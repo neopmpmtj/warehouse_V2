@@ -1,11 +1,13 @@
 const API_ROOT = "/api/manage/items/";
 const FAMILY_API = "/api/manage/families/";
+const SUPPLIER_API = "/api/manage/suppliers/";
 const THEME_KEY = "cc-theme";
 const LANG_KEY = "cc-lang";
 
 const state = {
     items: [],
     families: [],
+    suppliers: [],
     units: [],
     vat_rates: [],
     selectedIds: new Set(),
@@ -14,9 +16,12 @@ const state = {
     sortDir: "asc",
     familyHistoryId: null,
     familyHistoryEntries: [],
+    supplierHistoryId: null,
+    supplierHistoryEntries: [],
 };
 
 let familyHistoryRequestId = 0;
+let supplierHistoryRequestId = 0;
 
 const NUMERIC_SORT_KEYS = new Set(["reorder_level"]);
 
@@ -71,6 +76,8 @@ function catalogPermissions() {
         changeItem: body.dataset.canChangeItem === "true",
         addFamily: body.dataset.canAddFamily === "true",
         changeFamily: body.dataset.canChangeFamily === "true",
+        addSupplier: body.dataset.canAddSupplier === "true",
+        changeSupplier: body.dataset.canChangeSupplier === "true",
     };
 }
 
@@ -83,6 +90,8 @@ function applyCatalogPermissions(permissions) {
     body.dataset.canChangeItem = permissions.change_item ? "true" : "false";
     body.dataset.canAddFamily = permissions.add_family ? "true" : "false";
     body.dataset.canChangeFamily = permissions.change_family ? "true" : "false";
+    body.dataset.canAddSupplier = permissions.add_supplier ? "true" : "false";
+    body.dataset.canChangeSupplier = permissions.change_supplier ? "true" : "false";
 }
 
 function setItemFormEditable(editable) {
@@ -128,6 +137,7 @@ function setLanguage(lang) {
     fillFormLookups();
     renderTable();
     renderFamilyTable();
+    renderSupplierTable();
     refreshDrawerLabels();
     refreshEntityHistoryLabels();
 }
@@ -375,7 +385,7 @@ function renderTable() {
     if (rows.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.colSpan = 11;
+        cell.colSpan = 9;
         cell.className = "empty-row";
         cell.textContent = state.items.length === 0 ? t("empty") : t("noMatch");
         row.appendChild(cell);
@@ -565,8 +575,15 @@ function closeFamilyDrawer() {
     resetFamilyHistory();
 }
 
+function closeSupplierDrawer() {
+    document.getElementById("supplier-drawer").hidden = true;
+    document.getElementById("supplier-drawer-backdrop").hidden = true;
+    resetSupplierHistory();
+}
+
 async function openFamilyDrawer() {
     closeDrawer();
+    closeSupplierDrawer();
     document.getElementById("family-drawer").hidden = false;
     document.getElementById("family-drawer-backdrop").hidden = false;
     try {
@@ -759,6 +776,238 @@ async function toggleFamilyActive(family) {
     }
 }
 
+function supplierContactLabel(supplier) {
+    return supplier.contact_name || supplier.email || supplier.phone || "—";
+}
+
+function sortSuppliers() {
+    state.suppliers.sort((left, right) =>
+        left.name.localeCompare(right.name, currentLang(), { sensitivity: "base" })
+    );
+}
+
+function replaceSupplier(supplier) {
+    const index = state.suppliers.findIndex((item) => item.id === supplier.id);
+    if (index === -1) {
+        state.suppliers.push(supplier);
+    } else {
+        state.suppliers[index] = supplier;
+    }
+    sortSuppliers();
+    renderSupplierTable();
+}
+
+async function openSupplierDrawer() {
+    closeDrawer();
+    closeFamilyDrawer();
+    document.getElementById("supplier-drawer").hidden = false;
+    document.getElementById("supplier-drawer-backdrop").hidden = false;
+    try {
+        const data = await api(SUPPLIER_API);
+        state.suppliers = data.suppliers;
+        sortSuppliers();
+        renderSupplierTable();
+        resetSupplierHistory();
+    } catch (error) {
+        showBanner(error.message, true);
+        renderSupplierTable();
+    }
+}
+
+function renderSupplierTable() {
+    const body = document.getElementById("supplier-table-body");
+    if (!body) {
+        return;
+    }
+    body.replaceChildren();
+    if (!state.suppliers.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 4;
+        cell.className = "empty-row";
+        cell.textContent = t("emptySuppliers");
+        row.appendChild(cell);
+        body.appendChild(row);
+        return;
+    }
+    state.suppliers.forEach((supplier) => {
+        const row = document.createElement("tr");
+        if (!supplier.is_active) {
+            row.classList.add("is-inactive");
+        }
+
+        const name = document.createElement("td");
+        name.textContent = supplier.name;
+
+        const contact = document.createElement("td");
+        contact.textContent = supplierContactLabel(supplier);
+
+        const status = document.createElement("td");
+        const pill = document.createElement("span");
+        pill.className = supplier.is_active ? "pill pill-ok" : "pill pill-muted";
+        pill.textContent = supplier.is_active ? t("active") : t("inactive");
+        status.appendChild(pill);
+
+        const actions = document.createElement("td");
+        actions.className = "row-actions";
+        const perms = catalogPermissions();
+        if (perms.changeSupplier) {
+            const edit = document.createElement("button");
+            edit.type = "button";
+            edit.className = "btn";
+            edit.textContent = t("edit");
+            edit.addEventListener("click", () => promptSupplierForm(supplier));
+            actions.appendChild(edit);
+            const lifecycle = document.createElement("button");
+            lifecycle.type = "button";
+            lifecycle.className = supplier.is_active ? "btn btn-danger" : "btn";
+            lifecycle.textContent = supplier.is_active ? t("deactivate") : t("reactivate");
+            lifecycle.addEventListener("click", () => toggleSupplierActive(supplier));
+            actions.appendChild(lifecycle);
+        }
+        const history = document.createElement("button");
+        history.type = "button";
+        history.className = "btn";
+        history.textContent = t("history");
+        history.addEventListener("click", () => loadSupplierHistory(supplier));
+        actions.appendChild(history);
+
+        row.append(name, contact, status, actions);
+        body.appendChild(row);
+    });
+}
+
+function supplierFormPayload() {
+    return {
+        name: document.getElementById("supplier-field-name").value,
+        contact_name: document.getElementById("supplier-field-contact").value,
+        email: document.getElementById("supplier-field-email").value,
+        phone: document.getElementById("supplier-field-phone").value,
+        notes: document.getElementById("supplier-field-notes").value,
+    };
+}
+
+function askSupplierForm(supplier) {
+    return new Promise((resolve) => {
+        const backdrop = document.getElementById("supplier-form-dialog-backdrop");
+        const dialog = document.getElementById("supplier-form-dialog");
+        const title = document.getElementById("supplier-form-dialog-title");
+        const error = document.getElementById("supplier-form-error");
+        const confirmButton = document.getElementById("supplier-form-confirm");
+        const cancelButton = document.getElementById("supplier-form-cancel");
+        const nameInput = document.getElementById("supplier-field-name");
+
+        title.textContent = t(supplier ? "supplierEditTitle" : "supplierCreateTitle");
+        confirmButton.textContent = t("save");
+        nameInput.value = supplier ? supplier.name : "";
+        document.getElementById("supplier-field-contact").value = supplier ? supplier.contact_name : "";
+        document.getElementById("supplier-field-email").value = supplier ? supplier.email : "";
+        document.getElementById("supplier-field-phone").value = supplier ? supplier.phone : "";
+        document.getElementById("supplier-field-notes").value = supplier ? supplier.notes : "";
+        error.hidden = true;
+        backdrop.hidden = false;
+        dialog.hidden = false;
+        nameInput.focus();
+        nameInput.select();
+
+        function finish(value) {
+            backdrop.hidden = true;
+            dialog.hidden = true;
+            confirmButton.removeEventListener("click", onConfirm);
+            cancelButton.removeEventListener("click", onCancel);
+            backdrop.removeEventListener("click", onCancel);
+            nameInput.removeEventListener("keydown", onKey);
+            resolve(value);
+        }
+
+        function onConfirm() {
+            const payload = supplierFormPayload();
+            if (!payload.name.trim()) {
+                error.textContent = t("supplier_name_required");
+                error.hidden = false;
+                nameInput.focus();
+                return;
+            }
+            finish(payload);
+        }
+
+        function onCancel() {
+            finish(null);
+        }
+
+        function onKey(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                onConfirm();
+            }
+            if (event.key === "Escape") {
+                onCancel();
+            }
+        }
+
+        confirmButton.addEventListener("click", onConfirm);
+        cancelButton.addEventListener("click", onCancel);
+        backdrop.addEventListener("click", onCancel);
+        nameInput.addEventListener("keydown", onKey);
+    });
+}
+
+async function promptSupplierForm(supplier) {
+    const creating = !supplier;
+    if (creating && !catalogPermissions().addSupplier) {
+        return null;
+    }
+    if (!creating && !catalogPermissions().changeSupplier) {
+        return null;
+    }
+    const payload = await askSupplierForm(supplier);
+    if (payload === null) {
+        return null;
+    }
+    try {
+        const data = creating
+            ? await api(SUPPLIER_API, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            })
+            : await api(`${SUPPLIER_API}${supplier.id}/`, {
+                method: "PATCH",
+                body: JSON.stringify(payload),
+            });
+        replaceSupplier(data.supplier);
+        showBanner(creating ? t("supplierCreated") : t("supplierSaved"));
+        if (!document.getElementById("supplier-drawer").hidden) {
+            loadSupplierHistory(data.supplier);
+        }
+        return data.supplier;
+    } catch (error) {
+        showBanner(error.message, true);
+        return null;
+    }
+}
+
+async function toggleSupplierActive(supplier) {
+    if (!catalogPermissions().changeSupplier) {
+        return;
+    }
+    if (supplier.is_active && !window.confirm(t("confirmDeactivateSupplier"))) {
+        return;
+    }
+    try {
+        const data = await api(`${SUPPLIER_API}${supplier.id}/`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_active: !supplier.is_active }),
+        });
+        replaceSupplier(data.supplier);
+        showBanner(t("supplierSaved"));
+        if (state.supplierHistoryId === supplier.id) {
+            loadSupplierHistory(data.supplier);
+        }
+    } catch (error) {
+        showBanner(error.message, true);
+    }
+}
+
 async function startNewItem() {
     if (!catalogPermissions().addItem) {
         return;
@@ -835,6 +1084,97 @@ function resetFamilyHistory() {
     list.replaceChildren();
 }
 
+function showFamilyHistory(family) {
+    const title = document.getElementById("family-history-title");
+    const hint = document.getElementById("family-history-hint");
+    const list = document.getElementById("family-history-list");
+    if (!title || !hint || !list) {
+        return;
+    }
+    title.textContent = t("historyFor", { name: family.name });
+    hint.hidden = true;
+    fillHistoryList(list, state.familyHistoryEntries);
+}
+
+async function loadFamilyHistory(family) {
+    const requestId = ++familyHistoryRequestId;
+    state.familyHistoryId = family.id;
+    const title = document.getElementById("family-history-title");
+    const hint = document.getElementById("family-history-hint");
+    if (title) {
+        title.textContent = t("historyFor", { name: family.name });
+    }
+    if (hint) {
+        hint.hidden = true;
+    }
+    try {
+        const data = await api(`${FAMILY_API}${family.id}/history/`);
+        if (requestId !== familyHistoryRequestId) {
+            return;
+        }
+        state.familyHistoryEntries = data.history;
+        showFamilyHistory(family);
+    } catch (error) {
+        if (requestId !== familyHistoryRequestId) {
+            return;
+        }
+        showBanner(error.message, true);
+    }
+}
+
+function resetSupplierHistory() {
+    supplierHistoryRequestId += 1;
+    state.supplierHistoryId = null;
+    state.supplierHistoryEntries = [];
+    const title = document.getElementById("supplier-history-title");
+    const hint = document.getElementById("supplier-history-hint");
+    const list = document.getElementById("supplier-history-list");
+    if (!title || !hint || !list) {
+        return;
+    }
+    title.textContent = t("history");
+    hint.hidden = false;
+    list.replaceChildren();
+}
+
+function showSupplierHistory(supplier) {
+    const title = document.getElementById("supplier-history-title");
+    const hint = document.getElementById("supplier-history-hint");
+    const list = document.getElementById("supplier-history-list");
+    if (!title || !hint || !list) {
+        return;
+    }
+    title.textContent = t("historyFor", { name: supplier.name });
+    hint.hidden = true;
+    fillHistoryList(list, state.supplierHistoryEntries);
+}
+
+async function loadSupplierHistory(supplier) {
+    const requestId = ++supplierHistoryRequestId;
+    state.supplierHistoryId = supplier.id;
+    const title = document.getElementById("supplier-history-title");
+    const hint = document.getElementById("supplier-history-hint");
+    if (title) {
+        title.textContent = t("historyFor", { name: supplier.name });
+    }
+    if (hint) {
+        hint.hidden = true;
+    }
+    try {
+        const data = await api(`${SUPPLIER_API}${supplier.id}/history/`);
+        if (requestId !== supplierHistoryRequestId) {
+            return;
+        }
+        state.supplierHistoryEntries = data.history;
+        showSupplierHistory(supplier);
+    } catch (error) {
+        if (requestId !== supplierHistoryRequestId) {
+            return;
+        }
+        showBanner(error.message, true);
+    }
+}
+
 function refreshEntityHistoryLabels() {
     if (state.familyHistoryId) {
         const family = state.families.find((item) => item.id === state.familyHistoryId);
@@ -849,10 +1189,24 @@ function refreshEntityHistoryLabels() {
             title.textContent = t("history");
         }
     }
+    if (state.supplierHistoryId) {
+        const supplier = state.suppliers.find((item) => item.id === state.supplierHistoryId);
+        if (supplier) {
+            showSupplierHistory(supplier);
+        } else {
+            resetSupplierHistory();
+        }
+    } else {
+        const title = document.getElementById("supplier-history-title");
+        if (title) {
+            title.textContent = t("history");
+        }
+    }
 }
 
 async function openDrawer(item, selectFamilyId) {
     closeFamilyDrawer();
+    closeSupplierDrawer();
     fillFormLookups();
     document.getElementById("drawer").hidden = false;
     document.getElementById("drawer-backdrop").hidden = false;
@@ -901,16 +1255,16 @@ async function openDrawer(item, selectFamilyId) {
 async function saveItem(event) {
     event.preventDefault();
     const perms = catalogPermissions();
-    const productId = document.getElementById("field-id").value;
-    if (productId ? !perms.changeItem : !perms.addItem) {
+    const itemId = document.getElementById("field-id").value;
+    if (itemId ? !perms.changeItem : !perms.addItem) {
         return;
     }
     clearBanner();
     const payload = formPayload();
     try {
         let data;
-        if (productId) {
-            data = await api(`${API_ROOT}${productId}/`, {
+        if (itemId) {
+            data = await api(`${API_ROOT}${itemId}/`, {
                 method: "PATCH",
                 body: JSON.stringify(payload),
             });
@@ -1172,6 +1526,9 @@ async function loadCatalog() {
     fillFormLookups();
     renderTable();
     renderFamilyTable();
+    const perms = catalogPermissions();
+    document.getElementById("new-family").hidden = !perms.addFamily;
+    document.getElementById("new-supplier").hidden = !perms.addSupplier;
 }
 
 function bindEvents() {
@@ -1199,11 +1556,17 @@ function bindEvents() {
     document.getElementById("manage-families").addEventListener("click", () => {
         openFamilyDrawer();
     });
+    document.getElementById("manage-suppliers").addEventListener("click", () => {
+        openSupplierDrawer();
+    });
     document.getElementById("new-item").addEventListener("click", () => startNewItem());
     document.getElementById("new-family").addEventListener("click", () => promptCreateFamily(false));
     document.getElementById("new-family-inline").addEventListener("click", () => createFamilyFromItemForm());
     document.getElementById("family-drawer-close").addEventListener("click", closeFamilyDrawer);
     document.getElementById("family-drawer-backdrop").addEventListener("click", closeFamilyDrawer);
+    document.getElementById("new-supplier").addEventListener("click", () => promptSupplierForm(null));
+    document.getElementById("supplier-drawer-close").addEventListener("click", closeSupplierDrawer);
+    document.getElementById("supplier-drawer-backdrop").addEventListener("click", closeSupplierDrawer);
     document.getElementById("drawer-close").addEventListener("click", closeDrawer);
     document.getElementById("drawer-backdrop").addEventListener("click", closeDrawer);
     document.getElementById("item-form").addEventListener("submit", saveItem);

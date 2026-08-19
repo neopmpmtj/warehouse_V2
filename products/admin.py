@@ -20,13 +20,13 @@ from .services import (
     FamilyNameRequiredError,
     InvalidSupplierEmailError,
     SupplierNameRequiredError,
+    create_family,
     create_item,
-    create_product_family,
     create_supplier,
     deactivate_item,
     reactivate_item,
+    update_family,
     update_item,
-    update_product_family,
     update_supplier,
     validate_family_name_available,
     validate_internal_code_available,
@@ -465,14 +465,14 @@ class FamilyProductAdmin(admin.ModelAdmin):
 
         try:
             if change:
-                update_product_family(
+                update_family(
                     obj,
                     user=request.user,
                     name=form.cleaned_data["name"],
                     is_active=form.cleaned_data["is_active"],
                 )
             else:
-                created = create_product_family(
+                created = create_family(
                     name=form.cleaned_data["name"],
                     is_active=form.cleaned_data["is_active"],
                     user=request.user,

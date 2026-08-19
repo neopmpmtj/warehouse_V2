@@ -14,13 +14,15 @@
             document.documentElement.setAttribute("lang", lang);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=9">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=10">
 </head>
 <body
     data-can-add-item="{% if perms.products.add_item %}true{% else %}false{% endif %}"
     data-can-change-item="{% if perms.products.change_item %}true{% else %}false{% endif %}"
     data-can-add-family="{% if perms.products.add_familyproduct %}true{% else %}false{% endif %}"
     data-can-change-family="{% if perms.products.change_familyproduct %}true{% else %}false{% endif %}"
+    data-can-add-supplier="{% if perms.products.add_supplier %}true{% else %}false{% endif %}"
+    data-can-change-supplier="{% if perms.products.change_supplier %}true{% else %}false{% endif %}"
 >
     <header class="topbar">
         <div class="topbar-title">
@@ -71,6 +73,7 @@
             </select>
             <button type="button" id="bulk-apply" class="btn" data-i18n="apply">Apply</button>
             <button type="button" id="manage-families" class="btn" data-i18n="manageFamilies">Families</button>
+            <button type="button" id="manage-suppliers" class="btn" data-i18n="manageSuppliers">Suppliers</button>
             <button type="button" id="new-item" class="btn btn-primary" data-i18n="newItem">New item</button>
         </section>
 
@@ -216,6 +219,38 @@
         </div>
     </aside>
 
+    <div id="supplier-drawer-backdrop" class="backdrop" hidden></div>
+    <aside id="supplier-drawer" class="drawer" hidden>
+        <div class="drawer-head">
+            <h2 id="supplier-drawer-title" data-i18n="supplierDrawerTitle">Suppliers</h2>
+            <button type="button" id="supplier-drawer-close" class="btn btn-ghost" data-i18n="close">Close</button>
+        </div>
+        <div class="drawer-body">
+            <p id="supplier-drawer-help" class="drawer-help" data-i18n="supplierDrawerHelp">Suppliers are master data for later purchasing. Create them here independently of items.</p>
+            <div class="drawer-actions">
+                <button type="button" id="new-supplier" class="btn btn-primary" data-i18n="newSupplier">New supplier</button>
+            </div>
+            <div class="table-wrap">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th data-i18n="supplierName">Supplier name</th>
+                            <th data-i18n="supplierContact">Contact</th>
+                            <th data-i18n="colStatus">Status</th>
+                            <th data-i18n="colActions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="supplier-table-body"></tbody>
+                </table>
+            </div>
+            <section class="history">
+                <h3 id="supplier-history-title">History</h3>
+                <p id="supplier-history-hint" class="drawer-help" data-i18n="selectHistory">Choose History on a row to see who created or changed it.</p>
+                <ol id="supplier-history-list"></ol>
+            </section>
+        </div>
+    </aside>
+
     <div id="family-name-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
     <div id="family-name-dialog" class="dialog" hidden>
         <h2 id="family-name-dialog-title"></h2>
@@ -228,6 +263,36 @@
         <div class="drawer-actions">
             <button type="button" id="family-name-confirm" class="btn btn-primary"></button>
             <button type="button" id="family-name-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <div id="supplier-form-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
+    <div id="supplier-form-dialog" class="dialog" hidden>
+        <h2 id="supplier-form-dialog-title"></h2>
+        <label>
+            <span data-i18n="supplierName">Supplier name</span>
+            <input type="text" id="supplier-field-name" maxlength="255" required>
+        </label>
+        <label>
+            <span data-i18n="supplierContactName">Contact name</span>
+            <input type="text" id="supplier-field-contact" maxlength="255">
+        </label>
+        <label>
+            <span data-i18n="supplierEmail">Email</span>
+            <input type="email" id="supplier-field-email" maxlength="254">
+        </label>
+        <label>
+            <span data-i18n="supplierPhone">Phone</span>
+            <input type="text" id="supplier-field-phone" maxlength="64">
+        </label>
+        <label>
+            <span data-i18n="supplierNotes">Notes</span>
+            <textarea id="supplier-field-notes" rows="3"></textarea>
+        </label>
+        <p id="supplier-form-error" class="field-error" hidden></p>
+        <div class="drawer-actions">
+            <button type="button" id="supplier-form-confirm" class="btn btn-primary"></button>
+            <button type="button" id="supplier-form-cancel" class="btn" data-i18n="cancel">Cancel</button>
         </div>
     </div>
 
@@ -247,7 +312,7 @@
         </div>
     </div>
 
-    <script src="{% static 'products/js/console_i18n.js' %}?v=10"></script>
-    <script src="{% static 'products/js/console.js' %}?v=10"></script>
+    <script src="{% static 'products/js/console_i18n.js' %}?v=11"></script>
+    <script src="{% static 'products/js/console.js' %}?v=11"></script>
 </body>
 </html>

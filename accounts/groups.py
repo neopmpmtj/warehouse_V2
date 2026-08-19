@@ -23,6 +23,9 @@ DELETE_ITEM = "products.delete_item"
 ADD_FAMILY = "products.add_familyproduct"
 CHANGE_FAMILY = "products.change_familyproduct"
 DELETE_FAMILY = "products.delete_familyproduct"
+ADD_SUPPLIER = "products.add_supplier"
+CHANGE_SUPPLIER = "products.change_supplier"
+DELETE_SUPPLIER = "products.delete_supplier"
 
 WAREHOUSE_USERS = (
     ("warehouse.admin@centcompras.dev", GROUP_ADMINS),

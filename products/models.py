@@ -22,6 +22,8 @@ class FamilyProduct(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        verbose_name = "family"
+        verbose_name_plural = "families"
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(

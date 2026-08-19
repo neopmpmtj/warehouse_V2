@@ -14,11 +14,11 @@ from products.seed_catalog_data import (
     SUPPLIERS,
 )
 from products.services import (
+    create_family,
     create_item,
-    create_product_family,
     create_supplier,
     reactivate_item,
-    update_product_family,
+    update_family,
     update_supplier,
 )
 
@@ -28,7 +28,7 @@ DEFAULT_PASSWORD = "devpass123"
 
 class Command(BaseCommand):
     help = (
-        "Seed local dev data: warehouse users (3 groups), product families, "
+        "Seed local dev data: warehouse users (3 groups), families, "
         "suppliers, and ~50 items (idempotent)."
     )
 
@@ -39,9 +39,15 @@ class Command(BaseCommand):
             help=f"Password for seeded warehouse users (default: {DEFAULT_PASSWORD})",
         )
         parser.add_argument(
-            "--skip-products",
+            "--skip-items",
             action="store_true",
             help="Only seed the warehouse users.",
+        )
+        parser.add_argument(
+            "--skip-products",
+            action="store_true",
+            dest="skip_items",
+            help="Deprecated alias for --skip-items.",
         )
         parser.add_argument(
             "--skip-warehouse",
@@ -83,14 +89,16 @@ class Command(BaseCommand):
                     )
                 )
 
-        if not options["skip_products"]:
+        if not options["skip_items"]:
             families_by_name = {}
             for family_data in FAMILIES:
-                existing = FamilyProduct.objects.filter(name=family_data["name"]).first()
+                existing = FamilyProduct.objects.filter(
+                    name__iexact=family_data["name"]
+                ).first()
                 if existing:
                     family = existing
                     if family.is_active != family_data["is_active"]:
-                        update_product_family(
+                        update_family(
                             family,
                             is_active=family_data["is_active"],
                         )
@@ -98,7 +106,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"Exists family: {family.name}")
                     continue
 
-                family = create_product_family(
+                family = create_family(
                     family_data["name"],
                     is_active=family_data["is_active"],
                 )
@@ -106,7 +114,9 @@ class Command(BaseCommand):
                 self.stdout.write(f"Created family: {family.name}")
 
             for supplier_data in SUPPLIERS:
-                existing = Supplier.objects.filter(name=supplier_data["name"]).first()
+                existing = Supplier.objects.filter(
+                    name__iexact=supplier_data["name"]
+                ).first()
                 if existing:
                     supplier = existing
                     if supplier.is_active != supplier_data["is_active"]:

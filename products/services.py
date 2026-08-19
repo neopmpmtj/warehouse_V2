@@ -405,7 +405,7 @@ def _log_family_change(family, user, action, changes, reason=""):
 
 
 @transaction.atomic
-def create_product_family(name, is_active=True, user=None):
+def create_family(name, is_active=True, user=None):
     name = validate_family_name_available(name)
     family = FamilyProduct(
         name=name,
@@ -423,7 +423,7 @@ def create_product_family(name, is_active=True, user=None):
     )
 
     logger.info(
-        "Created product family id=%s name=%r user=%s",
+        "Created family id=%s name=%r user=%s",
         family.id,
         family.name,
         getattr(user, "email", None),
@@ -433,7 +433,7 @@ def create_product_family(name, is_active=True, user=None):
 
 
 @transaction.atomic
-def update_product_family(family, user=None, **fields):
+def update_family(family, user=None, **fields):
     if not fields:
         return family
 
@@ -469,7 +469,7 @@ def update_product_family(family, user=None, **fields):
     _log_family_change(family, user, action, logged_changes)
 
     logger.info(
-        "Updated product family id=%s action=%s fields=%s user=%s",
+        "Updated family id=%s action=%s fields=%s user=%s",
         family.id,
         action,
         list(changes.keys()),
@@ -483,7 +483,7 @@ def get_family_history(family):
     return family.change_logs.select_related("user").order_by("-created_at")
 
 
-def get_product_families(active_only=True):
+def get_families(active_only=True):
     queryset = FamilyProduct.objects.all()
     if active_only:
         queryset = queryset.filter(is_active=True)
@@ -644,6 +644,10 @@ def update_supplier(supplier, user=None, **fields):
     )
 
     return supplier
+
+
+def get_supplier_history(supplier):
+    return supplier.change_logs.select_related("user").order_by("-created_at")
 
 
 def get_suppliers(active_only=True):

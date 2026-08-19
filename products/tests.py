@@ -25,16 +25,17 @@ from products.services import (
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
     SupplierNameRequiredError,
+    create_family,
     create_item,
-    create_product_family,
     create_supplier,
     deactivate_item,
-    get_product_families,
+    get_families,
     get_items,
+    get_supplier_history,
     get_suppliers,
     reactivate_item,
+    update_family,
     update_item,
-    update_product_family,
     update_supplier,
     validate_internal_code_available,
 )
@@ -48,7 +49,7 @@ def make_warehouse_user(email, password="test-pass-123", group_name=GROUP_ADMINS
 
 class ItemTestCaseMixin:
     def create_test_family(self, name="Test Family"):
-        return create_product_family(name)
+        return create_family(name)
 
     def create_test_item(self, user, family=None, active=True, **kwargs):
         if family is None:
@@ -297,111 +298,111 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
 
 
 class FamilyProductServiceTests(TestCase):
-    def test_get_product_families_active_only_excludes_inactive(self):
-        active = create_product_family("Active Family")
-        inactive = create_product_family("Inactive Family")
-        update_product_family(inactive, is_active=False)
+    def test_get_families_active_only_excludes_inactive(self):
+        active = create_family("Active Family")
+        inactive = create_family("Inactive Family")
+        update_family(inactive, is_active=False)
 
-        names = list(get_product_families().values_list("name", flat=True))
+        names = list(get_families().values_list("name", flat=True))
 
         self.assertEqual(names, ["Active Family"])
 
-    def test_update_product_family_changes_name(self):
-        family = create_product_family("Original")
+    def test_update_family_changes_name(self):
+        family = create_family("Original")
 
-        updated = update_product_family(family, name="Renamed")
+        updated = update_family(family, name="Renamed")
 
         self.assertEqual(updated.name, "Renamed")
 
-    def test_create_product_family_respects_is_active(self):
-        inactive = create_product_family("Inactive on create", is_active=False)
+    def test_create_family_respects_is_active(self):
+        inactive = create_family("Inactive on create", is_active=False)
 
         self.assertFalse(inactive.is_active)
-        self.assertEqual(get_product_families(active_only=False).count(), 1)
-        self.assertEqual(get_product_families().count(), 0)
+        self.assertEqual(get_families(active_only=False).count(), 1)
+        self.assertEqual(get_families().count(), 0)
 
-    def test_create_product_family_rejects_empty_name(self):
+    def test_create_family_rejects_empty_name(self):
         with self.assertRaises(FamilyNameRequiredError):
-            create_product_family("   ")
+            create_family("   ")
 
-        self.assertEqual(get_product_families(active_only=False).count(), 0)
+        self.assertEqual(get_families(active_only=False).count(), 0)
 
-    def test_create_product_family_rejects_duplicate_name(self):
-        create_product_family("Cement")
-
-        with self.assertRaises(DuplicateFamilyNameError):
-            create_product_family("Cement")
+    def test_create_family_rejects_duplicate_name(self):
+        create_family("Cement")
 
         with self.assertRaises(DuplicateFamilyNameError):
-            create_product_family("cement")
+            create_family("Cement")
 
         with self.assertRaises(DuplicateFamilyNameError):
-            create_product_family("CEMENT")
-
-        self.assertEqual(get_product_families(active_only=False).count(), 1)
-
-    def test_update_product_family_rejects_duplicate_name(self):
-        create_product_family("Cement")
-        pipes = create_product_family("Pipes")
+            create_family("cement")
 
         with self.assertRaises(DuplicateFamilyNameError):
-            update_product_family(pipes, name="cement")
+            create_family("CEMENT")
+
+        self.assertEqual(get_families(active_only=False).count(), 1)
+
+    def test_update_family_rejects_duplicate_name(self):
+        create_family("Cement")
+        pipes = create_family("Pipes")
+
+        with self.assertRaises(DuplicateFamilyNameError):
+            update_family(pipes, name="cement")
 
         pipes.refresh_from_db()
         self.assertEqual(pipes.name, "Pipes")
 
-    def test_update_product_family_allows_unchanged_name(self):
-        family = create_product_family("Cement")
+    def test_update_family_allows_unchanged_name(self):
+        family = create_family("Cement")
 
-        updated = update_product_family(family, name="Cement", is_active=False)
+        updated = update_family(family, name="Cement", is_active=False)
 
         self.assertEqual(updated.name, "Cement")
         self.assertFalse(updated.is_active)
 
-    def test_create_product_family_writes_audit_log(self):
+    def test_create_family_writes_audit_log(self):
         user_model = get_user_model()
         user = user_model.objects.create_user(
             email="staff@example.com",
             password="test-pass-123",
         )
 
-        family = create_product_family("Cement", user=user)
+        family = create_family("Cement", user=user)
 
         log = family.change_logs.get(action=FamilyChangeLog.Action.CREATED)
         self.assertEqual(log.user, user)
         self.assertEqual(log.changes["name"], "Cement")
         self.assertTrue(log.changes["is_active"])
 
-    def test_create_product_family_allows_null_user(self):
-        family = create_product_family("Cement")
+    def test_create_family_allows_null_user(self):
+        family = create_family("Cement")
 
         log = family.change_logs.get(action=FamilyChangeLog.Action.CREATED)
         self.assertIsNone(log.user)
 
-    def test_update_product_family_writes_updated_log(self):
-        family = create_product_family("Original")
+    def test_update_family_writes_updated_log(self):
+        family = create_family("Original")
 
-        update_product_family(family, name="Renamed")
+        update_family(family, name="Renamed")
 
         log = family.change_logs.get(action=FamilyChangeLog.Action.UPDATED)
         self.assertEqual(log.changes["name"]["old"], "Original")
         self.assertEqual(log.changes["name"]["new"], "Renamed")
 
     def test_deactivate_and_reactivate_family_write_lifecycle_logs(self):
-        family = create_product_family("Cement")
+        family = create_family("Cement")
 
-        update_product_family(family, is_active=False)
+        update_family(family, is_active=False)
         deactivated = family.change_logs.get(action=FamilyChangeLog.Action.DEACTIVATED)
         self.assertEqual(deactivated.changes, {})
 
-        update_product_family(family, is_active=True)
+        update_family(family, is_active=True)
         reactivated = family.change_logs.get(action=FamilyChangeLog.Action.REACTIVATED)
         self.assertEqual(reactivated.changes, {})
 
     def test_unchanged_family_update_does_not_write_audit_log(self):
-        family = create_product_family("Cement")
+        family = create_family("Cement")
 
-        update_product_family(family, name="Cement", is_active=True)
+        update_family(family, name="Cement", is_active=True)
 
         self.assertEqual(family.change_logs.count(), 1)
         self.assertEqual(
@@ -505,7 +506,7 @@ class FamilyProductAdminAccessTests(TestCase):
         self.assertIn(response.status_code, (302, 403))
 
     def test_admin_create_rejects_duplicate_family_name(self):
-        create_product_family("Cement")
+        create_family("Cement")
         self.client.force_login(self.superuser)
 
         response = self.client.post(
@@ -629,6 +630,20 @@ class SupplierServiceTests(TestCase):
         )
         self.assertEqual(reactivated.changes, {})
 
+    def test_get_supplier_history_returns_newest_first(self):
+        supplier = create_supplier(name="BuildSupply Ltd")
+        update_supplier(supplier, phone="+351 210 000 001")
+
+        actions = list(get_supplier_history(supplier).values_list("action", flat=True))
+
+        self.assertEqual(
+            actions,
+            [
+                SupplierChangeLog.Action.UPDATED,
+                SupplierChangeLog.Action.CREATED,
+            ],
+        )
+
 
 class SupplierAdminAccessTests(TestCase):
     def setUp(self):
@@ -697,6 +712,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "item-form")
         self.assertContains(response, "item-table-body")
+        self.assertContains(response, "supplier-table-body")
         self.assertContains(response, "colVatRate")
         self.assertNotContains(response, "product-table-body")
         self.assertNotContains(response, "colPrice")
@@ -709,6 +725,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "/manage/items/")
+        self.assertContains(response, "/api/manage/suppliers/")
         self.assertNotContains(response, 'href="/admin/"')
         self.assertNotContains(response, "/api/items/")
         self.assertContains(response, self.staff_user.email)
@@ -797,6 +814,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'data-can-change-item="false"')
         self.assertContains(response, 'data-can-add-family="false"')
         self.assertContains(response, 'data-can-change-family="false"')
+        self.assertContains(response, 'data-can-add-supplier="false"')
+        self.assertContains(response, 'data-can-change-supplier="false"')
 
     def test_operator_manage_api_reports_read_only_permissions(self):
         operator = make_warehouse_user(
@@ -814,6 +833,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 "change_item": False,
                 "add_family": False,
                 "change_family": False,
+                "add_supplier": False,
+                "change_supplier": False,
             },
         )
 
@@ -826,6 +847,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'data-can-change-item="true"')
         self.assertContains(response, 'data-can-add-family="true"')
         self.assertContains(response, 'data-can-change-family="true"')
+        self.assertContains(response, 'data-can-add-supplier="true"')
+        self.assertContains(response, 'data-can-change-supplier="true"')
 
     def test_admin_manage_api_reports_write_permissions(self):
         self.client.force_login(self.staff_user)
@@ -839,6 +862,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 "change_item": True,
                 "add_family": True,
                 "change_family": True,
+                "add_supplier": True,
+                "change_supplier": True,
             },
         )
 
@@ -1140,3 +1165,110 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_staff_can_create_and_update_supplier_through_console_api(self):
+        self.client.force_login(self.staff_user)
+
+        create_response = self.client.post(
+            reverse("manage_supplier_list"),
+            data=json.dumps({
+                "name": "BuildSupply Ltd",
+                "contact_name": "Ana Ribeiro",
+                "email": "sales@buildsupply.dev",
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(create_response.status_code, 200)
+        payload = create_response.json()["supplier"]
+        self.assertEqual(payload["name"], "BuildSupply Ltd")
+        self.assertTrue(payload["is_active"])
+        self.assertNotIn("suppliers", self.client.get(reverse("manage_item_list")).json())
+
+        update_response = self.client.patch(
+            reverse("manage_supplier_detail", args=[payload["id"]]),
+            data=json.dumps({"phone": "+351 210 000 001"}),
+            content_type="application/json",
+        )
+        self.assertEqual(update_response.status_code, 200)
+        self.assertEqual(update_response.json()["supplier"]["phone"], "+351 210 000 001")
+
+        list_response = self.client.get(reverse("manage_supplier_list"))
+        names = [item["name"] for item in list_response.json()["suppliers"]]
+        self.assertIn("BuildSupply Ltd", names)
+
+    def test_console_create_supplier_rejects_empty_and_duplicate_name(self):
+        self.client.force_login(self.staff_user)
+
+        empty = self.client.post(
+            reverse("manage_supplier_list"),
+            data=json.dumps({"name": "  "}),
+            content_type="application/json",
+        )
+        self.assertEqual(empty.status_code, 400)
+        self.assertEqual(empty.json()["code"], "supplier_name_required")
+
+        self.client.post(
+            reverse("manage_supplier_list"),
+            data=json.dumps({"name": "BuildSupply Ltd"}),
+            content_type="application/json",
+        )
+        duplicate = self.client.post(
+            reverse("manage_supplier_list"),
+            data=json.dumps({"name": "buildsupply ltd"}),
+            content_type="application/json",
+        )
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertEqual(duplicate.json()["code"], "duplicate_supplier_name")
+
+    def test_console_supplier_create_and_deactivate_write_audit_history(self):
+        self.client.force_login(self.staff_user)
+
+        create_response = self.client.post(
+            reverse("manage_supplier_list"),
+            data=json.dumps({"name": "BuildSupply Ltd"}),
+            content_type="application/json",
+        )
+        supplier_id = create_response.json()["supplier"]["id"]
+
+        self.client.patch(
+            reverse("manage_supplier_detail", args=[supplier_id]),
+            data=json.dumps({"is_active": False}),
+            content_type="application/json",
+        )
+
+        history = self.client.get(
+            reverse("manage_supplier_history", args=[supplier_id]),
+        )
+        self.assertEqual(history.status_code, 200)
+        by_action = {entry["action"]: entry for entry in history.json()["history"]}
+        self.assertEqual(set(by_action), {"created", "deactivated"})
+        self.assertEqual(by_action["created"]["user_email"], self.staff_user.email)
+
+    def test_non_staff_user_cannot_use_supplier_api(self):
+        self.client.force_login(self.non_staff_user)
+
+        response = self.client.get(reverse("manage_supplier_list"))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_operator_cannot_create_supplier(self):
+        operator = make_warehouse_user(
+            "operator-supplier@example.com",
+            group_name=GROUP_OPERATORS,
+        )
+        self.client.force_login(operator)
+
+        listing = self.client.get(reverse("manage_supplier_list"))
+        self.assertEqual(listing.status_code, 200)
+
+        created = self.client.post(
+            reverse("manage_supplier_list"),
+            data=json.dumps({"name": "Blocked Supplier"}),
+            content_type="application/json",
+        )
+        self.assertEqual(created.status_code, 403)
+        self.assertEqual(
+            created.json()["error"],
+            "Missing permission: products.add_supplier",
+        )

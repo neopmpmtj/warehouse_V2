@@ -20,6 +20,21 @@ urlpatterns = [
         name="manage_family_history",
     ),
     path(
+        "manage/suppliers/",
+        console_views.manage_supplier_list,
+        name="manage_supplier_list",
+    ),
+    path(
+        "manage/suppliers/<int:supplier_id>/",
+        console_views.manage_supplier_detail,
+        name="manage_supplier_detail",
+    ),
+    path(
+        "manage/suppliers/<int:supplier_id>/history/",
+        console_views.manage_supplier_history,
+        name="manage_supplier_history",
+    ),
+    path(
         "manage/items/",
         console_views.manage_item_list,
         name="manage_item_list",

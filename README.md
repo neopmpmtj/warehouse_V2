@@ -8,13 +8,11 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status (handoff)
 
-*Last updated: 18 August 2026 — read this section first when resuming work.*
+*Last updated: 19 August 2026 — read this section first when resuming work.*
 
 ### Where we stand
 
-The **catalogue module is complete** for the current MVP scope: global products, warehouse-staff management with audit trail (products, families, and suppliers), branch read-only browsing (online + offline), and local dev seed data.
-
-**Stock is still a number typed on the product** in `/manage/products/`. Branch **orders** are on hold until inbound stock can be recorded from supplier purchases, so an order is not placed against an empty warehouse. Nothing in `orders/` or a procurement app exists yet.
+The **item catalogue** is the current module: warehouse staff create and manage **items**, **families**, and **suppliers** at `/manage/items/`. Items start inactive until Genesis. There is **no stock or price on the item** — quantity waits for a later inbound-receipt design. Branch orders wait until then.
 
 Held for later dedicated sessions (do not start in passing): shared page chrome, branch phone-catalogue UX, staff-console polish.
 
@@ -26,21 +24,21 @@ Held for later dedicated sessions (do not start in passing): shared page chrome,
 | **Auth & tenancy foundation** | Done | `accounts` (email login), `branches` (Branch, BranchMembership, roles, middleware, picker) |
 | **Login-protected catalogue** | Done | `/` and `/api/products/` require session; API returns 401 when logged out |
 | **Centralized logging** | Done | `logging_utils` → rotating files in `logs/` |
-| **Catalog management & audit** | Done | Product / family / supplier lifecycle, `ProductChangeLog` + `FamilyChangeLog` + `SupplierChangeLog`, soft delete, staff admin via `products/services.py` |
-| **Catalog polish** | Done | `catalog_updated_at` in API + UI; duplicate `internal_code` validation; optional product audit `reason` |
-| **Staff product console** | Done | `/manage/products/` — table, filters, column sort, inactive-by-default create + Genesis, family/supplier drawers, EN/pt-PT, light/dark |
-| **Family & supplier priors** | Done | Console create/deactivate; case-insensitive unique names (no rename in the console); PostgreSQL audit logs |
+| **Catalog management & audit** | Done | Item / family / supplier lifecycle, `ItemChangeLog` + `FamilyChangeLog` + `SupplierChangeLog`, soft delete, staff admin via `products/services.py` |
+| **Catalog polish** | Done | Duplicate `internal_code` validation; optional item audit `reason` |
+| **Staff item console** | Done | `/manage/items/` — table, filters, column sort, inactive-by-default create + Genesis, family/supplier drawers, EN/pt-PT, light/dark |
+| **Family & supplier priors** | Done | Console create/deactivate; case-insensitive unique names (no rename in the console UI); PostgreSQL audit logs |
 | **Dev seed script** | Done | [`scripts/seed_dev_data.sh`](scripts/seed_dev_data.sh) — branches, branch users, **warehouse user**, sample products |
 | **Project setup docs** | Done | Root README, `requirements.txt`, `config/settings.example.py`, `AGENTS.md`, `.cursor/` rules |
 
 **Design choices locked in for later phases:**
 
-- `Product` catalogue is **global** (central warehouse) — no `branch_id` on products.
+- `Item` catalogue is **global** (central warehouse) — no `branch_id` on items.
 - **Catalog mutations** = warehouse groups on the website (`warehouse_admins` full, `warehouse_managers` add/change, `warehouse_data_operators` view). **`/admin/` is superuser only.**
 - Dev login: email + password. Production: **Google OAuth** (not implemented yet).
 - Users are provisioned in admin or seed script — no public signup.
 - Orders (future, after inbound stock) will be **branch-scoped** with `branch` + `created_by` FKs. The sketch in [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) §6 is **not** an implementation spec (`item_name` is leftover).
-- **`Product.stock` as a console-editable field is not locked.** Inbound receipts from suppliers are expected to become the source of stock quantity.
+- **Items have no stock or price field.** Inbound receipts from suppliers are expected to become the source of quantity later.
 
 ### User roles (important — practice with these)
 
@@ -77,23 +75,23 @@ After `./scripts/seed_dev_data.sh`, all seeded users share password **`devpass12
 
 1. Read this section, [User roles](#user-roles-important--practice-with-these), and the staff console session reports: [`docs/product-console-session-2026-08-18.md`](docs/product-console-session-2026-08-18.md), [sort + lifecycle](docs/product-console-session-2026-08-18-sort-lifecycle.md), [family + supplier](docs/product-console-session-2026-08-18-family-supplier.md), [family + supplier audit](docs/product-console-session-2026-08-18-family-supplier-audit.md).
 2. Fresh environment: `python manage.py migrate` then `./scripts/seed_dev_data.sh`.
-3. Practice: warehouse user → `/manage/products/`; create a family if needed; new product starts inactive until Genesis; Families / Suppliers drawers show History. Branch user → `/` catalogue; deactivate a product (reason required) → confirm it disappears from branch API.
-4. **Design inbound stock** (procurement / goods receipt): how a supplier purchase becomes `Product.stock`. Do not start `orders/` until stock can be received.
+3. Practice: warehouse user → `/manage/items/`; create a family if needed; new item starts inactive until Genesis; Families / Suppliers drawers show History.
+4. **Design inbound stock** (procurement / goods receipt) only after items exist: how a supplier purchase will later write quantity. Do not start `orders/` until stock can be received.
 5. Do **not** in passing: restyle `/`, polish the staff console, or implement the tenancy-doc `Order` stub.
 
 ### Key files (catalog — current module)
 
 ```text
-products/models.py           Item, FamilyProduct, Supplier, change-log models
-products/services.py         create/update/deactivate/reactivate, family/supplier, get_products
-products/permissions.py      view/add/change/delete checks on /api/manage/
+products/models.py           Item, FamilyProduct, Supplier, VatRate, change-log models
+products/services.py         create/update/deactivate/reactivate items, families, suppliers
+products/permissions.py      view/add/change checks on /api/manage/
 accounts/groups.py           warehouse_admins / managers / data_operators + superuser-only /admin/
-products/admin.py            staff-only admin + audit inlines
-products/views.py              GET /api/products/ (active only + catalog_updated_at)
-products/console_views.py      Staff console page + /api/manage/ products, families, suppliers
-products/tests.py              Catalog + console tests — run: python manage.py test products
-branches/management/commands/seed_dev_data.py
-scripts/seed_dev_data.sh       wrapper: migrate + seed
+products/admin.py            superuser-only admin + audit inlines
+products/views.py            staff dashboard at `/`
+products/console_views.py    Staff console page + /api/manage/ items, families, suppliers
+products/tests.py            Catalog + console tests — run: python manage.py test products
+products/management/commands/seed_dev_data.py
+scripts/seed_dev_data.sh     wrapper: migrate + seed
 ```
 
 Migrations: `products/0001_initial.py` through `0005` (inactive-by-default, CI unique names, family/supplier audit). Run `migrate` after pull if schema changed.
@@ -143,55 +141,50 @@ No React, Vue, or similar frontend framework.
 
 Production will use Google OAuth (not implemented in dev — email/password login only).
 
-### Product catalogue (server)
+### Item catalogue (server)
 
-- `Product` model: required `family`, optional `internal_code`, `description`, `stock` (decimal), `price` (USD), `unit_of_measure`, `reorder_level`, `is_active` (soft delete; **new products start inactive**), timestamps.
-- `FamilyProduct` / `Supplier` — family is required on create; suppliers are optional. Names are case-insensitive unique. Console does not rename them.
-- Audit: `ProductChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Product deactivate/reactivate require a reason; family/supplier lifecycle does not.
-- Service layer in [`products/services.py`](products/services.py): product, family, and supplier mutations.
+- `Item` model: required `family`, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (soft delete; **new items start inactive**), timestamps. No stock or price.
+- `FamilyProduct` / `Supplier` — family is required on item create; suppliers are independent master data (not linked to items yet). Names are case-insensitive unique. The console UI does not rename them.
+- Audit: `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Item deactivate/reactivate require a reason; family/supplier lifecycle does not.
+- Service layer in [`products/services.py`](products/services.py): item, family, and supplier mutations.
 - Warehouse staff manage the catalogue in `/manage/items/` using Django model permissions on three groups. Django admin is superuser only.
 - Dev/bootstrap CLI:
 
   ```bash
-  python manage.py add_product "Cement 50kg" 100 12.95
-  python manage.py add_product "Steel Pipe" 50 8.75 --internal-code PIPE-20
+  python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16
+  python manage.py add_item "Steel Pipe" --family Pipes --vat-rate VAT16 --internal-code PIPE-20
   ```
 
-- JSON API (authenticated, **active products only**):
+- Staff JSON APIs (authenticated warehouse groups):
 
   ```text
-  GET /api/products/
+  GET /api/manage/items/
+  GET /api/manage/families/
+  GET /api/manage/suppliers/
   ```
 
-  Response includes `catalog_updated_at` (ISO timestamp of the latest active product change) for offline stale-catalogue messaging.
-
-- `ProductChangeLog.reason` — required for product deactivate/reactivate; optional on field edits. Family/supplier logs store an empty reason today.
+- `ItemChangeLog.reason` — required for item deactivate/reactivate; optional on field edits. Family/supplier logs store an empty reason today.
 - Duplicate non-empty `internal_code` values are rejected with a clear validation error in admin and services.
 - Tests in [`products/tests.py`](products/tests.py) cover service diffs, active filtering, uniqueness, console APIs, and audit logs.
 
-### Product catalogue (browser)
+### Item console (browser)
 
-- Product list page at `/` (login required).
-- Fetches catalogue from the API when online, saves to IndexedDB, renders a table.
-- On API failure, falls back to the last cached catalogue in IndexedDB.
-- Service Worker caches the application shell so the page and scripts load offline.
-- Retries when connectivity returns (`online` event) and every 30 seconds while the app is open.
+- Staff dashboard at `/` (catalogue view permission required).
+- Item console at `/manage/items/` — table, filters, family and supplier drawers.
+- The console is online-only (not part of a catalogue app-shell cache).
 
 ### URL layout
 
 | Path | Purpose |
 |------|---------|
-| `/` | Product list page (login required) |
+| `/` | Staff dashboard (catalogue view permission) |
 | `/manage/items/` | Warehouse item console (view permission) |
 | `/api/manage/items/` | Warehouse item JSON API (view; writes need add/change) |
 | `/api/manage/families/` | Warehouse family JSON API (view; writes need add/change) |
 | `/api/manage/suppliers/` | Warehouse supplier JSON API (view; writes need add/change) |
 | `/accounts/login/` | Email + password login |
 | `/accounts/logout/` | Log out |
-| `/branches/select/` | Choose active branch (multi-branch users) |
-| `/branches/no-access/` | Shown when user has no branch membership |
-| `/api/products/` | Catalogue JSON API (login required) |
-| `/service-worker.js` | Service Worker (served from root for correct scope) |
+| `/service-worker.js` | Parked uninstall stub |
 | `/admin/` | Django admin (**superuser only**) |
 
 ---
@@ -306,10 +299,10 @@ This creates:
 | **Branches** | Lisbonbranch, portobranch, vilarealbranch |
 | **Branch users** | `admin.lisbon@…`, `admin.porto@…`, `admin.vilareal@…` — **branch admin** role in their branch |
 | **Warehouse users** | `warehouse.admin@…` / `warehouse.manager@…` / `warehouse.operator@…` — groups `warehouse_admins`, `warehouse_managers`, `warehouse_data_operators` |
-| **Products** | 3 sample items via `products/services.py` |
+| **Items** | ~50 sample items via `products/services.py` |
 | **Password** | `devpass123` for all seeded users (override with `--password`) |
 
-Re-running the script is safe (idempotent). Options: `--skip-products`, `--skip-warehouse`.
+Re-running the script is safe (idempotent). Options: `--skip-items`, `--skip-warehouse`.
 
 **Important:** branch **admin** role is for future **order** permissions per branch. **Catalogue** access is the warehouse groups above, not Django admin.
 

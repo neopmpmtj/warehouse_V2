@@ -8,13 +8,13 @@ Staff product console (this phase): [`docs/product-console-session-2026-08-18.md
 
 ## Session handoff (August 2026)
 
-**Done:** Auth/tenancy, offline catalogue, catalog management (admin + audit + soft delete), staff product console (`/manage/products/` — sort, inactive-by-default create, family/supplier drawers), family and supplier PostgreSQL audit logs, catalog polish, dev seed script with **warehouse user**. Handoff docs synced 18 August 2026 (`aux_instructions.md`, tenancy preamble, this file, root README).
+**Done:** Auth, catalog management (admin + audit + soft delete), staff item console (`/manage/items/` — sort, inactive-by-default create, family/supplier drawers), family and supplier PostgreSQL audit logs, dev seed script with **warehouse users**.
 
-**Not done:** inbound stock / procurement app, `orders` app, offline order queue, shared page chrome, branch phone UX, console polish, integration tests for auth/branches, production OAuth/deployment.
+**Not done:** inbound stock / procurement app, `orders` app, offline order queue, shared page chrome, branch phone UX, console polish, production OAuth/deployment.
 
-**Next:** Design how a supplier purchase becomes `Product.stock`. Do **not** implement `orders/` or the tenancy-doc Order stub. Hold shared chrome, `/` restyle, and console polish for dedicated sessions.
+**Next:** Keep enhancing items, families, and suppliers. Quantity is **not** typed on the item. Do **not** implement `orders/` or the tenancy-doc Order stub. Hold shared chrome, `/` restyle, and console polish for dedicated sessions.
 
-**Stock today:** `Product.stock` is still typed in the staff console. That is not a locked design.
+**Stock today:** `Item` has no stock or price field. Inbound receipts from suppliers are a later design.
 
 ## User roles (do not confuse these)
 
@@ -50,15 +50,13 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 
 ### Catalogue
 
-- **Product fields:** family, optional `internal_code`, `description`, `stock` (still console-editable), `price`, `unit_of_measure`, `reorder_level`, `is_active` (new products start inactive), timestamps; suppliers via `ProductSupplier`
-- **Audit:** `ProductChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Product lifecycle reasons required; family/supplier deactivate is confirm-only
-- **Names:** family and supplier names are case-insensitive unique; the console does not rename them
-- **Global catalogue** — no `branch_id` on `Product` (warehouse stock for all branches)
+- **Item fields:** family, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (new items start inactive), timestamps. No stock or price. Suppliers are independent master data (not linked to items yet).
+- **Audit:** `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Item lifecycle reasons required; family/supplier deactivate is confirm-only
+- **Names:** family and supplier names are case-insensitive unique; the console UI does not rename them
+- **Global catalogue** — no `branch_id` on `Item`
 - **Management:** warehouse users via `/manage/items/` (groups `warehouse_admins` / `warehouse_managers` / `warehouse_data_operators` and Django model permissions). Django admin (`/admin/`) is **superuser only**. All mutations through `products/services.py`
-- **Branch access:** read-only — `GET /api/products/` returns active products only plus `catalog_updated_at`
 - **Validation:** duplicate non-empty `internal_code` rejected in services/admin
-- **CLI:** `add_product` for dev/bootstrap (audit user is null); optional `--internal-code`
-- **Offline:** Service Worker (`centcompras-shell-v5`) + IndexedDB (read-only catalogue cache)
+- **CLI:** `add_item` for dev/bootstrap (audit user is null); optional `--internal-code`
 - **Tests:** `.venv/bin/python manage.py test products`
 
 ### Logging
@@ -71,7 +69,7 @@ PostgreSQL is the source of truth. IndexedDB is a read-only local cache.
 
 ## Not implemented yet
 
-- Inbound stock / procurement (supplier receipt → `Product.stock`) — **next design**
+- Inbound stock / procurement (supplier receipt → item quantity) — **later design**
 - `orders` app and order workflow (**after** inbound stock)
 - Order business rules not locked (stock timing, cart shape, cancel policy)
 - Shared page chrome; branch phone-catalogue UX; staff console polish (dedicated sessions)

@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from products.models import FamilyProduct, Item, VatRate
-from products.services import create_item, get_product_families, reactivate_item
+from products.services import create_item, get_families, reactivate_item
 
 
 class Command(BaseCommand):
@@ -12,7 +12,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--family",
             required=True,
-            help="Product family name (must exist)",
+            help="Family name (must exist)",
         )
         parser.add_argument(
             "--vat-rate",
@@ -46,13 +46,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         family_name = options["family"].strip()
-        family = FamilyProduct.objects.filter(name=family_name).first()
+        family = FamilyProduct.objects.filter(name__iexact=family_name).first()
         if family is None:
             available = ", ".join(
-                get_product_families(active_only=False).values_list("name", flat=True)
+                get_families(active_only=False).values_list("name", flat=True)
             )
             raise CommandError(
-                f"Product family '{family_name}' not found. Available: {available}"
+                f"Family '{family_name}' not found. Available: {available}"
             )
 
         vat_rate_code = options["vat_rate"].strip()

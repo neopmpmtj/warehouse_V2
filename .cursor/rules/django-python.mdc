@@ -13,7 +13,7 @@ management commands / views  →  services.py  →  models.py
 ```
 
 - Add reusable DB operations to `services.py`, not duplicated in views or CLI
-- Use `Decimal` for money and stock in services (see `products/services.py`)
+- Use `Decimal` for numeric catalogue fields in services (see `products/services.py`)
 
 ## Django habits
 

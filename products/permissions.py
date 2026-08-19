@@ -3,7 +3,15 @@ from functools import wraps
 from django.contrib.auth.views import redirect_to_login
 from django.http import HttpResponseForbidden, JsonResponse
 
-from accounts.groups import ADD_FAMILY, ADD_ITEM, CHANGE_FAMILY, CHANGE_ITEM, VIEW_ITEM
+from accounts.groups import (
+    ADD_FAMILY,
+    ADD_ITEM,
+    ADD_SUPPLIER,
+    CHANGE_FAMILY,
+    CHANGE_ITEM,
+    CHANGE_SUPPLIER,
+    VIEW_ITEM,
+)
 
 
 def can_view_catalog(user):
@@ -18,11 +26,9 @@ def catalog_permissions(user):
         "change_item": user.has_perm(CHANGE_ITEM),
         "add_family": user.has_perm(ADD_FAMILY),
         "change_family": user.has_perm(CHANGE_FAMILY),
+        "add_supplier": user.has_perm(ADD_SUPPLIER),
+        "change_supplier": user.has_perm(CHANGE_SUPPLIER),
     }
-
-
-def can_manage_catalog(user):
-    return can_view_catalog(user)
 
 
 def deny_unless(request, perm):
@@ -52,6 +58,3 @@ def catalog_required(view_func):
         return view_func(request, *args, **kwargs)
 
     return wrapped
-
-
-staff_required = catalog_required

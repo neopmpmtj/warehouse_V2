@@ -7,28 +7,42 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from accounts.groups import ADD_FAMILY, ADD_ITEM, CHANGE_FAMILY, CHANGE_ITEM
+from accounts.groups import (
+    ADD_FAMILY,
+    ADD_ITEM,
+    ADD_SUPPLIER,
+    CHANGE_FAMILY,
+    CHANGE_ITEM,
+    CHANGE_SUPPLIER,
+)
 from logging_utils import get_logger
 
-from .models import FamilyProduct, Item
+from .models import FamilyProduct, Item, Supplier
 from .permissions import catalog_permissions, catalog_required, deny_unless
 from .services import (
     DeactivateReasonRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    DuplicateSupplierNameError,
     FamilyNameRequiredError,
+    InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
+    SupplierNameRequiredError,
+    create_family,
     create_item,
-    create_product_family,
+    create_supplier,
     deactivate_item,
+    get_families,
     get_family_history,
     get_item_history,
     get_items,
-    get_product_families,
+    get_supplier_history,
+    get_suppliers,
     get_vat_rates,
     reactivate_item,
+    update_family,
     update_item,
-    update_product_family,
+    update_supplier,
 )
 
 logger = get_logger("centcompras.products")
@@ -150,8 +164,20 @@ def _parse_unit(payload, required=True):
     return unit
 
 
+def _serialize_supplier(supplier):
+    return {
+        "id": supplier.id,
+        "name": supplier.name,
+        "contact_name": supplier.contact_name,
+        "email": supplier.email,
+        "phone": supplier.phone,
+        "notes": supplier.notes,
+        "is_active": supplier.is_active,
+    }
+
+
 def _families_with_counts():
-    return get_product_families(active_only=False).annotate(
+    return get_families(active_only=False).annotate(
         item_count=Count("items"),
     )
 
@@ -408,7 +434,7 @@ def manage_family_list(request):
         is_active = payload.get("is_active", True)
         if not isinstance(is_active, bool):
             raise ValidationError("is_active must be a boolean.")
-        family = create_product_family(
+        family = create_family(
             name=str(payload.get("name", "")),
             is_active=is_active,
             user=request.user,
@@ -444,7 +470,7 @@ def manage_family_detail(request, family_id):
             if not isinstance(payload["is_active"], bool):
                 raise ValidationError("is_active must be a boolean.")
             fields["is_active"] = payload["is_active"]
-        family = update_product_family(family, user=request.user, **fields)
+        family = update_family(family, user=request.user, **fields)
     except (FamilyNameRequiredError, DuplicateFamilyNameError, ValidationError) as exc:
         return _family_error(exc)
 
@@ -461,6 +487,141 @@ def manage_family_history(request, family_id):
         return _json_error("Family not found.", status=404)
 
     entries = get_family_history(family)
+    return JsonResponse(
+        {"history": [_serialize_history_entry(entry) for entry in entries]}
+    )
+
+
+def _supplier_error(exc):
+    if isinstance(
+        exc,
+        (
+            SupplierNameRequiredError,
+            DuplicateSupplierNameError,
+            InvalidSupplierEmailError,
+        ),
+    ):
+        return _json_error(exc.messages[0], code=exc.code)
+    if isinstance(exc, ValidationError):
+        message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+        return _json_error(message)
+    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError)):
+        return _json_error(str(exc))
+    raise exc
+
+
+def _get_supplier(supplier_id):
+    return Supplier.objects.get(pk=supplier_id)
+
+
+def _supplier_response(supplier):
+    supplier = _get_supplier(supplier.pk)
+    return JsonResponse({"supplier": _serialize_supplier(supplier)})
+
+
+def _supplier_fields_from_payload(payload, *, creating):
+    fields = {}
+    if creating or "name" in payload:
+        fields["name"] = str(payload.get("name", ""))
+    if "contact_name" in payload or creating:
+        fields["contact_name"] = str(payload.get("contact_name", ""))
+    if "email" in payload or creating:
+        fields["email"] = str(payload.get("email", ""))
+    if "phone" in payload or creating:
+        fields["phone"] = str(payload.get("phone", ""))
+    if "notes" in payload or creating:
+        fields["notes"] = str(payload.get("notes", ""))
+    if "is_active" in payload:
+        if not isinstance(payload["is_active"], bool):
+            raise ValidationError("is_active must be a boolean.")
+        fields["is_active"] = payload["is_active"]
+    return fields
+
+
+@catalog_required
+@require_http_methods(["GET", "POST"])
+def manage_supplier_list(request):
+    if request.method == "GET":
+        return JsonResponse(
+            {
+                "suppliers": [
+                    _serialize_supplier(supplier)
+                    for supplier in get_suppliers(active_only=False)
+                ]
+            }
+        )
+
+    denied = deny_unless(request, ADD_SUPPLIER)
+    if denied:
+        return denied
+
+    try:
+        payload = _parse_json(request)
+        fields = _supplier_fields_from_payload(payload, creating=True)
+        supplier = create_supplier(
+            user=request.user,
+            **fields,
+        )
+    except (
+        SupplierNameRequiredError,
+        DuplicateSupplierNameError,
+        InvalidSupplierEmailError,
+        ValidationError,
+    ) as exc:
+        return _supplier_error(exc)
+
+    logger.info(
+        "Console created supplier id=%s user=%s",
+        supplier.id,
+        request.user.email,
+    )
+    return _supplier_response(supplier)
+
+
+@catalog_required
+@require_http_methods(["GET", "PATCH"])
+def manage_supplier_detail(request, supplier_id):
+    try:
+        supplier = _get_supplier(supplier_id)
+    except Supplier.DoesNotExist:
+        return _json_error("Supplier not found.", status=404)
+
+    if request.method == "GET":
+        return JsonResponse({"supplier": _serialize_supplier(supplier)})
+
+    denied = deny_unless(request, CHANGE_SUPPLIER)
+    if denied:
+        return denied
+
+    try:
+        payload = _parse_json(request)
+        fields = _supplier_fields_from_payload(payload, creating=False)
+        supplier = update_supplier(supplier, user=request.user, **fields)
+    except (
+        SupplierNameRequiredError,
+        DuplicateSupplierNameError,
+        InvalidSupplierEmailError,
+        ValidationError,
+    ) as exc:
+        return _supplier_error(exc)
+
+    logger.info(
+        "Console updated supplier id=%s user=%s",
+        supplier.id,
+        request.user.email,
+    )
+    return _supplier_response(supplier)
+
+
+@catalog_required
+@require_GET
+def manage_supplier_history(request, supplier_id):
+    try:
+        supplier = Supplier.objects.get(pk=supplier_id)
+    except Supplier.DoesNotExist:
+        return _json_error("Supplier not found.", status=404)
+
+    entries = get_supplier_history(supplier)
     return JsonResponse(
         {"history": [_serialize_history_entry(entry) for entry in entries]}
     )
