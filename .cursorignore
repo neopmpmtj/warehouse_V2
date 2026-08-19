@@ -1,0 +1,15 @@
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*.sqlite3
+.env
+.env.*
+config/settings.py
+media/
+staticfiles/
+htmlcov/
+.coverage
+node_modules/

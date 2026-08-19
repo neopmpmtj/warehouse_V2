@@ -1,0 +1,33 @@
+---
+description: Django and Python conventions for CentCompras
+globs: **/*.py
+alwaysApply: false
+---
+
+# Django / Python
+
+## Layering
+
+```text
+management commands / views  →  services.py  →  models.py
+```
+
+- Add reusable DB operations to `services.py`, not duplicated in views or CLI
+- Use `Decimal` for money and stock in services (see `products/services.py`)
+
+## Django habits
+
+- Match existing app layout: `config/` for project, one app per domain
+- Migrations: one logical change per migration
+- FK fields used in filters should have `db_index=True` when added
+- Prefer `select_related` / `prefetch_related` on list views with FKs
+
+## Settings
+
+- `config/settings.py` is gitignored — never commit credentials
+- Database: `centcompras_db` (PostgreSQL, local dev)
+
+## Tests
+
+- Use `django.test.TestCase` in each app's `tests.py`
+- Only add tests when requested or they cover meaningful behaviour

@@ -1,0 +1,964 @@
+# Auxiliary Instructions for a Coding Agent — CentCompras MVP
+
+## Purpose
+
+You are taking over or reproducing a small Django warehouse catalogue MVP named **CentCompras**.
+
+The human developer is entry/mid-level and is intentionally learning the architecture while building it.
+
+Do **not** respond by replacing the project with a large, sophisticated, fully finished system.
+
+Preserve the incremental architecture and explain changes in understandable phases.
+
+This document contains both technical requirements and important clarifications that arose during the original build.
+
+---
+
+# 1. Developer interaction requirements
+
+When extending this project:
+
+- Prefer small, understandable phases.
+- Explain what a file/function is responsible for.
+- Avoid dumping an entire application at once.
+- Keep functions reusable.
+- Separate business/database operations from interface-specific code.
+- Give exact file paths when asking the developer to add or edit code.
+- When changing an existing function, state whether to replace the entire file or only a specific block.
+- Do not assume knowledge of browser caching, Service Workers, IndexedDB, Django URL routing, or API architecture.
+- Explain confusing naming when appropriate.
+- Preserve plain Django + plain JavaScript unless there is a compelling future reason to change.
+- Avoid React/Vue/etc. for this MVP.
+- Avoid adding unnecessary infrastructure.
+
+The developer requested a **hybrid pace**:
+
+> Not too slow, but not a complete code dump either.
+
+A good pattern is:
+
+```text
+Explain concept briefly
+→ show exact file
+→ provide small code change
+→ explain resulting flow
+→ ask/test before next major phase
+```
+
+---
+
+# 2. Environment and stack
+
+Operating system:
+
+```text
+Ubuntu
+```
+
+Backend:
+
+```text
+Python
+Django
+```
+
+Database:
+
+```text
+PostgreSQL
+```
+
+Current DB name:
+
+```text
+centcompras_db
+```
+
+Current DB user for local MVP:
+
+```text
+postgres
+```
+
+Frontend:
+
+```text
+HTML
+plain JavaScript
+```
+
+Offline components:
+
+```text
+IndexedDB
+Service Worker
+Cache API
+```
+
+---
+
+# 3. Business requirement
+
+The company has a central warehouse.
+
+Users access the ordering application primarily from phone browsers.
+
+Users may enter regions with **zero internet connectivity** for extended periods.
+
+The application must eventually support:
+
+```text
+online usage
+offline catalogue viewing
+offline order creation
+automatic synchronization when connectivity returns
+```
+
+At the current stage, only **offline catalogue viewing and automatic catalogue refresh** are implemented.
+
+Offline order creation is a future phase.
+
+---
+
+# 4. Critical product-management restriction
+
+Branch phone/browser users must **NOT** create or edit warehouse products.
+
+Warehouse staff (`User.is_staff`, seed `warehouse@centcompras.dev`) manage the catalogue in **`/manage/products/`**. Django admin (`/admin/products/`) remains available. Both paths call `products/services.py`.
+
+Staff can:
+
+- add products (created **inactive**; Genesis activates them for the branch catalogue)
+- edit fields (`internal_code`, `description`, `stock`, `price`, family, unit, reorder level, suppliers)
+- soft-delete (deactivate) and reactivate with a required reason
+- create/deactivate families and suppliers (names are case-insensitive unique; the console does not rename them)
+
+All server-side mutations go through `products/services.py` and are recorded in `ProductChangeLog`, `FamilyChangeLog`, or `SupplierChangeLog`.
+
+**Stock today** is still typed on the product in the console. That is not locked: inbound receipts from suppliers are expected to become the source of quantity before branch orders are built.
+
+The CLI remains for dev/bootstrap only:
+
+```bash
+python manage.py add_product "Description" stock price --family "Cement"
+python manage.py add_product "Steel Pipe 20mm" 50 8.75 --family "Pipes" --internal-code PIPE-20 --activate
+```
+
+If you see a function named:
+
+```javascript
+saveProducts(products)
+```
+
+do not misinterpret it.
+
+It does **not** create new warehouse products.
+
+It only saves a copy of products downloaded from the server into the browser's IndexedDB.
+
+The server PostgreSQL database remains the authoritative product database.
+
+---
+
+# 5. Product schema
+
+Current model fields (`products/models.py`):
+
+```text
+id
+family            (required FK to ProductFamily)
+internal_code     (optional, unique when set)
+description
+stock             (decimal; still console-editable today)
+price             (USD, decimal)
+unit_of_measure   (piece, kg, g, m, m2, m3, l)
+reorder_level
+is_active         (soft delete; new products default inactive)
+created_at
+updated_at
+```
+
+Related tables: `ProductFamily`, `Supplier`, `ProductSupplier` (many-to-many). Family and supplier names are case-insensitive unique.
+
+Audit: `ProductChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`.
+
+Requirements:
+
+- `id`: automatically generated by Django.
+- `description`: one language in the database (UI i18n is separate).
+- `stock`: may be fractional.
+- `price`: USD, decimal arithmetic.
+- No SKU in MVP beyond optional `internal_code`.
+- Global catalogue — no `branch_id` on `Product`.
+
+Do not bilingualise product data. Do not add images or extra columns unless requested.
+
+---
+
+# 6. Reusable service layer
+
+Do not place all model operations directly in CLI commands or views.
+
+Current:
+
+```text
+products/services.py
+```
+
+contains mutation and read helpers, including:
+
+```python
+create_product(user, family, description, stock, price, unit_of_measure, ...)
+update_product(user, product, **fields)
+deactivate_product(user, product, reason)   # reason required
+reactivate_product(user, product, reason)   # reason required
+get_products(active_only=True)
+get_catalog_updated_at()
+get_product_history(product)
+create_product_family / update_product_family / get_family_history
+create_supplier / update_supplier / get_supplier_history
+set_product_suppliers
+```
+
+`create_product` always starts `is_active=False`. Activating for the branch catalogue is a separate `reactivate_product` (console Genesis).
+
+All mutations write change-log rows inside a transaction.
+
+The intended design is:
+
+```text
+CLI / staff console / admin / API
+        ↓
+    services.py
+        ↓
+     models.py
+        ↓
+    PostgreSQL
+```
+
+Preserve this architecture unless there is a clear reason to refactor it later.
+
+---
+
+# 7. Current directory structure
+
+Expected relevant tree:
+
+```text
+warehouse/
+│
+├── manage.py
+│
+├── config/
+│   ├── settings.py
+│   ├── urls.py
+│   └── ...
+│
+├── accounts/                 # email login
+├── branches/                 # Branch, membership, seed_dev_data
+├── logging_utils/
+│
+└── products/
+    ├── models.py
+    ├── services.py
+    ├── views.py              # GET /api/products/, page, service worker
+    ├── console_views.py      # staff console + /api/manage/
+    ├── permissions.py
+    ├── admin.py
+    ├── urls.py
+    ├── web_urls.py
+    ├── tests.py
+    │
+    ├── management/commands/add_product.py
+    │
+    ├── templates/products/
+    │   ├── product_list.html      # branch phone catalogue (scaffold)
+    │   ├── product_console.html   # staff console
+    │   └── service_worker.js
+    │
+    └── static/products/
+        ├── css/console.css
+        └── js/
+            ├── db.js
+            ├── product_list.js
+            ├── register_sw.js
+            ├── console.js
+            └── console_i18n.js
+```
+
+---
+
+# 8. Database settings
+
+Current local Django settings:
+
+```python
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "centcompras_db",
+        "USER": "postgres",
+        "PASSWORD": "your_password_here",
+        "HOST": "localhost",
+        "PORT": "5432",
+    }
+}
+```
+
+The project currently accepts the password directly in settings for learning/local MVP simplicity.
+
+Do not mistake this for a production security recommendation.
+
+Later, move secrets to environment variables.
+
+---
+
+# 9. CLI command
+
+Current file:
+
+```text
+products/management/commands/add_product.py
+```
+
+Dev/bootstrap only. Requires `--family` (name must already exist). Creates an **inactive** product unless `--activate` (Genesis). Optional `--internal-code`, `--unit`, `--reorder-level`. Audit `user` is null.
+
+Keep CLI parsing separate from product creation logic in `services.py`.
+
+---
+
+# 10. API
+
+Branch catalogue endpoint (login required; **active products only**):
+
+```text
+GET /api/products/
+```
+
+Expected response:
+
+```json
+{
+    "products": [
+        {
+            "id": 1,
+            "description": "Cement 50kg",
+            "stock": "100.000",
+            "price": "12.95"
+        }
+    ],
+    "catalog_updated_at": "2026-08-18T12:00:00+00:00"
+}
+```
+
+The branch payload is still this small set (`id`, `description`, `stock`, `price`). Family, unit, and internal code are **not** exposed here yet (held for a later phone-catalogue session).
+
+Staff JSON lives under `/api/manage/products/`, `/api/manage/families/`, `/api/manage/suppliers/` (`is_staff` only) and includes inactive rows.
+
+This MVP intentionally avoids Django REST Framework.
+
+Do not introduce DRF unless the project later needs it.
+
+---
+
+# 11. Browser product page
+
+Current route:
+
+```text
+/
+```
+
+It returns a simple HTML table (scaffold — phone UX is a later dedicated session). Staff use `/manage/products/` instead.
+
+The HTML itself does not receive products through Django template context.
+
+Instead:
+
+```text
+HTML page loads
+   ↓
+product_list.js
+   ↓
+fetch("/api/products/")
+   ↓
+JSON
+   ↓
+displayProducts()
+```
+
+This separation was deliberate because the browser will use the same downloaded data for IndexedDB caching.
+
+---
+
+# 12. IndexedDB design
+
+Browser DB:
+
+```text
+centcompras
+```
+
+Object stores:
+
+```text
+products
+sync_metadata
+```
+
+The `products` store uses:
+
+```text
+keyPath: "id"
+```
+
+The `sync_metadata` store currently contains:
+
+```text
+key: last_updated
+value: ISO timestamp
+```
+
+Current conceptual responsibility:
+
+```text
+PostgreSQL
+   master data
+
+IndexedDB
+   local last-known catalogue
+```
+
+Do not allow browser data to become the master record for products.
+
+---
+
+# 13. Current IndexedDB code
+
+`db.js` is responsible only for local database operations.
+
+It currently exposes:
+
+```javascript
+openDatabase()
+saveProducts(products)
+getCachedProducts()
+```
+
+Important beginner clarification:
+
+```javascript
+saveProducts(products)
+```
+
+means:
+
+> cache the catalogue on this browser/device
+
+and not:
+
+> insert warehouse products into PostgreSQL.
+
+That misunderstanding already occurred once and should be proactively avoided in future explanations.
+
+---
+
+# 14. Service Worker responsibility
+
+There are two different offline storage systems and the distinction must be explained clearly.
+
+## Cache API / Service Worker
+
+Stores the **application shell**:
+
+```text
+HTML
+JavaScript
+future CSS/images if needed
+```
+
+Its purpose is to let the web app itself open when Django/network cannot be reached.
+
+## IndexedDB
+
+Stores **business/data content**:
+
+```text
+products
+future pending orders
+future metadata
+```
+
+Its purpose is to make data available while offline.
+
+Use this simple distinction when explaining:
+
+```text
+Service Worker cache = the app
+IndexedDB            = the data
+```
+
+---
+
+# 15. Service Worker implementation
+
+The Service Worker is rendered by Django from:
+
+```text
+products/templates/products/service_worker.js
+```
+
+and served at:
+
+```text
+/service-worker.js
+```
+
+This was intentional.
+
+A root-level worker has suitable scope for the application.
+
+Current cache name:
+
+```javascript
+const CACHE_NAME = "centcompras-shell-v5";
+```
+
+Current app shell:
+
+```javascript
+const APP_SHELL = [
+    "/",
+    "{% static 'products/js/db.js' %}",
+    "{% static 'products/js/product_list.js' %}",
+    "{% static 'products/js/register_sw.js' %}"
+];
+```
+
+API calls are intentionally excluded from Service Worker caching:
+
+```javascript
+if (event.request.url.includes("/api/")) {
+    return;
+}
+```
+
+Reason:
+
+The API should try the network.
+
+If the network fails, `product_list.js` catches the failure and reads IndexedDB.
+
+---
+
+# 16. Important Service Worker bug already encountered
+
+An earlier version forgot to put:
+
+```text
+register_sw.js
+```
+
+in `APP_SHELL`.
+
+When Django was stopped, Firefox reported:
+
+```text
+Failed to load:
+http://localhost:8000/static/products/js/register_sw.js
+```
+
+The app still showed data, which was confusing.
+
+Explanation:
+
+- HTML was cached.
+- `db.js` was cached.
+- `product_list.js` was cached.
+- Product data was in IndexedDB.
+- `register_sw.js` alone was missing.
+
+The fix was:
+
+```javascript
+"{% static 'products/js/register_sw.js' %}"
+```
+
+plus incrementing the cache version.
+
+Whenever app-shell JavaScript changes, remember that Service Worker caching can cause the browser to continue using an older file.
+
+Increment the cache version when appropriate, e.g.:
+
+```text
+v3 → v4
+```
+
+and test the worker update.
+
+---
+
+# 17. Automatic reconnection behaviour
+
+The developer specifically asked:
+
+> If the user has absolutely no internet, sees old data, and internet later returns, must the user manually refresh?
+
+Desired answer/behaviour:
+
+**No.**
+
+Current `product_list.js` automatically retries.
+
+It uses:
+
+```javascript
+window.addEventListener("online", () => {
+    loadProducts();
+});
+```
+
+and a backup:
+
+```javascript
+setInterval(() => {
+    if (navigator.onLine) {
+        loadProducts();
+    }
+}, 30000);
+```
+
+The actual API request remains the true connectivity test.
+
+Do not assume:
+
+```javascript
+navigator.onLine === true
+```
+
+means that:
+
+```text
+Django server is reachable
+```
+
+It only indicates browser/network connectivity state.
+
+---
+
+# 18. Current `product_list.js`
+
+Expected implementation:
+
+The live `product_list.js` also writes `catalog_updated_at` into IndexedDB and shows a stale-stock sentence when the catalogue came from cache. The sketch below is the fetch/fallback idea; treat the file on disk as source of truth.
+
+```javascript
+async function getProducts() {
+    const response = await fetch("/api/products/");
+
+    if (!response.ok) {
+        throw new Error("Server unavailable");
+    }
+
+    return response.json();
+}
+
+
+function displayProducts(products) {
+    const tableBody = document.getElementById("product-table-body");
+
+    tableBody.replaceChildren();
+
+    for (const product of products) {
+        const row = document.createElement("tr");
+
+        const idCell = document.createElement("td");
+        idCell.textContent = product.id;
+
+        const descriptionCell = document.createElement("td");
+        descriptionCell.textContent = product.description;
+
+        const stockCell = document.createElement("td");
+        stockCell.textContent = product.stock;
+
+        const priceCell = document.createElement("td");
+        priceCell.textContent = product.price;
+
+        row.append(
+            idCell,
+            descriptionCell,
+            stockCell,
+            priceCell
+        );
+
+        tableBody.appendChild(row);
+    }
+}
+
+
+async function loadProducts() {
+    try {
+        const data = await getProducts();
+
+        await saveProducts(data.products, data.catalog_updated_at);
+
+        displayProducts(data.products);
+
+    } catch (error) {
+        const cachedProducts = await getCachedProducts();
+
+        displayProducts(cachedProducts);
+    }
+}
+
+
+loadProducts();
+
+
+window.addEventListener("online", () => {
+    console.log("Connection restored. Refreshing products...");
+    loadProducts();
+});
+
+
+setInterval(() => {
+    if (navigator.onLine) {
+        loadProducts();
+    }
+}, 30000);
+```
+
+---
+
+# 19. Testing guidance
+
+Use one origin consistently.
+
+Pick:
+
+```text
+http://localhost:8000/
+```
+
+or:
+
+```text
+http://127.0.0.1:8000/
+```
+
+Do not alternate casually between them.
+
+Service Workers and browser storage are origin-sensitive.
+
+---
+
+## IndexedDB check in Firefox
+
+```text
+F12
+→ Storage
+→ Indexed DB
+→ centcompras
+```
+
+---
+
+## Service Worker check in Firefox
+
+```text
+F12
+→ Application
+→ Service Workers
+```
+
+The Application tab may be hidden under DevTools' overflow menu.
+
+---
+
+## Offline test
+
+1. Run:
+
+```bash
+python manage.py runserver
+```
+
+2. Load the app.
+3. Ensure products are shown.
+4. Ensure IndexedDB contains products.
+5. Ensure Service Worker has registered.
+6. Stop Django with `Ctrl+C`.
+7. Reload the page.
+
+Expected result:
+
+```text
+page still opens
+products still display
+API request fails
+cached catalogue comes from IndexedDB
+```
+
+---
+
+# 20. What must NOT be silently added
+
+Do not introduce the following without an explicit future phase/request:
+
+- React
+- Vue
+- Angular
+- Django REST Framework
+- Celery
+- Redis
+- WebSockets
+- background workers
+- product creation UI
+- admin complexity
+- authentication
+- order processing
+- cloud deployment
+- stock reservation
+- complicated synchronization frameworks
+
+The developer wants to understand each layer before adding complexity.
+
+---
+
+# 21. Future order architecture
+
+Branch orders are **not** the next build. Inbound stock (warehouse purchases from suppliers → `Product.stock`) comes first so orders are not placed against zero quantity. Do not implement `orders/` until requested.
+
+When orders are implemented, preserve offline-first behaviour.
+
+Recommended conceptual design:
+
+```text
+User creates order
+      ↓
+Generate client-side UUID
+      ↓
+Save locally as pending
+      ↓
+Try API
+   /       \
+success    fail
+  ↓          ↓
+mark       remain
+synced     pending
+              ↓
+       connection returns
+              ↓
+            retry
+```
+
+The client-generated order ID should later be used by the server for idempotency.
+
+This prevents duplicate orders if poor connectivity causes the same pending order to be submitted multiple times.
+
+---
+
+# 22. Stock caveat
+
+When offline, the stock quantity shown is **last-known stock**.
+
+It is not guaranteed to be current because other users may have ordered goods while this user was disconnected.
+
+A future UI should show something such as:
+
+```text
+Stock: 25
+Last updated: 08:45
+```
+
+and possibly an offline/stale indicator.
+
+Do not promise that cached stock equals real-time stock.
+
+On the **server**, stock is still a field on `Product` that staff can type. A future inbound-receipt flow should update that field (or replace it with a ledger) instead of treating console typing as the business process.
+
+---
+
+# 23. Documentation philosophy
+
+When explaining future work to a new developer or agent, always make the data path explicit.
+
+Examples:
+
+```text
+CLI → service → model → PostgreSQL
+```
+
+```text
+browser → API → service → model → PostgreSQL
+```
+
+```text
+online API → IndexedDB → offline fallback
+```
+
+```text
+Service Worker cache → app shell
+IndexedDB → catalogue data
+```
+
+Many beginner confusions disappear once the direction and responsibility of each layer are shown.
+
+---
+
+# 24. Current project status
+
+Canonical handoff: repository [`README.md` → Project status](../../README.md#project-status-handoff). This list is a short copy (synced 18 August 2026).
+
+Completed:
+
+```text
+[done] Django project, PostgreSQL, accounts, branches, logging
+[done] Product + family + supplier models and services
+[done] Staff console /manage/products/ (EN/pt-PT, theme, sort, Genesis)
+[done] Family/supplier drawers + PostgreSQL audit logs
+[done] GET /api/products/ (active only + catalog_updated_at)
+[done] Branch HTML page + IndexedDB + Service Worker (centcompras-shell-v5)
+[done] CLI add_product (dev/bootstrap)
+[done] products/tests.py (catalogue + console; ~86 tests)
+[done] scripts/seed_dev_data.sh + warehouse@centcompras.dev
+```
+
+Not completed:
+
+```text
+[todo] inbound stock / procurement (supplier receipt → Product.stock)
+[todo] orders (after inbound stock)
+[todo] offline pending-order store
+[todo] shared page chrome; branch phone UX; console polish (later sessions)
+[todo] integration tests (auth, branches, offline flow)
+[todo] deployment / production security
+```
+
+---
+
+# 25. Main instruction to the next coding agent
+
+Continue this project **incrementally**.
+
+Do not optimize away the learning process.
+
+Before adding a substantial new subsystem, explain:
+
+```text
+what problem it solves
+where it belongs
+what file(s) are added or changed
+what function calls what
+how to test it
+```
+
+Then implement only that phase.
+
+The correct outcome is not merely:
+
+> It works.
+
+The desired outcome is:
+
+> It works, and the developer understands why.

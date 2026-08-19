@@ -1,0 +1,37 @@
+---
+description: CentCompras core architecture, scope, and development pace
+alwaysApply: true
+---
+
+# CentCompras core
+
+## Project
+
+Central warehouse + satellite branches. Offline-capable product catalogue MVP (Django 6.1, PostgreSQL, plain HTML/JS).
+
+## What exists today
+
+- `accounts` — custom User, email login
+- `branches` — Branch, BranchMembership, active branch middleware, `seed_dev_data` command
+- `products` — catalogue, staff console `/manage/products/`, admin, audit logs, API, CLI, offline branch page, tests
+- `logging_utils` — centralized logging to `logs/`
+- **Inbound stock / procurement** — not built; next product-side design (supplier receipt → `Product.stock`)
+- `orders` — not built; wait until inbound stock exists
+- **Tests** — `products/tests.py` (catalogue + console, ~86 tests); `accounts` / `branches` stubs
+
+## Non-negotiables
+
+- PostgreSQL = source of truth; IndexedDB = read-only catalogue cache
+- Branch users: read-only catalogue; warehouse staff manage products via `/manage/products/` + `products/services.py`
+- Business logic in `services.py`; views/commands stay thin
+- Branch permissions via `branches/permissions.py`; catalogue via `products/permissions.py` (`is_staff`)
+- Plain Django + plain JavaScript — no React/Vue
+- Incremental phases — no large application dumps
+- Do not implement the tenancy-doc `Order` stub (`item_name`)
+- Do not restyle `/` or polish the staff console unless that session is requested
+
+## References
+
+- @README.md — **Project status (handoff)** section first when resuming
+- @AGENTS.md — agent instructions
+- @docs/warehouse-tenancy-setup.md — tenancy (done); Order sketch is not the next build; §11 inbound stock

@@ -1,0 +1,47 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Items</title>
+    
+    <script
+        src="{% static 'products/js/db.js' %}"
+        defer>
+    </script>
+
+    <script
+        src="{% static 'products/js/product_list.js' %}"
+        defer>
+    </script>
+
+    <script
+        src="{% static 'products/js/register_sw.js' %}"
+        defer>
+    </script>
+</head>
+
+<body>
+
+    <h1>Items</h1>
+
+    <p id="catalog-status"></p>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+
+        <tbody id="product-table-body">
+        </tbody>
+    </table>
+
+</body>
+</html>

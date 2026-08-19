@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<p>{{ help_text }}</p>
+<form method="post">
+    {% csrf_token %}
+    {% for item in queryset %}
+        <input type="hidden" name="{{ action_checkbox_name }}" value="{{ item.pk }}">
+    {% endfor %}
+    <input type="hidden" name="action" value="{{ action_name }}">
+    <input type="hidden" name="{{ confirm_field }}" value="1">
+    <p>
+        <label for="id_reason">Reason</label><br>
+        <input type="text" name="reason" id="id_reason" maxlength="255" required>
+    </p>
+    <ul>
+        {% for item in queryset %}
+            <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+    <input type="submit" value="{{ submit_label }}">
+    <a href="{% url 'admin:products_item_changelist' %}">Cancel</a>
+</form>
+{% endblock %}

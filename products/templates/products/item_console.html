@@ -1,0 +1,248 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Item console — CentCompras</title>
+    <script>
+        (function () {
+            var theme = localStorage.getItem("cc-theme") || "light";
+            var lang = localStorage.getItem("cc-lang") || "en";
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=8">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-title">
+            <p class="eyebrow" data-i18n="eyebrow">CentCompras</p>
+            <h1 data-i18n="title">Item console</h1>
+        </div>
+        <div class="topbar-actions">
+            <p class="user-line">
+                <span data-i18n="signedInAs">Signed in as</span>
+                <strong>{{ user.email }}</strong>
+            </p>
+            <label class="control-inline">
+                <span data-i18n="language">Language</span>
+                <select id="language-select" aria-label="Language">
+                    <option value="en">English</option>
+                    <option value="pt-PT">Português</option>
+                </select>
+            </label>
+            <button type="button" id="theme-toggle" class="btn btn-ghost"></button>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost" data-i18n="signOut">Sign out</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="page">
+        <section class="toolbar" aria-label="Filters">
+            <input
+                type="search"
+                id="search-input"
+                class="search-input"
+                data-i18n-placeholder="searchPlaceholder"
+                placeholder="Search code or description"
+            >
+            <select id="family-filter"></select>
+            <select id="status-filter">
+                <option value="all" data-i18n="allStatuses">All statuses</option>
+                <option value="active" data-i18n="active">Active</option>
+                <option value="inactive" data-i18n="inactive">Inactive</option>
+            </select>
+            <select id="unit-filter"></select>
+            <div class="toolbar-spacer"></div>
+            <select id="bulk-action">
+                <option value="" data-i18n="bulkAction">Bulk action</option>
+                <option value="deactivate" data-i18n="bulkDeactivate">Deactivate</option>
+                <option value="reactivate" data-i18n="bulkReactivate">Reactivate</option>
+            </select>
+            <button type="button" id="bulk-apply" class="btn" data-i18n="apply">Apply</button>
+            <button type="button" id="manage-families" class="btn" data-i18n="manageFamilies">Families</button>
+            <button type="button" id="new-item" class="btn btn-primary" data-i18n="newItem">New item</button>
+        </section>
+
+        <p id="result-count" class="result-count"></p>
+        <p id="banner" class="banner" hidden></p>
+
+        <div class="table-wrap">
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th class="col-check">
+                            <input type="checkbox" id="select-all" aria-label="Select all">
+                        </th>
+                        <th class="th-sortable" data-sort="internal_code" data-i18n-col="colCode" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colCode">Code</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="description" data-i18n-col="colDescription" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colDescription">Description</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="family" data-i18n-col="colFamily" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colFamily">Family</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="unit_of_measure" data-i18n-col="colUnit" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colUnit">Unit</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="reorder_level" data-i18n-col="colReorder" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colReorder">Reorder</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="vat_rate" data-i18n-col="colVatRate" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colVatRate">VAT</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="status" data-i18n-col="colStatus" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colStatus">Status</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th data-i18n="colActions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="item-table-body"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="drawer-backdrop" class="backdrop" hidden></div>
+    <aside id="drawer" class="drawer" hidden>
+        <div class="drawer-head">
+            <h2 id="drawer-title"></h2>
+            <button type="button" id="drawer-close" class="btn btn-ghost" data-i18n="close">Close</button>
+        </div>
+        <form id="item-form" class="drawer-body">
+            <input type="hidden" id="field-id">
+            <label>
+                <span data-i18n="internalCode">Internal code</span>
+                <input type="text" id="field-internal-code" maxlength="64">
+            </label>
+            <label>
+                <span data-i18n="description">Description</span>
+                <input type="text" id="field-description" maxlength="255" required>
+            </label>
+            <div class="field-with-action">
+                <label>
+                    <span data-i18n="family">Family</span>
+                    <select id="field-family" required></select>
+                </label>
+                <button type="button" id="new-family-inline" class="btn" data-i18n="newFamily">New family</button>
+            </div>
+            <label>
+                <span data-i18n="unit">Unit</span>
+                <select id="field-unit" required></select>
+            </label>
+            <label>
+                <span data-i18n="vatRate">VAT rate</span>
+                <select id="field-vat-rate" required></select>
+            </label>
+            <label>
+                <span data-i18n="reorderLevel">Reorder level</span>
+                <input type="number" id="field-reorder" step="0.001" required>
+            </label>
+            <label>
+                <span data-i18n="reason">Reason (optional)</span>
+                <input type="text" id="field-reason" maxlength="255" data-i18n-placeholder="reasonHint" placeholder="Why is this changing?">
+            </label>
+            <div class="drawer-actions">
+                <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
+                <button type="button" id="drawer-lifecycle" class="btn btn-danger"></button>
+            </div>
+            <section class="history">
+                <h3 data-i18n="history">History</h3>
+                <ol id="history-list"></ol>
+            </section>
+        </form>
+    </aside>
+
+    <div id="family-drawer-backdrop" class="backdrop" hidden></div>
+    <aside id="family-drawer" class="drawer" hidden>
+        <div class="drawer-head">
+            <h2 id="family-drawer-title" data-i18n="familyDrawerTitle">Families</h2>
+            <button type="button" id="family-drawer-close" class="btn btn-ghost" data-i18n="close">Close</button>
+        </div>
+        <div class="drawer-body">
+            <p id="family-drawer-help" class="drawer-help" data-i18n="familyDrawerHelp">An item must belong to a family. Create the family before the item.</p>
+            <div class="drawer-actions">
+                <button type="button" id="new-family" class="btn btn-primary" data-i18n="newFamily">New family</button>
+            </div>
+            <div class="table-wrap">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th data-i18n="familyName">Family name</th>
+                            <th data-i18n="colItems">Items</th>
+                            <th data-i18n="colStatus">Status</th>
+                            <th data-i18n="colActions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="family-table-body"></tbody>
+                </table>
+            </div>
+            <section class="history">
+                <h3 id="family-history-title">History</h3>
+                <p id="family-history-hint" class="drawer-help" data-i18n="selectHistory">Choose History on a row to see who created or changed it.</p>
+                <ol id="family-history-list"></ol>
+            </section>
+        </div>
+    </aside>
+
+    <div id="family-name-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
+    <div id="family-name-dialog" class="dialog" hidden>
+        <h2 id="family-name-dialog-title"></h2>
+        <p id="family-name-dialog-help" hidden></p>
+        <label>
+            <span data-i18n="familyName">Family name</span>
+            <input type="text" id="family-name-input" maxlength="255" required>
+        </label>
+        <p id="family-name-error" class="field-error" hidden></p>
+        <div class="drawer-actions">
+            <button type="button" id="family-name-confirm" class="btn btn-primary"></button>
+            <button type="button" id="family-name-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <div id="lifecycle-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
+    <div id="lifecycle-dialog" class="dialog" hidden>
+        <h2 id="lifecycle-dialog-title"></h2>
+        <p id="lifecycle-dialog-help" hidden></p>
+        <fieldset id="lifecycle-preset-list" class="lifecycle-presets"></fieldset>
+        <label id="lifecycle-custom-wrap" hidden>
+            <span id="lifecycle-custom-label" data-i18n="reasonOtherLabel">Other reason</span>
+            <textarea id="lifecycle-custom-input" maxlength="255" rows="3" data-i18n-placeholder="reasonOtherPlaceholder"></textarea>
+        </label>
+        <p id="lifecycle-reason-error" class="field-error" hidden></p>
+        <div class="drawer-actions">
+            <button type="button" id="lifecycle-confirm" class="btn btn-primary"></button>
+            <button type="button" id="lifecycle-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <script src="{% static 'products/js/console_i18n.js' %}?v=9"></script>
+    <script src="{% static 'products/js/console.js' %}?v=9"></script>
+</body>
+</html>

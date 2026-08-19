@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — CentCompras</title>
+</head>
+<body>
+    <p>Signed in as <strong>{{ user.email }}</strong></p>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Sign out</button>
+    </form>
+
+    <h1>CentCompras</h1>
+    <ul>
+        <li><a href="/" target="_blank" rel="noopener noreferrer">/</a> — this dashboard</li>
+        <li><a href="/accounts/login/" target="_blank" rel="noopener noreferrer">/accounts/login/</a></li>
+        <li>/accounts/logout/ (POST)</li>
+        <li><a href="/admin/" target="_blank" rel="noopener noreferrer">/admin/</a></li>
+        <li><a href="/manage/items/" target="_blank" rel="noopener noreferrer">/manage/items/</a> — item console</li>
+        <li><a href="/api/manage/items/" target="_blank" rel="noopener noreferrer">/api/manage/items/</a></li>
+        <li>/api/manage/items/bulk/</li>
+        <li>/api/manage/items/&lt;id&gt;/</li>
+        <li>/api/manage/items/&lt;id&gt;/deactivate/</li>
+        <li>/api/manage/items/&lt;id&gt;/reactivate/</li>
+        <li>/api/manage/items/&lt;id&gt;/history/</li>
+        <li><a href="/api/manage/families/" target="_blank" rel="noopener noreferrer">/api/manage/families/</a></li>
+        <li>/api/manage/families/&lt;id&gt;/</li>
+        <li>/api/manage/families/&lt;id&gt;/history/</li>
+        <li><a href="/service-worker.js" target="_blank" rel="noopener noreferrer">/service-worker.js</a> — parked uninstall stub</li>
+    </ul>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                registrations.forEach(function (registration) {
+                    registration.unregister();
+                });
+            });
+        }
+    </script>
+</body>
+</html>

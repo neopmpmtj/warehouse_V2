@@ -1,0 +1,52 @@
+from django.urls import path
+
+from . import console_views
+
+
+urlpatterns = [
+    path(
+        "manage/families/",
+        console_views.manage_family_list,
+        name="manage_family_list",
+    ),
+    path(
+        "manage/families/<int:family_id>/",
+        console_views.manage_family_detail,
+        name="manage_family_detail",
+    ),
+    path(
+        "manage/families/<int:family_id>/history/",
+        console_views.manage_family_history,
+        name="manage_family_history",
+    ),
+    path(
+        "manage/items/",
+        console_views.manage_item_list,
+        name="manage_item_list",
+    ),
+    path(
+        "manage/items/bulk/",
+        console_views.manage_item_bulk,
+        name="manage_item_bulk",
+    ),
+    path(
+        "manage/items/<int:item_id>/",
+        console_views.manage_item_detail,
+        name="manage_item_detail",
+    ),
+    path(
+        "manage/items/<int:item_id>/deactivate/",
+        console_views.manage_item_deactivate,
+        name="manage_item_deactivate",
+    ),
+    path(
+        "manage/items/<int:item_id>/reactivate/",
+        console_views.manage_item_reactivate,
+        name="manage_item_reactivate",
+    ),
+    path(
+        "manage/items/<int:item_id>/history/",
+        console_views.manage_item_history,
+        name="manage_item_history",
+    ),
+]
