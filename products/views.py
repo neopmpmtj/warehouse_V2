@@ -17,11 +17,3 @@ def staff_dashboard(request):
             "permissions": sorted(request.user.get_all_permissions()),
         },
     )
-
-
-def service_worker(request):
-    return render(
-        request,
-        "products/service_worker.js",
-        content_type="application/javascript",
-    )

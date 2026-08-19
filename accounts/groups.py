@@ -1,4 +1,3 @@
-from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import Group, Permission
 
 GROUP_ADMINS = "warehouse_admins"
@@ -55,13 +54,11 @@ def _products_permissions(codenames):
 
 
 def sync_warehouse_groups():
-    Group.objects.filter(name=LEGACY_WAREHOUSE_GROUP_NAME).delete()
-
     for group_name in WAREHOUSE_GROUP_NAMES:
         group, _ = Group.objects.get_or_create(name=group_name)
-        permissions = list(_products_permissions(_codenames_for_group(group_name)))
-        if permissions:
-            group.permissions.set(permissions)
+        desired = set(_products_permissions(_codenames_for_group(group_name)))
+        if set(group.permissions.all()) != desired:
+            group.permissions.set(desired)
 
 
 def ensure_warehouse_groups(sender, **kwargs):
@@ -80,15 +77,7 @@ def assign_warehouse_group(user, group_name=GROUP_ADMINS):
     if group_name not in WAREHOUSE_GROUP_NAMES:
         raise ValueError(f"Unknown warehouse group: {group_name}")
 
-    sync_warehouse_groups()
     group = Group.objects.get(name=group_name)
     user.groups.add(group)
     clear_permission_cache(user)
     return group
-
-
-def restrict_admin_to_superusers():
-    def has_permission(self, request):
-        return bool(request.user.is_active and request.user.is_superuser)
-
-    AdminSite.has_permission = has_permission

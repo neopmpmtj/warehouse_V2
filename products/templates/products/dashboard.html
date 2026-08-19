@@ -49,17 +49,6 @@
         <li><a href="/api/manage/suppliers/" target="_blank" rel="noopener noreferrer">/api/manage/suppliers/</a></li>
         <li>/api/manage/suppliers/&lt;id&gt;/</li>
         <li>/api/manage/suppliers/&lt;id&gt;/history/</li>
-        <li><a href="/service-worker.js" target="_blank" rel="noopener noreferrer">/service-worker.js</a> — parked uninstall stub</li>
     </ul>
-
-    <script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function (registrations) {
-                registrations.forEach(function (registration) {
-                    registration.unregister();
-                });
-            });
-        }
-    </script>
 </body>
 </html>

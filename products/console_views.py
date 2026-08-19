@@ -328,8 +328,6 @@ def _lifecycle(request, item_id, action):
             item,
             reason=str(payload.get("reason", "")),
         )
-    except json.JSONDecodeError:
-        return _json_error("Request body must be valid JSON.")
     except Item.DoesNotExist:
         return _json_error("Item not found.", status=404)
     except (DeactivateReasonRequiredError, ReactivateReasonRequiredError) as exc:

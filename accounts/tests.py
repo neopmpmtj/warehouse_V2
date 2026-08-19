@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -14,6 +14,7 @@ from accounts.groups import (
     VIEW_ITEM,
     WAREHOUSE_GROUP_NAMES,
     assign_warehouse_group,
+    sync_warehouse_groups,
 )
 from products.permissions import can_view_catalog
 
@@ -87,6 +88,34 @@ class WarehouseGroupTests(TestCase):
         self.assertFalse(user.has_perm(ADD_ITEM))
         self.assertFalse(user.has_perm(CHANGE_ITEM))
         self.assertFalse(user.has_perm(DELETE_ITEM))
+
+    def test_sync_warehouse_groups_is_idempotent(self):
+        admins = Group.objects.get(name=GROUP_ADMINS)
+        before = set(admins.permissions.values_list("codename", flat=True))
+
+        sync_warehouse_groups()
+
+        after = set(admins.permissions.values_list("codename", flat=True))
+        self.assertEqual(before, after)
+        self.assertTrue(after)
+
+    def test_assign_warehouse_group_preserves_extra_permission(self):
+        admins = Group.objects.get(name=GROUP_ADMINS)
+        extra = Permission.objects.get(
+            content_type__app_label="auth",
+            codename="change_group",
+        )
+        admins.permissions.add(extra)
+
+        user = get_user_model().objects.create_user(
+            email="preserve@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(user, GROUP_ADMINS)
+
+        self.assertTrue(
+            admins.permissions.filter(codename="change_group").exists()
+        )
 
 
 class LoginViewTests(TestCase):

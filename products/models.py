@@ -82,9 +82,9 @@ class Item(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["internal_code"],
+                Lower("internal_code"),
                 condition=~models.Q(internal_code=""),
-                name="unique_item_internal_code_when_set",
+                name="unique_item_internal_code_ci",
             )
         ]
 

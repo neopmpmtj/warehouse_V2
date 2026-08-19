@@ -211,6 +211,20 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
                 internal_code="PIPE-20",
             )
 
+    def test_duplicate_internal_code_is_case_insensitive(self):
+        self.create_test_item(
+            self.user,
+            description="First",
+            internal_code="CASE-1",
+        )
+
+        with self.assertRaises(DuplicateInternalCodeError):
+            self.create_test_item(
+                self.user,
+                description="Second",
+                internal_code="case-1",
+            )
+
     def test_update_item_rejects_duplicate_internal_code(self):
         self.create_test_item(
             self.user,

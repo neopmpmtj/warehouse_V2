@@ -116,7 +116,7 @@ def validate_internal_code_available(internal_code, exclude_item_id=None):
     if not internal_code:
         return
 
-    queryset = Item.objects.filter(internal_code=internal_code)
+    queryset = Item.objects.filter(internal_code__iexact=internal_code)
     if exclude_item_id is not None:
         queryset = queryset.exclude(pk=exclude_item_id)
 

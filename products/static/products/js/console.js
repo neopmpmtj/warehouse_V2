@@ -23,6 +23,7 @@ const state = {
 
 let familyHistoryRequestId = 0;
 let supplierHistoryRequestId = 0;
+let itemHistoryRequestId = 0;
 
 const NUMERIC_SORT_KEYS = new Set(["reorder_level"]);
 
@@ -1096,9 +1097,20 @@ function fillHistoryList(list, entries) {
 }
 
 async function loadHistory(itemId) {
+    const requestId = ++itemHistoryRequestId;
     const list = document.getElementById("history-list");
-    const data = await api(`${API_ROOT}${itemId}/history/`);
-    fillHistoryList(list, data.history);
+    try {
+        const data = await api(`${API_ROOT}${itemId}/history/`);
+        if (requestId !== itemHistoryRequestId) {
+            return;
+        }
+        fillHistoryList(list, data.history);
+    } catch (error) {
+        if (requestId !== itemHistoryRequestId) {
+            return;
+        }
+        showBanner(error.message, true);
+    }
 }
 
 function resetFamilyHistory() {
@@ -1523,9 +1535,7 @@ async function applyBulk() {
     }
     clearBanner();
     const action = document.getElementById("bulk-action").value;
-    const ids = filteredItems()
-        .map((item) => item.id)
-        .filter((id) => state.selectedIds.has(id));
+    const ids = [...state.selectedIds].sort((a, b) => a - b);
     if (!action) {
         showBanner(t("chooseAction"), true);
         return;

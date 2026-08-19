@@ -159,7 +159,7 @@ class Command(BaseCommand):
                     )
                     continue
 
-                existing = Item.objects.filter(internal_code=internal_code).first()
+                existing = Item.objects.filter(internal_code__iexact=internal_code).first()
                 if existing:
                     self.stdout.write(
                         f"Exists item: {existing.internal_code} — {existing.description}"
