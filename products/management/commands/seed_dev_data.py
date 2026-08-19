@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from products.models import Item, ProductFamily, Supplier, VatRate
+from products.models import FamilyProduct, Item, Supplier, VatRate
 from products.seed_catalog_data import (
     FAMILIES,
     ITEMS,
@@ -73,7 +73,7 @@ class Command(BaseCommand):
         if not options["skip_products"]:
             families_by_name = {}
             for family_data in FAMILIES:
-                existing = ProductFamily.objects.filter(name=family_data["name"]).first()
+                existing = FamilyProduct.objects.filter(name=family_data["name"]).first()
                 if existing:
                     family = existing
                     if family.is_active != family_data["is_active"]:

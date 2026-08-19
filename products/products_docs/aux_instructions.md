@@ -166,7 +166,7 @@ Current model fields (`products/models.py`):
 
 ```text
 id
-family            (required FK to ProductFamily)
+family            (required FK to FamilyProduct)
 internal_code     (optional, unique when set)
 description
 stock             (decimal; still console-editable today)
@@ -178,7 +178,7 @@ created_at
 updated_at
 ```
 
-Related tables: `ProductFamily`, `Supplier`, `ProductSupplier` (many-to-many). Family and supplier names are case-insensitive unique.
+Related tables: `FamilyProduct`, `Supplier`, `ProductSupplier` (many-to-many). Family and supplier names are case-insensitive unique.
 
 Audit: `ProductChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`.
 

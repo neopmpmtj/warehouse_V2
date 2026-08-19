@@ -7,9 +7,9 @@ from django.urls import reverse
 
 from products.models import (
     FamilyChangeLog,
+    FamilyProduct,
     Item,
     ItemChangeLog,
-    ProductFamily,
     Supplier,
     SupplierChangeLog,
     VatRate,
@@ -290,7 +290,7 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
         )
 
 
-class ProductFamilyServiceTests(TestCase):
+class FamilyProductServiceTests(TestCase):
     def test_get_product_families_active_only_excludes_inactive(self):
         active = create_product_family("Active Family")
         inactive = create_product_family("Inactive Family")
@@ -457,7 +457,7 @@ class ItemAdminAccessTests(TestCase):
         self.assertIn(response.status_code, (302, 403))
 
 
-class ProductFamilyAdminAccessTests(TestCase):
+class FamilyProductAdminAccessTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
         self.staff_user = user_model.objects.create_user(
@@ -470,7 +470,7 @@ class ProductFamilyAdminAccessTests(TestCase):
             password="test-pass-123",
         )
         self.client = Client()
-        self.family_changelist_url = reverse("admin:products_productfamily_changelist")
+        self.family_changelist_url = reverse("admin:products_familyproduct_changelist")
 
     def test_staff_user_can_open_product_family_admin(self):
         self.client.force_login(self.staff_user)
@@ -491,7 +491,7 @@ class ProductFamilyAdminAccessTests(TestCase):
         self.client.force_login(self.staff_user)
 
         response = self.client.post(
-            reverse("admin:products_productfamily_add"),
+            reverse("admin:products_familyproduct_add"),
             {"name": "cement", "is_active": "on", "_save": "Save"},
         )
 
@@ -503,7 +503,7 @@ class ProductFamilyAdminAccessTests(TestCase):
             'Family name "cement" is already used.',
         )
         self.assertEqual(
-            ProductFamily.objects.filter(name__iexact="Cement").count(),
+            FamilyProduct.objects.filter(name__iexact="Cement").count(),
             1,
         )
 
@@ -1027,7 +1027,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(set(by_action), {"created", "deactivated"})
         self.assertEqual(by_action["created"]["user_email"], self.staff_user.email)
 
-        family = ProductFamily.objects.get(pk=family_id)
+        family = FamilyProduct.objects.get(pk=family_id)
         self.assertEqual(
             family.change_logs.get(action=FamilyChangeLog.Action.CREATED).user,
             self.staff_user,

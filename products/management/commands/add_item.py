@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from products.models import Item, ProductFamily, VatRate
+from products.models import FamilyProduct, Item, VatRate
 from products.services import create_item, get_product_families, reactivate_item
 
 
@@ -46,7 +46,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         family_name = options["family"].strip()
-        family = ProductFamily.objects.filter(name=family_name).first()
+        family = FamilyProduct.objects.filter(name=family_name).first()
         if family is None:
             available = ", ".join(
                 get_product_families(active_only=False).values_list("name", flat=True)

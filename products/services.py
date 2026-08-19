@@ -8,9 +8,9 @@ from logging_utils import get_logger
 
 from .models import (
     FamilyChangeLog,
+    FamilyProduct,
     Item,
     ItemChangeLog,
-    ProductFamily,
     Supplier,
     SupplierChangeLog,
     VatRate,
@@ -95,7 +95,7 @@ class InvalidSupplierEmailError(ValidationError):
 def _serialize_value(value):
     if isinstance(value, Decimal):
         return str(value)
-    if isinstance(value, ProductFamily):
+    if isinstance(value, FamilyProduct):
         return {"id": value.pk, "name": value.name}
     if isinstance(value, VatRate):
         return {
@@ -125,9 +125,9 @@ def validate_internal_code_available(internal_code, exclude_item_id=None):
 
 
 def _resolve_family(family):
-    if isinstance(family, ProductFamily):
+    if isinstance(family, FamilyProduct):
         return family
-    return ProductFamily.objects.get(pk=family)
+    return FamilyProduct.objects.get(pk=family)
 
 
 def _resolve_vat_rate(vat_rate):
@@ -373,7 +373,7 @@ def validate_family_name_available(name, exclude_family_id=None):
     if not name:
         raise FamilyNameRequiredError()
 
-    queryset = ProductFamily.objects.filter(name__iexact=name)
+    queryset = FamilyProduct.objects.filter(name__iexact=name)
     if exclude_family_id is not None:
         queryset = queryset.exclude(pk=exclude_family_id)
     if queryset.exists():
@@ -389,7 +389,7 @@ def _save_family(family, update_fields=None):
             family.save(update_fields=update_fields)
     except IntegrityError as exc:
         message = str(exc).lower()
-        if "productfamily_name" in message or "unique_productfamily_name_ci" in message:
+        if "familyproduct_name" in message or "unique_familyproduct_name_ci" in message:
             raise DuplicateFamilyNameError(family.name) from exc
         raise
 
@@ -407,7 +407,7 @@ def _log_family_change(family, user, action, changes, reason=""):
 @transaction.atomic
 def create_product_family(name, is_active=True, user=None):
     name = validate_family_name_available(name)
-    family = ProductFamily(
+    family = FamilyProduct(
         name=name,
         is_active=is_active,
     )
@@ -441,7 +441,7 @@ def update_product_family(family, user=None, **fields):
     if unknown:
         raise ValueError(f"Cannot update fields: {', '.join(sorted(unknown))}")
 
-    family = ProductFamily.objects.select_for_update().get(pk=family.pk)
+    family = FamilyProduct.objects.select_for_update().get(pk=family.pk)
 
     changes = {}
     for field_name, new_value in fields.items():
@@ -484,7 +484,7 @@ def get_family_history(family):
 
 
 def get_product_families(active_only=True):
-    queryset = ProductFamily.objects.all()
+    queryset = FamilyProduct.objects.all()
     if active_only:
         queryset = queryset.filter(is_active=True)
     return queryset.order_by("name")

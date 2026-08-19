@@ -15,7 +15,7 @@ class VatRate(models.Model):
         return self.label
 
 
-class ProductFamily(models.Model):
+class FamilyProduct(models.Model):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -26,7 +26,7 @@ class ProductFamily(models.Model):
         constraints = [
             models.UniqueConstraint(
                 Lower("name"),
-                name="unique_productfamily_name_ci",
+                name="unique_familyproduct_name_ci",
             ),
         ]
 
@@ -50,7 +50,7 @@ class Item(models.Model):
         L = "l", "Liter"
 
     family = models.ForeignKey(
-        ProductFamily,
+        FamilyProduct,
         on_delete=models.PROTECT,
         related_name="items",
     )
@@ -154,7 +154,7 @@ class FamilyChangeLog(models.Model):
         REACTIVATED = "reactivated", "Reactivated"
 
     family = models.ForeignKey(
-        ProductFamily,
+        FamilyProduct,
         on_delete=models.PROTECT,
         related_name="change_logs",
     )

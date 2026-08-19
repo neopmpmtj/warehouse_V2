@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from logging_utils import get_logger
 
-from .models import Item, ProductFamily
+from .models import FamilyProduct, Item
 from .permissions import staff_required
 from .services import (
     DeactivateReasonRequiredError,
@@ -402,7 +402,7 @@ def manage_family_list(request):
 def manage_family_detail(request, family_id):
     try:
         family = _get_family(family_id)
-    except ProductFamily.DoesNotExist:
+    except FamilyProduct.DoesNotExist:
         return _json_error("Family not found.", status=404)
 
     if request.method == "GET":
@@ -429,8 +429,8 @@ def manage_family_detail(request, family_id):
 @require_GET
 def manage_family_history(request, family_id):
     try:
-        family = ProductFamily.objects.get(pk=family_id)
-    except ProductFamily.DoesNotExist:
+        family = FamilyProduct.objects.get(pk=family_id)
+    except FamilyProduct.DoesNotExist:
         return _json_error("Family not found.", status=404)
 
     entries = get_family_history(family)

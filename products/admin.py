@@ -6,9 +6,9 @@ from django.template.response import TemplateResponse
 
 from .models import (
     FamilyChangeLog,
+    FamilyProduct,
     Item,
     ItemChangeLog,
-    ProductFamily,
     Supplier,
     SupplierChangeLog,
     VatRate,
@@ -389,7 +389,7 @@ class SupplierAdmin(admin.ModelAdmin):
         obj.refresh_from_db()
 
 
-class ProductFamilyItemInline(admin.TabularInline):
+class FamilyProductItemInline(admin.TabularInline):
     model = Item
     extra = 0
     fields = ("internal_code", "description", "unit_of_measure", "is_active")
@@ -406,9 +406,9 @@ class ProductFamilyItemInline(admin.TabularInline):
         return False
 
 
-class ProductFamilyAdminForm(forms.ModelForm):
+class FamilyProductAdminForm(forms.ModelForm):
     class Meta:
-        model = ProductFamily
+        model = FamilyProduct
         fields = ("name", "is_active")
 
     def clean_name(self):
@@ -419,14 +419,14 @@ class ProductFamilyAdminForm(forms.ModelForm):
         )
 
 
-@admin.register(ProductFamily)
-class ProductFamilyAdmin(admin.ModelAdmin):
-    form = ProductFamilyAdminForm
+@admin.register(FamilyProduct)
+class FamilyProductAdmin(admin.ModelAdmin):
+    form = FamilyProductAdminForm
     list_display = ("name", "item_count", "is_active", "updated_at")
     list_filter = ("is_active",)
     search_fields = ("name",)
     readonly_fields = ("created_at", "updated_at")
-    inlines = (ProductFamilyItemInline, FamilyChangeLogInline)
+    inlines = (FamilyProductItemInline, FamilyChangeLogInline)
     fieldsets = (
         (
             None,

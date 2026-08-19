@@ -82,7 +82,7 @@ After `./scripts/seed_dev_data.sh`, all seeded users share password **`devpass12
 ### Key files (catalog — current module)
 
 ```text
-products/models.py           Product, ProductFamily, Supplier, change-log models
+products/models.py           Item, FamilyProduct, Supplier, change-log models
 products/services.py         create/update/deactivate/reactivate, family/supplier, get_products
 products/permissions.py      can_manage_catalog (is_staff)
 products/admin.py            staff-only admin + audit inlines
@@ -143,7 +143,7 @@ Production will use Google OAuth (not implemented in dev — email/password logi
 ### Product catalogue (server)
 
 - `Product` model: required `family`, optional `internal_code`, `description`, `stock` (decimal), `price` (USD), `unit_of_measure`, `reorder_level`, `is_active` (soft delete; **new products start inactive**), timestamps.
-- `ProductFamily` / `Supplier` — family is required on create; suppliers are optional. Names are case-insensitive unique. Console does not rename them.
+- `FamilyProduct` / `Supplier` — family is required on create; suppliers are optional. Names are case-insensitive unique. Console does not rename them.
 - Audit: `ProductChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Product deactivate/reactivate require a reason; family/supplier lifecycle does not.
 - Service layer in [`products/services.py`](products/services.py): product, family, and supplier mutations.
 - Warehouse staff manage the catalogue in `/manage/products/` (`products/permissions.py` — `is_staff` only). Django admin remains available.
