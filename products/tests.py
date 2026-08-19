@@ -2,6 +2,7 @@ import json
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -1271,4 +1272,23 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(
             created.json()["error"],
             "Missing permission: products.add_supplier",
+        )
+
+
+class SeedDevDataCommandTests(TestCase):
+    def test_seed_resolves_existing_family_when_case_differs(self):
+        create_family("cement")
+
+        call_command("seed_dev_data", verbosity=0)
+
+        self.assertTrue(
+            get_user_model().objects.filter(
+                email="warehouse.admin@centcompras.dev",
+            ).exists()
+        )
+        item = Item.objects.get(internal_code="CEM-50")
+        self.assertEqual(item.family.name, "cement")
+        self.assertEqual(
+            FamilyProduct.objects.filter(name__iexact="Cement").count(),
+            1,
         )

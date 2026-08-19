@@ -102,7 +102,7 @@ class Command(BaseCommand):
                             family,
                             is_active=family_data["is_active"],
                         )
-                    families_by_name[family.name] = family
+                    families_by_name[family_data["name"].casefold()] = family
                     self.stdout.write(f"Exists family: {family.name}")
                     continue
 
@@ -110,7 +110,7 @@ class Command(BaseCommand):
                     family_data["name"],
                     is_active=family_data["is_active"],
                 )
-                families_by_name[family.name] = family
+                families_by_name[family_data["name"].casefold()] = family
                 self.stdout.write(f"Created family: {family.name}")
 
             for supplier_data in SUPPLIERS:
@@ -149,7 +149,7 @@ class Command(BaseCommand):
                     is_active,
                     vat_rate_code,
                 ) = row
-                family = families_by_name[family_name]
+                family = families_by_name[family_name.casefold()]
                 vat_rate = VatRate.objects.filter(code=vat_rate_code).first()
                 if vat_rate is None:
                     self.stdout.write(
