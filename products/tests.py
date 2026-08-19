@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from accounts.groups import GROUP_ADMINS, GROUP_OPERATORS, assign_warehouse_group
 from products.models import (
     FamilyChangeLog,
     FamilyProduct,
@@ -14,7 +15,7 @@ from products.models import (
     SupplierChangeLog,
     VatRate,
 )
-from products.permissions import can_manage_catalog
+from products.permissions import can_view_catalog
 from products.services import (
     DeactivateReasonRequiredError,
     DuplicateFamilyNameError,
@@ -37,6 +38,12 @@ from products.services import (
     update_supplier,
     validate_internal_code_available,
 )
+
+
+def make_warehouse_user(email, password="test-pass-123", group_name=GROUP_ADMINS):
+    user = get_user_model().objects.create_user(email=email, password=password)
+    assign_warehouse_group(user, group_name)
+    return user
 
 
 class ItemTestCaseMixin:
@@ -66,7 +73,6 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
         self.user = get_user_model().objects.create_user(
             email="staff@example.com",
             password="test-pass-123",
-            is_staff=True,
         )
         self.family = self.create_test_family()
         self.vat_rate = VatRate.objects.get(code="VAT16")
@@ -357,7 +363,6 @@ class FamilyProductServiceTests(TestCase):
         user = user_model.objects.create_user(
             email="staff@example.com",
             password="test-pass-123",
-            is_staff=True,
         )
 
         family = create_product_family("Cement", user=user)
@@ -408,49 +413,66 @@ class FamilyProductServiceTests(TestCase):
 class ItemPermissionTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
+        self.warehouse_user = make_warehouse_user("warehouse@example.com")
+        self.plain_user = user_model.objects.create_user(
+            email="user@example.com",
+            password="test-pass-123",
+        )
         self.staff_user = user_model.objects.create_user(
             email="staff@example.com",
             password="test-pass-123",
             is_staff=True,
         )
-        self.non_staff_user = user_model.objects.create_user(
-            email="user@example.com",
+
+    def test_can_view_catalog_requires_warehouse_view_permission(self):
+        self.assertTrue(can_view_catalog(self.warehouse_user))
+        self.assertFalse(can_view_catalog(self.plain_user))
+        self.assertFalse(can_view_catalog(self.staff_user))
+
+    def test_superuser_can_view_catalog(self):
+        superuser = get_user_model().objects.create_superuser(
+            email="super@example.com",
             password="test-pass-123",
         )
+        self.assertTrue(can_view_catalog(superuser))
 
-    def test_can_manage_catalog_requires_staff(self):
-        self.assertTrue(can_manage_catalog(self.staff_user))
-        self.assertFalse(can_manage_catalog(self.non_staff_user))
-
-    def test_anonymous_user_cannot_manage_catalog(self):
+    def test_anonymous_user_cannot_view_catalog(self):
         anonymous = get_user_model()()
-        self.assertFalse(can_manage_catalog(anonymous))
+        self.assertFalse(can_view_catalog(anonymous))
 
 
 class ItemAdminAccessTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
+        self.superuser = user_model.objects.create_superuser(
+            email="super@example.com",
+            password="test-pass-123",
+        )
+        self.warehouse_user = make_warehouse_user("warehouse@example.com")
         self.staff_user = user_model.objects.create_user(
             email="staff@example.com",
             password="test-pass-123",
             is_staff=True,
         )
-        self.non_staff_user = user_model.objects.create_user(
-            email="user@example.com",
-            password="test-pass-123",
-        )
         self.client = Client()
         self.changelist_url = reverse("admin:products_item_changelist")
 
-    def test_staff_user_can_open_item_admin(self):
-        self.client.force_login(self.staff_user)
+    def test_superuser_can_open_item_admin(self):
+        self.client.force_login(self.superuser)
 
         response = self.client.get(self.changelist_url)
 
         self.assertEqual(response.status_code, 200)
 
-    def test_non_staff_user_cannot_open_item_admin(self):
-        self.client.force_login(self.non_staff_user)
+    def test_warehouse_user_cannot_open_item_admin(self):
+        self.client.force_login(self.warehouse_user)
+
+        response = self.client.get(self.changelist_url)
+
+        self.assertIn(response.status_code, (302, 403))
+
+    def test_staff_non_superuser_cannot_open_item_admin(self):
+        self.client.force_login(self.staff_user)
 
         response = self.client.get(self.changelist_url)
 
@@ -460,27 +482,23 @@ class ItemAdminAccessTests(TestCase):
 class FamilyProductAdminAccessTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
-        self.staff_user = user_model.objects.create_user(
-            email="staff@example.com",
-            password="test-pass-123",
-            is_staff=True,
-        )
-        self.non_staff_user = user_model.objects.create_user(
-            email="user@example.com",
+        self.superuser = user_model.objects.create_superuser(
+            email="super@example.com",
             password="test-pass-123",
         )
+        self.warehouse_user = make_warehouse_user("warehouse@example.com")
         self.client = Client()
         self.family_changelist_url = reverse("admin:products_familyproduct_changelist")
 
-    def test_staff_user_can_open_product_family_admin(self):
-        self.client.force_login(self.staff_user)
+    def test_superuser_can_open_family_admin(self):
+        self.client.force_login(self.superuser)
 
         response = self.client.get(self.family_changelist_url)
 
         self.assertEqual(response.status_code, 200)
 
-    def test_non_staff_user_cannot_open_product_family_admin(self):
-        self.client.force_login(self.non_staff_user)
+    def test_warehouse_user_cannot_open_family_admin(self):
+        self.client.force_login(self.warehouse_user)
 
         response = self.client.get(self.family_changelist_url)
 
@@ -488,7 +506,7 @@ class FamilyProductAdminAccessTests(TestCase):
 
     def test_admin_create_rejects_duplicate_family_name(self):
         create_product_family("Cement")
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.superuser)
 
         response = self.client.post(
             reverse("admin:products_familyproduct_add"),
@@ -513,7 +531,6 @@ class SupplierServiceTests(TestCase):
         self.staff_user = get_user_model().objects.create_user(
             email="staff@example.com",
             password="test-pass-123",
-            is_staff=True,
         )
 
     def test_update_supplier_changes_contact_fields(self):
@@ -616,27 +633,23 @@ class SupplierServiceTests(TestCase):
 class SupplierAdminAccessTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
-        self.staff_user = user_model.objects.create_user(
-            email="staff@example.com",
-            password="test-pass-123",
-            is_staff=True,
-        )
-        self.non_staff_user = user_model.objects.create_user(
-            email="user@example.com",
+        self.superuser = user_model.objects.create_superuser(
+            email="super@example.com",
             password="test-pass-123",
         )
+        self.warehouse_user = make_warehouse_user("warehouse@example.com")
         self.client = Client()
         self.supplier_changelist_url = reverse("admin:products_supplier_changelist")
 
-    def test_staff_user_can_open_supplier_admin(self):
-        self.client.force_login(self.staff_user)
+    def test_superuser_can_open_supplier_admin(self):
+        self.client.force_login(self.superuser)
 
         response = self.client.get(self.supplier_changelist_url)
 
         self.assertEqual(response.status_code, 200)
 
-    def test_non_staff_user_cannot_open_supplier_admin(self):
-        self.client.force_login(self.non_staff_user)
+    def test_warehouse_user_cannot_open_supplier_admin(self):
+        self.client.force_login(self.warehouse_user)
 
         response = self.client.get(self.supplier_changelist_url)
 
@@ -644,7 +657,7 @@ class SupplierAdminAccessTests(TestCase):
 
     def test_admin_create_rejects_duplicate_supplier_name(self):
         create_supplier("BuildSupply Ltd")
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.superuser)
 
         response = self.client.post(
             reverse("admin:products_supplier_add"),
@@ -667,11 +680,7 @@ class SupplierAdminAccessTests(TestCase):
 class ItemConsoleTests(ItemTestCaseMixin, TestCase):
     def setUp(self):
         user_model = get_user_model()
-        self.staff_user = user_model.objects.create_user(
-            email="warehouse@example.com",
-            password="test-pass-123",
-            is_staff=True,
-        )
+        self.staff_user = make_warehouse_user("warehouse@example.com")
         self.non_staff_user = user_model.objects.create_user(
             email="user@example.com",
             password="test-pass-123",
@@ -700,8 +709,12 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "/manage/items/")
+        self.assertNotContains(response, 'href="/admin/"')
         self.assertNotContains(response, "/api/items/")
         self.assertContains(response, self.staff_user.email)
+        self.assertContains(response, "warehouse_admins")
+        self.assertContains(response, "products.view_item")
+        self.assertContains(response, "products.delete_item")
 
     def test_anonymous_user_is_redirected_from_dashboard(self):
         response = self.client.get(reverse("staff_dashboard"))
@@ -743,6 +756,32 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         response = self.client.get(reverse("manage_item_list"))
 
         self.assertEqual(response.status_code, 403)
+
+    def test_operator_can_read_manage_api_but_cannot_create(self):
+        operator = make_warehouse_user(
+            "operator@example.com",
+            group_name=GROUP_OPERATORS,
+        )
+        self.client.force_login(operator)
+
+        listing = self.client.get(reverse("manage_item_list"))
+        self.assertEqual(listing.status_code, 200)
+
+        created = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps({
+                "family_id": self.family.id,
+                "description": "Operator should not create",
+                "unit_of_measure": Item.UnitOfMeasure.PIECE,
+                "vat_rate_id": self.vat_rate.id,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(created.status_code, 403)
+        self.assertEqual(
+            created.json()["error"],
+            "Missing permission: products.add_item",
+        )
 
     def test_staff_manage_api_includes_inactive_items(self):
         active = self.create_test_item(self.staff_user, description="Visible")

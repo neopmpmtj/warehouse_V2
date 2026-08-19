@@ -7,17 +7,35 @@
 </head>
 <body>
     <p>Signed in as <strong>{{ user.email }}</strong></p>
+    <p>Groups:
+        {% if groups %}
+            {% for group in groups %}<code>{{ group }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% else %}
+            none
+        {% endif %}
+    </p>
     <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
         <button type="submit">Sign out</button>
     </form>
 
     <h1>CentCompras</h1>
+    <h2>Your Django permissions</h2>
+    <p>These come from your group (plus every permission if you are a superuser).</p>
+    <ul>
+        {% for perm in permissions %}
+        <li><code>{{ perm }}</code></li>
+        {% empty %}
+        <li>none</li>
+        {% endfor %}
+    </ul>
     <ul>
         <li><a href="/" target="_blank" rel="noopener noreferrer">/</a> — this dashboard</li>
         <li><a href="/accounts/login/" target="_blank" rel="noopener noreferrer">/accounts/login/</a></li>
         <li>/accounts/logout/ (POST)</li>
+        {% if user.is_superuser %}
         <li><a href="/admin/" target="_blank" rel="noopener noreferrer">/admin/</a></li>
+        {% endif %}
         <li><a href="/manage/items/" target="_blank" rel="noopener noreferrer">/manage/items/</a> — item console</li>
         <li><a href="/api/manage/items/" target="_blank" rel="noopener noreferrer">/api/manage/items/</a></li>
         <li>/api/manage/items/bulk/</li>

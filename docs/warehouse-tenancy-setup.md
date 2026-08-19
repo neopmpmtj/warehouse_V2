@@ -4,7 +4,7 @@
 
 **Do not implement §6–7 as written.** The `Order` example with `item_name` / `quantity` / `notes` was a placeholder from before `Product` existed. Branch orders are **on hold** until inbound stock can be recorded (warehouse purchases from suppliers → `Product.stock`). Order business rules (cart shape, stock decrement timing, cancel policy) are also not locked.
 
-`User.is_staff` is **warehouse catalogue staff** (and Django admin), not “site admin only”. Site-wide config is `is_superuser`. Branch roles (`BranchMembership`) do **not** grant catalogue edit.
+The catalogue is managed on the **website** by Django groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators` (built-in `view` / `add` / `change` / `delete` model permissions). **`/admin/` is superuser only** — `is_staff` is not a warehouse role. Branch roles (`BranchMembership`) do **not** grant catalogue edit.
 
 ---
 
@@ -31,7 +31,7 @@ We are adding two things to the app:
 
 - A user's role is **not global** — it's attached to their membership in a *specific* branch. A user can belong to multiple branches with a different role in each (e.g. a regional manager).
 - Orders belong to exactly one branch. A branch only manages its own orders — no cross-branch ordering.
-- None of these roles are Django superuser. Django's built-in `is_superuser` stays reserved for site-wide `/admin/` configuration. **`is_staff` is warehouse catalogue staff** (`/manage/products/` and product admin), separate from this per-branch role system.
+- None of these roles are Django superuser. Django's built-in `is_superuser` stays reserved for site-wide `/admin/` configuration. Catalogue access is the warehouse_* groups on the website, separate from this per-branch role system.
 
 ---
 

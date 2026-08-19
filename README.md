@@ -36,7 +36,7 @@ Held for later dedicated sessions (do not start in passing): shared page chrome,
 **Design choices locked in for later phases:**
 
 - `Product` catalogue is **global** (central warehouse) — no `branch_id` on products.
-- **Catalog mutations** = warehouse staff (`is_staff`) only. **Branch roles** = future branch-scoped documents (orders), not catalogue edit.
+- **Catalog mutations** = warehouse groups on the website (`warehouse_admins` full, `warehouse_managers` add/change, `warehouse_data_operators` view). **`/admin/` is superuser only.**
 - Dev login: email + password. Production: **Google OAuth** (not implemented yet).
 - Users are provisioned in admin or seed script — no public signup.
 - Orders (future, after inbound stock) will be **branch-scoped** with `branch` + `created_by` FKs. The sketch in [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) §6 is **not** an implementation spec (`item_name` is leftover).
@@ -46,10 +46,12 @@ Held for later dedicated sessions (do not start in passing): shared page chrome,
 
 | User type | Example (after seed) | Can do today |
 |-----------|----------------------|--------------|
-| **Warehouse staff** | `warehouse@centcompras.dev` | Add/edit/deactivate products, families, and suppliers in `/manage/products/` (and `/admin/products/`); audit logs. Today they also type **stock** on the product. |
+| **Warehouse admin** | `warehouse.admin@centcompras.dev` | Full catalogue on `/manage/items/` (`warehouse_admins`). Cannot log into `/admin/`. |
+| **Warehouse manager** | `warehouse.manager@centcompras.dev` | Add/edit catalogue (`warehouse_managers`). No delete permission. |
+| **Warehouse operator** | `warehouse.operator@centcompras.dev` | Read-only catalogue (`warehouse_data_operators`). |
 | **Branch admin** | `admin.lisbon@centcompras.dev` | Log in, browse catalogue at `/` (read-only); future: orders in their branch (after inbound stock exists) |
 | **Branch manager / user** | (create in admin) | Same browse access; different order permissions later |
-| **Django superuser** | from `createsuperuser` | Site admin: users, branches, memberships — not the same as warehouse or branch admin unless you grant `is_staff` / memberships |
+| **Django superuser** | from `createsuperuser` | Site admin at `/admin/`: users, groups, memberships. The only users who may use the Django admin. |
 
 After `./scripts/seed_dev_data.sh`, all seeded users share password **`devpass123`**.
 
@@ -84,7 +86,8 @@ After `./scripts/seed_dev_data.sh`, all seeded users share password **`devpass12
 ```text
 products/models.py           Item, FamilyProduct, Supplier, change-log models
 products/services.py         create/update/deactivate/reactivate, family/supplier, get_products
-products/permissions.py      can_manage_catalog (is_staff)
+products/permissions.py      view/add/change/delete checks on /api/manage/
+accounts/groups.py           warehouse_admins / managers / data_operators + superuser-only /admin/
 products/admin.py            staff-only admin + audit inlines
 products/views.py              GET /api/products/ (active only + catalog_updated_at)
 products/console_views.py      Staff console page + /api/manage/ products, families, suppliers
@@ -108,7 +111,7 @@ One concept per phase. Reusable `services.py` layer. Plain Django + plain JavaSc
 - Users may travel through areas with little or no mobile data, so the client must work **offline** for catalogue browsing (and, in a future phase, for queuing orders).
 - PostgreSQL on the server is the **source of truth**. The browser's IndexedDB is a **read-only local cache** of the last successfully downloaded catalogue.
 
-Warehouse staff manage the catalogue in the staff console at `/manage/products/` (`is_staff` users). Django admin remains available. Branch phone users have **read-only** access via the API and offline cache. The CLI (`add_product`) remains for dev/bootstrap only.
+Warehouse staff manage the catalogue at `/manage/items/` via three Django groups (`warehouse_admins`, `warehouse_managers`, `warehouse_data_operators`). Django admin is reserved for superusers.
 
 ---
 
@@ -146,7 +149,7 @@ Production will use Google OAuth (not implemented in dev — email/password logi
 - `FamilyProduct` / `Supplier` — family is required on create; suppliers are optional. Names are case-insensitive unique. Console does not rename them.
 - Audit: `ProductChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Product deactivate/reactivate require a reason; family/supplier lifecycle does not.
 - Service layer in [`products/services.py`](products/services.py): product, family, and supplier mutations.
-- Warehouse staff manage the catalogue in `/manage/products/` (`products/permissions.py` — `is_staff` only). Django admin remains available.
+- Warehouse staff manage the catalogue in `/manage/items/` using Django model permissions on three groups. Django admin is superuser only.
 - Dev/bootstrap CLI:
 
   ```bash
@@ -179,17 +182,17 @@ Production will use Google OAuth (not implemented in dev — email/password logi
 | Path | Purpose |
 |------|---------|
 | `/` | Product list page (login required) |
-| `/manage/products/` | Warehouse staff product console (`is_staff`) |
-| `/api/manage/products/` | Staff product JSON API (`is_staff`) |
-| `/api/manage/families/` | Staff family JSON API (`is_staff`) |
-| `/api/manage/suppliers/` | Staff supplier JSON API (`is_staff`) |
+| `/manage/items/` | Warehouse item console (view permission) |
+| `/api/manage/items/` | Warehouse item JSON API (view; writes need add/change) |
+| `/api/manage/families/` | Warehouse family JSON API (view; writes need add/change) |
+| `/api/manage/suppliers/` | Warehouse supplier JSON API (view; writes need add/change) |
 | `/accounts/login/` | Email + password login |
 | `/accounts/logout/` | Log out |
 | `/branches/select/` | Choose active branch (multi-branch users) |
 | `/branches/no-access/` | Shown when user has no branch membership |
 | `/api/products/` | Catalogue JSON API (login required) |
 | `/service-worker.js` | Service Worker (served from root for correct scope) |
-| `/admin/` | Django admin |
+| `/admin/` | Django admin (**superuser only**) |
 
 ---
 
@@ -302,13 +305,13 @@ This creates:
 |------|---------|
 | **Branches** | Lisbonbranch, portobranch, vilarealbranch |
 | **Branch users** | `admin.lisbon@…`, `admin.porto@…`, `admin.vilareal@…` — **branch admin** role in their branch |
-| **Warehouse staff** | `warehouse@centcompras.dev` — manages **catalog** in `/manage/products/` (`is_staff`) |
+| **Warehouse users** | `warehouse.admin@…` / `warehouse.manager@…` / `warehouse.operator@…` — groups `warehouse_admins`, `warehouse_managers`, `warehouse_data_operators` |
 | **Products** | 3 sample items via `products/services.py` |
 | **Password** | `devpass123` for all seeded users (override with `--password`) |
 
 Re-running the script is safe (idempotent). Options: `--skip-products`, `--skip-warehouse`.
 
-**Important:** branch **admin** role is for future **order** permissions per branch. **Catalogue** add/edit/deactivate is **warehouse staff only** (`is_staff`), not branch role.
+**Important:** branch **admin** role is for future **order** permissions per branch. **Catalogue** access is the warehouse groups above, not Django admin.
 
 **Manual seed (via `/admin/`)** — if you prefer to practice admin UI:
 
@@ -335,7 +338,7 @@ Create records in this order:
 
 ### 6. Add sample products
 
-Products are managed in **`/manage/products/`** by warehouse staff (`is_staff`), or created by the seed script / CLI:
+Items are managed in **`/manage/items/`** by warehouse users (Django groups), or created by the seed script / CLI:
 
 ```bash
 ./scripts/seed_dev_data.sh          # recommended — includes 3 products

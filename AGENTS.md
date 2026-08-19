@@ -20,11 +20,13 @@ Staff product console (this phase): [`docs/product-console-session-2026-08-18.md
 
 | Role | Flag / model | Catalog | Orders (future) |
 |------|----------------|---------|-----------------|
-| Warehouse staff | `User.is_staff` | Manage via `/manage/products/` (and `/admin/products/`); stock is still typed on the product | N/A (central) |
+| Warehouse admin | group `warehouse_admins` | Full catalogue (view/add/change/delete) via the website | N/A (central) |
+| Warehouse manager | group `warehouse_managers` | View/add/change via the website (no delete) | N/A (central) |
+| Warehouse operator | group `warehouse_data_operators` | Read-only catalogue on the website | N/A (central) |
 | Branch admin/manager/user | `BranchMembership.role` | Read-only at `/` | Per-branch permissions in `branches/permissions.py` (after inbound stock) |
-| Django superuser | `is_superuser` | Only if also `is_staff` | Site config in `/admin/` |
+| Django superuser | `is_superuser` | May use the website console; **only** role that can log into `/admin/` | Site config in `/admin/` |
 
-Dev seed: `./scripts/seed_dev_data.sh` → `warehouse@centcompras.dev` + 3 branch admins, password `devpass123`.
+Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev`, `warehouse.operator@centcompras.dev`, password `devpass123`.
 
 ## Current state (what exists)
 
@@ -52,7 +54,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse@centcompras.dev` + 3 branc
 - **Audit:** `ProductChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Product lifecycle reasons required; family/supplier deactivate is confirm-only
 - **Names:** family and supplier names are case-insensitive unique; the console does not rename them
 - **Global catalogue** — no `branch_id` on `Product` (warehouse stock for all branches)
-- **Management:** warehouse staff via `/manage/products/` (products, families, suppliers) and Django admin (`is_staff`); all mutations through `products/services.py`
+- **Management:** warehouse users via `/manage/items/` (groups `warehouse_admins` / `warehouse_managers` / `warehouse_data_operators` and Django model permissions). Django admin (`/admin/`) is **superuser only**. All mutations through `products/services.py`
 - **Branch access:** read-only — `GET /api/products/` returns active products only plus `catalog_updated_at`
 - **Validation:** duplicate non-empty `internal_code` rejected in services/admin
 - **CLI:** `add_product` for dev/bootstrap (audit user is null); optional `--internal-code`
@@ -89,7 +91,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 ```
 
 - Business logic in `services.py`, not views or management commands
-- Tenant permission checks via `branches/permissions.py`; catalog management via `products/permissions.py` (`is_staff`)
+- Tenant permission checks via `branches/permissions.py`; catalog management via Django groups + `products.view/add/change/delete_*`
 - Use `request.active_branch` (set by middleware) for branch-scoped features
 - Pass pre-fetched `memberships` to `get_active_branch(request, memberships)` to avoid duplicate queries
 - Plain Django + plain JavaScript — no React, Vue

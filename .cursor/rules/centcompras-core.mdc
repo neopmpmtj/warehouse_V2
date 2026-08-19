@@ -24,7 +24,8 @@ Central warehouse + satellite branches. Offline-capable product catalogue MVP (D
 - PostgreSQL = source of truth; IndexedDB = read-only catalogue cache
 - Branch users: read-only catalogue; warehouse staff manage products via `/manage/products/` + `products/services.py`
 - Business logic in `services.py`; views/commands stay thin
-- Branch permissions via `branches/permissions.py`; catalogue via `products/permissions.py` (`is_staff`)
+- Branch permissions via `branches/permissions.py`; catalogue via Django groups (`warehouse_admins`, `warehouse_managers`, `warehouse_data_operators`)
+- Django admin (`/admin/`) is superuser only; warehouse users work on the website
 - Plain Django + plain JavaScript — no React/Vue
 - Incremental phases — no large application dumps
 - Do not implement the tenancy-doc `Order` stub (`item_name`)

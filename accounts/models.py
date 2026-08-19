@@ -34,7 +34,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
+    is_staff = models.BooleanField(
+        default=False,
+        help_text=(
+            "Django admin login. Only superusers should have this; "
+            "warehouse users work on the website via warehouse_* groups."
+        ),
+    )
     date_joined = models.DateTimeField(auto_now_add=True)
 
     objects = UserManager()

@@ -7,10 +7,11 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from accounts.groups import ADD_FAMILY, ADD_ITEM, CHANGE_FAMILY, CHANGE_ITEM
 from logging_utils import get_logger
 
 from .models import FamilyProduct, Item
-from .permissions import staff_required
+from .permissions import catalog_required, deny_unless
 from .services import (
     DeactivateReasonRequiredError,
     DuplicateFamilyNameError,
@@ -172,17 +173,21 @@ def _item_response(item):
     return JsonResponse({"item": _serialize_item(item)})
 
 
-@staff_required
+@catalog_required
 @require_GET
 def item_console(request):
     return render(request, "products/item_console.html")
 
 
-@staff_required
+@catalog_required
 @require_http_methods(["GET", "POST"])
 def manage_item_list(request):
     if request.method == "GET":
         return JsonResponse(_console_payload())
+
+    denied = deny_unless(request, ADD_ITEM)
+    if denied:
+        return denied
 
     try:
         payload = _parse_json(request)
@@ -217,7 +222,7 @@ def manage_item_list(request):
     return _item_response(item)
 
 
-@staff_required
+@catalog_required
 @require_http_methods(["GET", "PATCH"])
 def manage_item_detail(request, item_id):
     try:
@@ -227,6 +232,10 @@ def manage_item_detail(request, item_id):
 
     if request.method == "GET":
         return JsonResponse({"item": _serialize_item(item)})
+
+    denied = deny_unless(request, CHANGE_ITEM)
+    if denied:
+        return denied
 
     try:
         payload = _parse_json(request)
@@ -263,15 +272,21 @@ def manage_item_detail(request, item_id):
     return _item_response(item)
 
 
-@staff_required
+@catalog_required
 @require_POST
 def manage_item_deactivate(request, item_id):
+    denied = deny_unless(request, CHANGE_ITEM)
+    if denied:
+        return denied
     return _lifecycle(request, item_id, deactivate_item)
 
 
-@staff_required
+@catalog_required
 @require_POST
 def manage_item_reactivate(request, item_id):
+    denied = deny_unless(request, CHANGE_ITEM)
+    if denied:
+        return denied
     return _lifecycle(request, item_id, reactivate_item)
 
 
@@ -296,9 +311,12 @@ def _lifecycle(request, item_id, action):
     return _item_response(item)
 
 
-@staff_required
+@catalog_required
 @require_POST
 def manage_item_bulk(request):
+    denied = deny_unless(request, CHANGE_ITEM)
+    if denied:
+        return denied
     try:
         payload = _parse_json(request)
         action_name = str(payload.get("action", "")).strip()
@@ -343,7 +361,7 @@ def manage_item_bulk(request):
     )
 
 
-@staff_required
+@catalog_required
 @require_GET
 def manage_item_history(request, item_id):
     try:
@@ -368,7 +386,7 @@ def _family_error(exc):
     raise exc
 
 
-@staff_required
+@catalog_required
 @require_http_methods(["GET", "POST"])
 def manage_family_list(request):
     if request.method == "GET":
@@ -379,6 +397,10 @@ def manage_family_list(request):
                 ]
             }
         )
+
+    denied = deny_unless(request, ADD_FAMILY)
+    if denied:
+        return denied
 
     try:
         payload = _parse_json(request)
@@ -397,7 +419,7 @@ def manage_family_list(request):
     return _family_response(family)
 
 
-@staff_required
+@catalog_required
 @require_http_methods(["GET", "PATCH"])
 def manage_family_detail(request, family_id):
     try:
@@ -407,6 +429,10 @@ def manage_family_detail(request, family_id):
 
     if request.method == "GET":
         return JsonResponse({"family": _serialize_family(family)})
+
+    denied = deny_unless(request, CHANGE_FAMILY)
+    if denied:
+        return denied
 
     try:
         payload = _parse_json(request)
@@ -425,7 +451,7 @@ def manage_family_detail(request, family_id):
     return _family_response(family)
 
 
-@staff_required
+@catalog_required
 @require_GET
 def manage_family_history(request, family_id):
     try:

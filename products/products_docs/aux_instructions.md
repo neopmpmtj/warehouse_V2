@@ -124,7 +124,7 @@ Offline order creation is a future phase.
 
 Branch phone/browser users must **NOT** create or edit warehouse products.
 
-Warehouse staff (`User.is_staff`, seed `warehouse@centcompras.dev`) manage the catalogue in **`/manage/products/`**. Django admin (`/admin/products/`) remains available. Both paths call `products/services.py`.
+Warehouse users belong to Django groups `warehouse_admins` (view/add/change/delete), `warehouse_managers` (view/add/change), or `warehouse_data_operators` (view only). Seed logins: `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev`, `warehouse.operator@centcompras.dev`. They are **not** `is_staff` and **cannot** log into Django admin. `/admin/` is superuser only. Website mutations still go through `products/services.py`.
 
 Staff can:
 
@@ -353,7 +353,7 @@ Expected response:
 
 The branch payload is still this small set (`id`, `description`, `stock`, `price`). Family, unit, and internal code are **not** exposed here yet (held for a later phone-catalogue session).
 
-Staff JSON lives under `/api/manage/products/`, `/api/manage/families/`, `/api/manage/suppliers/` (`is_staff` only) and includes inactive rows.
+Staff JSON lives under `/api/manage/items/`, `/api/manage/families/`, `/api/manage/suppliers/` (warehouse groups; writes require add/change) and includes inactive rows.
 
 This MVP intentionally avoids Django REST Framework.
 

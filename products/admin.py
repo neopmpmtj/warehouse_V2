@@ -13,7 +13,6 @@ from .models import (
     SupplierChangeLog,
     VatRate,
 )
-from .permissions import can_manage_catalog
 from .services import (
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
@@ -157,22 +156,22 @@ class ItemAdmin(admin.ModelAdmin):
         )
 
     def has_module_permission(self, request):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_view_permission(self, request, obj=None):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_add_permission(self, request):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_change_permission(self, request, obj=None):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_delete_permission(self, request, obj=None):
         return False
 
     def save_model(self, request, obj, form, change):
-        if not can_manage_catalog(request.user):
+        if not request.user.is_superuser:
             raise PermissionDenied
 
         reason = form.cleaned_data.get("audit_reason", "")
@@ -338,22 +337,22 @@ class SupplierAdmin(admin.ModelAdmin):
     )
 
     def has_module_permission(self, request):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_view_permission(self, request, obj=None):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_add_permission(self, request):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_change_permission(self, request, obj=None):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_delete_permission(self, request, obj=None):
         return False
 
     def save_model(self, request, obj, form, change):
-        if not can_manage_catalog(request.user):
+        if not request.user.is_superuser:
             raise PermissionDenied
 
         try:
@@ -446,22 +445,22 @@ class FamilyProductAdmin(admin.ModelAdmin):
         return obj.items.count()
 
     def has_module_permission(self, request):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_view_permission(self, request, obj=None):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_add_permission(self, request):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_change_permission(self, request, obj=None):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_delete_permission(self, request, obj=None):
         return False
 
     def save_model(self, request, obj, form, change):
-        if not can_manage_catalog(request.user):
+        if not request.user.is_superuser:
             raise PermissionDenied
 
         try:
@@ -492,10 +491,10 @@ class _ReadOnlyChangeLogAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
 
     def has_module_permission(self, request):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_view_permission(self, request, obj=None):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_add_permission(self, request):
         return False
@@ -540,10 +539,10 @@ class VatRateAdmin(admin.ModelAdmin):
     readonly_fields = ("code", "label", "rate")
 
     def has_module_permission(self, request):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_view_permission(self, request, obj=None):
-        return can_manage_catalog(request.user)
+        return request.user.is_superuser
 
     def has_add_permission(self, request):
         return False
