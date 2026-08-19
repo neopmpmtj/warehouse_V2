@@ -1,7 +1,9 @@
 import json
 from decimal import Decimal
+from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -26,6 +28,11 @@ from products.services import (
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
     SupplierNameRequiredError,
+    _save_family,
+    _save_item,
+    _save_supplier,
+    bulk_deactivate_items,
+    bulk_reactivate_items,
     create_family,
     create_item,
     create_supplier,
@@ -1292,3 +1299,142 @@ class SeedDevDataCommandTests(TestCase):
             FamilyProduct.objects.filter(name__iexact="Cement").count(),
             1,
         )
+
+
+class BulkLifecycleAtomicityTests(ItemTestCaseMixin, TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="bulk@example.com",
+            password="test-pass-123",
+        )
+        self.family = self.create_test_family()
+
+    def test_bulk_deactivate_marks_all_inactive(self):
+        first = self.create_test_item(self.user, description="First")
+        second = self.create_test_item(self.user, description="Second")
+
+        bulk_deactivate_items(self.user, [first, second], reason="End of line")
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertFalse(first.is_active)
+        self.assertFalse(second.is_active)
+        self.assertEqual(
+            first.change_logs.filter(action=ItemChangeLog.Action.DEACTIVATED).count(),
+            1,
+        )
+
+    def test_bulk_deactivate_rolls_back_when_one_item_fails(self):
+        first = self.create_test_item(self.user, description="First")
+        second = self.create_test_item(self.user, description="Second")
+
+        original_deactivate = deactivate_item
+        calls = {"count": 0}
+
+        def failing_deactivate(user, item, reason=""):
+            calls["count"] += 1
+            if calls["count"] == 2:
+                raise RuntimeError("boom")
+            return original_deactivate(user, item, reason=reason)
+
+        with mock.patch(
+            "products.services.deactivate_item",
+            side_effect=failing_deactivate,
+        ):
+            with self.assertRaises(RuntimeError):
+                bulk_deactivate_items(
+                    self.user,
+                    [first, second],
+                    reason="End of line",
+                )
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertTrue(first.is_active)
+        self.assertTrue(second.is_active)
+
+
+class ServiceValidationTests(ItemTestCaseMixin, TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="validation@example.com",
+            password="test-pass-123",
+        )
+        self.family = self.create_test_family()
+        self.vat_rate = VatRate.objects.get(code="VAT16")
+
+    def test_create_item_rejects_overlong_description(self):
+        with self.assertRaises(ValidationError):
+            create_item(
+                self.user,
+                family=self.family,
+                description="x" * 256,
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+            )
+
+    def test_create_item_rejects_overlong_internal_code(self):
+        with self.assertRaises(ValidationError):
+            create_item(
+                self.user,
+                family=self.family,
+                description="OK",
+                internal_code="C" * 65,
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+            )
+
+    def test_create_item_rejects_reorder_level_overflow(self):
+        with self.assertRaises(ValidationError):
+            create_item(
+                self.user,
+                family=self.family,
+                description="OK",
+                reorder_level="12345678901.123",
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+            )
+
+    def test_create_family_rejects_overlong_name(self):
+        with self.assertRaises(ValidationError):
+            create_family(name="F" * 256)
+
+    def test_create_supplier_rejects_overlong_name(self):
+        with self.assertRaises(ValidationError):
+            create_supplier(name="S" * 256)
+
+
+class SaveHelperDuplicateMappingTests(TestCase):
+    def setUp(self):
+        self.family = create_family("Dup Family")
+        self.vat_rate = VatRate.objects.get(code="VAT16")
+
+    def test_save_item_maps_db_unique_violation(self):
+        Item.objects.create(
+            family=self.family,
+            description="Existing",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+            internal_code="CODE-1",
+        )
+        dup = Item(
+            family=self.family,
+            description="Another",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+            internal_code="CODE-1",
+        )
+        with self.assertRaises(DuplicateInternalCodeError):
+            _save_item(dup)
+
+    def test_save_family_maps_db_unique_violation(self):
+        create_family("Unique Family")
+        dup = FamilyProduct(name="unique family")
+        with self.assertRaises(DuplicateFamilyNameError):
+            _save_family(dup)
+
+    def test_save_supplier_maps_db_unique_violation(self):
+        create_supplier("Dup Supplier")
+        dup = Supplier(name="DUP SUPPLIER")
+        with self.assertRaises(DuplicateSupplierNameError):
+            _save_supplier(dup)
