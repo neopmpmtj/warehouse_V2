@@ -64,6 +64,44 @@ function csrfToken() {
     return meta ? meta.getAttribute("content") : "";
 }
 
+function catalogPermissions() {
+    const body = document.body;
+    return {
+        addItem: body.dataset.canAddItem === "true",
+        changeItem: body.dataset.canChangeItem === "true",
+        addFamily: body.dataset.canAddFamily === "true",
+        changeFamily: body.dataset.canChangeFamily === "true",
+    };
+}
+
+function applyCatalogPermissions(permissions) {
+    if (!permissions) {
+        return;
+    }
+    const body = document.body;
+    body.dataset.canAddItem = permissions.add_item ? "true" : "false";
+    body.dataset.canChangeItem = permissions.change_item ? "true" : "false";
+    body.dataset.canAddFamily = permissions.add_family ? "true" : "false";
+    body.dataset.canChangeFamily = permissions.change_family ? "true" : "false";
+}
+
+function setItemFormEditable(editable) {
+    [
+        "field-internal-code",
+        "field-description",
+        "field-family",
+        "field-unit",
+        "field-vat-rate",
+        "field-reorder",
+        "field-reason",
+    ].forEach((id) => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.disabled = !editable;
+        }
+    });
+}
+
 function applyStaticI18n() {
     document.documentElement.lang = currentLang();
     document.title = `${t("title")} — CentCompras`;
@@ -346,6 +384,7 @@ function renderTable() {
         return;
     }
 
+    const perms = catalogPermissions();
     rows.forEach((item) => {
         const row = document.createElement("tr");
         if (state.selectedIds.has(item.id)) {
@@ -356,19 +395,22 @@ function renderTable() {
         }
 
         const checkCell = document.createElement("td");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = state.selectedIds.has(item.id);
-        checkbox.addEventListener("click", (event) => event.stopPropagation());
-        checkbox.addEventListener("change", () => {
-            if (checkbox.checked) {
-                state.selectedIds.add(item.id);
-            } else {
-                state.selectedIds.delete(item.id);
-            }
-            renderTable();
-        });
-        checkCell.appendChild(checkbox);
+        checkCell.className = "col-check";
+        if (perms.changeItem) {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = state.selectedIds.has(item.id);
+            checkbox.addEventListener("click", (event) => event.stopPropagation());
+            checkbox.addEventListener("change", () => {
+                if (checkbox.checked) {
+                    state.selectedIds.add(item.id);
+                } else {
+                    state.selectedIds.delete(item.id);
+                }
+                renderTable();
+            });
+            checkCell.appendChild(checkbox);
+        }
 
         const code = document.createElement("td");
         code.textContent = item.internal_code || "—";
@@ -396,23 +438,26 @@ function renderTable() {
 
         const actions = document.createElement("td");
         actions.className = "row-actions";
-        const editButton = document.createElement("button");
-        editButton.type = "button";
-        editButton.className = "btn";
-        editButton.textContent = t("edit");
-        editButton.addEventListener("click", (event) => {
+        const openButton = document.createElement("button");
+        openButton.type = "button";
+        openButton.className = "btn";
+        openButton.textContent = perms.changeItem ? t("edit") : t("view");
+        openButton.addEventListener("click", (event) => {
             event.stopPropagation();
             openDrawer(item);
         });
-        const lifeButton = document.createElement("button");
-        lifeButton.type = "button";
-        lifeButton.className = item.is_active ? "btn btn-danger" : "btn";
-        lifeButton.textContent = item.is_active ? t("deactivate") : t("reactivate");
-        lifeButton.addEventListener("click", (event) => {
-            event.stopPropagation();
-            toggleLifecycle(item);
-        });
-        actions.append(editButton, lifeButton);
+        actions.appendChild(openButton);
+        if (perms.changeItem) {
+            const lifeButton = document.createElement("button");
+            lifeButton.type = "button";
+            lifeButton.className = item.is_active ? "btn btn-danger" : "btn";
+            lifeButton.textContent = item.is_active ? t("deactivate") : t("reactivate");
+            lifeButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                toggleLifecycle(item);
+            });
+            actions.appendChild(lifeButton);
+        }
 
         row.append(
             checkCell,
@@ -450,10 +495,18 @@ function refreshDrawerLabels() {
     if (drawer.hidden) {
         return;
     }
+    const perms = catalogPermissions();
     const isNew = !document.getElementById("field-id").value;
-    document.getElementById("drawer-title").textContent = isNew ? t("drawerNew") : t("drawerEdit");
+    const canSave = isNew ? perms.addItem : perms.changeItem;
+    document.getElementById("drawer-title").textContent = isNew
+        ? t("drawerNew")
+        : (perms.changeItem ? t("drawerEdit") : t("drawerView"));
+    document.getElementById("item-save").hidden = !canSave;
+    document.getElementById("reason-field").hidden = !canSave;
+    document.getElementById("new-family-inline").hidden = !perms.addFamily;
+    setItemFormEditable(canSave);
     const lifeButton = document.getElementById("drawer-lifecycle");
-    if (isNew) {
+    if (isNew || !perms.changeItem) {
         lifeButton.hidden = true;
         return;
     }
@@ -514,7 +567,6 @@ function closeFamilyDrawer() {
 
 async function openFamilyDrawer() {
     closeDrawer();
-    closeSupplierDrawer();
     document.getElementById("family-drawer").hidden = false;
     document.getElementById("family-drawer-backdrop").hidden = false;
     try {
@@ -567,17 +619,21 @@ function renderFamilyTable() {
 
         const actions = document.createElement("td");
         actions.className = "row-actions";
-        const lifecycle = document.createElement("button");
-        lifecycle.type = "button";
-        lifecycle.className = family.is_active ? "btn btn-danger" : "btn";
-        lifecycle.textContent = family.is_active ? t("deactivate") : t("reactivate");
-        lifecycle.addEventListener("click", () => toggleFamilyActive(family));
+        const perms = catalogPermissions();
+        if (perms.changeFamily) {
+            const lifecycle = document.createElement("button");
+            lifecycle.type = "button";
+            lifecycle.className = family.is_active ? "btn btn-danger" : "btn";
+            lifecycle.textContent = family.is_active ? t("deactivate") : t("reactivate");
+            lifecycle.addEventListener("click", () => toggleFamilyActive(family));
+            actions.appendChild(lifecycle);
+        }
         const history = document.createElement("button");
         history.type = "button";
         history.className = "btn";
         history.textContent = t("history");
         history.addEventListener("click", () => loadFamilyHistory(family));
-        actions.append(lifecycle, history);
+        actions.appendChild(history);
 
         row.append(name, count, status, actions);
         body.appendChild(row);
@@ -653,6 +709,9 @@ function askFamilyName(options) {
 }
 
 async function promptCreateFamily(showHelp) {
+    if (!catalogPermissions().addFamily) {
+        return null;
+    }
     const name = await askFamilyName({
         titleKey: "familyCreateTitle",
         confirmKey: "save",
@@ -679,6 +738,9 @@ async function promptCreateFamily(showHelp) {
 }
 
 async function toggleFamilyActive(family) {
+    if (!catalogPermissions().changeFamily) {
+        return;
+    }
     if (family.is_active && !window.confirm(t("confirmDeactivateFamily"))) {
         return;
     }
@@ -698,6 +760,9 @@ async function toggleFamilyActive(family) {
 }
 
 async function startNewItem() {
+    if (!catalogPermissions().addItem) {
+        return;
+    }
     const activeId = firstActiveFamilyId();
     if (activeId) {
         await openDrawer(null, activeId);
@@ -835,9 +900,13 @@ async function openDrawer(item, selectFamilyId) {
 
 async function saveItem(event) {
     event.preventDefault();
+    const perms = catalogPermissions();
+    const productId = document.getElementById("field-id").value;
+    if (productId ? !perms.changeItem : !perms.addItem) {
+        return;
+    }
     clearBanner();
     const payload = formPayload();
-    const productId = document.getElementById("field-id").value;
     try {
         let data;
         if (productId) {
@@ -1018,6 +1087,9 @@ function askLifecycleReason(mode) {
 }
 
 async function toggleLifecycle(item) {
+    if (!catalogPermissions().changeItem) {
+        return;
+    }
     clearBanner();
     const reason = item.is_active
         ? await askLifecycleReason("deactivate")
@@ -1045,6 +1117,9 @@ async function toggleLifecycle(item) {
 }
 
 async function applyBulk() {
+    if (!catalogPermissions().changeItem) {
+        return;
+    }
     clearBanner();
     const action = document.getElementById("bulk-action").value;
     const ids = filteredItems()
@@ -1088,6 +1163,7 @@ async function applyBulk() {
 
 async function loadCatalog() {
     const data = await api(API_ROOT);
+    applyCatalogPermissions(data.permissions);
     state.items = data.items;
     state.families = data.families;
     state.units = data.units;

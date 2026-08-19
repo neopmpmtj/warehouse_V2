@@ -783,6 +783,65 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
             "Missing permission: products.add_item",
         )
 
+    def test_operator_console_page_hides_write_flags(self):
+        operator = make_warehouse_user(
+            "operator-ui@example.com",
+            group_name=GROUP_OPERATORS,
+        )
+        self.client.force_login(operator)
+
+        response = self.client.get(reverse("item_console"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-can-add-item="false"')
+        self.assertContains(response, 'data-can-change-item="false"')
+        self.assertContains(response, 'data-can-add-family="false"')
+        self.assertContains(response, 'data-can-change-family="false"')
+
+    def test_operator_manage_api_reports_read_only_permissions(self):
+        operator = make_warehouse_user(
+            "operator-perms@example.com",
+            group_name=GROUP_OPERATORS,
+        )
+        self.client.force_login(operator)
+
+        payload = self.client.get(reverse("manage_item_list")).json()
+
+        self.assertEqual(
+            payload["permissions"],
+            {
+                "add_item": False,
+                "change_item": False,
+                "add_family": False,
+                "change_family": False,
+            },
+        )
+
+    def test_admin_console_page_shows_write_flags(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("item_console"))
+
+        self.assertContains(response, 'data-can-add-item="true"')
+        self.assertContains(response, 'data-can-change-item="true"')
+        self.assertContains(response, 'data-can-add-family="true"')
+        self.assertContains(response, 'data-can-change-family="true"')
+
+    def test_admin_manage_api_reports_write_permissions(self):
+        self.client.force_login(self.staff_user)
+
+        payload = self.client.get(reverse("manage_item_list")).json()
+
+        self.assertEqual(
+            payload["permissions"],
+            {
+                "add_item": True,
+                "change_item": True,
+                "add_family": True,
+                "change_family": True,
+            },
+        )
+
     def test_staff_manage_api_includes_inactive_items(self):
         active = self.create_test_item(self.staff_user, description="Visible")
         inactive = self.create_test_item(

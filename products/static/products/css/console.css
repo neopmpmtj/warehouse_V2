@@ -462,6 +462,15 @@ input[type="search"] {
     margin-bottom: 0.65rem;
 }
 
+body[data-can-add-item="false"] #new-item,
+body[data-can-add-family="false"] #new-family,
+body[data-can-add-family="false"] #new-family-inline,
+body[data-can-change-item="false"] #bulk-action,
+body[data-can-change-item="false"] #bulk-apply,
+body[data-can-change-item="false"] .col-check {
+    display: none !important;
+}
+
 @media (max-width: 900px) {
     .topbar,
     .toolbar {

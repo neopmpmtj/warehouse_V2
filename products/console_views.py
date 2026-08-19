@@ -11,7 +11,7 @@ from accounts.groups import ADD_FAMILY, ADD_ITEM, CHANGE_FAMILY, CHANGE_ITEM
 from logging_utils import get_logger
 
 from .models import FamilyProduct, Item
-from .permissions import catalog_required, deny_unless
+from .permissions import catalog_permissions, catalog_required, deny_unless
 from .services import (
     DeactivateReasonRequiredError,
     DuplicateFamilyNameError,
@@ -114,7 +114,7 @@ def _unit_choices():
     ]
 
 
-def _console_payload():
+def _console_payload(request):
     items = get_items(active_only=False)
     return {
         "items": [_serialize_item(item) for item in items],
@@ -124,6 +124,7 @@ def _console_payload():
         ],
         "units": _unit_choices(),
         "vat_rates": [_serialize_vat_rate(vr) for vr in get_vat_rates()],
+        "permissions": catalog_permissions(request.user),
     }
 
 
@@ -183,7 +184,7 @@ def item_console(request):
 @require_http_methods(["GET", "POST"])
 def manage_item_list(request):
     if request.method == "GET":
-        return JsonResponse(_console_payload())
+        return JsonResponse(_console_payload(request))
 
     denied = deny_unless(request, ADD_ITEM)
     if denied:

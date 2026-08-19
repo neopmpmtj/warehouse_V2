@@ -3,13 +3,22 @@ from functools import wraps
 from django.contrib.auth.views import redirect_to_login
 from django.http import HttpResponseForbidden, JsonResponse
 
-from accounts.groups import VIEW_ITEM
+from accounts.groups import ADD_FAMILY, ADD_ITEM, CHANGE_FAMILY, CHANGE_ITEM, VIEW_ITEM
 
 
 def can_view_catalog(user):
     if not getattr(user, "is_authenticated", False) or not getattr(user, "pk", None):
         return False
     return user.has_perm(VIEW_ITEM)
+
+
+def catalog_permissions(user):
+    return {
+        "add_item": user.has_perm(ADD_ITEM),
+        "change_item": user.has_perm(CHANGE_ITEM),
+        "add_family": user.has_perm(ADD_FAMILY),
+        "change_family": user.has_perm(CHANGE_FAMILY),
+    }
 
 
 def can_manage_catalog(user):
