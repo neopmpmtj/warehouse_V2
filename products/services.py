@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.db import IntegrityError, transaction
+from django.db import DataError, IntegrityError, transaction
 
 from logging_utils import get_logger
 
@@ -150,14 +150,20 @@ def _log_item_change(item, user, action, changes, reason=""):
 
 def _save_item(item, update_fields=None):
     try:
-        if update_fields is None:
-            item.save()
-        else:
-            item.save(update_fields=update_fields)
-    except IntegrityError as exc:
-        if "unique_item_internal_code_when_set" in str(exc):
-            raise DuplicateInternalCodeError(item.internal_code) from exc
+        with transaction.atomic():
+            item.full_clean(exclude=None, validate_unique=False, validate_constraints=False)
+            if update_fields is None:
+                item.save()
+            else:
+                item.save(update_fields=update_fields)
+    except IntegrityError:
+        validate_internal_code_available(
+            item.internal_code,
+            exclude_item_id=item.pk,
+        )
         raise
+    except DataError as exc:
+        raise ValidationError(f"Invalid value: {exc}") from exc
 
 
 @transaction.atomic
@@ -333,6 +339,18 @@ def reactivate_item(user, item, reason=""):
     return item
 
 
+@transaction.atomic
+def bulk_deactivate_items(user, items, reason=""):
+    for item in items:
+        deactivate_item(user, item, reason=reason)
+
+
+@transaction.atomic
+def bulk_reactivate_items(user, items, reason=""):
+    for item in items:
+        reactivate_item(user, item, reason=reason)
+
+
 def get_items(active_only=True, family=None):
     queryset = Item.objects.select_related(
         "family", "vat_rate",
@@ -383,15 +401,20 @@ def validate_family_name_available(name, exclude_family_id=None):
 
 def _save_family(family, update_fields=None):
     try:
-        if update_fields is None:
-            family.save()
-        else:
-            family.save(update_fields=update_fields)
-    except IntegrityError as exc:
-        message = str(exc).lower()
-        if "familyproduct_name" in message or "unique_familyproduct_name_ci" in message:
-            raise DuplicateFamilyNameError(family.name) from exc
+        with transaction.atomic():
+            family.full_clean(exclude=None, validate_unique=False, validate_constraints=False)
+            if update_fields is None:
+                family.save()
+            else:
+                family.save(update_fields=update_fields)
+    except IntegrityError:
+        validate_family_name_available(
+            family.name,
+            exclude_family_id=family.pk,
+        )
         raise
+    except DataError as exc:
+        raise ValidationError(f"Invalid value: {exc}") from exc
 
 
 def _log_family_change(family, user, action, changes, reason=""):
@@ -530,15 +553,20 @@ def _normalize_supplier_email(email):
 
 def _save_supplier(supplier, update_fields=None):
     try:
-        if update_fields is None:
-            supplier.save()
-        else:
-            supplier.save(update_fields=update_fields)
-    except IntegrityError as exc:
-        message = str(exc).lower()
-        if "unique_supplier_name_ci" in message or "supplier_name" in message:
-            raise DuplicateSupplierNameError(supplier.name) from exc
+        with transaction.atomic():
+            supplier.full_clean(exclude=None, validate_unique=False, validate_constraints=False)
+            if update_fields is None:
+                supplier.save()
+            else:
+                supplier.save(update_fields=update_fields)
+    except IntegrityError:
+        validate_supplier_name_available(
+            supplier.name,
+            exclude_supplier_id=supplier.pk,
+        )
         raise
+    except DataError as exc:
+        raise ValidationError(f"Invalid value: {exc}") from exc
 
 
 def _log_supplier_change(supplier, user, action, changes, reason=""):

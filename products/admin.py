@@ -20,11 +20,11 @@ from .services import (
     FamilyNameRequiredError,
     InvalidSupplierEmailError,
     SupplierNameRequiredError,
+    bulk_deactivate_items,
+    bulk_reactivate_items,
     create_family,
     create_item,
     create_supplier,
-    deactivate_item,
-    reactivate_item,
     update_family,
     update_item,
     update_supplier,
@@ -235,8 +235,7 @@ class ItemAdmin(admin.ModelAdmin):
                     messages.ERROR,
                 )
                 return None
-            for item in queryset:
-                deactivate_item(request.user, item, reason=reason)
+            bulk_deactivate_items(request.user, queryset, reason=reason)
             self.message_user(
                 request,
                 f"Deactivated {queryset.count()} item(s).",
@@ -264,8 +263,7 @@ class ItemAdmin(admin.ModelAdmin):
                     messages.ERROR,
                 )
                 return None
-            for item in queryset:
-                reactivate_item(request.user, item, reason=reason)
+            bulk_reactivate_items(request.user, queryset, reason=reason)
             self.message_user(
                 request,
                 f"Reactivated {queryset.count()} item(s).",

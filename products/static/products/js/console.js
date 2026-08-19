@@ -18,6 +18,7 @@ const state = {
     familyHistoryEntries: [],
     supplierHistoryId: null,
     supplierHistoryEntries: [],
+    busy: false,
 };
 
 let familyHistoryRequestId = 0;
@@ -67,6 +68,10 @@ function t(key, vars) {
 function csrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.getAttribute("content") : "";
+}
+
+function isBusy() {
+    return state.busy;
 }
 
 function catalogPermissions() {
@@ -737,6 +742,10 @@ async function promptCreateFamily(showHelp) {
     if (name === null) {
         return null;
     }
+    if (isBusy()) {
+        return null;
+    }
+    state.busy = true;
     try {
         const data = await api(FAMILY_API, {
             method: "POST",
@@ -751,6 +760,8 @@ async function promptCreateFamily(showHelp) {
     } catch (error) {
         showBanner(error.message, true);
         return null;
+    } finally {
+        state.busy = false;
     }
 }
 
@@ -761,6 +772,10 @@ async function toggleFamilyActive(family) {
     if (family.is_active && !window.confirm(t("confirmDeactivateFamily"))) {
         return;
     }
+    if (isBusy()) {
+        return;
+    }
+    state.busy = true;
     try {
         const data = await api(`${FAMILY_API}${family.id}/`, {
             method: "PATCH",
@@ -773,6 +788,8 @@ async function toggleFamilyActive(family) {
         }
     } catch (error) {
         showBanner(error.message, true);
+    } finally {
+        state.busy = false;
     }
 }
 
@@ -964,6 +981,10 @@ async function promptSupplierForm(supplier) {
     if (payload === null) {
         return null;
     }
+    if (isBusy()) {
+        return null;
+    }
+    state.busy = true;
     try {
         const data = creating
             ? await api(SUPPLIER_API, {
@@ -983,6 +1004,8 @@ async function promptSupplierForm(supplier) {
     } catch (error) {
         showBanner(error.message, true);
         return null;
+    } finally {
+        state.busy = false;
     }
 }
 
@@ -993,6 +1016,10 @@ async function toggleSupplierActive(supplier) {
     if (supplier.is_active && !window.confirm(t("confirmDeactivateSupplier"))) {
         return;
     }
+    if (isBusy()) {
+        return;
+    }
+    state.busy = true;
     try {
         const data = await api(`${SUPPLIER_API}${supplier.id}/`, {
             method: "PATCH",
@@ -1005,6 +1032,8 @@ async function toggleSupplierActive(supplier) {
         }
     } catch (error) {
         showBanner(error.message, true);
+    } finally {
+        state.busy = false;
     }
 }
 
@@ -1025,6 +1054,9 @@ async function startNewItem() {
 }
 
 async function createFamilyFromItemForm() {
+    if (isBusy()) {
+        return;
+    }
     const family = await promptCreateFamily(false);
     if (!family) {
         return;
@@ -1259,7 +1291,13 @@ async function saveItem(event) {
     if (itemId ? !perms.changeItem : !perms.addItem) {
         return;
     }
+    if (isBusy()) {
+        return;
+    }
     clearBanner();
+    const saveButton = document.getElementById("item-save");
+    saveButton.disabled = true;
+    state.busy = true;
     const payload = formPayload();
     try {
         let data;
@@ -1295,6 +1333,9 @@ async function saveItem(event) {
         refreshDrawerLabels();
     } catch (error) {
         showBanner(error.message, true);
+    } finally {
+        state.busy = false;
+        saveButton.disabled = false;
     }
 }
 
@@ -1451,9 +1492,13 @@ async function toggleLifecycle(item) {
     if (reason === null) {
         return;
     }
+    if (isBusy()) {
+        return;
+    }
     const path = item.is_active
         ? `${API_ROOT}${item.id}/deactivate/`
         : `${API_ROOT}${item.id}/reactivate/`;
+    state.busy = true;
     try {
         const data = await api(path, {
             method: "POST",
@@ -1467,6 +1512,8 @@ async function toggleLifecycle(item) {
         }
     } catch (error) {
         showBanner(error.message, true);
+    } finally {
+        state.busy = false;
     }
 }
 
@@ -1496,6 +1543,12 @@ async function applyBulk() {
     if (reason === null) {
         return;
     }
+    if (isBusy()) {
+        return;
+    }
+    const bulkButton = document.getElementById("bulk-apply");
+    bulkButton.disabled = true;
+    state.busy = true;
     try {
         const data = await api(`${API_ROOT}bulk/`, {
             method: "POST",
@@ -1512,6 +1565,9 @@ async function applyBulk() {
         renderTable();
     } catch (error) {
         showBanner(error.message, true);
+    } finally {
+        state.busy = false;
+        bulkButton.disabled = false;
     }
 }
 

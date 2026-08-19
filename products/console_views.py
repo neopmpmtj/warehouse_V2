@@ -28,6 +28,8 @@ from .services import (
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
     SupplierNameRequiredError,
+    bulk_deactivate_items,
+    bulk_reactivate_items,
     create_family,
     create_item,
     create_supplier,
@@ -357,7 +359,6 @@ def manage_item_bulk(request):
         message = exc.messages[0] if isinstance(exc, ValidationError) and getattr(exc, "messages", None) else str(exc)
         return _json_error(message)
 
-    action = deactivate_item if action_name == "deactivate" else reactivate_item
     reason = str(payload.get("reason", ""))
     items = list(
         Item.objects.filter(pk__in=item_ids).select_related("family")
@@ -367,9 +368,9 @@ def manage_item_bulk(request):
     if missing:
         return _json_error(f"Item not found: {', '.join(str(entry) for entry in missing)}.", status=404)
 
+    action = bulk_deactivate_items if action_name == "deactivate" else bulk_reactivate_items
     try:
-        for item in items:
-            action(request.user, item, reason=reason)
+        action(request.user, items, reason=reason)
     except (DeactivateReasonRequiredError, ReactivateReasonRequiredError) as exc:
         return _json_error(exc.messages[0], code=exc.code)
 
