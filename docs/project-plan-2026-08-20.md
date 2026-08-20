@@ -3,7 +3,7 @@
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
 - **Last updated:** 20 August 2026
-- **Current phase:** Phase 2 (procurement) — in progress
+- **Current phase:** Phase 2 (procurement) complete ✅ — next: Phase 3 (goods receipt + stock)
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is deferred — see [Phase 5](#phase-5--branches--internal-request-deferred).
 
 ---
@@ -126,7 +126,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 |-------|------|--------|------------|
 | 0 | Catalogue identity + auth + console | ✅ **Done** | — |
 | 1 | **Pricing — selling prices + supplier price list** | ✅ Done | Phase 0 |
-| 2 | Procurement — purchase orders, discounts, approval | 🔵 In progress | Phase 1 |
+| 2 | Procurement — purchase orders, discounts, approval | ✅ Done | Phase 1 |
 | 3 | Goods receipt + stock ledger | ⚪ Not started | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ⚪ Not started | Phase 3 |
 | 5 | Branches + internal request + branch catalog | ⏸ Deferred | Phase 4 |
@@ -238,7 +238,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ---
 
-## 9. Phase 2 — Procurement (purchase orders) 🔵
+## 9. Phase 2 — Procurement (purchase orders) ✅
 
 **Goal:** warehouse raises a PO to a supplier; lines auto-fill cost from `SupplierItemPrice` (editable); 3 discount types; approval workflow; email seam.
 
@@ -261,9 +261,9 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ### Definition of Done
 
-- [ ] PO with lines, auto-cost from supplier list, editable.
-- [ ] Approval workflow with audit.
-- [ ] Email stub present (no SMTP in dev).
+- [x] PO with lines, auto-cost from supplier list, editable.
+- [x] Approval workflow with audit.
+- [x] Email stub present (no SMTP in dev).
 
 ---
 

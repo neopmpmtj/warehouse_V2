@@ -1,20 +1,18 @@
 # CentCompras — Agent instructions
 
-Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Branch staff browse a product catalogue from a phone browser. **Inbound stock** (supplier purchases → product quantity) is the next product-side design; **branch orders** wait until stock can be received.
+Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders are done. **Goods receipt + stock ledger is the next phase (Phase 3)**; branch orders wait until stock exists.
 
-**Read [`README.md` → Project status (handoff)](README.md#project-status-handoff) first** for what is done vs pending.
-
-Staff product console (this phase): [`docs/product-console-session-2026-08-18.md`](docs/product-console-session-2026-08-18.md) — request, stack, decisions, bugs. Follow-ons: [sort + lifecycle](docs/product-console-session-2026-08-18-sort-lifecycle.md), [family + supplier](docs/product-console-session-2026-08-18-family-supplier.md), [family + supplier audit](docs/product-console-session-2026-08-18-family-supplier-audit.md).
+**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md` → Project status](README.md#project-status-handoff) and [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for detail.
 
 ## Session handoff (August 2026)
 
-**Done:** Auth (email login + warehouse groups), catalog management (admin + audit + soft delete), staff item console (`/manage/items/` — sort, inactive-by-default create, family/supplier drawers), family/supplier PostgreSQL audit logs, **pricing** (3 manual selling prices on `Item` + `SupplierItemPrice` cost table with audit), dev seed script with **warehouse users**.
+**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), dev seed script.
 
-**Not done:** inbound stock / procurement app, `orders` app, offline order queue, shared page chrome, branch phone UX, console polish, production OAuth/deployment.
+**Not done:** goods receipt + stock ledger (Phase 3), `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
 
-**Next:** Keep enhancing items, families, and suppliers. Quantity is **not** typed on the item. Do **not** implement `orders/` or the tenancy-doc Order stub. Hold shared chrome, `/` restyle, and console polish for dedicated sessions.
+**Next (Phase 3):** goods receipt + stock ledger — recording received goods against an approved PO writes stock. See [`docs/handoff.md`](docs/handoff.md) and plan §10. Do **not** implement `orders/` or the tenancy-doc Order stub.
 
-**Stock today:** `Item` has **no stock** field (inbound receipts are a later design). Selling prices are **manual** (retail/wholesale/special); **cost prices are dynamic** from `SupplierItemPrice` (supplier × item, one primary).
+**Stock today:** `Item` has **no stock** field. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice`. PO lines are **rejected** if the supplier has no price for the item; `approved_net/vat/gross` are frozen at approval.
 
 ## User roles (do not confuse these)
 
@@ -34,9 +32,10 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 
 | App | Purpose |
 |-----|---------|
-| `accounts` | Custom `User` (email login), login/logout |
-| `branches` | ⚠️ **Not built yet** — deferred (`Branch`, `BranchMembership`, middleware, picker are designed in `docs/warehouse-tenancy-setup.md` but no `branches/` app exists) |
-| `products` | Catalogue model, service layer, API, CLI, offline web UI, staff admin, staff console, tests |
+| `accounts` | Custom `User` (email login, timezone), login/logout, warehouse groups, timezone middleware |
+| `products` | Catalogue + pricing: model, service layer, API, staff admin, staff console, tests |
+| `procurement` | Purchase orders: models, service layer, console API, admin, tests |
+| `branches` | ⚠️ **Not built yet** — deferred (designed in `docs/warehouse-tenancy-setup.md`) |
 | `logging_utils` | `get_logger("centcompras.<app>")`, rotating logs in `logs/` |
 
 ### Auth
@@ -62,22 +61,23 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 ### Logging
 
 - `logging_utils` — console + `logs/*.log` (gitignored)
-- Loggers: `centcompras.products`, `centcompras.branches`, `centcompras.django`, etc.
+- Loggers: `centcompras.products`, `centcompras.procurement`, `centcompras.accounts`, `centcompras.django`, etc.
 - Config: `logging_utils/logging_config.py`
 
-PostgreSQL is the source of truth. IndexedDB is a read-only local cache.
+PostgreSQL is the source of truth.
 
 ## Not implemented yet
 
-- Inbound stock / procurement (supplier receipt → item quantity) — **later design**
-- `orders` app and order workflow (**after** inbound stock)
+- **Goods receipt + stock ledger** (Phase 3, next) — received goods write stock
+- Stock as a movement ledger (no stock exists yet)
+- `orders` app and order workflow (**after** stock)
+- Branches app (`Branch`, `BranchMembership`, middleware, picker)
 - Order business rules not locked (stock timing, cart shape, cancel policy)
 - Shared page chrome; branch phone-catalogue UX; staff console polish (dedicated sessions)
-- Integration tests for auth, branch middleware, offline catalogue
-- Tests for `accounts` and `branches` (stubs only)
+- Integration tests
 - Google OAuth, public signup, password reset
-- Offline order queue and sync
-- In-app branch switcher
+- Email automation (supplier notification — stub exists)
+- Offline order queue and sync; in-app branch switcher
 - Catalog extras: categories, vector/LLM search, bulk import
 
 Full list: [`README.md` → What is explicitly not built yet](README.md#what-is-explicitly-not-built-yet)
@@ -89,9 +89,8 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 ```
 
 - Business logic in `services.py`, not views or management commands
-- Tenant permission checks via `branches/permissions.py`; catalog management via Django groups + `products.view/add/change/delete_*`
-- Use `request.active_branch` (set by middleware) for branch-scoped features
-- Pass pre-fetched `memberships` to `get_active_branch(request, memberships)` to avoid duplicate queries
+- Catalog/PO management via Django groups + model permissions (both `products` and `procurement` apps)
+- Branch tenancy (`branches`, `request.active_branch`) is **future** — not built yet
 - Plain Django + plain JavaScript — no React, Vue
 - One concept per phase; no large application dumps
 
@@ -102,15 +101,15 @@ source .venv/bin/activate
 cp config/settings.example.py config/settings.py   # first time only
 python manage.py migrate
 python manage.py createsuperuser                 # optional site admin
-./scripts/seed_dev_data.sh                         # branches, users, warehouse, products
+./scripts/seed_dev_data.sh                         # warehouse users, families, suppliers, items, supplier prices
 python manage.py runserver
-python manage.py test products accounts branches
+python manage.py test products accounts procurement
 ```
 
 **Tests:** always use the project virtualenv — do not use system `python`/`python3`. Either activate first (`source .venv/bin/activate`) or invoke the venv interpreter directly:
 
 ```bash
-.venv/bin/python manage.py test products accounts branches
+.venv/bin/python manage.py test products accounts procurement
 ```
 
 Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, not both).
@@ -122,6 +121,7 @@ Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, n
 
 ## Before large changes
 
-1. [`README.md`](README.md) — project status and scope
-2. [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) — tenancy (done); Order sketch §6–7 is **not** the next build
-3. [`products/products_docs/aux_instructions.md`](products/products_docs/aux_instructions.md) — development pace
+1. [`docs/handoff.md`](docs/handoff.md) — state + decisions + next task
+2. [`README.md`](README.md) — project status and scope
+3. [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — phased plan
+4. [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) — tenancy design (**branches not built**); Order sketch §6–7 is **not** the next build

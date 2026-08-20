@@ -12,15 +12,17 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ### Where we stand
 
-The **item catalogue + pricing** is the current module: warehouse staff create and manage **items**, **families**, and **suppliers** at `/manage/items/`. Items start inactive until Genesis and carry **three manual selling prices** (retail / wholesale / special). **Cost prices are dynamic**, held per supplier in a `SupplierItemPrice` table (the source for later purchase orders). There is **no stock** — quantity waits for the inbound-receipt design. Branch orders wait until then.
+**Purchase orders (Phase 2) are done.** Warehouse staff raise purchase orders against suppliers: lines auto-cost from the supplier's price list (a line is **rejected** if the supplier has no price for the item), three discount types (commercial / financial / rappel), an approval workflow (draft → submitted → approved/rejected → received → closed), and an approved-totals snapshot (net / VAT / gross) frozen at approval. Items and pricing (Phase 1) are also complete: items carry three **manual** selling prices and suppliers carry **cost prices** in `SupplierItemPrice`.
 
-Held for later dedicated sessions (do not start in passing): shared page chrome, branch phone-catalogue UX, staff-console polish.
+**There is still no stock** — quantity does not exist yet. The **next phase is the goods receipt + stock ledger**: recording goods received against an approved PO writes stock. Branch orders wait until then.
+
+> ▶ **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state + locked decisions + the exact next task.
 
 ### Completed
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| **Product catalogue MVP** | Done | Model, API, offline HTML/JS, Service Worker, IndexedDB — see [`products/README.md`](products/README.md) |
+| **Product catalogue MVP** | Done | Model, API — see [`products/README.md`](products/README.md) |
 | **Auth foundation** | Done | `accounts` (email login), warehouse groups |
 | **Login-protected catalogue** | Done | `/` and `/api/products/` require session; API returns 401 when logged out |
 | **Centralized logging** | Done | `logging_utils` → rotating files in `logs/` |
@@ -29,7 +31,9 @@ Held for later dedicated sessions (do not start in passing): shared page chrome,
 | **Staff item console** | Done | `/manage/items/` — table, filters, column sort, inactive-by-default create + Genesis, family/supplier drawers, EN/pt-PT, light/dark |
 | **Family & supplier priors** | Done | Console create/deactivate; case-insensitive unique names (no rename in the console UI); PostgreSQL audit logs |
 | **Pricing (selling + supplier cost)** | Done | 3 manual selling prices on `Item`; `SupplierItemPrice` (supplier × item cost, one primary) + audit; console, admin, API, seed |
-| **Dev seed script** | Done | [`scripts/seed_dev_data.sh`](scripts/seed_dev_data.sh) — branches, branch users, **warehouse user**, sample products |
+| **Purchase orders (procurement)** | Done | New `procurement` app: `PurchaseOrder` + lines, 3 discount types, approval workflow, approved totals snapshot (net/VAT/gross), email stub, console at `/manage/purchase-orders/` |
+| **Timezone + dates** | Done | Per-user timezone (default `Europe/Lisbon`) + middleware; DD/MM/YYYY dates |
+| **Dev seed script** | Done | [`scripts/seed_dev_data.sh`](scripts/seed_dev_data.sh) — warehouse users, families, suppliers, items, supplier prices |
 | **Project setup docs** | Done | Root README, `requirements.txt`, `config/settings.example.py`, `AGENTS.md`, `.cursor/` rules |
 
 **Design choices locked in for later phases:**
@@ -40,6 +44,7 @@ Held for later dedicated sessions (do not start in passing): shared page chrome,
 - Users are provisioned in admin or seed script — no public signup.
 - Orders (future, after inbound stock) will be **branch-scoped** with `branch` + `created_by` FKs. The sketch in [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) §6 is **not** an implementation spec (`item_name` is leftover).
 - **Items have no stock field** (inbound receipts will become the source of quantity later). Selling prices are **manual**; **cost prices are dynamic** from `SupplierItemPrice`.
+- **Purchase orders:** status `draft → submitted → approved/rejected → received → closed`; 3 line discounts (commercial/financial/rappel, combined ≤ 100%); a PO line is **rejected** if the supplier has no price for the item (no cross-supplier fallback); `approved_net`/`approved_vat`/`approved_gross` are frozen at approval.
 
 ### User roles (important — practice with these)
 
@@ -54,17 +59,19 @@ Held for later dedicated sessions (do not start in passing): shared page chrome,
 
 After `./scripts/seed_dev_data.sh`, all seeded users share password **`devpass123`**.
 
+**Procurement permissions:** warehouse **admins** create + **approve** POs; **managers** create + submit (no approve); **operators** view only.
+
 ### Not started / pending
 
 | Area | Priority | Notes |
 |------|----------|-------|
-| **Inbound stock / procurement** | **Next (design)** | Warehouse buys from suppliers; a receipt should **write product stock**, not a person typing it on the product row. No app yet — agree the smallest first slice before coding. |
+| **Goods receipt + stock ledger** | **Next (Phase 3)** | Recording goods received against an approved PO writes stock; stock becomes a movement ledger (`StockMovement`) with a cached `Item.quantity`. No app yet — see [`docs/handoff.md`](docs/handoff.md). |
 | **Orders workflow** | After inbound stock | Branch requests against central stock. Sketch only: [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) §6–7. Do not implement the stub `item_name` model. |
 | **Order business rules** | Before coding orders | Multi-line cart vs single line; stock decrement timing; cancel/edit policy |
 | **Shared page chrome** | Later session | Same header/CSS on login, branch picker, `/`, so new pages do not look like a different app |
 | **Branch phone catalogue UX** | Later session | Search, family, unit, human stock/price — hold; `/` stays a scaffold until that session |
 | **Staff console polish** | Later session | History diffs, default Active filter, Genesis copy — hold |
-| **Tests (accounts/branches)** | Later | `accounts/tests.py`, `branches/tests.py` still stubs; `products/tests.py` covers catalogue + console (~86 tests) |
+| **Tests** | Later | `products` + `procurement` + `accounts` suites green (~156 tests); integration tests not started |
 | **Integration tests** | Later | Full auth → branch middleware → catalogue API → offline flow |
 | **Google OAuth** | Production | `django-allauth` or similar |
 | **Public signup / password reset** | Later | |
@@ -74,28 +81,30 @@ After `./scripts/seed_dev_data.sh`, all seeded users share password **`devpass12
 
 ### Recommended next session
 
-1. Read this section, [User roles](#user-roles-important--practice-with-these), and the staff console session reports: [`docs/product-console-session-2026-08-18.md`](docs/product-console-session-2026-08-18.md), [sort + lifecycle](docs/product-console-session-2026-08-18-sort-lifecycle.md), [family + supplier](docs/product-console-session-2026-08-18-family-supplier.md), [family + supplier audit](docs/product-console-session-2026-08-18-family-supplier-audit.md).
-2. Fresh environment: `python manage.py migrate` then `./scripts/seed_dev_data.sh`.
-3. Practice: warehouse user → `/manage/items/`; create a family if needed; new item starts inactive until Genesis; Families / Suppliers drawers show History.
-4. **Design inbound stock** (procurement / goods receipt) only after items exist: how a supplier purchase will later write quantity. Do not start `orders/` until stock can be received.
-5. Do **not** in passing: restyle `/`, polish the staff console, or implement the tenancy-doc `Order` stub.
+1. Read [`docs/handoff.md`](docs/handoff.md) (condensed state + decisions) and the plan [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md).
+2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and create a superuser with `createsuperuser` (the seed does not create one).
+3. Practice: warehouse user → `/manage/items/` (items, families, suppliers, supplier prices) and `/manage/purchase-orders/` (create PO → add line → submit → approve).
+4. **Start Phase 3 (goods receipt + stock ledger)** — see plan §10 and the handoff's "exact next task".
+5. Do **not** in passing: branches, orders, offline, email, shared page chrome.
 
-### Key files (catalog — current module)
+### Key files
 
 ```text
-products/models.py           Item, FamilyProduct, Supplier, VatRate, change-log models
-products/services.py         create/update/deactivate/reactivate items, families, suppliers
-products/permissions.py      view/add/change checks on /api/manage/
-accounts/groups.py           warehouse_admins / managers / data_operators + superuser-only /admin/
-products/admin.py            superuser-only admin + audit inlines
-products/views.py            staff dashboard at `/`
-products/console_views.py    Staff console page + /api/manage/ items, families, suppliers
-products/tests.py            Catalog + console tests — run: python manage.py test products
+products/models.py           Item, FamilyProduct, Supplier, VatRate, SupplierItemPrice, change-log models
+products/services.py         item / family / supplier / supplier-price mutations
+products/console_views.py    item console API (/api/manage/*)
+products/tests.py            catalogue + pricing tests
+procurement/models.py        PurchaseOrder, PurchaseOrderLine, PurchaseOrderChangeLog
+procurement/services.py      PO lifecycle, lines, discounts, approval, approved-totals snapshot
+procurement/console_views.py PO console API
+procurement/tests.py         procurement tests
+accounts/groups.py           warehouse groups (products + procurement apps)
+accounts/middleware.py       per-user timezone
 products/management/commands/seed_dev_data.py
 scripts/seed_dev_data.sh     wrapper: migrate + seed
 ```
 
-Migrations: `products/0001_initial.py` through `0005` (inactive-by-default, CI unique names, family/supplier audit). Run `migrate` after pull if schema changed.
+Migrations: `products/0001–0004`, `procurement/0001–0002` (approved totals), `accounts/0001–0002` (timezone). Run `migrate` after pull if schema changed.
 
 ### Development philosophy
 
@@ -105,12 +114,11 @@ One concept per phase. Reusable `services.py` layer. Plain Django + plain JavaSc
 
 ## Business scenario
 
-- A central warehouse holds the master product catalogue and stock levels. **Today, stock is typed on the product.** The next product-side work is recording supplier receipts so that quantity is filled from purchases, not from the product form.
-- Branch users access a lightweight web app (plain HTML + JavaScript) from their phones. **Branch orders wait** until inbound stock exists.
-- Users may travel through areas with little or no mobile data, so the client must work **offline** for catalogue browsing (and, in a future phase, for queuing orders).
-- PostgreSQL on the server is the **source of truth**. The browser's IndexedDB is a **read-only local cache** of the last successfully downloaded catalogue.
+- A central warehouse holds the master product catalogue and stock levels. **Stock does not exist yet** — the next phase (goods receipt) records supplier receipts so quantity is filled from purchases, not typed on a product.
+- Branch users (satellite branches) will later order against central stock. Branches and orders are **future** (deferred).
+- PostgreSQL on the server is the **source of truth**.
 
-Warehouse staff manage the catalogue at `/manage/items/` via three Django groups (`warehouse_admins`, `warehouse_managers`, `warehouse_data_operators`). Django admin is reserved for superusers.
+Warehouse staff manage the catalogue at `/manage/items/` and purchase orders at `/manage/purchase-orders/` via three Django groups (`warehouse_admins`, `warehouse_managers`, `warehouse_data_operators`). Django admin is reserved for superusers.
 
 ---
 
@@ -121,7 +129,7 @@ Warehouse staff manage the catalogue at `/manage/items/` via three Django groups
 | Backend | Python, Django 6.1 |
 | Database | PostgreSQL (`centcompras_db`) |
 | Frontend | Plain HTML, plain JavaScript |
-| Offline | Service Worker (app shell), IndexedDB (catalogue data) |
+| Offline | (future — not implemented) |
 | Logging | `logging_utils` — console + rotating files in `logs/` |
 
 No React, Vue, or similar frontend framework.
@@ -172,8 +180,14 @@ Production will use Google OAuth (not implemented in dev — email/password logi
 ### Item console (browser)
 
 - Staff dashboard at `/` (catalogue view permission required).
-- Item console at `/manage/items/` — table, filters, family and supplier drawers.
-- The console is online-only (not part of a catalogue app-shell cache).
+- Item console at `/manage/items/` — table, filters, family and supplier drawers, selling prices, supplier prices.
+- The console is online-only.
+
+### Purchase orders (browser)
+
+- Purchase-order console at `/manage/purchase-orders/` — list, create, line editor (auto-cost from the supplier price list; a line is rejected if the supplier has no price for the item), 3 discount types, status workflow, approved totals snapshot (net/VAT/gross), history, EN/pt-PT.
+- Permissions: admins create + approve; managers create + submit; operators view.
+- Supplier email notification on approval is a **stub** (Phase 6).
 
 ### URL layout
 
@@ -181,12 +195,14 @@ Production will use Google OAuth (not implemented in dev — email/password logi
 |------|---------|
 | `/` | Staff dashboard (catalogue view permission) |
 | `/manage/items/` | Warehouse item console (view permission) |
+| `/manage/purchase-orders/` | Purchase-order console (view permission) |
 | `/api/manage/items/` | Warehouse item JSON API (view; writes need add/change) |
 | `/api/manage/families/` | Warehouse family JSON API (view; writes need add/change) |
 | `/api/manage/suppliers/` | Warehouse supplier JSON API (view; writes need add/change) |
+| `/api/manage/supplier-prices/` | Supplier price JSON API (view; writes need add/change) |
+| `/api/manage/purchase-orders/` | Purchase-order JSON API (view; writes need add/change; approve needs `can_approve`) |
 | `/accounts/login/` | Email + password login |
 | `/accounts/logout/` | Log out |
-| `/service-worker.js` | Parked uninstall stub |
 | `/admin/` | Django admin (**superuser only**) |
 
 ---
@@ -197,22 +213,15 @@ Production will use Google OAuth (not implemented in dev — email/password logi
 warehouse/
 ├── manage.py
 ├── requirements.txt
-├── config/
-│   ├── settings.example.py   # copy to settings.py locally
-│   ├── urls.py
-│   └── ...
-├── accounts/                 # custom User, login/logout
-├── branches/                 # Branch, BranchMembership, active branch middleware
+├── config/                   # settings.example.py (copy to settings.py), urls.py
+├── accounts/                 # custom User (email, timezone), login/logout, groups, middleware
+├── products/                 # catalogue + pricing app
+├── procurement/              # purchase orders app
 ├── logging_utils/            # centralized logging (console + logs/)
-├── AGENTS.md                 # Cursor agent instructions
-├── .cursor/                  # Cursor rules and commands
-├── docs/
-│   └── warehouse-tenancy-setup.md
-└── products/                 # catalogue app
-    ├── models.py
-    ├── services.py
-    ├── views.py
-    └── ...
+├── docs/                     # handoff, plan, code reviews, user manual, tenancy design
+├── scripts/                  # seed_dev_data.sh
+├── AGENTS.md                 # agent instructions
+└── .cursor/                  # Cursor rules and commands
 ```
 
 The `products/README.md` file is a step-by-step record of how the catalogue and offline layer were built.
@@ -390,30 +399,26 @@ Practice logins (after seed): `warehouse@centcompras.dev` (catalog admin), `admi
 ```text
 PostgreSQL
     ↑
-User, Branch, BranchMembership, Product
+User, Item, FamilyProduct, Supplier, SupplierItemPrice, PurchaseOrder(+lines)
     ↑
-services.py / permissions.py
+services.py / permissions.py   (all mutations)
     ↑
-views (login required) → API + HTML
-    ↑
-product_list.js → IndexedDB
-
-Service Worker → caches HTML + JS (app shell, offline page load)
+views (login required) → API + HTML (item console, PO console)
 ```
 
 ---
 
 ## Further reading
 
-- **Start here:** [Project status (handoff)](#project-status-handoff) in this file
-- [`docs/product-console-session-2026-08-18.md`](docs/product-console-session-2026-08-18.md) — staff product console: request, stack, decisions, bugs fixed
-- [`docs/product-console-session-2026-08-18-sort-lifecycle.md`](docs/product-console-session-2026-08-18-sort-lifecycle.md) — column sort, inactive create, Genesis / activate / deactivate presets
-- [`docs/product-console-session-2026-08-18-family-supplier.md`](docs/product-console-session-2026-08-18-family-supplier.md) — family and supplier console priors
-- [`docs/product-console-session-2026-08-18-family-supplier-audit.md`](docs/product-console-session-2026-08-18-family-supplier-audit.md) — family/supplier PostgreSQL audit, History in drawers, leftover 1–3
-- [`products/README.md`](products/README.md) — **historical** catalogue build log and offline checklist; current facts are in this README’s Project status
-- [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) — tenancy design (accounts/branches done); **§6–7** is an Order *sketch*, not the next build; see preamble for inbound stock
-- [`AGENTS.md`](AGENTS.md) — concise instructions for AI agents in Cursor
-- [`products/products_docs/aux_instructions.md`](products/products_docs/aux_instructions.md) — incremental development pace (status synced August 2026)
+- **Start here:** [`docs/handoff.md`](docs/handoff.md) — condensed state + locked decisions + next task
+- [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — phased plan + status tracker
+- [`docs/code-review-2026-08-20.md`](docs/code-review-2026-08-20.md) · [`docs/code-review-audit.md`](docs/code-review-audit.md) — code reviews
+- [`docs/user-manual.md`](docs/user-manual.md) — user manual (item console)
+- [`docs/user-manual-purchase-orders.md`](docs/user-manual-purchase-orders.md) — user manual (purchase orders)
+- [`products/README.md`](products/README.md) — **historical** catalogue build log
+- [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) — tenancy design; **§6–7 Order is a sketch, NOT to implement**
+- [`AGENTS.md`](AGENTS.md) — agent instructions
+- [`products/products_docs/aux_instructions.md`](products/products_docs/aux_instructions.md) — development pace
 
 ---
 
@@ -423,8 +428,8 @@ The following do **not** exist today. The [Project status](#project-status-hando
 
 ### Business features
 
-- Inbound stock / procurement app — recording supplier purchases so `Product.stock` is filled from receipts
-- Stock as a movement ledger (today stock is still typed on the product)
+- **Goods receipt + stock ledger** (Phase 3, next) — recording received goods writes stock
+- Stock as a movement ledger (no stock exists yet)
 - `orders` app — create, list, edit, delete orders (after inbound stock)
 - Shopping cart
 - Customers
@@ -445,13 +450,13 @@ The following do **not** exist today. The [Project status](#project-status-hando
 
 ### Quality & operations
 
-- **Unit tests** — `products/tests.py` covers catalogue and console; `accounts/tests.py` and `branches/tests.py` still stubs
+- **Unit tests** — `products`, `procurement`, `accounts` suites green (~156 tests); integration tests not started
 - **Integration tests** — not started
 - Production deployment and HTTPS
 - PWA manifest / install prompt
 
 ### Planned next major phase
 
-**Inbound stock (procurement / goods receipt):** warehouse purchases from suppliers; a data person records the receipt; product stock is updated from that receipt. Branch **ordering** comes after that, so orders are not placed against zero stock.
+**Goods receipt + stock ledger (Phase 3):** recording goods received against an approved PO writes stock; stock becomes a movement ledger. Branch **ordering** comes after that, so orders are not placed against zero stock.
 
-Ordering (later): branch users create orders online or queue them offline, then sync to the central warehouse with duplicate-safe retries. Builds on existing `Branch`, `BranchMembership`, `permissions.py`, and `request.active_branch`. Do not implement the `item_name` Order stub in the tenancy doc.
+Ordering (later): branch users create orders online or queue them offline, then sync to the central warehouse with duplicate-safe retries. Builds on the future `branches` app (Branch, BranchMembership, permissions, `request.active_branch`). Do not implement the `item_name` Order stub in the tenancy doc.

@@ -2,6 +2,8 @@
 
 **The Item Console** · Version 1.0 · For warehouse staff (admin / manager / operator)
 
+> **Also available:** a **Purchase orders** console at `/manage/purchase-orders/` — see the [Purchase Orders manual](user-manual-purchase-orders.md).
+
 ---
 
 ## Where do I go?
