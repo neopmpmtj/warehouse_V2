@@ -773,11 +773,26 @@ def _log_supplier_item_price_change(
     )
 
 
-def _clear_other_primaries(item, exclude_id=None):
-    queryset = SupplierItemPrice.objects.filter(item=item, primary=True)
+def _clear_other_primaries(item, exclude_id=None, user=None):
+    queryset = SupplierItemPrice.objects.select_for_update().filter(
+        item=item, primary=True
+    )
     if exclude_id is not None:
         queryset = queryset.exclude(pk=exclude_id)
-    queryset.update(primary=False)
+    for other in queryset:
+        other.primary = False
+        _save_supplier_item_price(other, update_fields=["primary", "updated_at"])
+        _log_supplier_item_price_change(
+            other,
+            user,
+            SupplierItemPriceChangeLog.Action.UPDATED,
+            {
+                "primary": {
+                    "old": _serialize_value(True),
+                    "new": _serialize_value(False),
+                },
+            },
+        )
 
 
 @transaction.atomic
@@ -796,7 +811,7 @@ def create_supplier_item_price(supplier, item, cost_price, primary=False, user=N
     _save_supplier_item_price(supplier_item_price)
 
     if primary:
-        _clear_other_primaries(item, exclude_id=supplier_item_price.pk)
+        _clear_other_primaries(item, exclude_id=supplier_item_price.pk, user=user)
 
     _log_supplier_item_price_change(
         supplier_item_price,
@@ -859,7 +874,9 @@ def update_supplier_item_price(supplier_item_price, user=None, **fields):
 
     if "primary" in changes and changes["primary"]["new"] is True:
         _clear_other_primaries(
-            supplier_item_price.item, exclude_id=supplier_item_price.pk
+            supplier_item_price.item,
+            exclude_id=supplier_item_price.pk,
+            user=user,
         )
 
     _log_supplier_item_price_change(

@@ -1599,16 +1599,50 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
     def test_setting_primary_clears_other_primaries(self):
         other_supplier = create_supplier(name="Porto Materials Co")
         first = create_supplier_item_price(
-            self.supplier, self.item, "12.50", primary=True
+            self.supplier, self.item, "12.50", primary=True, user=self.user
         )
+        first_updated_at = first.updated_at
         second = create_supplier_item_price(
-            other_supplier, self.item, "11.00", primary=True
+            other_supplier, self.item, "11.00", primary=True, user=self.user
         )
 
         first.refresh_from_db()
         second.refresh_from_db()
         self.assertTrue(second.primary)
         self.assertFalse(first.primary)
+        self.assertGreater(first.updated_at, first_updated_at)
+
+        demote_log = first.change_logs.get(
+            action=SupplierItemPriceChangeLog.Action.UPDATED
+        )
+        self.assertEqual(demote_log.user, self.user)
+        self.assertEqual(demote_log.changes["primary"]["old"], True)
+        self.assertEqual(demote_log.changes["primary"]["new"], False)
+
+    def test_update_primary_audits_cleared_primaries(self):
+        other_supplier = create_supplier(name="Porto Materials Co")
+        first = create_supplier_item_price(
+            self.supplier, self.item, "12.50", primary=True, user=self.user
+        )
+        second = create_supplier_item_price(
+            other_supplier, self.item, "11.00", primary=False, user=self.user
+        )
+        first_updated_at = first.updated_at
+
+        update_supplier_item_price(second, user=self.user, primary=True)
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertTrue(second.primary)
+        self.assertFalse(first.primary)
+        self.assertGreater(first.updated_at, first_updated_at)
+
+        demote_log = first.change_logs.get(
+            action=SupplierItemPriceChangeLog.Action.UPDATED
+        )
+        self.assertEqual(demote_log.user, self.user)
+        self.assertEqual(demote_log.changes["primary"]["old"], True)
+        self.assertEqual(demote_log.changes["primary"]["new"], False)
 
     def test_get_item_buying_price_prefers_primary_then_cheapest(self):
         other_supplier = create_supplier(name="Porto Materials Co")
