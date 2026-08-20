@@ -13,7 +13,7 @@ class UserAdmin(BaseUserAdmin):
     filter_horizontal = ("groups", "user_permissions")
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("first_name", "last_name")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "timezone")}),
         (
             "Permissions",
             {

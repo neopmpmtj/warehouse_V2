@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
+DEFAULT_USER_TIMEZONE = "Europe/Lisbon"
+
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -42,6 +44,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         ),
     )
     date_joined = models.DateTimeField(auto_now_add=True)
+    timezone = models.CharField(
+        max_length=64,
+        default=DEFAULT_USER_TIMEZONE,
+        help_text=(
+            "IANA timezone name, e.g. Europe/Lisbon (UTC+1 summer / UTC+0 winter) "
+            "or Asia/Singapore (UTC+8). Used for server-rendered dates."
+        ),
+    )
 
     objects = UserManager()
 

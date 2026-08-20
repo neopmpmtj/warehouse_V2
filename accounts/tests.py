@@ -184,3 +184,55 @@ class DjangoAdminAccessTests(TestCase):
         response = self.client.get(reverse("admin:index"))
 
         self.assertIn(response.status_code, (302, 403))
+
+
+class UserTimezoneTests(TestCase):
+    def test_new_user_defaults_to_lisbon_timezone(self):
+        from accounts.models import DEFAULT_USER_TIMEZONE
+
+        user = get_user_model().objects.create_user(
+            email="tz-default@example.com",
+            password="test-pass-123",
+        )
+
+        self.assertEqual(user.timezone, DEFAULT_USER_TIMEZONE)
+        self.assertEqual(DEFAULT_USER_TIMEZONE, "Europe/Lisbon")
+
+    def test_middleware_activates_user_timezone(self):
+        from datetime import datetime, timedelta
+
+        from django.test import RequestFactory
+        from django.utils import timezone
+
+        from accounts.middleware import UserTimezoneMiddleware
+
+        user = get_user_model().objects.create_user(
+            email="tz-sg@example.com",
+            password="test-pass-123",
+        )
+        user.timezone = "Asia/Singapore"
+        user.save()
+
+        request = RequestFactory().get("/")
+        request.user = user
+        UserTimezoneMiddleware(lambda r: None)(request)
+
+        self.assertEqual(
+            timezone.get_current_timezone().utcoffset(datetime(2026, 1, 1)),
+            timedelta(hours=8),
+        )
+        timezone.deactivate()
+
+    def test_middleware_deactivates_for_anonymous_user(self):
+        from django.contrib.auth.models import AnonymousUser
+        from django.test import RequestFactory
+        from django.utils import timezone
+
+        from accounts.middleware import UserTimezoneMiddleware
+
+        request = RequestFactory().get("/")
+        request.user = AnonymousUser()
+        UserTimezoneMiddleware(lambda r: None)(request)
+
+        self.assertEqual(timezone.get_current_timezone_name(), "UTC")
+        timezone.deactivate()
