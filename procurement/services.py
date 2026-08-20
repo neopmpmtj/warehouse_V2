@@ -448,7 +448,7 @@ def reject(po, user=None):
 
 @transaction.atomic
 def receive(po, user=None):
-    """Transition approved -> received. Stock is written in Phase 3 (goods receipt)."""
+    """Transition approved -> received. Called by inventory.receive_goods() after stock is written."""
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.RECEIVED)
     po.status = PurchaseOrder.Status.RECEIVED
@@ -465,6 +465,7 @@ def receive(po, user=None):
 
 @transaction.atomic
 def close(po, user=None):
+    """Transition received -> closed. Called by inventory.receive_goods() when fully received, or manually to accept a short shipment."""
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.CLOSED)
     po.status = PurchaseOrder.Status.CLOSED

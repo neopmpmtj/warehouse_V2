@@ -155,6 +155,7 @@ class ItemAdmin(admin.ModelAdmin):
         "family",
         "unit_of_measure",
         "reorder_level",
+        "quantity",
         "vat_rate",
         "is_active",
         "updated_at",
@@ -162,7 +163,7 @@ class ItemAdmin(admin.ModelAdmin):
     list_filter = ("is_active", "family", "unit_of_measure", "vat_rate")
     search_fields = ("internal_code", "description", "family__name")
     autocomplete_fields = ("family", "vat_rate")
-    readonly_fields = ("is_active", "created_at", "updated_at")
+    readonly_fields = ("is_active", "quantity", "created_at", "updated_at")
     inlines = (ItemChangeLogInline,)
     actions = ("deactivate_items", "reactivate_items")
     fieldsets = (
@@ -175,6 +176,7 @@ class ItemAdmin(admin.ModelAdmin):
                     "description",
                     "unit_of_measure",
                     "reorder_level",
+                    "quantity",
                     "vat_rate",
                     "is_active",
                     "created_at",

@@ -381,6 +381,18 @@ function renderStatusActions(po, perms) {
     const container = document.getElementById("po-status-actions");
     container.replaceChildren();
 
+    // Receiving goods writes stock via the goods-receipt console.
+    if ((po.status === "approved" || po.status === "received") && perms.change) {
+        const receiveButton = document.createElement("button");
+        receiveButton.type = "button";
+        receiveButton.className = "btn btn-primary";
+        receiveButton.textContent = t("actionReceiveGoods");
+        receiveButton.addEventListener("click", () => {
+            window.location.href = `/manage/goods-receipts/?po=${po.id}`;
+        });
+        container.appendChild(receiveButton);
+    }
+
     let actions = [];
     if (po.status === "draft") {
         if (perms.change) {
@@ -392,10 +404,6 @@ function renderStatusActions(po, perms) {
         }
         if (perms.change) {
             actions.push({ endpoint: "reject/", labelKey: "actionReject", successKey: "rejected", danger: true });
-        }
-    } else if (po.status === "approved") {
-        if (perms.change) {
-            actions = [{ endpoint: "receive/", labelKey: "actionReceive", successKey: "received" }];
         }
     } else if (po.status === "received") {
         if (perms.change) {

@@ -299,12 +299,6 @@ def manage_purchase_order_reject(request, po_id):
 
 @procurement_required
 @require_POST
-def manage_purchase_order_receive(request, po_id):
-    return _status_action(request, po_id, services.receive, CHANGE_PO)
-
-
-@procurement_required
-@require_POST
 def manage_purchase_order_close(request, po_id):
     return _status_action(request, po_id, services.close, CHANGE_PO)
 

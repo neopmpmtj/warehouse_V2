@@ -119,6 +119,7 @@ class PurchaseOrderChangeLog(models.Model):
         LINE_ADDED = "line_added", "Line added"
         LINE_UPDATED = "line_updated", "Line updated"
         LINE_REMOVED = "line_removed", "Line removed"
+        GOODS_RECEIVED = "goods_received", "Goods received"
 
     purchase_order = models.ForeignKey(
         PurchaseOrder,

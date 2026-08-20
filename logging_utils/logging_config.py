@@ -43,6 +43,9 @@ LOGGING_CONFIG = {
         "centcompras.procurement": {
             "log_filename": "procurement.log",
         },
+        "centcompras.inventory": {
+            "log_filename": "inventory.log",
+        },
         "centcompras.django": {
             "log_filename": "django.log",
             "console_level": "INFO",

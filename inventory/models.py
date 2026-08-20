@@ -1,0 +1,119 @@
+from decimal import Decimal
+
+from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+
+
+class GoodsReceipt(models.Model):
+    """A delivery received against an approved purchase order (partial allowed)."""
+
+    purchase_order = models.ForeignKey(
+        "procurement.PurchaseOrder",
+        on_delete=models.PROTECT,
+        related_name="goods_receipts",
+    )
+    received_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="goods_receipts",
+    )
+    received_at = models.DateTimeField(auto_now_add=True)
+    reference = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-received_at"]
+
+    def __str__(self):
+        return f"GR #{self.pk} — PO #{self.purchase_order_id}"
+
+    def total_received(self):
+        return sum(
+            (line.quantity_received for line in self.lines.all()),
+            Decimal("0"),
+        )
+
+
+class GoodsReceiptLine(models.Model):
+    goods_receipt = models.ForeignKey(
+        GoodsReceipt,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    purchase_order_line = models.ForeignKey(
+        "procurement.PurchaseOrderLine",
+        on_delete=models.PROTECT,
+        related_name="goods_receipt_lines",
+    )
+    quantity_received = models.DecimalField(max_digits=12, decimal_places=3)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["goods_receipt", "purchase_order_line"],
+                name="unique_goods_receipt_line",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"GR #{self.goods_receipt_id}: "
+            f"PO line {self.purchase_order_line_id} x {self.quantity_received}"
+        )
+
+
+class StockMovement(models.Model):
+    """Append-only stock ledger. `Item.quantity` is the cached sum of these."""
+
+    class Type(models.TextChoices):
+        RECEIPT = "receipt", "Receipt"
+        GOODS_ISSUE = "goods_issue", "Goods issue"
+        ADJUSTMENT = "adjustment", "Adjustment"
+        INITIAL = "initial", "Initial"
+
+    item = models.ForeignKey(
+        "products.Item",
+        on_delete=models.PROTECT,
+        related_name="stock_movements",
+    )
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        help_text="Signed quantity: positive in, negative out.",
+    )
+    movement_type = models.CharField(max_length=20, choices=Type.choices)
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="stock_movements",
+    )
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey("content_type", "object_id")
+    reason = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stock_movements",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        permissions = [
+            ("can_adjust_stock", "Can manually adjust stock"),
+        ]
+        indexes = [
+            models.Index(fields=["item", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.movement_type} {self.item_id} {self.quantity:+}"

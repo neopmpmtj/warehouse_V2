@@ -68,6 +68,12 @@ class Item(models.Model):
         decimal_places=3,
         default=0,
     )
+    quantity = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        default=0,
+        help_text="Cached stock balance — updated only via StockMovement.",
+    )
     vat_rate = models.ForeignKey(
         VatRate,
         on_delete=models.PROTECT,

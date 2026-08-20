@@ -109,6 +109,7 @@ def _serialize_item(item):
         "description": item.description,
         "unit_of_measure": item.unit_of_measure,
         "reorder_level": _decimal_string(item.reorder_level),
+        "quantity": _decimal_string(item.quantity),
         "retail_price": _decimal_string(item.retail_price),
         "wholesale_price": _decimal_string(item.wholesale_price),
         "special_price": _decimal_string(item.special_price),

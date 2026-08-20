@@ -39,11 +39,6 @@ urlpatterns = [
         name="manage_purchase_order_reject",
     ),
     path(
-        "manage/purchase-orders/<int:po_id>/receive/",
-        console_views.manage_purchase_order_receive,
-        name="manage_purchase_order_receive",
-    ),
-    path(
         "manage/purchase-orders/<int:po_id>/close/",
         console_views.manage_purchase_order_close,
         name="manage_purchase_order_close",

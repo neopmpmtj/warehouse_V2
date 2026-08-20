@@ -1,0 +1,40 @@
+.section-title {
+    margin: 1.5rem 0 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-head .section-title {
+    margin: 0;
+}
+
+.movements {
+    margin-top: 1rem;
+}
+
+.empty-note {
+    color: var(--muted, #6b7280);
+    margin: 0.5rem 0 0;
+}
+
+.receipt-lines {
+    margin: 0.75rem 0;
+}
+
+.receipt-lines .grid {
+    width: 100%;
+}
+
+.receipt-qty-input {
+    width: 7rem;
+}
+
+#movement-item-filter {
+    max-width: 16rem;
+}
