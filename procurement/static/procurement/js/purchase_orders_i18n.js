@@ -24,6 +24,8 @@ const PO_I18N = {
         approvedBy: "Approved by",
         approvedAt: "Approved at",
         totalNet: "Total (net)",
+        totalVat: "VAT",
+        totalGross: "Total (gross)",
         purchaseOrder: "Purchase order #{id}",
         lines: "Lines",
         addLine: "Add line",
@@ -96,6 +98,7 @@ const PO_I18N = {
         invalid_status_transition: "This status change is not allowed.",
         empty_purchase_order: "Add at least one line before submitting.",
         purchase_order_not_draft: "Lines can only be changed while the order is a draft.",
+        supplier_price_missing: "This supplier does not have a price for this item. Add it under Suppliers → Supplier prices first.",
     },
     "pt-PT": {
         title: "Encomendas de compra",
@@ -122,6 +125,8 @@ const PO_I18N = {
         approvedBy: "Aprovado por",
         approvedAt: "Aprovado em",
         totalNet: "Total (líquido)",
+        totalVat: "IVA",
+        totalGross: "Total (bruto)",
         purchaseOrder: "Encomenda #{id}",
         lines: "Linhas",
         addLine: "Adicionar linha",
@@ -194,5 +199,6 @@ const PO_I18N = {
         invalid_status_transition: "Esta mudança de estado não é permitida.",
         empty_purchase_order: "Adicione pelo menos uma linha antes de submeter.",
         purchase_order_not_draft: "As linhas só podem ser alteradas enquanto a encomenda é um rascunho.",
+        supplier_price_missing: "Este fornecedor não tem preço para este artigo. Adicione-o em Fornecedores → Preços de fornecedor primeiro.",
     },
 };

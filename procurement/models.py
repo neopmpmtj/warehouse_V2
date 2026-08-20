@@ -36,6 +36,9 @@ class PurchaseOrder(models.Model):
         related_name="purchase_orders_approved",
     )
     approved_at = models.DateTimeField(null=True, blank=True)
+    approved_net = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    approved_vat = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    approved_gross = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     supplier_ref = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -49,6 +52,12 @@ class PurchaseOrder(models.Model):
 
     def __str__(self):
         return f"PO #{self.pk} — {self.supplier.name} ({self.status})"
+
+    def totals(self):
+        net = sum((line.line_net for line in self.lines.all()), Decimal("0"))
+        vat = sum((line.line_vat for line in self.lines.all()), Decimal("0"))
+        gross = sum((line.line_total for line in self.lines.all()), Decimal("0"))
+        return net, vat, gross
 
 
 class PurchaseOrderLine(models.Model):

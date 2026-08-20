@@ -85,10 +85,17 @@ def _serialize_po(po, include_lines=True):
         "created_at": po.created_at.isoformat(),
         "updated_at": po.updated_at.isoformat(),
     }
+    net, vat, gross = po.totals()
+    payload["total_net"] = _dec(net)
+    payload["total_vat"] = _dec(vat)
+    payload["total_gross"] = _dec(gross)
     if include_lines:
         lines = list(po.lines.all())
         payload["lines"] = [_serialize_line(line) for line in lines]
-        payload["total_net"] = _dec(sum(line.line_net for line in lines))
+    if po.approved_net is not None:
+        payload["approved_net"] = _dec(po.approved_net)
+        payload["approved_vat"] = _dec(po.approved_vat)
+        payload["approved_gross"] = _dec(po.approved_gross)
     return payload
 
 

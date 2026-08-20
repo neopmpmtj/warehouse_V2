@@ -85,6 +85,11 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         line = services.add_line(po, self.item, quantity="10", unit_cost="9.99")
         self.assertEqual(line.unit_cost, Decimal("9.99"))
 
+    def test_add_line_rejects_item_not_in_supplier_price_list(self):
+        po = services.create_purchase_order(self.other_supplier, self.user)
+        with self.assertRaises(services.SupplierPriceMissingError):
+            services.add_line(po, self.item, quantity="1")
+
     def test_line_totals_apply_discounts_and_vat(self):
         po = self.create_draft_po()
         line = services.add_line(po, self.item, quantity="10")
@@ -159,6 +164,44 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertEqual(po.status, PurchaseOrder.Status.APPROVED)
         self.assertEqual(po.approved_by, self.user)
         self.assertIsNotNone(po.approved_at)
+
+    def test_totals_returns_net_vat_gross(self):
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="10")
+
+        net, vat, gross = po.totals()
+
+        self.assertEqual(net, Decimal("125.00"))
+        self.assertEqual(vat, Decimal("20.00"))
+        self.assertEqual(gross, Decimal("145.00"))
+
+    def test_approve_snapshots_approved_totals(self):
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="10")
+        services.submit(po, self.user)
+
+        po = services.approve(po, self.user)
+
+        self.assertEqual(po.approved_net, Decimal("125.00"))
+        self.assertEqual(po.approved_vat, Decimal("20.00"))
+        self.assertEqual(po.approved_gross, Decimal("145.00"))
+
+        approval_log = po.change_logs.get(
+            action=PurchaseOrderChangeLog.Action.STATUS_CHANGED,
+            changes__has_key="approved_gross",
+        )
+        self.assertEqual(approval_log.changes["approved_gross"], "145.00")
+
+    def test_rejected_po_has_no_approved_totals(self):
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        services.submit(po, self.user)
+
+        po = services.reject(po, self.user)
+
+        self.assertIsNone(po.approved_net)
+        self.assertIsNone(po.approved_vat)
+        self.assertIsNone(po.approved_gross)
 
     def test_invalid_status_transition_is_rejected(self):
         po = self.create_draft_po()
@@ -256,6 +299,44 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
             reverse("manage_purchase_order_approve", args=[po["id"]]), **self.host
         )
         self.assertEqual(approve.json()["purchase_order"]["status"], "approved")
+
+    def test_approved_po_exposes_approved_totals(self):
+        self.client.force_login(self.user)
+        po = self._create_po_via_api()
+        self.client.post(
+            reverse("manage_purchase_order_lines", args=[po["id"]]),
+            data=json.dumps({"item_id": self.item.id, "quantity": "10"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.client.post(reverse("manage_purchase_order_submit", args=[po["id"]]), **self.host)
+        resp = self.client.post(
+            reverse("manage_purchase_order_approve", args=[po["id"]]), **self.host
+        )
+
+        data = resp.json()["purchase_order"]
+        self.assertEqual(data["approved_net"], "125.00")
+        self.assertEqual(data["approved_vat"], "20.00")
+        self.assertEqual(data["approved_gross"], "145.00")
+
+    def test_console_rejects_line_for_supplier_without_price(self):
+        self.client.force_login(self.user)
+        resp = self.client.post(
+            reverse("manage_purchase_order_list"),
+            data=json.dumps({"supplier_id": self.other_supplier.id}),
+            content_type="application/json",
+            **self.host,
+        )
+        po = resp.json()["purchase_order"]
+
+        line_resp = self.client.post(
+            reverse("manage_purchase_order_lines", args=[po["id"]]),
+            data=json.dumps({"item_id": self.item.id, "quantity": "1"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(line_resp.status_code, 400)
+        self.assertEqual(line_resp.json()["code"], "supplier_price_missing")
 
     def test_manager_cannot_approve(self):
         manager = make_warehouse_user("po-mgr2@example.com", group_name=GROUP_MANAGERS)

@@ -279,7 +279,10 @@ function renderTable() {
         pill.textContent = statusLabel(po.status);
         status.appendChild(pill);
 
-        const total = textTd("—");
+        const gross = (po.approved_gross !== undefined && po.approved_gross !== null)
+            ? po.approved_gross
+            : po.total_gross;
+        const total = textTd(formatCost(gross));
         const created = textTd(formatDateTime(po.created_at));
 
         const actions = document.createElement("td");
@@ -313,7 +316,10 @@ function renderDrawer(po) {
     document.getElementById("po-created-by").textContent = po.created_by || "—";
     document.getElementById("po-approved-by").textContent = po.approved_by || "—";
     document.getElementById("po-approved-at").textContent = po.approved_at ? formatDateTime(po.approved_at) : "—";
-    document.getElementById("po-total").textContent = formatCost(po.total_net);
+    const hasApproved = po.approved_net !== undefined && po.approved_net !== null;
+    document.getElementById("po-net").textContent = formatCost(hasApproved ? po.approved_net : po.total_net);
+    document.getElementById("po-vat").textContent = formatCost(hasApproved ? po.approved_vat : (po.total_vat || "0"));
+    document.getElementById("po-gross").textContent = formatCost(hasApproved ? po.approved_gross : (po.total_gross || "0"));
 
     renderLines(po, perms);
     renderStatusActions(po, perms);
@@ -713,7 +719,9 @@ async function onLineConfirm() {
         loadHistory(po.id);
         showBanner(t(lineId ? "lineUpdated" : "lineAdded"));
     } catch (error) {
-        showBanner(error.message, true);
+        const lineError = document.getElementById("line-error");
+        lineError.textContent = error.message;
+        lineError.hidden = false;
     } finally {
         state.busy = false;
         confirmButton.disabled = false;

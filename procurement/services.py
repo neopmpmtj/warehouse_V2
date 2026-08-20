@@ -48,6 +48,14 @@ class PurchaseOrderNotDraftError(ValidationError):
         )
 
 
+class SupplierPriceMissingError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "This supplier does not have a price for this item.",
+            code="supplier_price_missing",
+        )
+
+
 def _resolve_supplier(supplier):
     if isinstance(supplier, Supplier):
         return supplier
@@ -118,19 +126,6 @@ def _validate_total_discount(commercial, financial, rappel):
         )
 
 
-def _default_unit_cost(supplier, item):
-    # Prefer this supplier's own price for the item.
-    price = SupplierItemPrice.objects.filter(supplier=supplier, item=item).first()
-    if price is None:
-        # Fall back to the item's primary supplier, then cheapest.
-        price = (
-            SupplierItemPrice.objects.filter(item=item)
-            .order_by("-primary", "cost_price")
-            .first()
-        )
-    return price.cost_price if price else Decimal("0")
-
-
 def suggested_supplier(item):
     """Return the item's preferred (primary) supplier, else its cheapest."""
     item = _resolve_item(item)
@@ -192,8 +187,15 @@ def add_line(
     _ensure_draft(po)
     item = _resolve_item(item)
     quantity = _validate_quantity(quantity)
+
+    supplier_price = SupplierItemPrice.objects.filter(
+        supplier=po.supplier, item=item
+    ).first()
+    if supplier_price is None:
+        raise SupplierPriceMissingError()
+
     if unit_cost is None:
-        unit_cost = _default_unit_cost(po.supplier, item)
+        unit_cost = supplier_price.cost_price
     unit_cost = _validate_unit_cost(unit_cost)
     discount_commercial = _validate_discount(discount_commercial, "discount_commercial")
     discount_financial = _validate_discount(discount_financial, "discount_financial")
@@ -394,15 +396,34 @@ def submit(po, user=None):
 def approve(po, user=None):
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.APPROVED)
+    net, vat, gross = po.totals()
     po.status = PurchaseOrder.Status.APPROVED
     po.approved_by = user
     po.approved_at = timezone.now()
-    po.save(update_fields=["status", "approved_by", "approved_at", "updated_at"])
+    po.approved_net = net
+    po.approved_vat = vat
+    po.approved_gross = gross
+    po.save(
+        update_fields=[
+            "status",
+            "approved_by",
+            "approved_at",
+            "approved_net",
+            "approved_vat",
+            "approved_gross",
+            "updated_at",
+        ]
+    )
     _log(
         po,
         user,
         PurchaseOrderChangeLog.Action.STATUS_CHANGED,
-        {"status": {"old": PurchaseOrder.Status.SUBMITTED, "new": PurchaseOrder.Status.APPROVED}},
+        {
+            "status": {"old": PurchaseOrder.Status.SUBMITTED, "new": PurchaseOrder.Status.APPROVED},
+            "approved_net": str(net),
+            "approved_vat": str(vat),
+            "approved_gross": str(gross),
+        },
     )
     notify_supplier_on_approval(po)
     logger.info("Approved purchase order id=%s user=%s", po.id, getattr(user, "email", None))
