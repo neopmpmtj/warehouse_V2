@@ -8,6 +8,7 @@ WAREHOUSE_GROUP_NAMES = (GROUP_ADMINS, GROUP_MANAGERS, GROUP_OPERATORS)
 LEGACY_WAREHOUSE_GROUP_NAME = "Warehouse"
 
 CATALOG_MODELS = ("item", "familyproduct", "supplier", "supplieritemprice", "purchaseorder", "goodsreceipt")
+CATALOG_NO_DELETE_MODELS = ("goodsreceipt",)
 CATALOG_VIEW_ONLY_MODELS = (
     "vatrate",
     "itemchangelog",
@@ -45,7 +46,7 @@ def _codenames_for_group(group_name):
     view.extend(f"view_{model}" for model in CATALOG_VIEW_ONLY_MODELS)
     add = [f"add_{model}" for model in CATALOG_MODELS]
     change = [f"change_{model}" for model in CATALOG_MODELS]
-    delete = [f"delete_{model}" for model in CATALOG_MODELS]
+    delete = [f"delete_{model}" for model in CATALOG_MODELS if model not in CATALOG_NO_DELETE_MODELS]
     if group_name == GROUP_ADMINS:
         return view + add + change + delete + ["can_approve", "can_adjust_stock"]
     if group_name == GROUP_MANAGERS:

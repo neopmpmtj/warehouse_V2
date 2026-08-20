@@ -1,0 +1,16 @@
+.row-warn td {
+    background: var(--warn-bg, #fff7e6);
+}
+
+.empty-note {
+    color: var(--muted, #6b7280);
+    margin: 0.5rem 0 0;
+}
+
+#catalog-search {
+    min-width: 16rem;
+}
+
+#catalog-family {
+    min-width: 14rem;
+}

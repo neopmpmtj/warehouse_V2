@@ -248,6 +248,7 @@ function renderMovements() {
         row.appendChild(textTd(`${movement.internal_code || "—"} — ${movement.description}`));
         row.appendChild(textTd(movementTypeLabel(movement.movement_type)));
         row.appendChild(textTd(formatMovementQty(movement.quantity)));
+        row.appendChild(textTd(movement.reference || "—"));
         row.appendChild(textTd(movement.reason || "—"));
         row.appendChild(textTd(movement.created_by || "—"));
         row.appendChild(textTd(formatDateTime(movement.created_at)));
@@ -470,6 +471,7 @@ async function openAdjustDialog() {
         showBanner(error.message, true);
         return;
     }
+    fillItemFilter();
     fillSelect(
         document.getElementById("adjust-item"),
         state.items.map((item) => ({
@@ -563,12 +565,8 @@ async function init() {
     document.getElementById("new-receipt").hidden = !permissions().add;
     document.getElementById("adjust-stock").hidden = !permissions().adjust;
 
-    loadItems().catch(() => {
-        /* filter retries on demand */
-    });
-
     try {
-        await Promise.all([loadReceipts(), loadMovements()]);
+        await Promise.all([loadReceipts(), loadMovements(), loadItems()]);
     } catch (error) {
         showBanner(error.message, true);
     }

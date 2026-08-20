@@ -112,6 +112,15 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         with self.assertRaises(ValidationError):
             services.add_line(po, self.item, quantity="-1")
 
+    def test_nan_values_are_rejected(self):
+        po = self.create_draft_po()
+        with self.assertRaises(ValidationError):
+            services.add_line(po, self.item, quantity="NaN")
+        with self.assertRaises(ValidationError):
+            services.add_line(po, self.item, quantity="1", unit_cost="NaN")
+        with self.assertRaises(ValidationError):
+            services.add_line(po, self.item, quantity="1", discount_commercial="NaN")
+
     def test_discount_out_of_range_is_rejected(self):
         po = self.create_draft_po()
         line = services.add_line(po, self.item, quantity="1")
@@ -216,6 +225,25 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         services.submit(po, self.user)
         po = services.reject(po, self.user)
         self.assertEqual(po.status, PurchaseOrder.Status.REJECTED)
+
+    def test_reopen_rejected_returns_to_draft_and_resubmit(self):
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        services.submit(po, self.user)
+        po = services.reject(po, self.user)
+        self.assertEqual(po.status, PurchaseOrder.Status.REJECTED)
+
+        po = services.reopen(po, self.user)
+        self.assertEqual(po.status, PurchaseOrder.Status.DRAFT)
+
+        po = services.submit(po, self.user)
+        self.assertEqual(po.status, PurchaseOrder.Status.SUBMITTED)
+
+    def test_reopen_non_rejected_is_invalid(self):
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        with self.assertRaises(services.InvalidStatusTransitionError):
+            services.reopen(po, self.user)
 
     def test_remove_line_audits(self):
         po = self.create_draft_po()
@@ -367,3 +395,19 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
             **self.host,
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_reopen_rejected_po_through_api(self):
+        self.client.force_login(self.user)
+        po = self._create_po_via_api()
+        self.client.post(
+            reverse("manage_purchase_order_lines", args=[po["id"]]),
+            data=json.dumps({"item_id": self.item.id, "quantity": "1"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.client.post(reverse("manage_purchase_order_submit", args=[po["id"]]), **self.host)
+        self.client.post(reverse("manage_purchase_order_reject", args=[po["id"]]), **self.host)
+
+        response = self.client.post(reverse("manage_purchase_order_reopen", args=[po["id"]]), **self.host)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["purchase_order"]["status"], "draft")

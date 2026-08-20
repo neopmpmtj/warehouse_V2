@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -29,6 +29,7 @@ STATUS_TRANSITIONS = {
     },
     PurchaseOrder.Status.APPROVED: {PurchaseOrder.Status.RECEIVED},
     PurchaseOrder.Status.RECEIVED: {PurchaseOrder.Status.CLOSED},
+    PurchaseOrder.Status.REJECTED: {PurchaseOrder.Status.DRAFT},
 }
 
 
@@ -89,22 +90,33 @@ def _ensure_draft(po):
         raise PurchaseOrderNotDraftError()
 
 
+def _parse_decimal(value, field_name):
+    """Parse a finite Decimal, raising a clean ValidationError on malformed input."""
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValidationError(f"{field_name} must be a number.", code="invalid_number") from exc
+    if not parsed.is_finite():
+        raise ValidationError(f"{field_name} must be a finite number.", code="invalid_number")
+    return parsed
+
+
 def _validate_quantity(quantity):
-    value = Decimal(str(quantity))
+    value = _parse_decimal(quantity, "quantity")
     if value <= 0:
         raise ValidationError("quantity must be greater than zero.", code="invalid_quantity")
     return value
 
 
 def _validate_unit_cost(unit_cost):
-    value = Decimal(str(unit_cost))
+    value = _parse_decimal(unit_cost, "unit_cost")
     if value < 0:
         raise ValidationError("unit_cost must be zero or greater.", code="invalid_unit_cost")
     return value
 
 
 def _validate_discount(value, field_name):
-    amount = Decimal(str(value))
+    amount = _parse_decimal(value, field_name)
     if amount < 0 or amount > 100:
         raise ValidationError(
             f"{field_name} must be between 0 and 100.",
@@ -124,18 +136,6 @@ def _validate_total_discount(commercial, financial, rappel):
             "Commercial, financial and rappel discounts cannot exceed 100% combined.",
             code="invalid_total_discount",
         )
-
-
-def suggested_supplier(item):
-    """Return the item's preferred (primary) supplier, else its cheapest."""
-    item = _resolve_item(item)
-    price = (
-        SupplierItemPrice.objects.filter(item=item)
-        .select_related("supplier")
-        .order_by("-primary", "cost_price")
-        .first()
-    )
-    return price.supplier if price else None
 
 
 @transaction.atomic
@@ -480,6 +480,23 @@ def close(po, user=None):
     return po
 
 
+@transaction.atomic
+def reopen(po, user=None):
+    """Transition rejected -> draft so the order can be corrected and resubmitted."""
+    po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
+    _transition(po, PurchaseOrder.Status.DRAFT)
+    po.status = PurchaseOrder.Status.DRAFT
+    po.save(update_fields=["status", "updated_at"])
+    _log(
+        po,
+        user,
+        PurchaseOrderChangeLog.Action.STATUS_CHANGED,
+        {"status": {"old": PurchaseOrder.Status.REJECTED, "new": PurchaseOrder.Status.DRAFT}},
+    )
+    logger.info("Reopened purchase order id=%s user=%s", po.id, getattr(user, "email", None))
+    return po
+
+
 def notify_supplier_on_approval(po):
     """Stub for Phase 6 (email automation). Logs intent only."""
     logger.info(
@@ -490,7 +507,7 @@ def notify_supplier_on_approval(po):
 
 
 def get_purchase_orders(status=None):
-    queryset = PurchaseOrder.objects.select_related("supplier", "created_by").prefetch_related("lines")
+    queryset = PurchaseOrder.objects.select_related("supplier", "created_by", "approved_by").prefetch_related("lines")
     if status is not None:
         queryset = queryset.filter(status=status)
     return queryset

@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -54,6 +54,32 @@ class InvalidAdjustmentQuantityError(ValidationError):
         )
 
 
+class InvalidQuantityError(ValidationError):
+    def __init__(self, message="Quantity must be a finite number."):
+        super().__init__(message, code="invalid_quantity")
+
+
+class InvalidReceiptLineError(ValidationError):
+    def __init__(self, message="Each receipt line must be a valid object with line_id and quantity_received."):
+        super().__init__(message, code="invalid_receipt_line")
+
+
+class DuplicateReceiptLineError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A purchase order line was provided more than once in this receipt.",
+            code="duplicate_receipt_line",
+        )
+
+
+class NegativeStockError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Stock cannot be adjusted below zero.",
+            code="negative_stock",
+        )
+
+
 def _resolve_po(po):
     if isinstance(po, PurchaseOrder):
         return po
@@ -66,19 +92,37 @@ def _resolve_item(item):
     return Item.objects.get(pk=item)
 
 
-def _received_qty(po_line):
-    total = GoodsReceiptLine.objects.filter(purchase_order_line=po_line).aggregate(
-        total=Sum("quantity_received")
-    )["total"]
-    return total or Decimal("0")
+def _received_qty_map(po):
+    """Map PO line id → total received, in a single grouped aggregate query."""
+    totals = (
+        GoodsReceiptLine.objects.filter(purchase_order_line__purchase_order=po)
+        .values("purchase_order_line_id")
+        .annotate(total=Sum("quantity_received"))
+    )
+    return {
+        row["purchase_order_line_id"]: (row["total"] or Decimal("0"))
+        for row in totals
+    }
 
 
-def remaining_qty(po_line):
-    return po_line.quantity - _received_qty(po_line)
+def _parse_decimal_quantity(value):
+    """Parse, bound and quantise a quantity to the field precision (12,3)."""
+    try:
+        qty = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise InvalidQuantityError() from exc
+    if not qty.is_finite():
+        raise InvalidQuantityError()
+    rounded = qty.quantize(Decimal("0.001"))
+    if qty != 0 and rounded == 0:
+        raise InvalidQuantityError("Quantity is too small (rounds to zero).")
+    if rounded.copy_abs() >= Decimal("1000000000"):
+        raise InvalidQuantityError("Quantity is too large.")
+    return rounded
 
 
 def _validate_received_qty(value):
-    qty = Decimal(str(value))
+    qty = _parse_decimal_quantity(value)
     if qty <= 0:
         raise InvalidReceivedQuantityError(
             "quantity_received must be greater than zero."
@@ -87,7 +131,11 @@ def _validate_received_qty(value):
 
 
 def _is_fully_received(po):
-    return all(remaining_qty(line) <= 0 for line in po.lines.all())
+    received_map = _received_qty_map(po)
+    return all(
+        (line.quantity - received_map.get(line.id, Decimal("0"))) <= 0
+        for line in po.lines.all()
+    )
 
 
 def _log_goods_received(po, user, changes):
@@ -101,6 +149,9 @@ def _log_goods_received(po, user, changes):
 
 def _write_movement(item, quantity, movement_type, user, content_object=None, reason=""):
     item = Item.objects.select_for_update().get(pk=item.pk)
+    new_quantity = (item.quantity or Decimal("0")) + quantity
+    if quantity < 0 and new_quantity < 0:
+        raise NegativeStockError()
     kwargs = {
         "item": item,
         "quantity": quantity,
@@ -111,11 +162,11 @@ def _write_movement(item, quantity, movement_type, user, content_object=None, re
     if content_object is not None:
         kwargs["content_type"] = ContentType.objects.get_for_model(content_object)
         kwargs["object_id"] = content_object.pk
-    StockMovement.objects.create(**kwargs)
+    movement = StockMovement.objects.create(**kwargs)
 
-    item.quantity = (item.quantity or Decimal("0")) + quantity
+    item.quantity = new_quantity.quantize(Decimal("0.001"))
     item.save(update_fields=["quantity", "updated_at"])
-    return item
+    return movement
 
 
 @transaction.atomic
@@ -130,14 +181,29 @@ def receive_goods(po, lines, user, reference="", notes=""):
         raise PurchaseOrderNotReceivableError(po.status)
 
     normalized = []
+    seen_line_ids = set()
+    received_map = _received_qty_map(po)
     for entry in lines:
+        if not isinstance(entry, dict):
+            raise InvalidReceiptLineError()
         line_id = entry.get("line_id", entry.get("purchase_order_line_id"))
+        if line_id is None:
+            raise InvalidReceiptLineError(
+                "Each receipt line requires a line_id."
+            )
+        if "quantity_received" not in entry:
+            raise InvalidReceiptLineError(
+                "Each receipt line requires quantity_received."
+            )
         qty = _validate_received_qty(entry["quantity_received"])
         try:
             po_line = po.lines.get(pk=line_id)
         except PurchaseOrderLine.DoesNotExist:
             raise PurchaseOrderLineNotFoundError()
-        remaining = remaining_qty(po_line)
+        if po_line.id in seen_line_ids:
+            raise DuplicateReceiptLineError()
+        seen_line_ids.add(po_line.id)
+        remaining = po_line.quantity - received_map.get(po_line.id, Decimal("0"))
         if qty > remaining:
             raise InvalidReceivedQuantityError(
                 f"Received quantity {qty} exceeds remaining {remaining} "
@@ -209,11 +275,11 @@ def receive_goods(po, lines, user, reference="", notes=""):
 def adjust_stock(item, quantity, reason, user):
     """Manual stock adjustment (warehouse admin only)."""
     item = _resolve_item(item)
-    quantity = Decimal(str(quantity))
+    quantity = _parse_decimal_quantity(quantity)
     if quantity == 0:
         raise InvalidAdjustmentQuantityError()
 
-    updated = _write_movement(
+    movement = _write_movement(
         item,
         quantity,
         StockMovement.Type.ADJUSTMENT,
@@ -227,7 +293,7 @@ def adjust_stock(item, quantity, reason, user):
         str(quantity),
         getattr(user, "email", None),
     )
-    return updated
+    return movement
 
 
 def get_goods_receipts(po=None):
@@ -241,7 +307,7 @@ def get_goods_receipts(po=None):
 
 
 def get_stock_movements(item=None):
-    queryset = StockMovement.objects.select_related("item", "created_by")
+    queryset = StockMovement.objects.select_related("item", "created_by", "content_type")
     if item is not None:
         queryset = queryset.filter(item=item)
     return queryset
@@ -250,7 +316,8 @@ def get_stock_movements(item=None):
 def get_receipt_summary(po):
     """Per-line ordered / received / remaining for a purchase order."""
     po = _resolve_po(po)
-    lines = po.lines.select_related("item").all()
+    lines = list(po.lines.select_related("item").all())
+    received_map = _received_qty_map(po)
     return [
         {
             "line_id": line.id,
@@ -259,8 +326,8 @@ def get_receipt_summary(po):
             "description": line.description,
             "unit_of_measure": line.unit_of_measure,
             "quantity": str(line.quantity),
-            "received": str(_received_qty(line)),
-            "remaining": str(remaining_qty(line)),
+            "received": str(received_map.get(line.id, Decimal("0"))),
+            "remaining": str(line.quantity - received_map.get(line.id, Decimal("0"))),
         }
         for line in lines
     ]

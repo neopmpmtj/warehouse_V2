@@ -1,5 +1,5 @@
 import json
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, DecimalException, InvalidOperation
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import JsonResponse
@@ -117,7 +117,7 @@ def _po_error(exc):
     if isinstance(exc, ValidationError):
         message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
         return _json_error(message, code=getattr(exc, "code", None))
-    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError)):
+    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError, DecimalException)):
         return _json_error(str(exc))
     raise exc
 
@@ -295,6 +295,12 @@ def manage_purchase_order_approve(request, po_id):
 @require_POST
 def manage_purchase_order_reject(request, po_id):
     return _status_action(request, po_id, services.reject, CHANGE_PO)
+
+
+@procurement_required
+@require_POST
+def manage_purchase_order_reopen(request, po_id):
+    return _status_action(request, po_id, services.reopen, CHANGE_PO)
 
 
 @procurement_required

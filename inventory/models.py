@@ -114,6 +114,15 @@ class StockMovement(models.Model):
         indexes = [
             models.Index(fields=["item", "-created_at"]),
         ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(content_type__isnull=True, object_id__isnull=True)
+                    | models.Q(content_type__isnull=False, object_id__isnull=False)
+                ),
+                name="stockmovement_reference_both_or_neither",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.movement_type} {self.item_id} {self.quantity:+}"

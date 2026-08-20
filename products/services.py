@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -739,8 +739,11 @@ def _resolve_item(item):
 
 
 def _validate_cost_price(cost_price):
-    value = Decimal(str(cost_price))
-    if value < 0:
+    try:
+        value = Decimal(str(cost_price))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise InvalidCostPriceError() from exc
+    if not value.is_finite() or value < 0:
         raise InvalidCostPriceError()
     return value
 
@@ -909,11 +912,42 @@ def get_supplier_item_price_history(supplier_item_price):
     return supplier_item_price.change_logs.select_related("user").order_by("-created_at")
 
 
+def _buying_price_from_prices(prices):
+    """O1: the primary supplier's cost, else the cheapest (None if no prices). Ignores deactivated suppliers."""
+    active = [p for p in prices if p.supplier.is_active]
+    primary = next((p for p in active if p.primary), None)
+    if primary is not None:
+        return primary.cost_price
+    if active:
+        return min(p.cost_price for p in active)
+    return None
+
+
 def get_item_buying_price(item):
     item = _resolve_item(item)
-    price = (
-        SupplierItemPrice.objects.filter(item=item)
-        .order_by("-primary", "cost_price")
-        .first()
+    prices = list(SupplierItemPrice.objects.filter(item=item).select_related("supplier"))
+    return _buying_price_from_prices(prices)
+
+
+def get_catalog(active_only=True, family=None):
+    """Read-only manager-catalog join: item + family + prices + cached stock."""
+    queryset = (
+        Item.objects.select_related("family", "vat_rate")
+        .prefetch_related("supplier_prices__supplier")
+        .order_by("id")
     )
-    return price.cost_price if price else None
+    if active_only:
+        queryset = queryset.active()
+    if family is not None:
+        queryset = queryset.filter(family=_resolve_family(family))
+    return queryset
+
+
+def catalog_buying_price(item):
+    """O1 buying price from already-prefetched supplier prices (no extra query)."""
+    return _buying_price_from_prices(list(item.supplier_prices.all()))
+
+
+def catalog_below_reorder(item):
+    """True when the item has a reorder level and stock is at/below it."""
+    return item.reorder_level > 0 and item.quantity <= item.reorder_level

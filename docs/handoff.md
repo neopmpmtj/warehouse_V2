@@ -52,6 +52,8 @@ Phases 0–4 are complete (auth → catalogue → pricing → purchase orders �
 
 There is no single "next" build after Phase 4. Next session, pick one to scope — **email (Phase 6) is the smallest self-contained item**; **branches (Phase 5) needs a dedicated plan**.
 
+**Stability:** a full-codebase review ([`docs/archive/code-review-full-2026-08-20-1928.md`](archive/code-review-full-2026-08-20-1928.md)) was completed and all 14 findings resolved — the app is hardened and the review backlog is empty.
+
 ---
 
 ## Key files
@@ -82,8 +84,8 @@ python manage.py test products accounts procurement inventory
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…`, `warehouse.operator@…` (groups `warehouse_admins`/`_managers`/`_data_operators`).
 - **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog (stock + prices) · `/manage/purchase-orders/` PO console · `/manage/goods-receipts/` goods receipt + stock · `/admin/` superuser only.
-- **Test state at sign-off:** full suite green (~190 tests: products 122 + accounts 16 + procurement 27 + inventory 25). Tests run fast (~18s) — `TESTING` flag in settings enables a fast password hasher + quiet logging.
-- **Git:** branch `phase3-stock-ledger` (Phases 3–4 work — Phase 4 manager catalog is **uncommitted** in the working tree).
+- **Test state at sign-off:** full suite green (~199 tests: products 125 + accounts 16 + procurement 31 + inventory 27). Tests run fast (~18s) — `TESTING` flag in settings enables a fast password hasher + quiet logging.
+- **Git:** branch `phase3-stock-ledger` — Phases 3–4 (goods receipt + manager catalog) and the full-review fixes are committed on top of `main`.
 
 ---
 
@@ -96,6 +98,7 @@ python manage.py test products accounts procurement inventory
 | `docs/archive/code-review-audit.md` | **historical / completed** — catalogue hardening; “Phase 1/2/3” = audit batches, not product phases |
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — **concluded** (all findings fixed); archived |
 | `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — **concluded** (all findings fixed); archived |
+| `docs/archive/code-review-full-2026-08-20-1928.md` | Full-codebase stability review — **concluded** (all 14 findings resolved); archived |
 | `docs/user-manuals/` | staff user manuals |
 | `docs/user-manuals/01-items.md` | item console |
 | `docs/user-manuals/02-purchase-orders.md` | purchase orders |

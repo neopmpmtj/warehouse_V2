@@ -79,4 +79,9 @@ urlpatterns = [
         console_views.manage_item_history,
         name="manage_item_history",
     ),
+    path(
+        "manage/catalog/",
+        console_views.manage_catalog_list,
+        name="manage_catalog_list",
+    ),
 ]

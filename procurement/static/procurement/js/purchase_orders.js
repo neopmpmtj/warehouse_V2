@@ -409,6 +409,10 @@ function renderStatusActions(po, perms) {
         if (perms.change) {
             actions = [{ endpoint: "close/", labelKey: "actionClose", successKey: "closed", confirmKey: "confirmClose" }];
         }
+    } else if (po.status === "rejected") {
+        if (perms.change) {
+            actions = [{ endpoint: "reopen/", labelKey: "actionReopen", successKey: "reopened" }];
+        }
     }
 
     actions.forEach((action) => {

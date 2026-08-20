@@ -1,5 +1,5 @@
 import json
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, DecimalException, InvalidOperation
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models import Count
@@ -34,6 +34,8 @@ from .services import (
     SupplierNameRequiredError,
     bulk_deactivate_items,
     bulk_reactivate_items,
+    catalog_below_reorder,
+    catalog_buying_price,
     create_family,
     create_item,
     create_supplier,
@@ -43,6 +45,7 @@ from .services import (
     get_family_history,
     get_item_history,
     get_items,
+    get_catalog,
     get_supplier_history,
     get_supplier_item_price_history,
     get_supplier_item_prices,
@@ -700,7 +703,7 @@ def _supplier_item_price_error(exc):
     if isinstance(exc, ValidationError):
         message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
         return _json_error(message)
-    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError)):
+    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError, DecimalException)):
         return _json_error(str(exc))
     raise exc
 
@@ -833,4 +836,53 @@ def manage_supplier_item_price_history(request, sip_id):
     entries = get_supplier_item_price_history(sip)
     return JsonResponse(
         {"history": [_serialize_history_entry(entry) for entry in entries]}
+    )
+
+
+def _serialize_catalog_item(item):
+    buying_price = catalog_buying_price(item)
+    return {
+        "id": item.id,
+        "internal_code": item.internal_code,
+        "description": item.description,
+        "unit_of_measure": item.unit_of_measure,
+        "is_active": item.is_active,
+        "family": _serialize_family(item.family),
+        "vat_rate": _serialize_vat_rate(item.vat_rate),
+        "quantity": _decimal_string(item.quantity),
+        "reorder_level": _decimal_string(item.reorder_level),
+        "below_reorder": catalog_below_reorder(item),
+        "retail_price": _decimal_string(item.retail_price),
+        "wholesale_price": _decimal_string(item.wholesale_price),
+        "special_price": _decimal_string(item.special_price),
+        "buying_price": _decimal_string(buying_price) if buying_price is not None else None,
+        "suppliers": [
+            {
+                "id": price.supplier_id,
+                "name": price.supplier.name,
+                "cost_price": _decimal_string(price.cost_price),
+                "primary": price.primary,
+            }
+            for price in item.supplier_prices.all()
+            if price.supplier.is_active
+        ],
+    }
+
+
+@catalog_required
+@require_GET
+def catalog_console(request):
+    return render(request, "products/catalog.html")
+
+
+@catalog_required
+@require_GET
+def manage_catalog_list(request):
+    family_id = request.GET.get("family_id")
+    try:
+        queryset = get_catalog(active_only=True, family=family_id)
+    except (ValueError, ObjectDoesNotExist):
+        return _json_error("Invalid family_id.", status=400)
+    return JsonResponse(
+        {"catalog": [_serialize_catalog_item(item) for item in queryset]}
     )

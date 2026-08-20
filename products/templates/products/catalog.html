@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Manager catalog — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            var lang = "en";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "en";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=12">
+    <link rel="stylesheet" href="{% static 'products/css/catalog.css' %}?v=1">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-title">
+            <p class="eyebrow" data-i18n="eyebrow">CentCompras</p>
+            <h1 data-i18n="title">Manager catalog</h1>
+        </div>
+        <div class="topbar-actions">
+            <p class="user-line">
+                <span data-i18n="signedInAs">Signed in as</span>
+                <strong>{{ user.email }}</strong>
+            </p>
+            <label class="control-inline">
+                <span data-i18n="language">Language</span>
+                <select id="language-select" aria-label="Language">
+                    <option value="en">English</option>
+                    <option value="pt-PT">Português</option>
+                </select>
+            </label>
+            <button type="button" id="theme-toggle" class="btn btn-ghost"></button>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost" data-i18n="signOut">Sign out</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="page">
+        <section class="toolbar" aria-label="Filters">
+            <input type="search" id="catalog-search" data-i18n-placeholder="searchPlaceholder" placeholder="Search code or description…">
+            <select id="catalog-family" aria-label="Family filter"></select>
+            <label class="control-inline">
+                <input type="checkbox" id="catalog-below-reorder">
+                <span data-i18n="belowReorderOnly">Below reorder only</span>
+            </label>
+            <div class="toolbar-spacer"></div>
+        </section>
+
+        <p id="banner" class="banner" hidden></p>
+
+        <div class="table-wrap">
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th data-i18n="colCode">Code</th>
+                        <th data-i18n="colDescription">Description</th>
+                        <th data-i18n="colFamily">Family</th>
+                        <th data-i18n="colUnit">Unit</th>
+                        <th data-i18n="colStock">Stock</th>
+                        <th data-i18n="colReorder">Reorder</th>
+                        <th data-i18n="colBuying">Buying</th>
+                        <th data-i18n="colRetail">Retail</th>
+                        <th data-i18n="colWholesale">Wholesale</th>
+                        <th data-i18n="colSpecial">Special</th>
+                        <th data-i18n="colSuppliers">Suppliers</th>
+                        <th data-i18n="colStatus">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="catalog-body"></tbody>
+            </table>
+        </div>
+        <p id="catalog-empty" class="empty-note" hidden data-i18n="empty">No items to show.</p>
+    </main>
+
+    <script src="{% static 'products/js/catalog_i18n.js' %}?v=1"></script>
+    <script src="{% static 'products/js/catalog.js' %}?v=1"></script>
+</body>
+</html>

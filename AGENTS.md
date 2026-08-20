@@ -2,7 +2,7 @@
 
 Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done. Branches, orders, offline, and email are deferred.
 
-**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup and [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing.
+**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup, [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing, and [`docs/archive/code-review-full-2026-08-20-1928.md`](docs/archive/code-review-full-2026-08-20-1928.md) (full-codebase review — all findings resolved). All code reviews are archived under `docs/archive/`; there is no open review backlog.
 
 ## Session handoff (August 2026)
 
@@ -93,6 +93,11 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 - Branch tenancy (`branches`, `request.active_branch`) is **future** — not built yet
 - Plain Django + plain JavaScript — no React, Vue
 - One concept per phase; no large application dumps
+
+## Documentation conventions
+
+- **Always put a full timestamp (date + time) in document filenames** — e.g. `code-review-full-2026-08-20-1928.md` (format `YYYY-MM-DD-HHMM`). The timestamp makes the chronological order self-evident when many similarly-named docs accumulate.
+- Reviews/audits are worked to completion, marked done, then archived under `docs/archive/` — never left as a live backlog.
 
 ## Commands
 

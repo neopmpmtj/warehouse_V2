@@ -1117,8 +1117,17 @@ function formPayload() {
 }
 
 function formatCost(value) {
-    const num = Number(value);
-    return Number.isFinite(num) ? num.toFixed(2) : value || "—";
+    if (value === null || value === undefined || value === "") {
+        return "—";
+    }
+    const s = String(value);
+    const dot = s.indexOf(".");
+    if (dot === -1) {
+        return s + ".00";
+    }
+    const intPart = s.slice(0, dot);
+    const frac = (s.slice(dot + 1) + "00").slice(0, 2);
+    return intPart + "." + frac;
 }
 
 function renderItemSupplierPrices(entries) {

@@ -1,10 +1,13 @@
 import json
+import threading
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.test import Client, TestCase
+from django.db import connection
+from django.test import Client, TestCase, TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from accounts.groups import (
@@ -156,6 +159,13 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
         with self.assertRaises(services.InvalidAdjustmentQuantityError):
             services.adjust_stock(self.item, "0", "noop", self.user)
 
+    def test_adjust_stock_cannot_drive_negative(self):
+        services.adjust_stock(self.item, "5", "add", self.user)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("5"))
+        with self.assertRaises(services.NegativeStockError):
+            services.adjust_stock(self.item, "-10", "over-adjust", self.user)
+
     def test_receipt_summary_reports_remaining(self):
         po, line = self.create_approved_po("10")
         services.receive_goods(po, [{"line_id": line.id, "quantity_received": "4"}], self.user)
@@ -165,6 +175,77 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
         self.assertEqual(summary[0]["quantity"], "10.000")
         self.assertEqual(summary[0]["received"], "4.000")
         self.assertEqual(summary[0]["remaining"], "6.000")
+
+    def test_malformed_quantity_is_rejected(self):
+        po, line = self.create_approved_po("10")
+        with self.assertRaises(services.InvalidQuantityError):
+            services.receive_goods(
+                po, [{"line_id": line.id, "quantity_received": "abc"}], self.user
+            )
+
+    def test_non_finite_quantity_is_rejected(self):
+        po, line = self.create_approved_po("10")
+        for bad in ("NaN", "Infinity", "-Infinity"):
+            with self.assertRaises(services.InvalidQuantityError):
+                services.receive_goods(
+                    po, [{"line_id": line.id, "quantity_received": bad}], self.user
+                )
+
+    def test_duplicate_line_id_is_rejected(self):
+        po, line = self.create_approved_po("10")
+        with self.assertRaises(services.DuplicateReceiptLineError):
+            services.receive_goods(
+                po,
+                [
+                    {"line_id": line.id, "quantity_received": "3"},
+                    {"line_id": line.id, "quantity_received": "3"},
+                ],
+                self.user,
+            )
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("0"))
+
+    def test_non_dict_line_is_rejected(self):
+        po, _line = self.create_approved_po("10")
+        with self.assertRaises(services.InvalidReceiptLineError):
+            services.receive_goods(po, ["not-a-dict"], self.user)
+
+    def test_line_missing_quantity_is_rejected(self):
+        po, line = self.create_approved_po("10")
+        with self.assertRaises(services.InvalidReceiptLineError):
+            services.receive_goods(po, [{"line_id": line.id}], self.user)
+
+    def test_adjust_stock_non_finite_is_rejected(self):
+        for bad in ("NaN", "Infinity"):
+            with self.assertRaises(services.InvalidQuantityError):
+                services.adjust_stock(self.item, bad, "x", self.user)
+
+    def test_over_precise_quantity_is_rejected(self):
+        po, line = self.create_approved_po("10")
+        with self.assertRaises(services.InvalidQuantityError):
+            services.receive_goods(
+                po, [{"line_id": line.id, "quantity_received": "0.0001"}], self.user
+            )
+
+    def test_oversized_quantity_is_rejected(self):
+        po, line = self.create_approved_po("10")
+        with self.assertRaises(services.InvalidQuantityError):
+            services.receive_goods(
+                po, [{"line_id": line.id, "quantity_received": "1000000000000"}], self.user
+            )
+
+    def test_receive_goods_locks_rows_for_update(self):
+        po, line = self.create_approved_po("10")
+        with CaptureQueriesContext(connection) as ctx:
+            services.receive_goods(
+                po, [{"line_id": line.id, "quantity_received": "2"}], self.user
+            )
+        for_update = [
+            query["sql"]
+            for query in ctx.captured_queries
+            if "FOR UPDATE" in query["sql"]
+        ]
+        self.assertGreaterEqual(len(for_update), 1)
 
 
 class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
@@ -280,7 +361,18 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
             **self.host,
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["quantity"], "5")
+        self.assertEqual(resp.json()["quantity"], "5.000")
+        self.assertEqual(resp.json()["balance"], "5.000")
+
+        resp2 = self.client.post(
+            reverse("manage_stock_adjustment"),
+            data=json.dumps({"item_id": self.item.id, "quantity": "-2", "reason": "y"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(resp2.json()["quantity"], "-2.000")
+        self.assertEqual(resp2.json()["balance"], "3.000")
 
     def test_stock_movements_endpoint(self):
         self.client.force_login(self.user)
@@ -293,6 +385,29 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         self.assertEqual(len(movements), 1)
         self.assertEqual(movements[0]["quantity"], "3.000")
         self.assertEqual(movements[0]["movement_type"], "receipt")
+        self.assertTrue(movements[0]["reference"].startswith("GR #"))
+
+    def test_stock_movements_rejects_bad_item_id(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("manage_stock_movements") + "?item_id=abc")
+        self.assertEqual(response.status_code, 400)
+
+    def test_malformed_receipt_returns_400(self):
+        self.client.force_login(self.user)
+        po = self._create_approved_po_via_api()
+        resp = self.client.post(
+            reverse("manage_goods_receipt_list"),
+            data=json.dumps(
+                {
+                    "purchase_order_id": po["id"],
+                    "lines": [{"line_id": 1, "quantity_received": "abc"}],
+                }
+            ),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()["code"], "invalid_quantity")
 
     def test_group_permissions_granted(self):
         admin = make_warehouse_user("perm-adm@example.com", group_name=GROUP_ADMINS)
@@ -305,3 +420,35 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         self.assertFalse(manager.has_perm("inventory.can_adjust_stock"))
         self.assertFalse(operator.has_perm("inventory.add_goodsreceipt"))
         self.assertTrue(operator.has_perm("inventory.view_goodsreceipt"))
+
+
+class ConcurrentReceiptTests(InventoryTestCaseMixin, TransactionTestCase):
+    """A true two-thread race test: concurrent receipts must not over-receive."""
+
+    def test_concurrent_receipts_cannot_over_receive(self):
+        po, line = self.create_approved_po("10")
+        outcomes = []
+
+        def worker(qty):
+            try:
+                services.receive_goods(
+                    po.id,
+                    [{"line_id": line.id, "quantity_received": qty}],
+                    self.user,
+                )
+                outcomes.append("ok")
+            except ValidationError:
+                outcomes.append("rejected")
+            finally:
+                connection.close()
+
+        threads = [threading.Thread(target=worker, args=("6",)) for _ in range(2)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("6.000"))
+        self.assertEqual(outcomes.count("ok"), 1)
+        self.assertEqual(outcomes.count("rejected"), 1)

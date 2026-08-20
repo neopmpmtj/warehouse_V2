@@ -1,6 +1,7 @@
 import json
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, DecimalException, InvalidOperation
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -83,7 +84,15 @@ def _serialize_receipt(receipt, include_lines=True):
     return payload
 
 
-def _serialize_movement(movement):
+def _serialize_movement(movement, receipt=None):
+    if receipt is not None:
+        reference = f"GR #{receipt.id}"
+        if receipt.reference:
+            reference += f" — {receipt.reference}"
+    elif movement.content_type_id is not None:
+        reference = f"{movement.content_type.model} #{movement.object_id}"
+    else:
+        reference = ""
     return {
         "id": movement.id,
         "item_id": movement.item_id,
@@ -91,6 +100,7 @@ def _serialize_movement(movement):
         "description": movement.item.description,
         "quantity": _dec(movement.quantity),
         "movement_type": movement.movement_type,
+        "reference": reference,
         "reason": movement.reason,
         "created_by": movement.created_by.email if movement.created_by_id else None,
         "created_at": movement.created_at.isoformat(),
@@ -101,7 +111,7 @@ def _inv_error(exc):
     if isinstance(exc, ValidationError):
         message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
         return _json_error(message, code=getattr(exc, "code", None))
-    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError)):
+    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError, DecimalException)):
         return _json_error(str(exc))
     raise exc
 
@@ -150,7 +160,7 @@ def manage_goods_receipt_list(request):
             reference=str(payload.get("reference", "")),
             notes=str(payload.get("notes", "")),
         )
-    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError) as exc:
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
         return _inv_error(exc)
 
     logger.info(
@@ -187,9 +197,29 @@ def manage_receipt_summary(request, po_id):
 @require_GET
 def manage_stock_movements(request):
     item_id = request.GET.get("item_id")
-    queryset = services.get_stock_movements(item=item_id)
+    try:
+        movements = list(services.get_stock_movements(item=item_id))
+    except ValueError:
+        return _json_error("Invalid item_id.", status=400)
+    receipt_ct = ContentType.objects.get_for_model(GoodsReceipt)
+    receipt_ids = [
+        m.object_id
+        for m in movements
+        if m.content_type_id == receipt_ct.id and m.object_id
+    ]
+    receipts = {r.id: r for r in GoodsReceipt.objects.filter(pk__in=receipt_ids)}
     return JsonResponse(
-        {"stock_movements": [_serialize_movement(m) for m in queryset]}
+        {
+            "stock_movements": [
+                _serialize_movement(
+                    m,
+                    receipt=receipts.get(m.object_id)
+                    if m.content_type_id == receipt_ct.id
+                    else None,
+                )
+                for m in movements
+            ]
+        }
     )
 
 
@@ -207,16 +237,22 @@ def manage_stock_adjustment(request):
             raise ValidationError("item_id is required.")
         if "quantity" not in payload:
             raise ValidationError("quantity is required.")
-        updated = services.adjust_stock(
+        movement = services.adjust_stock(
             item=item_id,
             quantity=_parse_decimal(payload, "quantity"),
             reason=str(payload.get("reason", "")),
             user=request.user,
         )
-    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError) as exc:
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
         return _inv_error(exc)
 
     logger.info(
-        "Console adjusted stock item=%s user=%s", updated.id, request.user.email
+        "Console adjusted stock item=%s user=%s", movement.item_id, request.user.email
     )
-    return JsonResponse({"item_id": updated.id, "quantity": _dec(updated.quantity)})
+    return JsonResponse(
+        {
+            "item_id": movement.item_id,
+            "quantity": _dec(movement.quantity),
+            "balance": _dec(movement.item.quantity),
+        }
+    )

@@ -65,6 +65,10 @@ const GR_I18N = {
         "purchase_order_line_not_found": "A line could not be found on this purchase order.",
         "no_lines_to_receive": "Add at least one line to receive.",
         "invalid_adjustment_quantity": "Adjustment quantity must be non-zero.",
+        "negative_stock": "Stock cannot be adjusted below zero.",
+        "invalid_quantity": "Quantity must be a finite number.",
+        "invalid_receipt_line": "Each receipt line must be a valid object with line_id and quantity_received.",
+        "duplicate_receipt_line": "A purchase order line was provided more than once in this receipt.",
     },
     "pt-PT": {
         title: "Receção de mercadorias e stock",
@@ -132,5 +136,9 @@ const GR_I18N = {
         "purchase_order_line_not_found": "Não foi possível encontrar uma linha nesta encomenda.",
         "no_lines_to_receive": "Adicione pelo menos uma linha para receber.",
         "invalid_adjustment_quantity": "A quantidade de ajuste tem de ser diferente de zero.",
+        "negative_stock": "O stock não pode ser ajustado abaixo de zero.",
+        "invalid_quantity": "A quantidade tem de ser um número finito.",
+        "invalid_receipt_line": "Cada linha da receção tem de ser um objeto válido com line_id e quantity_received.",
+        "duplicate_receipt_line": "Uma linha da encomenda foi indicada mais do que uma vez nesta receção.",
     },
 };

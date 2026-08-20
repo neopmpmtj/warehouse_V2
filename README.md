@@ -300,5 +300,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Branches + internal request** (Phase 5)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
-- Integration tests (unit suites are green, ~190 tests)
+- Integration tests (unit suites are green, ~199 tests)
 - Frontend pagination UI (API supports `?page`; console still loads all items)

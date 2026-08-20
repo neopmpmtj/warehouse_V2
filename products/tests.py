@@ -42,11 +42,14 @@ from products.services import (
     _save_supplier,
     bulk_deactivate_items,
     bulk_reactivate_items,
+    catalog_below_reorder,
+    catalog_buying_price,
     create_family,
     create_item,
     create_supplier,
     create_supplier_item_price,
     deactivate_item,
+    get_catalog,
     get_families,
     get_item_buying_price,
     get_items,
@@ -1660,6 +1663,10 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
     def test_get_item_buying_price_returns_none_without_prices(self):
         self.assertIsNone(get_item_buying_price(self.item))
 
+    def test_nan_cost_price_is_rejected(self):
+        with self.assertRaises(InvalidCostPriceError):
+            create_supplier_item_price(self.supplier, self.item, "NaN")
+
     def test_get_supplier_item_price_history_newest_first(self):
         sip = create_supplier_item_price(self.supplier, self.item, "12.50")
         update_supplier_item_price(sip, cost_price="13.75")
@@ -1843,3 +1850,123 @@ class SupplierItemPriceConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(item["retail_price"], "99.99")
         self.assertEqual(item["wholesale_price"], "75.00")
         self.assertEqual(item["special_price"], "60.00")
+
+
+class CatalogServiceTests(ItemTestCaseMixin, TestCase):
+    def setUp(self):
+        self.user = make_warehouse_user("catalog@example.com")
+        self.family = self.create_test_family()
+        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.item = self.create_test_item(
+            self.user,
+            description="Cement 50kg",
+            internal_code="CEM-50",
+            reorder_level="10",
+        )
+        self.supplier = create_supplier(name="BuildSupply Ltd")
+
+    def test_get_catalog_returns_active_items(self):
+        create_supplier_item_price(
+            self.supplier, self.item, "8.50", primary=True, user=self.user
+        )
+        items = list(get_catalog())
+        self.assertEqual([item.pk for item in items], [self.item.pk])
+
+    def test_catalog_buying_price_prefers_primary_then_cheapest(self):
+        other = create_supplier(name="Porto Materials Co")
+        create_supplier_item_price(self.supplier, self.item, "12.50", primary=False)
+        create_supplier_item_price(other, self.item, "9.99", primary=False)
+
+        item = get_catalog().get(pk=self.item.pk)
+        self.assertEqual(catalog_buying_price(item), Decimal("9.99"))
+
+        primary = SupplierItemPrice.objects.get(supplier=self.supplier, item=self.item)
+        update_supplier_item_price(primary, primary=True)
+        item = get_catalog().get(pk=self.item.pk)
+        self.assertEqual(catalog_buying_price(item), Decimal("12.50"))
+
+    def test_catalog_buying_price_none_without_prices(self):
+        item = get_catalog().get(pk=self.item.pk)
+        self.assertIsNone(catalog_buying_price(item))
+
+    def test_catalog_below_reorder_flags_at_or_below(self):
+        item = get_catalog().get(pk=self.item.pk)
+        self.assertTrue(catalog_below_reorder(item))
+        item.quantity = Decimal("10")
+        self.assertTrue(catalog_below_reorder(item))
+        item.quantity = Decimal("11")
+        self.assertFalse(catalog_below_reorder(item))
+
+    def test_catalog_below_reorder_ignores_zero_reorder_level(self):
+        item = get_catalog().get(pk=self.item.pk)
+        item.reorder_level = Decimal("0")
+        item.quantity = Decimal("0")
+        self.assertFalse(catalog_below_reorder(item))
+
+    def test_catalog_buying_price_ignores_deactivated_supplier(self):
+        other = create_supplier(name="Porto Materials Co")
+        create_supplier_item_price(self.supplier, self.item, "12.50", primary=True)
+        create_supplier_item_price(other, self.item, "9.99", primary=False)
+
+        self.supplier.is_active = False
+        self.supplier.save()
+
+        item = get_catalog().get(pk=self.item.pk)
+        self.assertEqual(catalog_buying_price(item), Decimal("9.99"))
+
+
+class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
+    def setUp(self):
+        self.staff_user = make_warehouse_user("catalog-console@example.com")
+        self.non_staff_user = get_user_model().objects.create_user(
+            email="plain@example.com", password="test-pass-123"
+        )
+        self.client = Client()
+        self.family = self.create_test_family()
+        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.item = self.create_test_item(
+            self.staff_user,
+            description="Cement 50kg",
+            internal_code="CEM-50",
+            reorder_level="10",
+        )
+        self.supplier = create_supplier(name="BuildSupply Ltd")
+        create_supplier_item_price(
+            self.supplier, self.item, "8.50", primary=True, user=self.staff_user
+        )
+
+    def test_staff_can_open_catalog_console(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse("catalog_console"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "catalog-body")
+
+    def test_catalog_api_returns_joined_data(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse("manage_catalog_list"))
+        self.assertEqual(response.status_code, 200)
+        catalog = response.json()["catalog"]
+        self.assertEqual(len(catalog), 1)
+        row = catalog[0]
+        self.assertEqual(row["internal_code"], "CEM-50")
+        self.assertEqual(row["family"]["name"], self.family.name)
+        self.assertEqual(Decimal(row["quantity"]), Decimal("0"))
+        self.assertEqual(Decimal(row["reorder_level"]), Decimal("10"))
+        self.assertEqual(Decimal(row["buying_price"]), Decimal("8.50"))
+        self.assertTrue(row["below_reorder"])
+        self.assertEqual(row["suppliers"][0]["name"], self.supplier.name)
+        self.assertTrue(row["suppliers"][0]["primary"])
+
+    def test_catalog_api_requires_view_permission(self):
+        self.client.force_login(self.non_staff_user)
+        response = self.client.get(reverse("manage_catalog_list"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_catalog_api_requires_login(self):
+        response = self.client.get(reverse("manage_catalog_list"))
+        self.assertEqual(response.status_code, 401)
+
+    def test_catalog_api_rejects_bad_family_id(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse("manage_catalog_list") + "?family_id=abc")
+        self.assertEqual(response.status_code, 400)
