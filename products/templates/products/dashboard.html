@@ -34,6 +34,7 @@
         <li><a href="/">/</a> — this dashboard</li>
         <li><a href="/manage/items/">/manage/items/</a> — item console (staff catalogue)</li>
         <li><a href="/manage/purchase-orders/">/manage/purchase-orders/</a> — purchase orders</li>
+        <li><a href="/manage/goods-receipts/">/manage/goods-receipts/</a> — goods receipt &amp; stock</li>
         {% if user.is_superuser %}
         <li><a href="/admin/">/admin/</a> — Django admin (superuser only)</li>
         {% endif %}
@@ -85,9 +86,17 @@
         <li>/api/manage/purchase-orders/&lt;id&gt;/submit/</li>
         <li>/api/manage/purchase-orders/&lt;id&gt;/approve/</li>
         <li>/api/manage/purchase-orders/&lt;id&gt;/reject/</li>
-        <li>/api/manage/purchase-orders/&lt;id&gt;/receive/</li>
         <li>/api/manage/purchase-orders/&lt;id&gt;/close/</li>
         <li>/api/manage/purchase-orders/&lt;id&gt;/history/</li>
+    </ul>
+
+    <h2>Goods receipt &amp; stock API</h2>
+    <ul>
+        <li><a href="/api/manage/goods-receipts/" target="_blank" rel="noopener noreferrer">/api/manage/goods-receipts/</a> — list / create</li>
+        <li>/api/manage/goods-receipts/&lt;id&gt;/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/receipt-summary/ — per-line ordered/received/remaining</li>
+        <li><a href="/api/manage/stock-movements/" target="_blank" rel="noopener noreferrer">/api/manage/stock-movements/</a> — stock ledger (with ?item_id=)</li>
+        <li>/api/manage/stock-adjustments/ — manual adjustment (POST)</li>
     </ul>
 </body>
 </html>
