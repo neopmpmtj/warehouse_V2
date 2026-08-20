@@ -407,7 +407,7 @@ function renderStatusActions(po, perms) {
         }
     } else if (po.status === "received") {
         if (perms.change) {
-            actions = [{ endpoint: "close/", labelKey: "actionClose", successKey: "closed" }];
+            actions = [{ endpoint: "close/", labelKey: "actionClose", successKey: "closed", confirmKey: "confirmClose" }];
         }
     }
 
@@ -416,9 +416,12 @@ function renderStatusActions(po, perms) {
         button.type = "button";
         button.className = action.danger ? "btn btn-danger" : "btn btn-primary";
         button.textContent = t(action.labelKey);
-        button.addEventListener("click", () =>
-            performStatusAction(po.id, action.endpoint, action.successKey, button)
-        );
+        button.addEventListener("click", () => {
+            if (action.confirmKey && !window.confirm(t(action.confirmKey))) {
+                return;
+            }
+            performStatusAction(po.id, action.endpoint, action.successKey, button);
+        });
         container.appendChild(button);
     });
 }
