@@ -11,6 +11,13 @@ import warnings
 from pathlib import Path
 from typing import Optional
 
+try:
+    from concurrent_log_handler import (
+        ConcurrentRotatingFileHandler as RotatingFileHandler,
+    )
+except ImportError:  # pragma: no cover - single-process fallback
+    RotatingFileHandler = logging.handlers.RotatingFileHandler
+
 LOGGING_CONFIG = {
     "defaults": {
         "console_level": "DEBUG",
@@ -69,10 +76,12 @@ def create_rotating_file_handler(
     level: str,
     max_bytes: int,
     backup_count: int,
-) -> logging.handlers.RotatingFileHandler:
+) -> logging.Handler:
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    handler = logging.handlers.RotatingFileHandler(
+    # RotatingFileHandler is ConcurrentRotatingFileHandler when the optional
+    # dependency is installed, which keeps rotation safe under multi-process WSGI.
+    handler = RotatingFileHandler(
         log_path,
         maxBytes=max_bytes,
         backupCount=backup_count,

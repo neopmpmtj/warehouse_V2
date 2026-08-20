@@ -8,8 +8,14 @@
     <title>Item console — CentCompras</title>
     <script>
         (function () {
-            var theme = localStorage.getItem("cc-theme") || "light";
-            var lang = localStorage.getItem("cc-lang") || "en";
+            var theme = "light";
+            var lang = "en";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "en";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
             document.documentElement.setAttribute("data-theme", theme);
             document.documentElement.setAttribute("lang", lang);
         })();

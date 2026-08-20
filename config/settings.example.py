@@ -4,13 +4,17 @@ Copy to config/settings.py and adjust values for your local environment.
     cp config/settings.example.py config/settings.py
 """
 
+# Environment variables (optional overrides):
+#   DJANGO_SECRET_KEY, DJANGO_DEBUG, POSTGRES_PASSWORD
+
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "change-me-in-production"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production")
 
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
@@ -60,7 +64,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "centcompras_db",
         "USER": "postgres",
-        "PASSWORD": "your_password_here",
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "your_password_here"),
         "HOST": "localhost",
         "PORT": "5432",
     }

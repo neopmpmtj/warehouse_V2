@@ -131,9 +131,12 @@ def _unit_choices():
 
 
 def _console_payload(request):
-    items = get_items(active_only=False)
-    return {
-        "items": [_serialize_item(item) for item in items],
+    queryset = get_items(active_only=False)
+
+    page_raw = request.GET.get("page")
+    page_size_raw = request.GET.get("page_size")
+
+    payload = {
         "families": [
             _serialize_family(family)
             for family in _families_with_counts()
@@ -142,6 +145,30 @@ def _console_payload(request):
         "vat_rates": [_serialize_vat_rate(vr) for vr in get_vat_rates()],
         "permissions": catalog_permissions(request.user),
     }
+
+    if page_raw is None and page_size_raw is None:
+        payload["items"] = [_serialize_item(item) for item in queryset]
+        return payload
+
+    try:
+        page = max(int(page_raw) if page_raw is not None else 1, 1)
+        page_size = max(int(page_size_raw) if page_size_raw is not None else 50, 1)
+    except (TypeError, ValueError):
+        page, page_size = 1, 50
+    page_size = min(page_size, 200)
+
+    total = queryset.count()
+    start = (page - 1) * page_size
+    payload.update({
+        "items": [
+            _serialize_item(item) for item in queryset[start:start + page_size]
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "num_pages": (total + page_size - 1) // page_size,
+    })
+    return payload
 
 
 def _parse_decimal(payload, field_name, required=True):

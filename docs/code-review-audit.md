@@ -11,7 +11,7 @@
 |-------|-------|--------|
 | **Phase 1 — critical** | #1, #2, #3, #11 | ✅ **DONE** |
 | **Phase 2 — medium** | #4, #5, #6, #7, #12, #13, #14 | ✅ **DONE** |
-| **Phase 3 — remaining** | #8, #9, #10, #15 (+ cleanup) | ⏳ pending — awaiting go-ahead |
+| **Phase 3 — remaining** | #8, #9, #10, #15 (+ cleanup) | ✅ **DONE** |
 
 Each item below is tagged with its current status.
 
@@ -21,7 +21,8 @@ Each item below is tagged with its current status.
 
 - **Baseline (pre-fix):** 90 tests, 0 failures, 0 errors.
 - **After Phase 1:** 101 tests, 0 failures, 0 errors.
-- **After Phase 2:** **104 tests, 0 failures, 0 errors** (`Ran 104 tests in ~247s — OK`).
+- **After Phase 2:** 104 tests, 0 failures, 0 errors.
+- **After Phase 3:** **105 tests, 0 failures, 0 errors** (`Ran 105 tests in ~246s — OK`).
 - "System check identified no issues (0 silenced)"; no deprecation warnings.
 - ⚠️ Caveat: the Django test client **disables CSRF and runs single-threaded**, so these tests do **not** exercise browser CSRF, concurrency, or race conditions. Concurrency/rollback is simulated via `mock.patch`.
 
@@ -62,13 +63,13 @@ Replaced `restrict_admin_to_superusers()` (which patched `AdminSite.has_permissi
 **7. Group sync runs too eagerly.** — ✅ **FIXED (Phase 2)**
 `sync_warehouse_groups()` is now idempotent (only `permissions.set()` when the set actually differs; no recurring legacy-group delete); `assign_warehouse_group()` no longer re-syncs on every call.
 
-**8. No pagination on the console payload.** — ⏳ **Phase 3**
+**8. No pagination on the console payload.** — ✅ **FIXED (Phase 3, backend)**
 `_console_payload`/`get_items` load **every** item into one response.
 
-**9. Logging not multi-process-safe.** — ⏳ **Phase 3**
+**9. Logging not multi-process-safe.** — ✅ **FIXED (Phase 3)**
 `RotatingFileHandler` loses/corrupts lines under multi-process WSGI (gunicorn).
 
-**10. Dev credentials in `config/settings.py`.** — ⏳ **Phase 3**
+**10. Dev credentials in `config/settings.py`.** — ✅ **FIXED (Phase 3)**
 Plaintext PostgreSQL password + `SECRET_KEY = "change-me-in-production"` + `DEBUG = True`. Move to env vars before anything leaves localhost.
 
 ---
@@ -100,7 +101,7 @@ Deleted `products/offline_reference/` and the served `service_worker.js` stub; r
 
 ### 🟢 Minor
 
-- `currentLang()` / `currentTheme()` read `localStorage` directly — throws in privacy/blocked-storage contexts. — ⏳ **Phase 3**
+- `currentLang()` / `currentTheme()` read `localStorage` directly — throws in privacy/blocked-storage contexts. — ✅ **FIXED (Phase 3)**
 - ~~Server-side length limits are absent (see backend #2).~~ — ✅ **Resolved by #2 (Phase 1).**
 
 ---
@@ -166,8 +167,32 @@ Deleted `products/offline_reference/` and the served `service_worker.js` stub; r
 
 ---
 
+## Phase 3 — changes applied (changelog)
+
+### #8 Backend pagination (foundation)
+- `products/console_views.py` — `_console_payload` now accepts `?page` / `?page_size` (page_size clamped ≤ 200) and returns `total`, `page`, `page_size`, `num_pages`. With no params, behavior is unchanged (all items) — fully backward-compatible; the existing frontend still works unmodified.
+- Test — `ItemConsoleTests.test_manage_api_supports_pagination`.
+- ⚠️ **Frontend pagination UI deferred** — see note at the bottom.
+
+### #9 Process-safe log rotation
+- `logging_utils/logging_config.py` — uses `concurrent_log_handler.ConcurrentRotatingFileHandler` when installed (graceful fallback to `RotatingFileHandler`), so rotation is safe under multi-process WSGI.
+- `requirements.txt` — added `concurrent-log-handler>=0.9.13,<1`.
+
+### #10 Environment-driven settings
+- `config/settings.py` + `config/settings.example.py` — `SECRET_KEY`, `DEBUG`, and DB `PASSWORD` now read from `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `POSTGRES_PASSWORD` (with dev fallbacks); documented in the example file.
+
+### #15 Safe localStorage access
+- `products/static/products/js/console.js` — added `safeGetStorage`/`safeSetStorage`; used in `currentLang`/`currentTheme`/`setTheme`/`setLanguage`.
+- `products/templates/products/item_console.html` — wrapped the inline IIFE `localStorage` reads in try/catch.
+
+**Phase 3 test result:** full suite `Ran 105 tests — OK` (0 failures, 0 errors).
+
+---
+
 ## Bottom line
 
-The codebase is **well-architected and disciplined** (service layer, transactions, row locking, audit-by-design, no XSS). **Phase 1 (critical) and Phase 2 (medium) are complete and green.** Remaining: Phase 3 (#8 pagination, #9 multi-process logging, #10 dev credentials, #15 localStorage guard).
+The codebase is **well-architected and disciplined** (service layer, transactions, row locking, audit-by-design, no XSS). **All three phases are complete and green** (105 tests).
+
+> ⚠️ **Deferred:** #8's *frontend* pagination UI. The API now supports pagination, but the console still loads all items and filters/sorts client-side. Adopting server-side pagination in the UI requires moving search/filter/sort to the server — a UX refactor best done as its own focused session when the catalogue grows.
 
 > ⚠️ Note: `README.md`, `products/README.md`, and `products/products_docs/aux_instructions.md` still describe the now-removed offline catalogue (offline_reference, `/service-worker.js`, `/api/items/`). Consider a separate doc-cleanup pass before relying on those docs.

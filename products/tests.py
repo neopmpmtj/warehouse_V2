@@ -907,6 +907,29 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertIn("families", payload)
         self.assertNotIn("suppliers", payload)
 
+    def test_manage_api_supports_pagination(self):
+        for index in range(5):
+            self.create_test_item(self.staff_user, description=f"Item {index}")
+        self.client.force_login(self.staff_user)
+
+        page1 = self.client.get(
+            reverse("manage_item_list"),
+            {"page": "1", "page_size": "2"},
+        )
+        self.assertEqual(page1.status_code, 200)
+        payload = page1.json()
+        self.assertEqual(len(payload["items"]), 2)
+        self.assertEqual(payload["total"], 5)
+        self.assertEqual(payload["page"], 1)
+        self.assertEqual(payload["page_size"], 2)
+        self.assertEqual(payload["num_pages"], 3)
+
+        page3 = self.client.get(
+            reverse("manage_item_list"),
+            {"page": "3", "page_size": "2"},
+        )
+        self.assertEqual(len(page3.json()["items"]), 1)
+
     def test_staff_can_create_and_update_item_through_console_api(self):
         self.client.force_login(self.staff_user)
 

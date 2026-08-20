@@ -4,6 +4,22 @@ const SUPPLIER_API = "/api/manage/suppliers/";
 const THEME_KEY = "cc-theme";
 const LANG_KEY = "cc-lang";
 
+function safeGetStorage(key, fallback) {
+    try {
+        return localStorage.getItem(key) || fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function safeSetStorage(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (error) {
+        /* ignore */
+    }
+}
+
 const state = {
     items: [],
     families: [],
@@ -48,11 +64,11 @@ const LIFECYCLE_PRESETS = {
 };
 
 function currentLang() {
-    return localStorage.getItem(LANG_KEY) || "en";
+    return safeGetStorage(LANG_KEY, "en");
 }
 
 function currentTheme() {
-    return localStorage.getItem(THEME_KEY) || "light";
+    return safeGetStorage(THEME_KEY, "light");
 }
 
 function t(key, vars) {
@@ -131,13 +147,13 @@ function applyStaticI18n() {
 }
 
 function setTheme(theme) {
-    localStorage.setItem(THEME_KEY, theme);
+    safeSetStorage(THEME_KEY, theme);
     document.documentElement.setAttribute("data-theme", theme);
     applyStaticI18n();
 }
 
 function setLanguage(lang) {
-    localStorage.setItem(LANG_KEY, lang);
+    safeSetStorage(LANG_KEY, lang);
     applyStaticI18n();
     fillFilterOptions();
     fillFormLookups();
