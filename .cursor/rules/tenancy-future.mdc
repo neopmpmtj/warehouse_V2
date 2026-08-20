@@ -5,26 +5,28 @@ alwaysApply: false
 
 # Orders (planned — not built)
 
-**Do not start this work yet.** Inbound stock (supplier purchases → `Product.stock`) comes first. Branch orders against zero stock are not useful.
+**Do not start this work yet.** Phases 0–4 (through manager catalog) are done. Branch orders wait for Phase 5 (`branches` app + internal request). Stock already exists (goods receipt ledger); that is not a reason to start orders now.
 
-Auth and tenancy foundation exists (`accounts`, `branches`). Use this rule only when implementing orders after that.
+The `branches` app is **not built**. Design only: @docs/warehouse-tenancy-setup.md
 
-@docs/warehouse-tenancy-setup.md
-
-## Already in place
+## Already in place (warehouse, not tenancy)
 
 - `accounts.User` — email login
-- `Branch`, `BranchMembership` — roles per branch
-- `branches/permissions.py` — `can_create_order`, `can_edit_or_delete_order`, etc.
-- `request.active_branch` — session-based active branch
-- Global `Product` catalogue (no `branch_id`)
+- Global `Item` catalogue (no `branch_id`)
+- Stock ledger: `StockMovement` + cached `Item.quantity`
+
+## Not in place (do not assume these exist)
+
+- `Branch`, `BranchMembership`
+- `branches/permissions.py`
+- `request.active_branch`
 
 ## Order phase rules (when the phase actually starts)
 
 - Do **not** implement the historical `item_name` / `quantity` / `notes` stub in the tenancy doc
 - Every `Order` has required `branch` FK and `created_by` FK
-- Order lines should reference `Product` (snapshot description/price later)
+- Order lines should reference `Item` (snapshot description/price later)
 - Always query orders via branch-scoped manager (e.g. `.for_user_branches(user)`)
-- Role checks at view entry using `branches/permissions.py`
+- Role checks at view entry using future `branches/permissions.py`
 - Client-side order IDs for idempotent sync (offline retries)
-- Product catalogue stays global (no `branch_id` on `Product`)
+- Catalogue stays global (no `branch_id` on `Item`)

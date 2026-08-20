@@ -1,16 +1,16 @@
 # CentCompras — Agent instructions
 
-Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock are done. **Manager catalog (stock + price view) is the next phase (Phase 4)**; branch orders wait until then.
+Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done. Branches, orders, offline, and email are deferred.
 
-**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md` → Project status](README.md#project-status-handoff) and [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for detail.
+**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup and [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing.
 
 ## Session handoff (August 2026)
 
-**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), **goods receipt + stock ledger** (`inventory` app: `GoodsReceipt`/`GoodsReceiptLine`, `StockMovement` signed ledger, cached `Item.quantity`, `receive_goods()` + admin-only `adjust_stock()`), dev seed script.
+**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), **goods receipt + stock ledger** (`inventory` app: `GoodsReceipt`/`GoodsReceiptLine`, `StockMovement` signed ledger, cached `Item.quantity`, `receive_goods()` + admin-only `adjust_stock()`), **manager catalog** (read-only `/manage/catalog/`: stock + reorder level + selling/buying prices + suppliers, cost visible to warehouse groups only), dev seed script.
 
 **Not done:** `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
 
-**Next (Phase 4):** manager catalog (stock + price view) — read-only join of item + 3 selling prices + buying price (primary supplier) + cached stock + reorder level + supplier(s); cost visible to warehouse groups only. See [`docs/handoff.md`](docs/handoff.md) and plan §11. Do **not** implement `orders/` or the tenancy-doc Order stub.
+**Next:** no forced next build after Phase 4. Remaining phases are all deferred/pending/future — **email (Phase 6) is the smallest self-contained item**; **branches (Phase 5) needs a dedicated plan**. Do **not** implement `orders/` or the tenancy-doc Order stub.
 
 **Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly). Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice`. PO lines are **rejected** if the supplier has no price for the item; `approved_net/vat/gross` are frozen at approval.
 
@@ -21,7 +21,7 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 | Warehouse admin | group `warehouse_admins` | Full catalogue (view/add/change/delete) via the website | N/A (central) |
 | Warehouse manager | group `warehouse_managers` | View/add/change via the website (no delete) | N/A (central) |
 | Warehouse operator | group `warehouse_data_operators` | Read-only catalogue on the website | N/A (central) |
-| Branch admin/manager/user | `BranchMembership.role` | Read-only at `/` | Per-branch permissions in `branches/permissions.py` (after inbound stock) |
+| Branch admin/manager/user | *(future — Phase 5)* `BranchMembership.role` | Read-only catalogue (not built) | Per-branch permissions (not built) |
 | Django superuser | `is_superuser` | May use the website console; **only** role that can log into `/admin/` | Site config in `/admin/` |
 
 Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev`, `warehouse.operator@centcompras.dev`, password `devpass123`.
@@ -69,7 +69,7 @@ PostgreSQL is the source of truth.
 
 ## Not implemented yet
 
-- **Manager catalog (stock + price view)** (Phase 4, next) — read-only join of item, prices, stock, supplier(s)
+- **Branches + internal request** (Phase 5, deferred)
 - `orders` app and order workflow (**after** stock)
 - Branches app (`Branch`, `BranchMembership`, middleware, picker)
 - Order business rules not locked (stock timing, cart shape, cancel policy)
@@ -122,6 +122,6 @@ Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, n
 ## Before large changes
 
 1. [`docs/handoff.md`](docs/handoff.md) — state + decisions + next task
-2. [`README.md`](README.md) — project status and scope
+2. [`README.md`](README.md) — setup, URLs, seed
 3. [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — phased plan
 4. [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) — tenancy design (**branches not built**); Order sketch §6–7 is **not** the next build

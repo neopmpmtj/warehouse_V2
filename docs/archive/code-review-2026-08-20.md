@@ -1,5 +1,16 @@
 # CentCompras — Code Review (Phase 2 + cross-cutting)
 
+> **✅ Concluded 20 August 2026 — all findings resolved; this review is archived.** This is **not** a product-phase backlog. Product Phases 1–2 (pricing, purchase orders) are done. All six findings (#1–#6) are fixed. *(Two obsolete findings were removed — "zero-cost lines" (superseded by D12) and "receive without stock" (superseded by Phase 3).)* Current product state: [`handoff.md`](handoff.md).
+
+| # | Finding | Status now |
+|---|---------|------------|
+| 1 | Empty optional numeric field → HTTP 400 | ✅ **Fixed** — empty coerced to `"0"` (`|| "0"` in `formPayload`, `submitSupplierPriceAdd`, `onLineConfirm`) |
+| 2 | Backend error codes not in i18n | ✅ **Fixed** — all codes localised (EN + pt-PT) in `purchase_orders_i18n.js` and `console_i18n.js` |
+| 3 | `net_unit_cost` not quantized | ✅ **Fixed** — quantised to `Decimal("0.0001")` |
+| 4 | Changing PO supplier does not re-price lines | ✅ **Resolved** — `supplier` is not in `PO_UPDATABLE_FIELDS` (immutable) |
+| 5 | `Number()` used for currency/percent formatting | ✅ **Fixed** — `formatCost`/`formatPercent` use string manipulation (no `Number()`) |
+| 6 | `rejected` is terminal (no reopen-to-draft) | ✅ **Fixed** — `reopen()` adds `rejected → draft` |
+
 > Read-only review. Scope: whole project, prioritising Phase 1 pricing + Phase 2 procurement and recent cross-cutting changes (timezone, date format, primary-demotion audit). No code changed during this review.
 
 - **Date:** 20 August 2026
@@ -9,7 +20,7 @@
 
 ## Summary
 
-No **critical** (data-loss/corruption) defects remain — the discount-total bug found during UI testing was the main one and is already fixed with regression tests. The findings below are **medium/low severity** plus two "info" items to settle before Phase 3. The single most worth-fixing item is **#1**, because it's the same class of "edge case getting through" the user has been hitting.
+No **critical** (data-loss/corruption) defects remain — the discount-total bug found during UI testing was the main one and is already fixed with regression tests. The findings below are **medium/low severity** plus one "info" item (a reopen transition). The single most worth-fixing item is **#1**, because it's the same class of "edge case getting through" the user has been hitting.
 
 | # | Severity | Area | Summary |
 |---|----------|------|---------|
@@ -18,9 +29,7 @@ No **critical** (data-loss/corruption) defects remain — the discount-total bug
 | 3 | 🟢 Low | Backend | `net_unit_cost` is not rounded → inconsistent decimal display |
 | 4 | 🟢 Low | Backend | Changing a PO's supplier (service) does not re-price existing lines |
 | 5 | 🟢 Low | Frontend | `formatCost`/`formatPercent` use `Number()` → precision loss on large values |
-| 6 | 🟢 Low | Backend | Zero-cost lines are created silently when an item has no supplier price |
-| 7 | 🔵 Info | Backend | `rejected` is terminal — no "reopen to draft" transition |
-| 8 | 🔵 Info | Backend | `receive` does not write stock (Phase 3) but is already reachable in the UI |
+| 6 | 🔵 Info | Backend | `rejected` is terminal — no "reopen to draft" transition |
 
 ---
 
@@ -70,25 +79,11 @@ The `api()` helper maps `payload.code` through `t()`, but the backend error code
 
 **Suggested fix:** format the string directly (split on `.`, pad/round) instead of going through `Number`.
 
-### 6. 🟢 Zero-cost lines created silently
-
-**File:** `procurement/services.py` (`_default_unit_cost` returns `Decimal("0")` when an item has no supplier price; `add_line` accepts it).
-
-If an item has no `SupplierItemPrice`, a line is auto-filled with cost `0` with no warning — easy to miss and submit. Not corruption, but a silent default.
-
-**Suggested fix:** surface a hint in the UI ("no supplier price — cost set to 0"), or require an explicit `unit_cost` when no price exists.
-
-### 7. 🔵 `rejected` is terminal
+### 6. 🔵 `rejected` is terminal
 
 **File:** `procurement/services.py` (`STATUS_TRANSITIONS`).
 
-There is no transition out of `rejected`. A PO rejected by mistake cannot be reopened as a draft. Likely a desired feature later.
-
-### 8. 🔵 `receive` does not write stock (Phase 3), but is reachable now
-
-**File:** `procurement/services.py` (`receive` is a status-only transition; stock writing is Phase 3).
-
-Managers/admins can already click **Receive** in the console, which marks a PO "received" *without* creating any stock movement. This is correct per the plan (goods receipt is Phase 3), but worth a deliberate decision: either hide the **Receive** button until Phase 3, or document it as "confirmation only, no stock yet."
+There is no transition out of `rejected`. A PO rejected by mistake cannot be reopened as a draft. *(Resolved — a `reopen()` transition was added.)*
 
 ---
 
@@ -106,7 +101,9 @@ Managers/admins can already click **Receive** in the console, which marks a PO "
 
 ## Recommended priority
 
+> *(Historical — all remaining findings were resolved; see the status table at the top.)*
+
 1. **Fix #1** (empty numeric field → 400) — the one real papercut users will hit.
 2. **#2, #3** — cheap polish (localise errors, round `net_unit_cost`).
-3. **#4, #6** — small backend hardening before Phase 3.
-4. **#7, #8** — decide during Phase 3 planning (reopen; receive vs. stock).
+3. **#4** — small backend hardening before Phase 3.
+4. **#6** — decide during Phase 3 planning (reopen).

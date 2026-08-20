@@ -12,7 +12,7 @@
 >
 > *(During development on your own machine: `http://127.0.0.1:8000/manage/purchase-orders/`)*
 
-Sign in with your email + password (the one your administrator gave you). This manual assumes you already know the item catalogue; see the [Item Console manual](user-manual.md) for items, families, suppliers, and supplier prices.
+Sign in with your email + password (the one your administrator gave you). This manual assumes you already know the item catalogue; see the [Item Console manual](01-items.md) for items, families, suppliers, and supplier prices. After a PO is **approved**, book the delivery in with the [Goods receipt & stock manual](03-goods-receipts.md).
 
 ---
 
@@ -114,14 +114,14 @@ The list's **Total** column shows the **gross**.
 | Draft | **Submit** | Submitted | manager/admin |
 | Submitted | **Approve** | Approved | **admin only** |
 | Submitted | **Reject** | Rejected | manager/admin |
-| Approved | **Receive** | Received | manager/admin |
-| Received | **Close** | Closed | manager/admin |
+| Approved | **Receive goods** | Received | manager/admin |
+| Received | **Close** | Closed | manager/admin (when fully received, this can happen automatically) |
 
 - **Submit** requires at least one line.
 - Once submitted, lines are **locked** — you can no longer edit them.
 - **Approve** freezes the totals (see §8).
 
-> ⚠️ **Receive** currently only changes the status — it does **not** yet write stock (that's the next phase, goods receipt).
+> **Receive goods** opens the [goods receipt console](03-goods-receipts.md) (`/manage/goods-receipts/?po=<id>`). Recording a receipt writes stock and moves the purchase order to **Received**, then **Closed** when every line is fully received. Partial shipments are allowed.
 
 ---
 

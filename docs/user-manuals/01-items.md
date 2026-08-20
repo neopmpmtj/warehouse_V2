@@ -2,7 +2,7 @@
 
 **The Item Console** · Version 1.0 · For warehouse staff (admin / manager / operator)
 
-> **Also available:** a **Purchase orders** console at `/manage/purchase-orders/` — see the [Purchase Orders manual](user-manual-purchase-orders.md).
+> **Also available:** [Purchase orders](02-purchase-orders.md) at `/manage/purchase-orders/` · [Goods receipt & stock](03-goods-receipts.md) at `/manage/goods-receipts/`.
 
 ---
 
@@ -268,9 +268,12 @@ This is your safety net: nothing is ever silently overwritten.
 
 ---
 
-## 12. Coming soon
+## 12. Related consoles
 
-Procurement (purchase orders), stock/inventory, goods receipts, and branch ordering are **not yet available** — they'll be added in later phases and documented here.
+- [Purchase orders](02-purchase-orders.md) — raise and approve supplier orders.
+- [Goods receipt & stock](03-goods-receipts.md) — book in deliveries; stock is a ledger, never typed on the item.
+
+Branch ordering is **not yet available**.
 
 ---
 

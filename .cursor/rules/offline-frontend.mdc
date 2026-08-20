@@ -1,10 +1,15 @@
 ---
-description: Offline catalogue frontend — Service Worker, IndexedDB, plain JS
-globs: products/**/*.{js,html}
+description: Phase 7 offline catalogue — not implemented; files listed here do not exist
 alwaysApply: false
 ---
 
-# Offline frontend
+# Offline frontend (Phase 7 — future)
+
+**Do not implement this now.** The Service Worker + IndexedDB catalogue was built once and **deleted**. Staff consoles (`/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`) are online-only.
+
+There is no `db.js`, `product_list.js`, `register_sw.js`, `service_worker.js`, or `GET /api/products/` in the tree today.
+
+When Phase 7 re-adds offline catalogue (after Phase 5 branches):
 
 ## Responsibilities (do not merge)
 
@@ -22,9 +27,4 @@ alwaysApply: false
 - Bump `CACHE_NAME` version when app shell files change
 - Include all shell scripts in `APP_SHELL` (including `register_sw.js`)
 - IndexedDB stores downloaded catalogue only — not user-created products
-
-## API contract
-
-`GET /api/products/` returns `{ "products": [{ id, description, stock, price }], "catalog_updated_at": "<iso or null>" }` with stock/price as strings. Family, unit, and internal code are not in this payload yet.
-
-The staff console (`/manage/items/`, `console.js`) is **online-only** and is not part of the app-shell cache.
+- PostgreSQL remains the source of truth

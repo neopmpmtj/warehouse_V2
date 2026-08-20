@@ -1,7 +1,9 @@
 # CentCompras — Code Review & Audit (report only)
 
+> **HISTORICAL / COMPLETED.** Do not treat this file as a backlog. All numbered findings were applied. The “Phase 1 / 2 / 3” labels below are **audit-fix batches** on the catalogue (atomicity, uniqueness, pagination, env settings) — they are **not** product Phases 1–3 (pricing / purchase orders / goods receipt). Current product state: [`handoff.md`](../handoff.md).
+
 > Read-only audit. Backend and frontend reviewed separately.
-> Project: `/home/pmpmt/python/260819-central_de_compras/warehouse_V2/`
+> Project: `/home/pmpmt/python/260819-central_de_compras/warehouse_V2/` (path is the old clone; ignore it)
 
 ---
 

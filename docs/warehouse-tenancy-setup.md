@@ -1,10 +1,10 @@
 # Warehouse App — Multi-Tenancy & Role Setup Instructions
 
-**Status (18 August 2026):** `accounts` and `branches` from this document **are built**. The product catalogue is a separate, completed module (`products/`, staff console at `/manage/products/`).
+> **Phase 5 design — not built.** There is no `branches/` app in the repository. `accounts` (email login) **is** built. The catalogue lives at `/manage/items/`. Live state: [`handoff.md`](handoff.md).
 
-**Do not implement §6–7 as written.** The `Order` example with `item_name` / `quantity` / `notes` was a placeholder from before `Product` existed. Branch orders are **on hold** until inbound stock can be recorded (warehouse purchases from suppliers → `Product.stock`). Order business rules (cart shape, stock decrement timing, cancel policy) are also not locked.
+**Do not implement §6–7 as written.** The `Order` example with `item_name` / `quantity` / `notes` was a placeholder from before `Item` existed. Branch orders wait until Phase 5. Order business rules (cart shape, stock decrement timing, cancel policy) are also not locked.
 
-The catalogue is managed on the **website** by Django groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators` (built-in `view` / `add` / `change` / `delete` model permissions). **`/admin/` is superuser only** — `is_staff` is not a warehouse role. Branch roles (`BranchMembership`) do **not** grant catalogue edit.
+The catalogue is managed on the **website** by Django groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators` (built-in `view` / `add` / `change` / `delete` model permissions). **`/admin/` is superuser only** — `is_staff` is not a warehouse role. Future branch roles (`BranchMembership`) will **not** grant catalogue edit.
 
 ---
 
@@ -354,19 +354,12 @@ Then via `/admin`:
 
 ---
 
-## 11. Inbound stock (under discussion — not in this original brief)
+## 11. Inbound stock — now done (Phase 3)
 
-This document designed **branch-scoped outbound orders**. The catalogue now exists, and **stock is still a field typed on `Product`**.
+This document designed **branch-scoped outbound orders**. Inbound stock was built later as the `inventory` app, not as a typed field on the item.
 
-The intended next product-side slice (not built):
+**As built:** many `GoodsReceipt`s per purchase order; each receipt writes a signed `StockMovement`; cached `Item.quantity` is updated only via that ledger (never typed on the item form). Admin-only `adjust_stock` covers corrections. Console: `/manage/goods-receipts/`.
 
-```text
-Warehouse purchases from suppliers
-    → a receipt is recorded (who, which supplier, which products, quantities)
-    → Product.stock is updated from that receipt
-    → branch orders come later, against that stock
-```
+Do **not** add an `orders` app in this document in order to “have somewhere to put stock.” Stock in is not a branch order. Keep catalogue identity in `products`. Quantity movement stays in `inventory`.
 
-Do not add an `orders` app in order to “have somewhere to put stock”. Stock in is not a branch order. Naming (`procurement`, `purchases`, `receiving`) and whether the first slice is a full purchase order or a goods-receipt-only record are **not locked**. Agree that slice before coding.
-
-Keep catalogue identity (family, description, unit, price, `is_active`) in `products`. Keep movement of quantity in a dedicated app that calls `products/services.py` (or a new stock-adjustment helper there) so PostgreSQL stays the source of truth.
+Branch orders (this document’s original brief) remain Phase 5.

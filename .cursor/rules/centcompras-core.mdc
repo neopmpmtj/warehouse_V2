@@ -7,32 +7,33 @@ alwaysApply: true
 
 ## Project
 
-Central warehouse + satellite branches. Offline-capable product catalogue MVP (Django 6.1, PostgreSQL, plain HTML/JS).
+Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. Phases 0–4 are done: catalogue + pricing + purchase orders + goods receipt + manager catalog. Branches, orders, offline, and email are later (deferred/pending).
 
 ## What exists today
 
-- `accounts` — custom User, email login
-- `branches` — Branch, BranchMembership, active branch middleware, `seed_dev_data` command
-- `products` — catalogue, staff console `/manage/items/`, admin, audit logs, API, CLI, tests
-- `logging_utils` — centralized logging to `logs/`
-- **Inbound stock / procurement** — not built; items have no stock field yet
-- `orders` — not built; wait until inbound stock exists
-- **Tests** — `products/tests.py` (catalogue + console); `accounts` tests for login/groups
+- `accounts` — custom User (email, timezone), warehouse groups, login
+- `products` — catalogue + selling prices + `SupplierItemPrice`, staff console `/manage/items/`, manager catalog `/manage/catalog/` (read-only stock + prices)
+- `procurement` — purchase orders at `/manage/purchase-orders/`
+- `inventory` — goods receipt + `StockMovement` ledger + cached `Item.quantity` at `/manage/goods-receipts/`
+- `logging_utils` — rotating logs in `logs/`
+- `branches` — **not built** (design in `docs/warehouse-tenancy-setup.md`)
+- `orders` — not built; wait until Phase 5
+- Offline catalogue — **removed** (Phase 7 may re-add it)
 
 ## Non-negotiables
 
-- PostgreSQL = source of truth; IndexedDB = read-only catalogue cache
-- Branch users: read-only catalogue later; warehouse staff manage items via `/manage/items/` + `products/services.py`
+- PostgreSQL = source of truth. No client-side writes.
 - Business logic in `services.py`; views/commands stay thin
-- Branch permissions via `branches/permissions.py`; catalogue via Django groups (`warehouse_admins`, `warehouse_managers`, `warehouse_data_operators`)
-- Django admin (`/admin/`) is superuser only; warehouse users work on the website
+- Warehouse groups (`warehouse_admins`, `warehouse_managers`, `warehouse_data_operators`); `/admin/` is superuser only
 - Plain Django + plain JavaScript — no React/Vue
 - Incremental phases — no large application dumps
 - Do not implement the tenancy-doc `Order` stub (`item_name`)
+- Do not start branches, orders, offline, email, or shared chrome in passing
 - Do not restyle `/` or polish the staff console unless that session is requested
 
 ## References
 
-- @README.md — **Project status (handoff)** section first when resuming
-- @AGENTS.md — agent instructions
-- @docs/warehouse-tenancy-setup.md — tenancy (done); Order sketch is not the next build; §11 inbound stock
+- @docs/handoff.md — **read first** (state, decisions, next task)
+- @README.md — setup
+- @docs/project-plan-2026-08-20.md — sequencing
+- @docs/warehouse-tenancy-setup.md — Phase 5 design (**not built**); Order sketch is not the next build

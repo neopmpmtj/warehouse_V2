@@ -3,14 +3,14 @@
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
 - **Last updated:** 20 August 2026
-- **Current phase:** Phase 3 (goods receipt + stock) complete ✅ — next: Phase 4 (manager catalog)
+- **Current phase:** Phase 4 (manager catalog) complete ✅ — phases 0–4 done; branches/email/mobile remain deferred/pending/future
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is deferred — see [Phase 5](#phase-5--branches--internal-request-deferred).
 
 ---
 
 ## 1. Purpose
 
-This plan turns the agreed vision into an executable, step-by-step roadmap with status tracking. It is the single source of truth for **what is built, what is next, and what is deliberately deferred**. The live code-level handoff remains in [`README.md`](../README.md) (canonical for code facts); this document is canonical for **sequencing and status**.
+This plan turns the agreed vision into an executable, step-by-step roadmap with status tracking. It is the single source of truth for **sequencing, the status tracker, and locked decisions**. The live session handoff is [`docs/handoff.md`](handoff.md); setup lives in [`README.md`](../README.md).
 
 ---
 
@@ -69,13 +69,13 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | Catalog item (identity) | `Item` | exists |
 | 3 selling prices | `Item.retail_price` / `Item.wholesale_price` / `Item.special_price` | manual, audited |
 | Supplier cost price | `SupplierItemPrice` | supplier × item → `cost_price` |
-| Purchase order | `PurchaseOrder` + `PurchaseOrderLine` | future |
-| Receiving document | `GoodsReceipt` + `GoodsReceiptLine` | "Receção de Mercadorias" (pt-PT) |
-| Stock movement | `StockMovement` (ledger) + cached quantity on `Item` | future |
-| Branch-side order | Internal request / "Requisição Interna" | future |
+| Purchase order | `PurchaseOrder` + `PurchaseOrderLine` | exists (Phase 2) |
+| Receiving document | `GoodsReceipt` + `GoodsReceiptLine` | exists (Phase 3); "Receção de Mercadorias" (pt-PT) |
+| Stock movement | `StockMovement` (ledger) + cached quantity on `Item` | exists (Phase 3) |
+| Branch-side order | Internal request / "Requisição Interna" | future (Phase 5) |
 | Discounts | `discount_commercial` / `discount_financial` / `rappel` | on PO lines, simple % |
-| Manager view | Stock & price catalog (cost **visible**) | future |
-| Branch view | Branch catalog (cost **hidden**) | future |
+| Manager view | Stock & price catalog (cost **visible**) | exists (Phase 4) |
+| Branch view | Branch catalog (cost **hidden**) | future (Phase 5) |
 
 ---
 
@@ -96,27 +96,27 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D9 | Email automation | deferred to a **pending phase**; model a stub seam now |
 | D10 | Branches | **not now**; only keep products branch-ready |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — **auto-suggested by default** when procuring (PO line), **always overridable** |
+| D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
+| D13 | Approved totals snapshot | `approved_net` / `approved_vat` / `approved_gross` frozen at `approve()` |
+| O1 | Item-level buying-price display | **Option A** — `primary` flag (one per item); fall back to cheapest if none marked — **implemented** |
 
 ### Open ⚠️
 
-| # | Decision | Working default | Confirm at |
-|---|----------|-----------------|------------|
-| O1 | Item-level "buying price" display when an item has multiple suppliers | **Option A** — `SupplierItemPrice.primary` flag (one primary per item); fall back to cheapest if none marked | Resolved — Option A implemented |
+None. O1 was resolved as Option A (see locked table).
 
-> **O1 options recap:** A = primary supplier flag (recommended) · B = always show cheapest · C = per-supplier only, no single item-level cost.
+> **O1 options recap (historical):** A = primary supplier flag (chosen) · B = always show cheapest · C = per-supplier only, no single item-level cost.
 
 ---
 
-## 6. Current state (verified in code)
+## 6. Current state
 
-- **Apps:** `accounts` (email login, warehouse groups), `products` (catalog + console + audit), `logging_utils`. **No `branches` app yet** (deferred, not lost).
-- **`Item`** has family, `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active`. **No price, no stock** (deliberate).
-- **`Supplier`** master data exists (name, contact, email, phone, notes, `is_active`).
-- **Audit:** `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`.
-- **Service layer** `products/services.py` — full CRUD + validation + audit for items/families/suppliers.
-- **Console** `/manage/items/` + JSON API `/api/manage/{items,families,suppliers}/`.
-- **Tests:** 105 passing (`products accounts`). `accounts/tests.py`, `branches/tests.py` (the latter does not exist yet) are stubs.
-- **Docs drift (known):** README/AGENTS.md still describe a `branches` app and the removed offline catalogue as "done". Will be corrected in the Phase 1 docs pass.
+**Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
+
+The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
+
+- Apps then: `accounts`, `products`, `logging_utils`. No `branches` app (still true).
+- `Item` then had no selling prices and no stock field.
+- Tests then: 105 (`products` + `accounts`).
 
 ---
 
@@ -128,7 +128,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | 1 | **Pricing — selling prices + supplier price list** | ✅ Done | Phase 0 |
 | 2 | Procurement — purchase orders, discounts, approval | ✅ Done | Phase 1 |
 | 3 | Goods receipt + stock ledger | ✅ Done | Phase 2 |
-| 4 | Manager catalog (stock + price view) | ⚪ Not started | Phase 3 |
+| 4 | Manager catalog (stock + price view) | ✅ Done | Phase 3 |
 | 5 | Branches + internal request + branch catalog | ⏸ Deferred | Phase 4 |
 | 6 | Email automation (supplier notifications) | ⏸ Pending | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
@@ -230,11 +230,13 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ### Phase 1 — Definition of Done
 
-- [ ] Migrations clean; `migrate` runs on a fresh DB.
-- [ ] All mutations audited (selling-price changes on item; supplier-price create/update/lifecycle).
-- [ ] Console: enter/edit selling prices; manage supplier cost prices + primary from drawers.
-- [ ] `python manage.py test products accounts` green (new tests added, ≥ 105 baseline preserved).
-- [ ] Seed script idempotent with sample prices.
+§8 is the **build spec (done)**. Tracker in §15 is ticked.
+
+- [x] Migrations clean; `migrate` runs on a fresh DB.
+- [x] All mutations audited (selling-price changes on item; supplier-price create/update/lifecycle).
+- [x] Console: enter/edit selling prices; manage supplier cost prices + primary from drawers.
+- [x] `python manage.py test products accounts` green (new tests added, ≥ 105 baseline preserved).
+- [x] Seed script idempotent with sample prices.
 
 ---
 
@@ -299,13 +301,26 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ---
 
-## 11. Phase 4 — Manager catalog (stock + price view) ⚪
+## 11. Phase 4 — Manager catalog (stock + price view) ✅
 
 **Goal:** managers see a join-heavy, read-only view: item + 3 selling prices + buying price (O1) + stock balance + reorder level + supplier(s).
 
 - Read-only dashboard joining `Item`, `SupplierItemPrice`, `StockMovement` (cached `quantity`), `Supplier`.
 - Cost **visible** to warehouse groups only.
 - Reorder-level highlighting (below reorder level → flag).
+
+### Definition of Done
+
+- [x] Dashboard (join view)
+- [x] Reorder highlighting
+- [x] Tests
+
+### Implementation notes (as built)
+
+- Service: `get_catalog()` (read-only `Item` join with `select_related` family/vat + `prefetch_related` supplier prices), `catalog_buying_price()` (O1 — primary else cheapest, from prefetched prices), `catalog_below_reorder()` (`reorder_level > 0 and quantity <= reorder_level`).
+- API: `GET /api/manage/catalog/` → joined rows (quantity, reorder level, buying price, 3 selling prices, suppliers, `below_reorder` flag).
+- UI: `/manage/catalog/` — read-only table with search, family filter, "below reorder only" toggle, and a warning row/pill for items at/below reorder. EN + pt-PT.
+- Permission: view-only, gated by `catalog_required` (`products.view_item`) — warehouse groups only (cost hidden from branches is Phase 5).
 
 ---
 
@@ -365,9 +380,9 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 - [x] Tests
 
 ### Phase 4 — Manager catalog
-- [ ] Dashboard (join view)
-- [ ] Reorder highlighting
-- [ ] Tests
+- [x] Dashboard (join view)
+- [x] Reorder highlighting
+- [x] Tests
 
 ### Phase 5 / 6 / 7
 - [ ] (separate branches plan; email; mobile) — deferred
@@ -386,8 +401,8 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ## 17. Risks & notes
 
-1. **Cost-price ambiguity (O1)** — resolve at Phase 1 start; Option A assumed.
-2. **Docs drift** — README/AGENTS.md claim `branches` and offline catalogue are done; they are not in code. Correct in §8.9.
+1. **Cost-price ambiguity (O1)** — resolved: Option A (`primary` flag).
+2. **Docs drift** — live state is [`handoff.md`](handoff.md). `branches` and the offline catalogue are **not** in code.
 3. **Rappel semantics** — simple % now may need rework if it becomes a true periodic accrual later.
 4. **Stock concurrency** — ledger + `select_for_update()` (existing pattern) avoids lost updates on concurrent receipts; keep this discipline.
 5. **Snapshot-on-line** — PO/GR lines must snapshot description, code, unit cost, VAT so later master-data edits don't rewrite history.

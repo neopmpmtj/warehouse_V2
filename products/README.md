@@ -1,8 +1,8 @@
 # CentCompras MVP
 
-> **Current status lives in the root [`README.md` → Project status](../README.md#project-status-handoff).** This file is a **historical build log** of how the catalogue and offline layer were first assembled. Do not treat the early sections (CLI-only insert, three-field `Product`, admin-only management) as the live app.
+> **Current status lives in [`docs/handoff.md`](../docs/handoff.md).** This file is a **historical build log** of how the catalogue and offline layer were first assembled. Do not treat the early sections (CLI-only insert, three-field `Product`, admin-only management, Service Worker) as the live app.
 >
-> **Live facts (August 2026):** warehouse staff manage items at `/manage/items/`; new items start inactive (Genesis); families and suppliers have console drawers and PostgreSQL audit logs. **Items have no stock or price.** Inbound receipts from suppliers are a later design. `/` is the staff dashboard.
+> **Live facts (August 2026):** warehouse staff manage items at `/manage/items/`; new items start inactive (Genesis); families and suppliers have console drawers and PostgreSQL audit logs. Items have **three manual selling prices** and a cached **`quantity`** written only via `StockMovement` (goods receipt at `/manage/goods-receipts/`). Offline catalogue was removed. `/` is the staff dashboard.
 
 A small **offline-capable warehouse product catalogue web app** built with:
 

@@ -12,12 +12,12 @@
 | 1 — Pricing (selling prices + supplier price list) | ✅ Done |
 | 2 — Procurement (purchase orders) | ✅ Done |
 | **3 — Goods receipt + stock ledger** | ✅ **Done** |
-| **4 — Manager catalog (stock + price view)** | ▶ **NEXT** |
+| **4 — Manager catalog (stock + price view)** | ✅ **Done** |
 | 5 — Branches + internal request | ⏸ Deferred |
 | 6 — Email automation | ⏸ Pending (stub exists) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**What we build next: Phase 4** — a join-heavy, read-only **manager catalog**: item + 3 selling prices + buying price (primary supplier, O1) + cached stock balance + reorder level + supplier(s). Cost **visible** to warehouse groups only; reorder-level highlighting.
+**Phases 0–4 are complete.** Remaining work is branches (deferred), email (pending), and mobile/offline/OAuth (future) — no forced "next" build after Phase 4.
 
 ---
 
@@ -42,14 +42,15 @@
 
 ---
 
-## The exact next task (Phase 4)
+## What's next (no forced build)
 
-**Manager catalog (stock + price view)** — full spec in [`project-plan-2026-08-20.md` §11](project-plan-2026-08-20.md).
+Phases 0–4 are complete (auth → catalogue → pricing → purchase orders → goods receipt → manager catalog). The remaining phases are **all deferred/pending/future**:
 
-- Read-only, join-heavy dashboard joining `Item`, `SupplierItemPrice`, `StockMovement` (cached `quantity`), and `Supplier`.
-- Cost **visible** to warehouse groups only (branch view hides cost — Phase 5).
-- Reorder-level highlighting (below `reorder_level` → flag).
-- Do **not** start branches, orders, offline, email, or shared page chrome in passing.
+- **Phase 5 — branches + internal request** ⏸ deferred (needs its own branches plan).
+- **Phase 6 — email automation** ⏸ pending (the `notify_supplier_on_approval` stub exists).
+- **Phase 7 — mobile / offline / PWA / OAuth** ⏸ future.
+
+There is no single "next" build after Phase 4. Next session, pick one to scope — **email (Phase 6) is the smallest self-contained item**; **branches (Phase 5) needs a dedicated plan**.
 
 ---
 
@@ -62,7 +63,7 @@ inventory/      goods receipt + stock ledger (models, services, console_views, a
 accounts/       custom User (email, timezone), warehouse groups, login, timezone middleware
 config/         settings, urls
 logging_utils/  rotating per-app logs
-docs/           plan, handoff, code reviews, user manual, tenancy design
+docs/           plan, handoff, code reviews, user-manuals/, tenancy design
 ```
 
 **Conventions:** all mutations go through each app's `services.py`; audit-by-design (`*ChangeLog`); plain Django + vanilla JS; `select_for_update()` on updates.
@@ -80,9 +81,9 @@ python manage.py test products accounts procurement inventory
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…`, `warehouse.operator@…` (groups `warehouse_admins`/`_managers`/`_data_operators`).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/purchase-orders/` PO console · `/manage/goods-receipts/` goods receipt + stock · `/admin/` superuser only.
-- **Test state at sign-off:** full suite green (~170 tests: products 113 + accounts 16 + procurement 27 + inventory 14). Tests run fast (~18s) — `TESTING` flag in settings enables a fast password hasher + quiet logging.
-- **Git:** branch `phase3-stock-ledger` (Phase 3 committed on top of `main`).
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog (stock + prices) · `/manage/purchase-orders/` PO console · `/manage/goods-receipts/` goods receipt + stock · `/admin/` superuser only.
+- **Test state at sign-off:** full suite green (~190 tests: products 122 + accounts 16 + procurement 27 + inventory 25). Tests run fast (~18s) — `TESTING` flag in settings enables a fast password hasher + quiet logging.
+- **Git:** branch `phase3-stock-ledger` (Phases 3–4 work — Phase 4 manager catalog is **uncommitted** in the working tree).
 
 ---
 
@@ -90,10 +91,15 @@ python manage.py test products accounts procurement inventory
 
 | Doc | Purpose |
 |-----|---------|
-| `README.md` | canonical project status + setup (read §Project status) |
-| `docs/project-plan-2026-08-20.md` | phased plan + status tracker (tick as you go) |
-| `docs/code-review-2026-08-20.md` | recent review findings (mostly fixed) |
-| `docs/code-review-audit.md` | earlier (Phase 1) audit |
-| `docs/user-manual.md` | user manual — item console |
-| `docs/user-manual-purchase-orders.md` | user manual — purchase orders |
-| `docs/warehouse-tenancy-setup.md` | tenancy design — **§6–7 Order is a sketch, NOT to implement** |
+| `README.md` | setup, URLs, seed, how to run |
+| `docs/project-plan-2026-08-20.md` | phased plan + status tracker + locked decisions |
+| `docs/archive/code-review-audit.md` | **historical / completed** — catalogue hardening; “Phase 1/2/3” = audit batches, not product phases |
+| `docs/archive/code-review-2026-08-20.md` | Phase 2 review — **concluded** (all findings fixed); archived |
+| `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — **concluded** (all findings fixed); archived |
+| `docs/user-manuals/` | staff user manuals |
+| `docs/user-manuals/01-items.md` | item console |
+| `docs/user-manuals/02-purchase-orders.md` | purchase orders |
+| `docs/user-manuals/03-goods-receipts.md` | goods receipt & stock |
+| `docs/warehouse-tenancy-setup.md` | Phase 5 tenancy **design** — not built; **§6–7 Order is a sketch, NOT to implement** |
+| `products/products_docs/aux_instructions.md` | learning pace for agents (not live status) |
+| `.cursor/rules/` | agent rules — must match this handoff |
