@@ -384,7 +384,10 @@ async function openReceiptDialog(preferredPoId) {
     const select = document.getElementById("receipt-po");
     if (preferredPoId && [...select.options].some((option) => option.value === String(preferredPoId))) {
         select.value = String(preferredPoId);
+    } else {
+        select.value = "";
     }
+    state.receiptSummary = [];
     document.getElementById("receipt-dialog-backdrop").hidden = false;
     document.getElementById("receipt-dialog").hidden = false;
     if (select.value) {
