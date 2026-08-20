@@ -20,7 +20,7 @@
             document.documentElement.setAttribute("lang", lang);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=10">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=12">
 </head>
 <body
     data-can-add-item="{% if perms.products.add_item %}true{% else %}false{% endif %}"
@@ -29,6 +29,8 @@
     data-can-change-family="{% if perms.products.change_familyproduct %}true{% else %}false{% endif %}"
     data-can-add-supplier="{% if perms.products.add_supplier %}true{% else %}false{% endif %}"
     data-can-change-supplier="{% if perms.products.change_supplier %}true{% else %}false{% endif %}"
+    data-can-add-supplier-item-price="{% if perms.products.add_supplieritemprice %}true{% else %}false{% endif %}"
+    data-can-change-supplier-item-price="{% if perms.products.change_supplieritemprice %}true{% else %}false{% endif %}"
 >
     <header class="topbar">
         <div class="topbar-title">
@@ -178,6 +180,18 @@
                 <span data-i18n="reorderLevel">Reorder level</span>
                 <input type="number" id="field-reorder" step="0.001" required>
             </label>
+            <label>
+                <span data-i18n="retailPrice">Retail price</span>
+                <input type="number" id="field-retail-price" step="0.01" min="0">
+            </label>
+            <label>
+                <span data-i18n="wholesalePrice">Wholesale price</span>
+                <input type="number" id="field-wholesale-price" step="0.01" min="0">
+            </label>
+            <label>
+                <span data-i18n="specialPrice">Special price</span>
+                <input type="number" id="field-special-price" step="0.01" min="0">
+            </label>
             <label id="reason-field">
                 <span data-i18n="reason">Reason (optional)</span>
                 <input type="text" id="field-reason" maxlength="255" data-i18n-placeholder="reasonHint" placeholder="Why is this changing?">
@@ -189,6 +203,10 @@
             <section class="history">
                 <h3 data-i18n="history">History</h3>
                 <ol id="history-list"></ol>
+            </section>
+            <section class="history" id="item-supplier-prices">
+                <h3 data-i18n="supplierPrices">Supplier prices</h3>
+                <ul id="item-supplier-prices-list"></ul>
             </section>
         </form>
     </aside>
@@ -302,6 +320,44 @@
         </div>
     </div>
 
+    <div id="supplier-prices-backdrop" class="backdrop dialog-backdrop" hidden></div>
+    <div id="supplier-prices-dialog" class="dialog supplier-prices-dialog" hidden>
+        <h2 id="supplier-prices-title"></h2>
+        <form id="supplier-price-form" class="supplier-price-form">
+            <label>
+                <span data-i18n="item">Item</span>
+                <select id="supplier-price-item" required></select>
+            </label>
+            <label>
+                <span data-i18n="costPrice">Cost price</span>
+                <input type="number" id="supplier-price-cost" step="0.01" min="0" required>
+            </label>
+            <label class="checkbox-inline">
+                <input type="checkbox" id="supplier-price-primary">
+                <span data-i18n="primary">Primary</span>
+            </label>
+            <div class="drawer-actions">
+                <button type="submit" id="supplier-price-add" class="btn btn-primary" data-i18n="addSupplierPrice">Add price</button>
+                <button type="button" id="supplier-price-cancel" class="btn" data-i18n="close">Close</button>
+            </div>
+        </form>
+        <p id="supplier-price-error" class="field-error" hidden></p>
+        <div class="table-wrap">
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th data-i18n="colCode">Code</th>
+                        <th data-i18n="colDescription">Description</th>
+                        <th data-i18n="costPrice">Cost price</th>
+                        <th data-i18n="primary">Primary</th>
+                        <th data-i18n="colActions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="supplier-prices-body"></tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="lifecycle-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
     <div id="lifecycle-dialog" class="dialog" hidden>
         <h2 id="lifecycle-dialog-title"></h2>
@@ -318,7 +374,7 @@
         </div>
     </div>
 
-    <script src="{% static 'products/js/console_i18n.js' %}?v=11"></script>
-    <script src="{% static 'products/js/console.js' %}?v=11"></script>
+    <script src="{% static 'products/js/console_i18n.js' %}?v=12"></script>
+    <script src="{% static 'products/js/console.js' %}?v=13"></script>
 </body>
 </html>

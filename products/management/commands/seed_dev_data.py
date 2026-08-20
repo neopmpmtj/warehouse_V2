@@ -1,29 +1,49 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from decimal import Decimal
 
 from accounts.groups import (
     GROUP_ADMINS,
     WAREHOUSE_USERS,
     assign_warehouse_group,
 )
-from products.models import FamilyProduct, Item, Supplier, VatRate
+from accounts.models import DEFAULT_USER_TIMEZONE
+from products.models import (
+    FamilyProduct,
+    Item,
+    Supplier,
+    SupplierItemPrice,
+    VatRate,
+)
 from products.seed_catalog_data import (
     FAMILIES,
     ITEMS,
     SUPPLIERS,
+    SUPPLIER_ITEM_PRICES,
 )
 from products.services import (
     create_family,
     create_item,
     create_supplier,
+    create_supplier_item_price,
     reactivate_item,
     update_family,
+    update_item,
     update_supplier,
+    update_supplier_item_price,
 )
 
 
 DEFAULT_PASSWORD = "devpass123"
+
+
+def _demo_selling_prices(internal_code):
+    total = sum(ord(ch) for ch in internal_code)
+    retail = Decimal(10) + (total % 91)
+    wholesale = (retail * Decimal("0.80")).quantize(Decimal("0.01"))
+    special = (retail * Decimal("0.65")).quantize(Decimal("0.01"))
+    return retail, wholesale, special
 
 
 class Command(BaseCommand):
@@ -68,6 +88,7 @@ class Command(BaseCommand):
                     defaults={
                         "is_staff": False,
                         "is_superuser": False,
+                        "timezone": DEFAULT_USER_TIMEZONE,
                     },
                 )
                 changed_fields = []
@@ -75,6 +96,9 @@ class Command(BaseCommand):
                     user.is_staff = False
                     user.is_superuser = False
                     changed_fields.extend(["is_staff", "is_superuser"])
+                if not user.timezone:
+                    user.timezone = DEFAULT_USER_TIMEZONE
+                    changed_fields.append("timezone")
                 if created or not user.check_password(password):
                     user.set_password(password)
                     changed_fields.append("password")
@@ -159,8 +183,17 @@ class Command(BaseCommand):
                     )
                     continue
 
+                retail, wholesale, special = _demo_selling_prices(internal_code)
                 existing = Item.objects.filter(internal_code__iexact=internal_code).first()
                 if existing:
+                    update_item(
+                        warehouse_user,
+                        existing,
+                        retail_price=retail,
+                        wholesale_price=wholesale,
+                        special_price=special,
+                        reason="seed_dev_data",
+                    )
                     self.stdout.write(
                         f"Exists item: {existing.internal_code} — {existing.description}"
                     )
@@ -174,6 +207,9 @@ class Command(BaseCommand):
                     vat_rate=vat_rate,
                     internal_code=internal_code,
                     reorder_level=reorder_level,
+                    retail_price=retail,
+                    wholesale_price=wholesale,
+                    special_price=special,
                     reason="seed_dev_data",
                 )
                 if is_active:
@@ -182,6 +218,48 @@ class Command(BaseCommand):
                     self.style.SUCCESS(
                         f"Created item: {item.internal_code} — {item.description}"
                     )
+                )
+
+            suppliers_by_name = {
+                supplier.name.casefold(): supplier
+                for supplier in Supplier.objects.all()
+            }
+            items_by_code = {
+                item.internal_code.casefold(): item
+                for item in Item.objects.all()
+            }
+
+            for supplier_name, internal_code, cost_price, primary in SUPPLIER_ITEM_PRICES:
+                supplier = suppliers_by_name.get(supplier_name.casefold())
+                item = items_by_code.get(internal_code.casefold())
+                if supplier is None or item is None:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Skipping supplier price {supplier_name}/{internal_code}: not found"
+                        )
+                    )
+                    continue
+
+                existing_sip = SupplierItemPrice.objects.filter(
+                    supplier=supplier, item=item
+                ).first()
+                if existing_sip:
+                    update_supplier_item_price(
+                        existing_sip,
+                        user=warehouse_user,
+                        cost_price=cost_price,
+                        primary=primary,
+                    )
+                else:
+                    create_supplier_item_price(
+                        supplier=supplier,
+                        item=item,
+                        cost_price=cost_price,
+                        primary=primary,
+                        user=warehouse_user,
+                    )
+                self.stdout.write(
+                    f"Supplier price: {supplier.name} -> {item.internal_code} @ {cost_price}"
                 )
 
         self.stdout.write("")

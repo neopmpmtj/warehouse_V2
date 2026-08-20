@@ -1,6 +1,7 @@
 const API_ROOT = "/api/manage/items/";
 const FAMILY_API = "/api/manage/families/";
 const SUPPLIER_API = "/api/manage/suppliers/";
+const SUPPLIER_PRICE_API = "/api/manage/supplier-prices/";
 const THEME_KEY = "cc-theme";
 const LANG_KEY = "cc-lang";
 
@@ -34,12 +35,16 @@ const state = {
     familyHistoryEntries: [],
     supplierHistoryId: null,
     supplierHistoryEntries: [],
+    supplierPriceSupplierId: null,
+    supplierPrices: [],
     busy: false,
 };
 
 let familyHistoryRequestId = 0;
 let supplierHistoryRequestId = 0;
 let itemHistoryRequestId = 0;
+let supplierPriceRequestId = 0;
+let itemSupplierPriceRequestId = 0;
 
 const NUMERIC_SORT_KEYS = new Set(["reorder_level"]);
 
@@ -100,6 +105,8 @@ function catalogPermissions() {
         changeFamily: body.dataset.canChangeFamily === "true",
         addSupplier: body.dataset.canAddSupplier === "true",
         changeSupplier: body.dataset.canChangeSupplier === "true",
+        addSupplierItemPrice: body.dataset.canAddSupplierItemPrice === "true",
+        changeSupplierItemPrice: body.dataset.canChangeSupplierItemPrice === "true",
     };
 }
 
@@ -114,6 +121,8 @@ function applyCatalogPermissions(permissions) {
     body.dataset.canChangeFamily = permissions.change_family ? "true" : "false";
     body.dataset.canAddSupplier = permissions.add_supplier ? "true" : "false";
     body.dataset.canChangeSupplier = permissions.change_supplier ? "true" : "false";
+    body.dataset.canAddSupplierItemPrice = permissions.add_supplier_item_price ? "true" : "false";
+    body.dataset.canChangeSupplierItemPrice = permissions.change_supplier_item_price ? "true" : "false";
 }
 
 function setItemFormEditable(editable) {
@@ -124,6 +133,9 @@ function setItemFormEditable(editable) {
         "field-unit",
         "field-vat-rate",
         "field-reorder",
+        "field-retail-price",
+        "field-wholesale-price",
+        "field-special-price",
         "field-reason",
     ].forEach((id) => {
         const field = document.getElementById(id);
@@ -555,6 +567,8 @@ function closeDrawer() {
     document.getElementById("drawer").hidden = true;
     document.getElementById("drawer-backdrop").hidden = true;
     state.editingId = null;
+    itemSupplierPriceRequestId += 1;
+    renderItemSupplierPrices([]);
 }
 
 function firstActiveFamilyId() {
@@ -905,6 +919,12 @@ function renderSupplierTable() {
         history.textContent = t("history");
         history.addEventListener("click", () => loadSupplierHistory(supplier));
         actions.appendChild(history);
+        const prices = document.createElement("button");
+        prices.type = "button";
+        prices.className = "btn";
+        prices.textContent = t("supplierPrices");
+        prices.addEventListener("click", () => openSupplierPrices(supplier));
+        actions.appendChild(prices);
 
         row.append(name, contact, status, actions);
         body.appendChild(row);
@@ -1089,8 +1109,254 @@ function formPayload() {
         unit_of_measure: document.getElementById("field-unit").value,
         reorder_level: document.getElementById("field-reorder").value,
         vat_rate_id: Number(document.getElementById("field-vat-rate").value),
+        retail_price: document.getElementById("field-retail-price").value,
+        wholesale_price: document.getElementById("field-wholesale-price").value,
+        special_price: document.getElementById("field-special-price").value,
         reason: document.getElementById("field-reason").value,
     };
+}
+
+function formatCost(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num.toFixed(2) : value || "—";
+}
+
+function renderItemSupplierPrices(entries) {
+    const list = document.getElementById("item-supplier-prices-list");
+    if (!list) {
+        return;
+    }
+    list.replaceChildren();
+    if (!entries.length) {
+        const item = document.createElement("li");
+        item.textContent = t("noSupplierPrices");
+        list.appendChild(item);
+        return;
+    }
+    entries.forEach((entry) => {
+        const item = document.createElement("li");
+        const price = formatCost(entry.cost_price);
+        const primary = entry.primary ? ` · ${t("primary")}` : "";
+        item.textContent = `${entry.supplier_name} — ${price}${primary}`;
+        list.appendChild(item);
+    });
+}
+
+async function loadItemSupplierPrices(itemId) {
+    const requestId = ++itemSupplierPriceRequestId;
+    try {
+        const data = await api(`${SUPPLIER_PRICE_API}?item_id=${itemId}`);
+        if (requestId !== itemSupplierPriceRequestId) {
+            return;
+        }
+        renderItemSupplierPrices(data.supplier_item_prices);
+    } catch (error) {
+        if (requestId !== itemSupplierPriceRequestId) {
+            return;
+        }
+        showBanner(error.message, true);
+    }
+}
+
+function fillSupplierPriceItemSelect(selectedId) {
+    const select = document.getElementById("supplier-price-item");
+    const options = state.items.map((item) => ({
+        value: String(item.id),
+        label: `${item.internal_code || "—"} — ${item.description}`,
+    }));
+    fillSelect(select, options, null);
+    if (selectedId && [...select.options].some((opt) => opt.value === String(selectedId))) {
+        select.value = String(selectedId);
+    }
+}
+
+function renderSupplierPrices() {
+    const body = document.getElementById("supplier-prices-body");
+    if (!body) {
+        return;
+    }
+    body.replaceChildren();
+    const perms = catalogPermissions();
+    if (!state.supplierPrices.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 5;
+        cell.className = "empty-row";
+        cell.textContent = t("noSupplierPrices");
+        row.appendChild(cell);
+        body.appendChild(row);
+        return;
+    }
+    state.supplierPrices.forEach((price) => {
+        const row = document.createElement("tr");
+
+        const code = document.createElement("td");
+        code.textContent = price.internal_code || "—";
+
+        const desc = document.createElement("td");
+        desc.textContent = price.item_description || "—";
+
+        const cost = document.createElement("td");
+        const costInput = document.createElement("input");
+        costInput.type = "number";
+        costInput.step = "0.01";
+        costInput.min = "0";
+        costInput.value = price.cost_price ?? "";
+        costInput.disabled = !perms.changeSupplierItemPrice;
+        costInput.dataset.priceId = String(price.id);
+        cost.appendChild(costInput);
+
+        const primaryCell = document.createElement("td");
+        const primaryInput = document.createElement("input");
+        primaryInput.type = "checkbox";
+        primaryInput.checked = Boolean(price.primary);
+        primaryInput.disabled = !perms.changeSupplierItemPrice;
+        primaryInput.dataset.priceId = String(price.id);
+        primaryCell.appendChild(primaryInput);
+
+        const actions = document.createElement("td");
+        actions.className = "row-actions";
+        if (perms.changeSupplierItemPrice) {
+            const saveButton = document.createElement("button");
+            saveButton.type = "button";
+            saveButton.className = "btn";
+            saveButton.textContent = t("save");
+            saveButton.addEventListener("click", () => updateSupplierPrice(price, saveButton));
+            actions.appendChild(saveButton);
+        }
+
+        row.append(code, desc, cost, primaryCell, actions);
+        body.appendChild(row);
+    });
+}
+
+async function updateSupplierPrice(price, button) {
+    if (!catalogPermissions().changeSupplierItemPrice) {
+        return;
+    }
+    if (isBusy()) {
+        return;
+    }
+    const costInput = document.querySelector(`input[data-price-id="${price.id}"][type="number"]`);
+    const primaryInput = document.querySelector(`input[data-price-id="${price.id}"][type="checkbox"]`);
+    const payload = {
+        cost_price: costInput ? costInput.value : price.cost_price,
+        primary: primaryInput ? primaryInput.checked : price.primary,
+    };
+    button.disabled = true;
+    state.busy = true;
+    try {
+        const data = await api(`${SUPPLIER_PRICE_API}${price.id}/`, {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+        });
+        const index = state.supplierPrices.findIndex((entry) => entry.id === price.id);
+        if (index !== -1) {
+            state.supplierPrices[index] = data.supplier_item_price;
+        }
+        renderSupplierPrices();
+        showBanner(t("supplierPriceSaved"));
+    } catch (error) {
+        showBanner(error.message, true);
+    } finally {
+        state.busy = false;
+        button.disabled = false;
+    }
+}
+
+async function submitSupplierPriceAdd(event) {
+    event.preventDefault();
+    if (!catalogPermissions().addSupplierItemPrice) {
+        return;
+    }
+    if (isBusy()) {
+        return;
+    }
+    const supplierId = state.supplierPriceSupplierId;
+    if (!supplierId) {
+        return;
+    }
+    const itemId = document.getElementById("supplier-price-item").value;
+    const costPrice = document.getElementById("supplier-price-cost").value;
+    const primary = document.getElementById("supplier-price-primary").checked;
+    const addButton = document.getElementById("supplier-price-add");
+    addButton.disabled = true;
+    state.busy = true;
+    try {
+        const data = await api(SUPPLIER_PRICE_API, {
+            method: "POST",
+            body: JSON.stringify({
+                supplier_id: supplierId,
+                item_id: Number(itemId),
+                cost_price: costPrice,
+                primary,
+            }),
+        });
+        state.supplierPrices.push(data.supplier_item_price);
+        renderSupplierPrices();
+        document.getElementById("supplier-price-cost").value = "";
+        document.getElementById("supplier-price-primary").checked = false;
+        showBanner(t("supplierPriceAdded"));
+    } catch (error) {
+        showBanner(error.message, true);
+    } finally {
+        state.busy = false;
+        addButton.disabled = false;
+    }
+}
+
+async function openSupplierPrices(supplier) {
+    const requestId = ++supplierPriceRequestId;
+    state.supplierPriceSupplierId = supplier.id;
+    document.getElementById("supplier-prices-title").textContent = t("supplierPriceDialogTitle", {
+        name: supplier.name,
+    });
+    document.getElementById("supplier-prices-backdrop").hidden = false;
+    document.getElementById("supplier-prices-dialog").hidden = false;
+    const perms = catalogPermissions();
+    document.getElementById("supplier-price-form").hidden = !perms.addSupplierItemPrice;
+    document.getElementById("supplier-price-error").hidden = true;
+    document.getElementById("supplier-price-cost").value = "";
+    document.getElementById("supplier-price-primary").checked = false;
+    fillSupplierPriceItemSelect(null);
+    state.supplierPrices = [];
+    renderSupplierPrices();
+    try {
+        const data = await api(`${SUPPLIER_PRICE_API}?supplier_id=${supplier.id}`);
+        if (requestId !== supplierPriceRequestId) {
+            return;
+        }
+        state.supplierPrices = data.supplier_item_prices;
+        renderSupplierPrices();
+    } catch (error) {
+        if (requestId !== supplierPriceRequestId) {
+            return;
+        }
+        showBanner(error.message, true);
+    }
+}
+
+function closeSupplierPrices() {
+    supplierPriceRequestId += 1;
+    state.supplierPriceSupplierId = null;
+    state.supplierPrices = [];
+    document.getElementById("supplier-prices-backdrop").hidden = true;
+    document.getElementById("supplier-prices-dialog").hidden = true;
+}
+
+function formatDateTime(isoString) {
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+        return isoString;
+    }
+    const pad = (value) => String(value).padStart(2, "0");
+    return (
+        pad(date.getDate()) + "/" +
+        pad(date.getMonth() + 1) + "/" +
+        date.getFullYear() + " " +
+        pad(date.getHours()) + ":" +
+        pad(date.getMinutes())
+    );
 }
 
 function fillHistoryList(list, entries) {
@@ -1104,7 +1370,7 @@ function fillHistoryList(list, entries) {
     entries.forEach((entry) => {
         const item = document.createElement("li");
         const actionKey = `action${entry.action.charAt(0).toUpperCase()}${entry.action.slice(1)}`;
-        const when = new Date(entry.created_at).toLocaleString();
+        const when = formatDateTime(entry.created_at);
         const who = entry.user_email || "—";
         const reason = entry.reason ? ` — ${entry.reason}` : "";
         item.textContent = `${t(actionKey)} · ${who} · ${when}${reason}`;
@@ -1280,6 +1546,11 @@ async function openDrawer(item, selectFamilyId) {
         document.getElementById("field-internal-code").value = "";
         document.getElementById("field-description").value = "";
         document.getElementById("field-reorder").value = "0";
+        document.getElementById("field-retail-price").value = "0";
+        document.getElementById("field-wholesale-price").value = "0";
+        document.getElementById("field-special-price").value = "0";
+        itemSupplierPriceRequestId += 1;
+        renderItemSupplierPrices([]);
         const familyId = selectFamilyId || firstActiveFamilyId();
         if (familyId) {
             document.getElementById("field-family").value = String(familyId);
@@ -1300,11 +1571,15 @@ async function openDrawer(item, selectFamilyId) {
     document.getElementById("field-description").value = item.description;
     document.getElementById("field-family").value = String(item.family.id);
     document.getElementById("field-reorder").value = item.reorder_level;
+    document.getElementById("field-retail-price").value = item.retail_price ?? "0";
+    document.getElementById("field-wholesale-price").value = item.wholesale_price ?? "0";
+    document.getElementById("field-special-price").value = item.special_price ?? "0";
     document.getElementById("field-unit").value = item.unit_of_measure;
     if (item.vat_rate) {
         document.getElementById("field-vat-rate").value = String(item.vat_rate.id);
     }
     refreshDrawerLabels();
+    loadItemSupplierPrices(item.id);
     try {
         await loadHistory(item.id);
     } catch (error) {
@@ -1652,6 +1927,9 @@ function bindEvents() {
     document.getElementById("drawer-close").addEventListener("click", closeDrawer);
     document.getElementById("drawer-backdrop").addEventListener("click", closeDrawer);
     document.getElementById("item-form").addEventListener("submit", saveItem);
+    document.getElementById("supplier-price-form").addEventListener("submit", submitSupplierPriceAdd);
+    document.getElementById("supplier-price-cancel").addEventListener("click", closeSupplierPrices);
+    document.getElementById("supplier-prices-backdrop").addEventListener("click", closeSupplierPrices);
     document.getElementById("drawer-lifecycle").addEventListener("click", () => {
         const item = state.items.find((item) => item.id === state.editingId);
         if (item) {

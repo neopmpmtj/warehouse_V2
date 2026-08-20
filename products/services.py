@@ -13,6 +13,8 @@ from .models import (
     ItemChangeLog,
     Supplier,
     SupplierChangeLog,
+    SupplierItemPrice,
+    SupplierItemPriceChangeLog,
     VatRate,
 )
 
@@ -25,6 +27,9 @@ ITEM_UPDATABLE_FIELDS = (
     "unit_of_measure",
     "reorder_level",
     "vat_rate",
+    "retail_price",
+    "wholesale_price",
+    "special_price",
 )
 
 
@@ -104,6 +109,14 @@ def _serialize_value(value):
             "label": value.label,
             "rate": str(value.rate),
         }
+    if isinstance(value, Supplier):
+        return {"id": value.pk, "name": value.name}
+    if isinstance(value, Item):
+        return {
+            "id": value.pk,
+            "internal_code": value.internal_code,
+            "description": value.description,
+        }
     return value
 
 
@@ -175,6 +188,9 @@ def create_item(
     vat_rate,
     internal_code="",
     reorder_level="0",
+    retail_price="0",
+    wholesale_price="0",
+    special_price="0",
     reason="",
 ):
     internal_code = _normalize_internal_code(internal_code)
@@ -188,6 +204,9 @@ def create_item(
         description=description,
         unit_of_measure=unit_of_measure,
         reorder_level=Decimal(str(reorder_level)),
+        retail_price=Decimal(str(retail_price)),
+        wholesale_price=Decimal(str(wholesale_price)),
+        special_price=Decimal(str(special_price)),
         vat_rate=vat_rate,
         is_active=False,
     )
@@ -203,6 +222,9 @@ def create_item(
             "description": item.description,
             "unit_of_measure": item.unit_of_measure,
             "reorder_level": _serialize_value(item.reorder_level),
+            "retail_price": _serialize_value(item.retail_price),
+            "wholesale_price": _serialize_value(item.wholesale_price),
+            "special_price": _serialize_value(item.special_price),
             "vat_rate": _serialize_value(item.vat_rate),
         },
         reason=reason,
@@ -235,7 +257,7 @@ def update_item(user, item, reason="", **fields):
     pending_internal_code = None
 
     for field_name, new_value in fields.items():
-        if field_name == "reorder_level":
+        if field_name in ("reorder_level", "retail_price", "wholesale_price", "special_price"):
             new_value = Decimal(str(new_value))
         elif field_name == "internal_code":
             new_value = _normalize_internal_code(new_value)
@@ -683,3 +705,198 @@ def get_suppliers(active_only=True):
     if active_only:
         queryset = queryset.filter(is_active=True)
     return queryset.order_by("name")
+
+
+SUPPLIER_ITEM_PRICE_UPDATABLE_FIELDS = ("cost_price", "primary")
+
+
+class DuplicateSupplierItemPriceError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "This supplier already has a price for this item.",
+            code="duplicate_supplier_item_price",
+        )
+
+
+class InvalidCostPriceError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Cost price must be zero or greater.",
+            code="invalid_cost_price",
+        )
+
+
+def _resolve_supplier(supplier):
+    if isinstance(supplier, Supplier):
+        return supplier
+    return Supplier.objects.get(pk=supplier)
+
+
+def _resolve_item(item):
+    if isinstance(item, Item):
+        return item
+    return Item.objects.get(pk=item)
+
+
+def _validate_cost_price(cost_price):
+    value = Decimal(str(cost_price))
+    if value < 0:
+        raise InvalidCostPriceError()
+    return value
+
+
+def _save_supplier_item_price(supplier_item_price, update_fields=None):
+    try:
+        with transaction.atomic():
+            supplier_item_price.full_clean(
+                exclude=None, validate_unique=False, validate_constraints=False
+            )
+            if update_fields is None:
+                supplier_item_price.save()
+            else:
+                supplier_item_price.save(update_fields=update_fields)
+    except IntegrityError:
+        raise DuplicateSupplierItemPriceError()
+    except DataError as exc:
+        raise ValidationError(f"Invalid value: {exc}") from exc
+
+
+def _log_supplier_item_price_change(
+    supplier_item_price, user, action, changes, reason=""
+):
+    SupplierItemPriceChangeLog.objects.create(
+        supplier_item_price=supplier_item_price,
+        user=user,
+        action=action,
+        changes=changes,
+        reason=(reason or "").strip(),
+    )
+
+
+def _clear_other_primaries(item, exclude_id=None):
+    queryset = SupplierItemPrice.objects.filter(item=item, primary=True)
+    if exclude_id is not None:
+        queryset = queryset.exclude(pk=exclude_id)
+    queryset.update(primary=False)
+
+
+@transaction.atomic
+def create_supplier_item_price(supplier, item, cost_price, primary=False, user=None):
+    supplier = _resolve_supplier(supplier)
+    item = _resolve_item(item)
+    cost_price = _validate_cost_price(cost_price)
+    primary = bool(primary)
+
+    supplier_item_price = SupplierItemPrice(
+        supplier=supplier,
+        item=item,
+        cost_price=cost_price,
+        primary=primary,
+    )
+    _save_supplier_item_price(supplier_item_price)
+
+    if primary:
+        _clear_other_primaries(item, exclude_id=supplier_item_price.pk)
+
+    _log_supplier_item_price_change(
+        supplier_item_price,
+        user,
+        SupplierItemPriceChangeLog.Action.CREATED,
+        {
+            "supplier": _serialize_value(supplier),
+            "item": _serialize_value(item),
+            "cost_price": _serialize_value(cost_price),
+            "primary": primary,
+        },
+    )
+
+    logger.info(
+        "Created supplier item price id=%s supplier=%s item=%r cost=%s primary=%s user=%s",
+        supplier_item_price.id,
+        supplier.name,
+        item.internal_code or item.description,
+        cost_price,
+        primary,
+        getattr(user, "email", None),
+    )
+
+    return supplier_item_price
+
+
+@transaction.atomic
+def update_supplier_item_price(supplier_item_price, user=None, **fields):
+    if not fields:
+        return supplier_item_price
+
+    unknown = set(fields) - set(SUPPLIER_ITEM_PRICE_UPDATABLE_FIELDS)
+    if unknown:
+        raise ValueError(f"Cannot update fields: {', '.join(sorted(unknown))}")
+
+    supplier_item_price = SupplierItemPrice.objects.select_for_update().get(
+        pk=supplier_item_price.pk
+    )
+
+    changes = {}
+    for field_name, new_value in fields.items():
+        if field_name == "cost_price":
+            new_value = _validate_cost_price(new_value)
+        elif field_name == "primary":
+            new_value = bool(new_value)
+        old_value = getattr(supplier_item_price, field_name)
+        if old_value != new_value:
+            changes[field_name] = {
+                "old": _serialize_value(old_value),
+                "new": _serialize_value(new_value),
+            }
+            setattr(supplier_item_price, field_name, new_value)
+
+    if not changes:
+        return supplier_item_price
+
+    _save_supplier_item_price(
+        supplier_item_price, update_fields=[*changes.keys(), "updated_at"]
+    )
+
+    if "primary" in changes and changes["primary"]["new"] is True:
+        _clear_other_primaries(
+            supplier_item_price.item, exclude_id=supplier_item_price.pk
+        )
+
+    _log_supplier_item_price_change(
+        supplier_item_price,
+        user,
+        SupplierItemPriceChangeLog.Action.UPDATED,
+        changes,
+    )
+
+    logger.info(
+        "Updated supplier item price id=%s changes=%s user=%s",
+        supplier_item_price.id,
+        list(changes.keys()),
+        getattr(user, "email", None),
+    )
+
+    return supplier_item_price
+
+
+def get_supplier_item_prices(item=None, supplier=None):
+    queryset = SupplierItemPrice.objects.select_related("supplier", "item")
+    if item is not None:
+        queryset = queryset.filter(item=_resolve_item(item))
+    if supplier is not None:
+        queryset = queryset.filter(supplier=_resolve_supplier(supplier))
+    return queryset.order_by("supplier__name", "item__description")
+
+
+def get_supplier_item_price_history(supplier_item_price):
+    return supplier_item_price.change_logs.select_related("user").order_by("-created_at")
+
+
+def get_item_buying_price(item):
+    item = _resolve_item(item)
+    price = (
+        SupplierItemPrice.objects.filter(item=item)
+        .order_by("-primary", "cost_price")
+        .first()
+    )
+    return price.cost_price if price else None

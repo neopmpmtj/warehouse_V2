@@ -7,12 +7,13 @@ GROUP_OPERATORS = "warehouse_data_operators"
 WAREHOUSE_GROUP_NAMES = (GROUP_ADMINS, GROUP_MANAGERS, GROUP_OPERATORS)
 LEGACY_WAREHOUSE_GROUP_NAME = "Warehouse"
 
-CATALOG_MODELS = ("item", "familyproduct", "supplier")
+CATALOG_MODELS = ("item", "familyproduct", "supplier", "supplieritemprice")
 CATALOG_VIEW_ONLY_MODELS = (
     "vatrate",
     "itemchangelog",
     "familychangelog",
     "supplierchangelog",
+    "supplieritempricechangelog",
 )
 
 VIEW_ITEM = "products.view_item"
@@ -25,6 +26,8 @@ DELETE_FAMILY = "products.delete_familyproduct"
 ADD_SUPPLIER = "products.add_supplier"
 CHANGE_SUPPLIER = "products.change_supplier"
 DELETE_SUPPLIER = "products.delete_supplier"
+ADD_SUPPLIER_ITEM_PRICE = "products.add_supplieritemprice"
+CHANGE_SUPPLIER_ITEM_PRICE = "products.change_supplieritemprice"
 
 WAREHOUSE_USERS = (
     ("warehouse.admin@centcompras.dev", GROUP_ADMINS),

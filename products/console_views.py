@@ -11,20 +11,24 @@ from accounts.groups import (
     ADD_FAMILY,
     ADD_ITEM,
     ADD_SUPPLIER,
+    ADD_SUPPLIER_ITEM_PRICE,
     CHANGE_FAMILY,
     CHANGE_ITEM,
     CHANGE_SUPPLIER,
+    CHANGE_SUPPLIER_ITEM_PRICE,
 )
 from logging_utils import get_logger
 
-from .models import FamilyProduct, Item, Supplier
+from .models import FamilyProduct, Item, Supplier, SupplierItemPrice
 from .permissions import catalog_permissions, catalog_required, deny_unless
 from .services import (
     DeactivateReasonRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
+    InvalidCostPriceError,
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
     SupplierNameRequiredError,
@@ -33,18 +37,22 @@ from .services import (
     create_family,
     create_item,
     create_supplier,
+    create_supplier_item_price,
     deactivate_item,
     get_families,
     get_family_history,
     get_item_history,
     get_items,
     get_supplier_history,
+    get_supplier_item_price_history,
+    get_supplier_item_prices,
     get_suppliers,
     get_vat_rates,
     reactivate_item,
     update_family,
     update_item,
     update_supplier,
+    update_supplier_item_price,
 )
 
 logger = get_logger("centcompras.products")
@@ -101,6 +109,9 @@ def _serialize_item(item):
         "description": item.description,
         "unit_of_measure": item.unit_of_measure,
         "reorder_level": _decimal_string(item.reorder_level),
+        "retail_price": _decimal_string(item.retail_price),
+        "wholesale_price": _decimal_string(item.wholesale_price),
+        "special_price": _decimal_string(item.special_price),
         "is_active": item.is_active,
         "family": _serialize_family(item.family),
         "vat_rate": _serialize_vat_rate(item.vat_rate),
@@ -266,6 +277,15 @@ def manage_item_list(request):
             reorder_level=_parse_decimal(payload, "reorder_level")
             if "reorder_level" in payload
             else "0",
+            retail_price=_parse_decimal(payload, "retail_price")
+            if "retail_price" in payload
+            else "0",
+            wholesale_price=_parse_decimal(payload, "wholesale_price")
+            if "wholesale_price" in payload
+            else "0",
+            special_price=_parse_decimal(payload, "special_price")
+            if "special_price" in payload
+            else "0",
             reason=str(payload.get("reason", "")),
         )
     except DuplicateInternalCodeError as exc:
@@ -309,6 +329,12 @@ def manage_item_detail(request, item_id):
             fields["unit_of_measure"] = _parse_unit(payload)
         if "reorder_level" in payload:
             fields["reorder_level"] = _parse_decimal(payload, "reorder_level")
+        if "retail_price" in payload:
+            fields["retail_price"] = _parse_decimal(payload, "retail_price")
+        if "wholesale_price" in payload:
+            fields["wholesale_price"] = _parse_decimal(payload, "wholesale_price")
+        if "special_price" in payload:
+            fields["special_price"] = _parse_decimal(payload, "special_price")
         if "vat_rate_id" in payload:
             fields["vat_rate"] = int(payload["vat_rate_id"])
 
@@ -648,6 +674,162 @@ def manage_supplier_history(request, supplier_id):
         return _json_error("Supplier not found.", status=404)
 
     entries = get_supplier_history(supplier)
+    return JsonResponse(
+        {"history": [_serialize_history_entry(entry) for entry in entries]}
+    )
+
+
+def _serialize_supplier_item_price(sip):
+    return {
+        "id": sip.id,
+        "supplier_id": sip.supplier_id,
+        "supplier_name": sip.supplier.name,
+        "item_id": sip.item_id,
+        "internal_code": sip.item.internal_code,
+        "item_description": sip.item.description,
+        "cost_price": _decimal_string(sip.cost_price),
+        "primary": sip.primary,
+        "updated_at": sip.updated_at.isoformat(),
+    }
+
+
+def _supplier_item_price_error(exc):
+    if isinstance(exc, (DuplicateSupplierItemPriceError, InvalidCostPriceError)):
+        return _json_error(exc.messages[0], code=exc.code)
+    if isinstance(exc, ValidationError):
+        message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+        return _json_error(message)
+    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError)):
+        return _json_error(str(exc))
+    raise exc
+
+
+def _get_supplier_item_price(sip_id):
+    return SupplierItemPrice.objects.select_related("supplier", "item").get(pk=sip_id)
+
+
+def _supplier_item_price_response(sip):
+    sip = _get_supplier_item_price(sip.pk)
+    return JsonResponse(
+        {"supplier_item_price": _serialize_supplier_item_price(sip)}
+    )
+
+
+@catalog_required
+@require_http_methods(["GET", "POST"])
+def manage_supplier_item_price_list(request):
+    if request.method == "GET":
+        queryset = get_supplier_item_prices()
+        supplier_id = request.GET.get("supplier_id")
+        item_id = request.GET.get("item_id")
+        if supplier_id:
+            try:
+                queryset = queryset.filter(supplier_id=int(supplier_id))
+            except (TypeError, ValueError):
+                return _json_error("supplier_id must be an integer.")
+        if item_id:
+            try:
+                queryset = queryset.filter(item_id=int(item_id))
+            except (TypeError, ValueError):
+                return _json_error("item_id must be an integer.")
+        return JsonResponse(
+            {
+                "supplier_item_prices": [
+                    _serialize_supplier_item_price(sip) for sip in queryset
+                ]
+            }
+        )
+
+    denied = deny_unless(request, ADD_SUPPLIER_ITEM_PRICE)
+    if denied:
+        return denied
+
+    try:
+        payload = _parse_json(request)
+        supplier_id = payload.get("supplier_id")
+        item_id = payload.get("item_id")
+        if supplier_id is None:
+            raise ValidationError("supplier_id is required.")
+        if item_id is None:
+            raise ValidationError("item_id is required.")
+        if "cost_price" not in payload:
+            raise ValidationError("cost_price is required.")
+        primary = payload.get("primary", False)
+        if not isinstance(primary, bool):
+            raise ValidationError("primary must be a boolean.")
+        sip = create_supplier_item_price(
+            supplier=int(supplier_id),
+            item=int(item_id),
+            cost_price=_parse_decimal(payload, "cost_price"),
+            primary=primary,
+            user=request.user,
+        )
+    except (
+        DuplicateSupplierItemPriceError,
+        InvalidCostPriceError,
+        ValidationError,
+    ) as exc:
+        return _supplier_item_price_error(exc)
+
+    logger.info(
+        "Console created supplier item price id=%s user=%s",
+        sip.id,
+        request.user.email,
+    )
+    return _supplier_item_price_response(sip)
+
+
+@catalog_required
+@require_http_methods(["GET", "PATCH"])
+def manage_supplier_item_price_detail(request, sip_id):
+    try:
+        sip = _get_supplier_item_price(sip_id)
+    except SupplierItemPrice.DoesNotExist:
+        return _json_error("Supplier item price not found.", status=404)
+
+    if request.method == "GET":
+        return JsonResponse(
+            {"supplier_item_price": _serialize_supplier_item_price(sip)}
+        )
+
+    denied = deny_unless(request, CHANGE_SUPPLIER_ITEM_PRICE)
+    if denied:
+        return denied
+
+    try:
+        payload = _parse_json(request)
+        fields = {}
+        if "cost_price" in payload:
+            fields["cost_price"] = _parse_decimal(payload, "cost_price")
+        if "primary" in payload:
+            if not isinstance(payload["primary"], bool):
+                raise ValidationError("primary must be a boolean.")
+            fields["primary"] = payload["primary"]
+        sip = update_supplier_item_price(sip, user=request.user, **fields)
+    except (
+        DuplicateSupplierItemPriceError,
+        InvalidCostPriceError,
+        ValidationError,
+    ) as exc:
+        return _supplier_item_price_error(exc)
+
+    logger.info(
+        "Console updated supplier item price id=%s user=%s",
+        sip.id,
+        request.user.email,
+    )
+    return _supplier_item_price_response(sip)
+
+
+@catalog_required
+@require_GET
+def manage_supplier_item_price_history(request, sip_id):
+    try:
+        sip = SupplierItemPrice.objects.get(pk=sip_id)
+    except SupplierItemPrice.DoesNotExist:
+        return _json_error("Supplier item price not found.", status=404)
+
+    entries = get_supplier_item_price_history(sip)
     return JsonResponse(
         {"history": [_serialize_history_entry(entry) for entry in entries]}
     )

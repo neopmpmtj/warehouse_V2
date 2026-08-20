@@ -11,13 +11,17 @@ from .models import (
     ItemChangeLog,
     Supplier,
     SupplierChangeLog,
+    SupplierItemPrice,
+    SupplierItemPriceChangeLog,
     VatRate,
 )
 from .services import (
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
+    InvalidCostPriceError,
     InvalidSupplierEmailError,
     SupplierNameRequiredError,
     bulk_deactivate_items,
@@ -25,9 +29,11 @@ from .services import (
     create_family,
     create_item,
     create_supplier,
+    create_supplier_item_price,
     update_family,
     update_item,
     update_supplier,
+    update_supplier_item_price,
     validate_family_name_available,
     validate_internal_code_available,
     validate_supplier_name_available,
@@ -50,6 +56,9 @@ class ItemAdminForm(forms.ModelForm):
             "description",
             "unit_of_measure",
             "reorder_level",
+            "retail_price",
+            "wholesale_price",
+            "special_price",
             "vat_rate",
         )
 
@@ -105,6 +114,37 @@ class SupplierChangeLogInline(admin.TabularInline):
         return False
 
 
+class SupplierItemPriceChangeLogInline(admin.TabularInline):
+    model = SupplierItemPriceChangeLog
+    extra = 0
+    can_delete = False
+    readonly_fields = ("user", "action", "reason", "changes", "created_at")
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+class SupplierItemPriceInline(admin.TabularInline):
+    model = SupplierItemPrice
+    extra = 0
+    fields = ("item", "cost_price", "primary", "updated_at")
+    readonly_fields = ("updated_at",)
+    autocomplete_fields = ("item",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
     form = ItemAdminForm
@@ -141,6 +181,10 @@ class ItemAdmin(admin.ModelAdmin):
                     "updated_at",
                 )
             },
+        ),
+        (
+            "Pricing",
+            {"fields": ("retail_price", "wholesale_price", "special_price")},
         ),
         (
             "Audit",
@@ -187,6 +231,9 @@ class ItemAdmin(admin.ModelAdmin):
                     description=form.cleaned_data["description"],
                     unit_of_measure=form.cleaned_data["unit_of_measure"],
                     reorder_level=form.cleaned_data["reorder_level"],
+                    retail_price=form.cleaned_data["retail_price"],
+                    wholesale_price=form.cleaned_data["wholesale_price"],
+                    special_price=form.cleaned_data["special_price"],
                     vat_rate=form.cleaned_data["vat_rate"],
                 )
                 obj.pk = updated.pk
@@ -199,6 +246,9 @@ class ItemAdmin(admin.ModelAdmin):
                     vat_rate=form.cleaned_data["vat_rate"],
                     internal_code=form.cleaned_data.get("internal_code", ""),
                     reorder_level=form.cleaned_data["reorder_level"],
+                    retail_price=form.cleaned_data["retail_price"],
+                    wholesale_price=form.cleaned_data["wholesale_price"],
+                    special_price=form.cleaned_data["special_price"],
                     reason=reason,
                 )
                 obj.pk = created.pk
@@ -315,7 +365,7 @@ class SupplierAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("name", "contact_name", "email", "phone", "notes")
     readonly_fields = ("created_at", "updated_at")
-    inlines = (SupplierChangeLogInline,)
+    inlines = (SupplierChangeLogInline, SupplierItemPriceInline)
     fieldsets = (
         (
             None,
@@ -382,6 +432,92 @@ class SupplierAdmin(admin.ModelAdmin):
             raise ValidationError({"name": exc.messages[0]}) from exc
         except InvalidSupplierEmailError as exc:
             raise ValidationError({"email": exc.messages[0]}) from exc
+
+        obj.refresh_from_db()
+
+
+class SupplierItemPriceAdminForm(forms.ModelForm):
+    class Meta:
+        model = SupplierItemPrice
+        fields = ("supplier", "item", "cost_price", "primary")
+
+    def clean_cost_price(self):
+        cost = self.cleaned_data.get("cost_price")
+        if cost is not None and cost < 0:
+            raise ValidationError("Cost price must be zero or greater.")
+        return cost
+
+
+@admin.register(SupplierItemPrice)
+class SupplierItemPriceAdmin(admin.ModelAdmin):
+    form = SupplierItemPriceAdminForm
+    list_display = ("id", "supplier", "item", "cost_price", "primary", "updated_at")
+    list_filter = ("primary", "supplier")
+    search_fields = ("supplier__name", "item__internal_code", "item__description")
+    autocomplete_fields = ("supplier", "item")
+    readonly_fields = ("created_at", "updated_at")
+    inlines = (SupplierItemPriceChangeLogInline,)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "supplier",
+                    "item",
+                    "cost_price",
+                    "primary",
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj is not None:
+            return ("supplier", "item", "created_at", "updated_at")
+        return ("created_at", "updated_at")
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+
+        try:
+            if change:
+                update_supplier_item_price(
+                    obj,
+                    user=request.user,
+                    cost_price=form.cleaned_data["cost_price"],
+                    primary=form.cleaned_data["primary"],
+                )
+            else:
+                created = create_supplier_item_price(
+                    supplier=form.cleaned_data["supplier"],
+                    item=form.cleaned_data["item"],
+                    cost_price=form.cleaned_data["cost_price"],
+                    primary=form.cleaned_data["primary"],
+                    user=request.user,
+                )
+                obj.pk = created.pk
+        except DuplicateSupplierItemPriceError as exc:
+            raise ValidationError({"item": exc.messages[0]}) from exc
+        except InvalidCostPriceError as exc:
+            raise ValidationError({"cost_price": exc.messages[0]}) from exc
 
         obj.refresh_from_db()
 
@@ -528,6 +664,25 @@ class SupplierChangeLogAdmin(_ReadOnlyChangeLogAdmin):
     list_display = ("id", "supplier", "user", "action", "reason", "created_at")
     search_fields = ("supplier__name", "user__email", "reason")
     readonly_fields = ("supplier", "user", "action", "reason", "changes", "created_at")
+
+
+@admin.register(SupplierItemPriceChangeLog)
+class SupplierItemPriceChangeLogAdmin(_ReadOnlyChangeLogAdmin):
+    list_display = ("id", "supplier_item_price", "user", "action", "reason", "created_at")
+    search_fields = (
+        "supplier_item_price__supplier__name",
+        "supplier_item_price__item__internal_code",
+        "user__email",
+        "reason",
+    )
+    readonly_fields = (
+        "supplier_item_price",
+        "user",
+        "action",
+        "reason",
+        "changes",
+        "created_at",
+    )
 
 
 @admin.register(VatRate)

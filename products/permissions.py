@@ -7,9 +7,11 @@ from accounts.groups import (
     ADD_FAMILY,
     ADD_ITEM,
     ADD_SUPPLIER,
+    ADD_SUPPLIER_ITEM_PRICE,
     CHANGE_FAMILY,
     CHANGE_ITEM,
     CHANGE_SUPPLIER,
+    CHANGE_SUPPLIER_ITEM_PRICE,
     VIEW_ITEM,
 )
 
@@ -28,6 +30,8 @@ def catalog_permissions(user):
         "change_family": user.has_perm(CHANGE_FAMILY),
         "add_supplier": user.has_perm(ADD_SUPPLIER),
         "change_supplier": user.has_perm(CHANGE_SUPPLIER),
+        "add_supplier_item_price": user.has_perm(ADD_SUPPLIER_ITEM_PRICE),
+        "change_supplier_item_price": user.has_perm(CHANGE_SUPPLIER_ITEM_PRICE),
     }
 
 

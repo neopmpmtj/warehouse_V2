@@ -347,6 +347,26 @@ input[type="search"] {
     gap: 0.35rem;
 }
 
+.supplier-prices-dialog {
+    width: min(40rem, calc(100% - 2rem));
+}
+
+.supplier-price-form label.checkbox-inline {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 400;
+    color: var(--text);
+}
+
+.history ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
 .lifecycle-presets {
     margin: 0;
     padding: 0;

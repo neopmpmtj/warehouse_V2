@@ -85,6 +85,32 @@ SUPPLIERS = (
     },
 )
 
+# supplier_name, internal_code, cost_price, primary
+SUPPLIER_ITEM_PRICES = (
+    ("National Cement Works", "CEM-50", "8.50", True),
+    ("National Cement Works", "CEM-25", "4.95", False),
+    ("National Cement Works", "CEM-40", "9.80", False),
+    ("BuildSupply Ltd", "CEM-50", "8.75", False),
+    ("BuildSupply Ltd", "PIPE-20", "3.10", True),
+    ("BuildSupply Ltd", "STEEL-8", "2.40", False),
+    ("Porto Materials Co", "SAND-1KG", "0.90", True),
+    ("Porto Materials Co", "GRAVEL-10", "1.20", False),
+    ("Iberian Steel Trading", "STEEL-6", "1.85", False),
+    ("Iberian Steel Trading", "STEEL-10", "2.90", True),
+    ("Norte Timber Supply", "TIMBER-2X4", "2.15", True),
+    ("Norte Timber Supply", "TIMBER-PLY", "12.50", False),
+    ("ElectroPorto", "CABLE-2.5", "28.00", True),
+    ("ElectroPorto", "SOCKET", "1.40", False),
+    ("AquaFlow Plumbing", "VALVE-15", "2.60", True),
+    ("AquaFlow Plumbing", "TAP-CHROME", "18.90", False),
+    ("ColorWorks Paint", "PAINT-WHITE", "16.40", True),
+    ("ColorWorks Paint", "PAINT-RED", "8.20", False),
+    ("SafeGuard Equipment", "GLOVES-L", "1.95", True),
+    ("SafeGuard Equipment", "HELMET", "4.60", False),
+    ("FixAll Fasteners", "BOLT-M8", "0.55", True),
+    ("FixAll Fasteners", "SCREW-50", "1.15", False),
+)
+
 # internal_code, description, family, unit, reorder_level, is_active, vat_rate_code
 ITEMS = (
     ("CEM-50", "Cement 50kg", "Cement", "kg", "20", True, "VAT16"),

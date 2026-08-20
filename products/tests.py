@@ -8,7 +8,12 @@ from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from accounts.groups import GROUP_ADMINS, GROUP_OPERATORS, assign_warehouse_group
+from accounts.groups import (
+    GROUP_ADMINS,
+    GROUP_MANAGERS,
+    GROUP_OPERATORS,
+    assign_warehouse_group,
+)
 from products.models import (
     FamilyChangeLog,
     FamilyProduct,
@@ -16,6 +21,8 @@ from products.models import (
     ItemChangeLog,
     Supplier,
     SupplierChangeLog,
+    SupplierItemPrice,
+    SupplierItemPriceChangeLog,
     VatRate,
 )
 from products.permissions import can_view_catalog
@@ -23,8 +30,10 @@ from products.services import (
     DeactivateReasonRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
+    InvalidCostPriceError,
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
     SupplierNameRequiredError,
@@ -36,15 +45,20 @@ from products.services import (
     create_family,
     create_item,
     create_supplier,
+    create_supplier_item_price,
     deactivate_item,
     get_families,
+    get_item_buying_price,
     get_items,
     get_supplier_history,
+    get_supplier_item_price_history,
+    get_supplier_item_prices,
     get_suppliers,
     reactivate_item,
     update_family,
     update_item,
     update_supplier,
+    update_supplier_item_price,
     validate_internal_code_available,
 )
 
@@ -857,6 +871,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 "change_family": False,
                 "add_supplier": False,
                 "change_supplier": False,
+                "add_supplier_item_price": False,
+                "change_supplier_item_price": False,
             },
         )
 
@@ -886,6 +902,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 "change_family": True,
                 "add_supplier": True,
                 "change_supplier": True,
+                "add_supplier_item_price": True,
+                "change_supplier_item_price": True,
             },
         )
 
@@ -1475,3 +1493,319 @@ class SaveHelperDuplicateMappingTests(TestCase):
         dup = Supplier(name="DUP SUPPLIER")
         with self.assertRaises(DuplicateSupplierNameError):
             _save_supplier(dup)
+
+
+class SellingPriceServiceTests(ItemTestCaseMixin, TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="staff@example.com",
+            password="test-pass-123",
+        )
+        self.family = self.create_test_family()
+        self.vat_rate = VatRate.objects.get(code="VAT16")
+
+    def test_create_item_stores_selling_prices(self):
+        item = create_item(
+            self.user,
+            family=self.family,
+            description="Priced item",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+            retail_price="99.99",
+            wholesale_price="75.00",
+            special_price="60.00",
+        )
+
+        self.assertEqual(item.retail_price, Decimal("99.99"))
+        self.assertEqual(item.wholesale_price, Decimal("75.00"))
+        self.assertEqual(item.special_price, Decimal("60.00"))
+        log = item.change_logs.get(action=ItemChangeLog.Action.CREATED)
+        self.assertEqual(log.changes["retail_price"], "99.99")
+        self.assertEqual(log.changes["wholesale_price"], "75.00")
+        self.assertEqual(log.changes["special_price"], "60.00")
+
+    def test_update_item_selling_prices_writes_audit_diff(self):
+        item = self.create_test_item(self.user, description="Priced item")
+
+        update_item(
+            self.user,
+            item,
+            retail_price="10.00",
+            wholesale_price="8.00",
+            special_price="6.50",
+        )
+
+        log = item.change_logs.get(action=ItemChangeLog.Action.UPDATED)
+        self.assertEqual(log.changes["retail_price"]["new"], "10.00")
+        self.assertEqual(log.changes["wholesale_price"]["new"], "8.00")
+        self.assertEqual(log.changes["special_price"]["new"], "6.50")
+
+
+class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="staff@example.com",
+            password="test-pass-123",
+        )
+        self.family = self.create_test_family()
+        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.item = self.create_test_item(
+            self.user,
+            description="Cement 50kg",
+            internal_code="CEM-50",
+        )
+        self.supplier = create_supplier(name="BuildSupply Ltd")
+
+    def test_create_supplier_item_price_writes_audit_log(self):
+        sip = create_supplier_item_price(
+            supplier=self.supplier,
+            item=self.item,
+            cost_price="12.50",
+            primary=True,
+            user=self.user,
+        )
+
+        log = sip.change_logs.get(action=SupplierItemPriceChangeLog.Action.CREATED)
+        self.assertEqual(log.user, self.user)
+        self.assertEqual(log.changes["cost_price"], "12.50")
+        self.assertTrue(log.changes["primary"])
+        self.assertEqual(log.changes["supplier"]["name"], self.supplier.name)
+        self.assertEqual(log.changes["item"]["internal_code"], "CEM-50")
+
+    def test_duplicate_supplier_item_price_is_rejected(self):
+        create_supplier_item_price(self.supplier, self.item, "12.50")
+
+        with self.assertRaises(DuplicateSupplierItemPriceError):
+            create_supplier_item_price(self.supplier, self.item, "9.99")
+
+        self.assertEqual(SupplierItemPrice.objects.count(), 1)
+
+    def test_negative_cost_price_is_rejected(self):
+        with self.assertRaises(InvalidCostPriceError):
+            create_supplier_item_price(self.supplier, self.item, "-1")
+
+    def test_update_supplier_item_price_writes_audit_and_diff(self):
+        sip = create_supplier_item_price(self.supplier, self.item, "12.50")
+
+        update_supplier_item_price(sip, user=self.user, cost_price="13.75")
+
+        sip.refresh_from_db()
+        self.assertEqual(sip.cost_price, Decimal("13.75"))
+        log = sip.change_logs.get(action=SupplierItemPriceChangeLog.Action.UPDATED)
+        self.assertEqual(log.user, self.user)
+        self.assertEqual(log.changes["cost_price"]["old"], "12.50")
+        self.assertEqual(log.changes["cost_price"]["new"], "13.75")
+
+    def test_setting_primary_clears_other_primaries(self):
+        other_supplier = create_supplier(name="Porto Materials Co")
+        first = create_supplier_item_price(
+            self.supplier, self.item, "12.50", primary=True
+        )
+        second = create_supplier_item_price(
+            other_supplier, self.item, "11.00", primary=True
+        )
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertTrue(second.primary)
+        self.assertFalse(first.primary)
+
+    def test_get_item_buying_price_prefers_primary_then_cheapest(self):
+        other_supplier = create_supplier(name="Porto Materials Co")
+        create_supplier_item_price(self.supplier, self.item, "12.50", primary=False)
+        create_supplier_item_price(other_supplier, self.item, "9.99", primary=False)
+
+        self.assertEqual(get_item_buying_price(self.item), Decimal("9.99"))
+
+        primary_sip = SupplierItemPrice.objects.get(
+            supplier=self.supplier, item=self.item
+        )
+        update_supplier_item_price(primary_sip, primary=True)
+        self.assertEqual(get_item_buying_price(self.item), Decimal("12.50"))
+
+    def test_get_item_buying_price_returns_none_without_prices(self):
+        self.assertIsNone(get_item_buying_price(self.item))
+
+    def test_get_supplier_item_price_history_newest_first(self):
+        sip = create_supplier_item_price(self.supplier, self.item, "12.50")
+        update_supplier_item_price(sip, cost_price="13.75")
+
+        actions = list(
+            get_supplier_item_price_history(sip).values_list("action", flat=True)
+        )
+        self.assertEqual(
+            actions,
+            [
+                SupplierItemPriceChangeLog.Action.UPDATED,
+                SupplierItemPriceChangeLog.Action.CREATED,
+            ],
+        )
+
+
+class SupplierItemPricePermissionTests(TestCase):
+    def test_operator_has_view_only_permission(self):
+        operator = make_warehouse_user("op-sip@example.com", group_name=GROUP_OPERATORS)
+        self.assertTrue(operator.has_perm("products.view_supplieritemprice"))
+        self.assertFalse(operator.has_perm("products.add_supplieritemprice"))
+        self.assertFalse(operator.has_perm("products.change_supplieritemprice"))
+
+    def test_manager_can_add_and_change_but_not_delete(self):
+        manager = make_warehouse_user("mgr-sip@example.com", group_name=GROUP_MANAGERS)
+        self.assertTrue(manager.has_perm("products.add_supplieritemprice"))
+        self.assertTrue(manager.has_perm("products.change_supplieritemprice"))
+        self.assertFalse(manager.has_perm("products.delete_supplieritemprice"))
+
+    def test_admin_can_delete(self):
+        admin = make_warehouse_user("adm-sip@example.com", group_name=GROUP_ADMINS)
+        self.assertTrue(admin.has_perm("products.delete_supplieritemprice"))
+
+
+class SupplierItemPriceAdminAccessTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.superuser = user_model.objects.create_superuser(
+            email="super@example.com",
+            password="test-pass-123",
+        )
+        self.warehouse_user = make_warehouse_user("warehouse@example.com")
+        self.client = Client()
+        self.sip_changelist_url = reverse(
+            "admin:products_supplieritemprice_changelist"
+        )
+
+    def test_superuser_can_open_supplier_item_price_admin(self):
+        self.client.force_login(self.superuser)
+        response = self.client.get(self.sip_changelist_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_warehouse_user_cannot_open_supplier_item_price_admin(self):
+        self.client.force_login(self.warehouse_user)
+        response = self.client.get(self.sip_changelist_url)
+        self.assertIn(response.status_code, (302, 403))
+
+
+class SupplierItemPriceConsoleTests(ItemTestCaseMixin, TestCase):
+    def setUp(self):
+        self.staff_user = make_warehouse_user("warehouse@example.com")
+        self.non_staff_user = get_user_model().objects.create_user(
+            email="user@example.com",
+            password="test-pass-123",
+        )
+        self.client = Client()
+        self.family = self.create_test_family()
+        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.item = self.create_test_item(
+            self.staff_user,
+            description="Cement 50kg",
+            internal_code="CEM-50",
+        )
+        self.supplier = create_supplier(name="BuildSupply Ltd")
+
+    def test_staff_can_create_and_update_supplier_item_price_through_api(self):
+        self.client.force_login(self.staff_user)
+
+        create_response = self.client.post(
+            reverse("manage_supplier_item_price_list"),
+            data=json.dumps({
+                "supplier_id": self.supplier.id,
+                "item_id": self.item.id,
+                "cost_price": "12.50",
+                "primary": True,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(create_response.status_code, 200)
+        sip = create_response.json()["supplier_item_price"]
+        self.assertEqual(sip["cost_price"], "12.50")
+        self.assertTrue(sip["primary"])
+        self.assertEqual(sip["supplier_name"], "BuildSupply Ltd")
+        self.assertEqual(sip["internal_code"], "CEM-50")
+
+        update_response = self.client.patch(
+            reverse("manage_supplier_item_price_detail", args=[sip["id"]]),
+            data=json.dumps({"cost_price": "13.75"}),
+            content_type="application/json",
+        )
+        self.assertEqual(update_response.status_code, 200)
+        self.assertEqual(
+            update_response.json()["supplier_item_price"]["cost_price"],
+            "13.75",
+        )
+
+        list_response = self.client.get(
+            reverse("manage_supplier_item_price_list"),
+            {"item_id": self.item.id},
+        )
+        rows = list_response.json()["supplier_item_prices"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["cost_price"], "13.75")
+
+    def test_console_rejects_duplicate_and_negative(self):
+        self.client.force_login(self.staff_user)
+        create_supplier_item_price(self.supplier, self.item, "12.50")
+
+        duplicate = self.client.post(
+            reverse("manage_supplier_item_price_list"),
+            data=json.dumps({
+                "supplier_id": self.supplier.id,
+                "item_id": self.item.id,
+                "cost_price": "9.99",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertEqual(duplicate.json()["code"], "duplicate_supplier_item_price")
+
+        negative = self.client.post(
+            reverse("manage_supplier_item_price_list"),
+            data=json.dumps({
+                "supplier_id": self.supplier.id,
+                "item_id": self.item.id,
+                "cost_price": "-1",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(negative.status_code, 400)
+        self.assertEqual(negative.json()["code"], "invalid_cost_price")
+
+    def test_operator_cannot_create_supplier_item_price(self):
+        operator = make_warehouse_user("op-sip@example.com", group_name=GROUP_OPERATORS)
+        self.client.force_login(operator)
+
+        response = self.client.post(
+            reverse("manage_supplier_item_price_list"),
+            data=json.dumps({
+                "supplier_id": self.supplier.id,
+                "item_id": self.item.id,
+                "cost_price": "12.50",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_non_staff_cannot_use_supplier_item_price_api(self):
+        self.client.force_login(self.non_staff_user)
+        response = self.client.get(reverse("manage_supplier_item_price_list"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_staff_can_create_item_with_selling_prices_through_api(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps({
+                "family_id": self.family.id,
+                "description": "Priced item",
+                "unit_of_measure": "piece",
+                "vat_rate_id": self.vat_rate.id,
+                "retail_price": "99.99",
+                "wholesale_price": "75.00",
+                "special_price": "60.00",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        item = response.json()["item"]
+        self.assertEqual(item["retail_price"], "99.99")
+        self.assertEqual(item["wholesale_price"], "75.00")
+        self.assertEqual(item["special_price"], "60.00")
