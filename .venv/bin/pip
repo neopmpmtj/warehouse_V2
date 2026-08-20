@@ -1,4 +1,4 @@
-#!/home/pmpmt/python/260819-central_de_compras/warehouse_V2/.venv/bin/python3
+#!/home/pmpmt/python/260820-central_de_compras/warehouse_V2/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

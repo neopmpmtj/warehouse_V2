@@ -1,0 +1,384 @@
+# CentCompras — Master Project Plan
+
+> **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
+
+- **Last updated:** 20 August 2026
+- **Current phase:** Phase 1 — Pricing (selling prices + supplier price list)
+- **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is deferred — see [Phase 5](#phase-5--branches--internal-request-deferred).
+
+---
+
+## 1. Purpose
+
+This plan turns the agreed vision into an executable, step-by-step roadmap with status tracking. It is the single source of truth for **what is built, what is next, and what is deliberately deferred**. The live code-level handoff remains in [`README.md`](../README.md) (canonical for code facts); this document is canonical for **sequencing and status**.
+
+---
+
+## 2. Vision & corrected business flow
+
+A **central warehouse** buys from suppliers and ships to **satellite branches**. The loop closes only when the warehouse has **stock in house** — that is why we build products/procurement first and branches last.
+
+```
+Branch (satellite)                            Central warehouse
+    │                                              │
+    │  Internal request (item needed)              │
+    ├─────────────────────────────────────────────►│
+    │                                              │
+    │                              ┌─ In stock? ───┤
+    │                              │               │
+    │                    NO        │        YES    │
+    │                              ▼               ▼
+    │                 Procurement (PO)         Ship to branch
+    │                 → Goods receipt          (goods issue)
+    │                 → Stock in                 │
+    │                              └──────┬───────┘
+    │                                     │
+    │◄──────────────────── Stock updated ─┘
+```
+
+**Key correction (locked):** branches place an **internal request** *before* the item is procured (if out of stock) or shipped (if in stock). This branch-side flow is **not built now** — it is the trigger for the procurement loop we build first.
+
+### Price dynamics (locked — this is important)
+
+| Value | Source | Update method |
+|-------|--------|---------------|
+| **Selling prices** (retail / wholesale / special) | `Item` | **Manual** — filled by a senior person, *not* automated |
+| **Buying / cost price** | `SupplierItemPrice` (per supplier) | **Dynamic** — sourced from the supplier price list |
+
+So "dynamically updated wherever possible" applies to **cost prices** and **stock**, not to selling prices.
+
+---
+
+## 3. Guiding principles
+
+1. **One concept per phase.** No large application dumps.
+2. **All mutations through `services.py`** — views/CLI/admin never touch models directly for writes.
+3. **Audit-by-design** — every create/update/lifecycle change writes a `*ChangeLog` row with `user`, `action`, `changes`, `reason` (reuse the existing pattern).
+4. **Plain Django + plain JavaScript.** No React/Vue, no extra frameworks.
+5. **Normalized tables + joins** — the user's "separate tables + inner/outer joins" instinct is the house style; Django's `select_related` / `prefetch_related` implement the joins.
+6. **~500 users, low traffic** → correctness and clarity over performance.
+7. **PostgreSQL is the source of truth.** No client-side writes.
+8. **Branch-readiness now, branches later** — keep `Item` global (no `branch_id`), stable PKs, snapshot prices onto future order lines, and expose cost only to warehouse groups (the future branch catalog will hide cost).
+
+---
+
+## 4. Naming conventions (locked)
+
+| Concept | Name (code) | Notes |
+|---|---|---|
+| Catalog item (identity) | `Item` | exists |
+| 3 selling prices | `Item.retail_price` / `Item.wholesale_price` / `Item.special_price` | manual, audited |
+| Supplier cost price | `SupplierItemPrice` | supplier × item → `cost_price` |
+| Purchase order | `PurchaseOrder` + `PurchaseOrderLine` | future |
+| Receiving document | `GoodsReceipt` + `GoodsReceiptLine` | "Receção de Mercadorias" (pt-PT) |
+| Stock movement | `StockMovement` (ledger) + cached quantity on `Item` | future |
+| Branch-side order | Internal request / "Requisição Interna" | future |
+| Discounts | `discount_commercial` / `discount_financial` / `rappel` | on PO lines, simple % |
+| Manager view | Stock & price catalog (cost **visible**) | future |
+| Branch view | Branch catalog (cost **hidden**) | future |
+
+---
+
+## 5. Decisions log
+
+### Locked ✅
+
+| # | Decision | Choice |
+|---|----------|--------|
+| D1 | Selling prices are manual; cost is dynamic | Manual sell / dynamic cost (from supplier list) |
+| D2 | 3 selling prices | retail, wholesale, special — **not** branch-tiered (buildable later) |
+| D3 | Supplier cost price linkage | supplier ID + item (whose `internal_code` is written on the PO line) |
+| D4 | Supplier price storage | separate table `SupplierItemPrice`, `unique(supplier, item)`, **no** supplier SKU / validity dates for now |
+| D5 | Stock model | movement **ledger** + cached quantity on `Item` |
+| D6 | Goods receipt ↔ PO | **many receipts per PO** (partial / split shipments) |
+| D7 | Approval workflow | `draft → submitted → approved → received → closed` (+ `rejected`) |
+| D8 | Rappel | simple per-line % now; shape later |
+| D9 | Email automation | deferred to a **pending phase**; model a stub seam now |
+| D10 | Branches | **not now**; only keep products branch-ready |
+
+### Open ⚠️
+
+| # | Decision | Working default | Confirm at |
+|---|----------|-----------------|------------|
+| O1 | Item-level "buying price" display when an item has multiple suppliers | **Option A** — `SupplierItemPrice.primary` flag (one primary per item); fall back to cheapest if none marked | Phase 1 start |
+
+> **O1 options recap:** A = primary supplier flag (recommended) · B = always show cheapest · C = per-supplier only, no single item-level cost.
+
+---
+
+## 6. Current state (verified in code)
+
+- **Apps:** `accounts` (email login, warehouse groups), `products` (catalog + console + audit), `logging_utils`. **No `branches` app yet** (deferred, not lost).
+- **`Item`** has family, `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active`. **No price, no stock** (deliberate).
+- **`Supplier`** master data exists (name, contact, email, phone, notes, `is_active`).
+- **Audit:** `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`.
+- **Service layer** `products/services.py` — full CRUD + validation + audit for items/families/suppliers.
+- **Console** `/manage/items/` + JSON API `/api/manage/{items,families,suppliers}/`.
+- **Tests:** 105 passing (`products accounts`). `accounts/tests.py`, `branches/tests.py` (the latter does not exist yet) are stubs.
+- **Docs drift (known):** README/AGENTS.md still describe a `branches` app and the removed offline catalogue as "done". Will be corrected in the Phase 1 docs pass.
+
+---
+
+## 7. Phase map (overview)
+
+| Phase | Name | Status | Depends on |
+|-------|------|--------|------------|
+| 0 | Catalogue identity + auth + console | ✅ **Done** | — |
+| 1 | **Pricing — selling prices + supplier price list** | 🔵 Current | Phase 0 |
+| 2 | Procurement — purchase orders, discounts, approval | ⚪ Not started | Phase 1 |
+| 3 | Goods receipt + stock ledger | ⚪ Not started | Phase 2 |
+| 4 | Manager catalog (stock + price view) | ⚪ Not started | Phase 3 |
+| 5 | Branches + internal request + branch catalog | ⏸ Deferred | Phase 4 |
+| 6 | Email automation (supplier notifications) | ⏸ Pending | Phase 2 (stub) |
+| 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
+
+---
+
+## 8. Phase 1 — Pricing (current) 🔵
+
+**Goal:** items carry 3 manually-entered selling prices; suppliers carry dynamic cost prices; the console lets warehouse staff manage both with full audit.
+
+### 8.1 Data model
+
+**`Item` — add 3 selling-price fields (manual, audited):**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `retail_price` | `DecimalField(12,2)` | default `0.00` |
+| `wholesale_price` | `DecimalField(12,2)` | default `0.00` |
+| `special_price` | `DecimalField(12,2)` | default `0.00` |
+
+- `0.00` means "not yet priced". Add to `ITEM_UPDATABLE_FIELDS` and to the item audit diff.
+- *(Decision note: if branch/segment price tiering is later required, extract these into a `PriceList` model — do not do this now.)*
+
+**`SupplierItemPrice` (dynamic cost source) — new:**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `supplier` | FK → `Supplier`, `PROTECT` | `related_name="item_prices"` |
+| `item` | FK → `Item`, `PROTECT` | `related_name="supplier_prices"` |
+| `cost_price` | `DecimalField(12,2)` | ≥ 0 |
+| `primary` | `BooleanField(default=False)` | O1 — one primary per item (enforced in service layer) |
+| `created_at` / `updated_at` | `DateTimeField` | auto |
+
+- `unique_together(supplier, item)` — one cost per supplier per item.
+
+**`SupplierItemPriceChangeLog` — new (audit):**
+
+| Field | Type |
+|-------|------|
+| `supplier_item_price` | FK, `PROTECT`, `related_name="change_logs"` |
+| `user` | FK → `AUTH_USER_MODEL`, `SET_NULL`, nullable |
+| `action` | choices: created / updated / deactivated / reactivated |
+| `changes` | `JSONField(default=dict)` |
+| `reason` | `CharField(blank=True)` |
+| `created_at` | auto |
+
+### 8.2 Service layer (`products/services.py`)
+
+- Add `retail_price`, `wholesale_price`, `special_price` to `ITEM_UPDATABLE_FIELDS`; coerce `Decimal`; include in `create_item` / `update_item` diffs and the created-log.
+- New functions (mirror supplier/family pattern):
+  - `create_supplier_item_price(supplier, item, cost_price, primary=False, user=None)`
+  - `update_supplier_item_price(...)` — diff + audit
+  - `deactivate_supplier_item_price(...)` / `reactivate_supplier_item_price(...)` (if soft-delete added)
+  - `set_primary_supplier_price(item, supplier_item_price, user=None)` — unset others, enforce one primary
+  - `get_supplier_item_prices(item=None, supplier=None)` — with `select_related`
+  - `get_supplier_item_price_history(...)`
+  - `get_item_buying_price(item)` — primary's cost, else cheapest (O1)
+- Validation: `cost_price >= 0`; duplicate `(supplier, item)` → clear error (reuse the `_save_*` + `IntegrityError` re-check pattern).
+- New error classes: `DuplicateSupplierItemPriceError`, `InvalidCostPriceError`.
+
+### 8.3 Permissions (`products/permissions.py`)
+
+- Supplier-item prices follow the same warehouse-group rules as items/suppliers: `warehouse_admins` full, `warehouse_managers` add/change, `warehouse_data_operators` view.
+- Selling prices ride the existing item add/change permissions (no new perm codes needed).
+
+### 8.4 Django admin (`products/admin.py`)
+
+- Add the 3 selling prices to `ItemAdmin` (fieldsets) + `ItemChangeLogInline` already diffs them.
+- New `SupplierItemPriceAdmin` (inline under `SupplierAdmin`) + read-only `SupplierItemPriceChangeLogAdmin` (mirror existing change-log admins).
+
+### 8.5 Console API (`products/console_views.py`)
+
+- `_serialize_item` → include the 3 selling prices.
+- New endpoints (authenticated warehouse groups):
+  - `GET/POST /api/manage/supplier-prices/`
+  - `GET/PATCH/DELETE /api/manage/supplier-prices/<id>/`
+  - `GET /api/manage/supplier-prices/<id>/history/`
+- `_console_payload` → include supplier-item-price lists (or lazy-load per drawer, matching the existing family/supplier drawer pattern).
+
+### 8.6 Console UI (`item_console.html` + `console.js`)
+
+- Item create/edit form → 3 selling-price inputs (numeric, EN + pt-PT labels).
+- Supplier drawer → list of that supplier's item prices (item, internal_code, cost, primary) + add/edit cost + set-primary.
+- Item drawer → list of that item's supplier prices (supplier, cost, primary).
+- Follow existing patterns: `textContent`/`createElement` only (no `innerHTML`), `state.busy` double-submit guard, request-id guards on history loads, safe `localStorage` helpers.
+
+### 8.7 Seed (`products/management/commands/seed_dev_data.py`)
+
+- Add sample selling prices (retail > wholesale > special) and supplier-item cost prices for the seeded items/suppliers. **Idempotent** (case-insensitive lookups, `update_or_create`-style).
+
+### 8.8 Tests (`products/tests.py`)
+
+- Selling-price create/update + audit diff.
+- `SupplierItemPrice`: create, duplicate rejected, cost ≥ 0, primary uniqueness, buying-price resolution (O1), audit log, permissions (admin/manager/operator), admin access, console API.
+
+### 8.9 Docs pass
+
+- Update `README.md` "Project status" + `AGENTS.md` to reflect: selling prices manual, `SupplierItemPrice` done, `branches` still deferred (correct the "done" claim), offline catalogue removed.
+
+### Phase 1 — Definition of Done
+
+- [ ] Migrations clean; `migrate` runs on a fresh DB.
+- [ ] All mutations audited (selling-price changes on item; supplier-price create/update/lifecycle).
+- [ ] Console: enter/edit selling prices; manage supplier cost prices + primary from drawers.
+- [ ] `python manage.py test products accounts` green (new tests added, ≥ 105 baseline preserved).
+- [ ] Seed script idempotent with sample prices.
+
+---
+
+## 9. Phase 2 — Procurement (purchase orders) ⚪
+
+**Goal:** warehouse raises a PO to a supplier; lines auto-fill cost from `SupplierItemPrice` (editable); 3 discount types; approval workflow; email seam.
+
+### Model (new `procurement` app)
+
+- `PurchaseOrder`: `supplier` FK, `status` (`draft/submitted/approved/received/closed/rejected`), `created_by`, `approved_by`, `approved_at`, `supplier_ref` (optional), `notes`, timestamps. **Global** (central warehouse, no branch).
+- `PurchaseOrderLine`: `purchase_order` FK, `item` FK, `description` (snapshot), `internal_code` (snapshot), `quantity` `Decimal(12,3)`, `unit_cost` (auto-filled from `SupplierItemPrice`, editable), `discount_commercial` `Decimal(5,2)`, `discount_financial` `Decimal(5,2)`, `rappel` `Decimal(5,2)`, `vat_rate` (snapshot), line totals.
+- `PurchaseOrderChangeLog` (status + field audit) + `PurchaseOrderLineChangeLog` (or reuse a single PO audit capturing line diffs — decide at build).
+
+### Service layer
+
+- `create_purchase_order`, `add_line` (auto-fill cost), `update_line`, `submit`, `approve`, `reject`, `receive` (transition hook for Phase 3), `close`.
+- Discounts: **commercial & financial & rappel as simple line %** (D8). Net line = `unit_cost × (1 − Σ discounts)`. Rappel treated as a plain % for now.
+- Status transitions enforced (e.g. only `draft→submitted`, `submitted→approved/rejected`).
+- Email seam: `notify_supplier_on_approval(po)` → **stub** that logs "would send" (D9).
+
+### Console
+
+- PO list + detail, line editor, discount fields, status buttons, permission-gated (warehouse admins create/approve; managers create; operators view).
+
+### Definition of Done
+
+- [ ] PO with lines, auto-cost from supplier list, editable.
+- [ ] Approval workflow with audit.
+- [ ] Email stub present (no SMTP in dev).
+
+---
+
+## 10. Phase 3 — Goods receipt + stock ledger ⚪
+
+**Goal:** receiving goods writes stock; stock is a ledger, never typed on the product.
+
+### Model
+
+- `GoodsReceipt`: FK → `PurchaseOrder` (many receipts per PO, D6), `received_by`, `received_at`, `reference` (supplier delivery note / guia), notes.
+- `GoodsReceiptLine`: FK → `PurchaseOrderLine`, `quantity_received` `Decimal(12,3)` (≤ remaining qty on PO line), optional over/under tolerance decision at build.
+- `StockMovement`: `item` FK, `quantity` (signed: `+in / −out`), `movement_type` (`receipt`, `goods_issue`, `adjustment`, `initial`), `reference` FK (polymorphic: receipt / order / adjustment), `created_by`, `created_at`.
+- `Item.quantity` (cached balance) — updated transactionally with each `StockMovement`.
+
+### Service layer (new `inventory` app, or `procurement` + helper in `products`)
+
+- `receive_goods(po, lines)` → creates `GoodsReceipt` + lines, writes `StockMovement` (+in), updates `Item.quantity`, marks PO `received`/`closed` when fully received.
+- `adjust_stock(item, qty, reason)` → manual adjustment (warehouse-admin only).
+- Stock never written directly on `Item` — always via movement.
+
+### Definition of Done
+
+- [ ] Goods receipt writes stock; ledger complete; partial receipts supported; PO closes when fully received.
+- [ ] Cached `Item.quantity` correct and never manually edited.
+
+---
+
+## 11. Phase 4 — Manager catalog (stock + price view) ⚪
+
+**Goal:** managers see a join-heavy, read-only view: item + 3 selling prices + buying price (O1) + stock balance + reorder level + supplier(s).
+
+- Read-only dashboard joining `Item`, `SupplierItemPrice`, `StockMovement` (cached `quantity`), `Supplier`.
+- Cost **visible** to warehouse groups only.
+- Reorder-level highlighting (below reorder level → flag).
+
+---
+
+## 12. Phase 5 — Branches + internal request (deferred) ⏸
+
+**Explicitly not now.** Only note for completeness; a **separate "branches plan"** will be authored when we get here.
+
+- Build the missing `branches` app: `Branch`, `BranchMembership`, `ActiveBranchMiddleware`, branch picker.
+- Internal request ("Requisição Interna") flow: branch requests item → stock check → **ship** (in stock) or **procure then ship** (out of stock).
+- Branch catalog view (cost **hidden**, selling prices possibly branch-tiered — revisit D2).
+- Offline order queue + sync.
+
+---
+
+## 13. Phase 6 — Email automation (pending) ⏸
+
+- Wire `notify_supplier_on_approval` to real email (SMTP / provider).
+- Templates EN + pt-PT; audit sent-notifications.
+- Deferred by D9.
+
+---
+
+## 14. Phase 7 — Mobile / offline / production (future) ⏸
+
+- Offline catalogue cache (Service Worker + IndexedDB) — re-add after Phase 5.
+- Offline order queue + idempotent sync.
+- PWA manifest, HTTPS, Google OAuth, deployment.
+
+---
+
+## 15. Status tracker
+
+> Tick `[x]` as tasks complete. Move `🔵 Current` in §7 forward each phase.
+
+### Phase 1 — Pricing
+- [ ] 8.1 Models + migrations (Item prices, `SupplierItemPrice`, `SupplierItemPriceChangeLog`)
+- [ ] 8.2 Service layer (selling prices + supplier-price CRUD + primary + buying-price)
+- [ ] 8.3 Permissions
+- [ ] 8.4 Django admin
+- [ ] 8.5 Console API
+- [ ] 8.6 Console UI
+- [ ] 8.7 Seed data
+- [ ] 8.8 Tests
+- [ ] 8.9 Docs pass (fix branches/offline drift)
+
+### Phase 2 — Procurement
+- [ ] Models + migrations
+- [ ] Service layer (PO, lines, discounts, approval)
+- [ ] Console UI
+- [ ] Email stub
+- [ ] Tests
+
+### Phase 3 — Goods receipt + stock
+- [ ] Models + migrations
+- [ ] Service layer (receive → stock movement → cached quantity)
+- [ ] Console UI
+- [ ] Tests
+
+### Phase 4 — Manager catalog
+- [ ] Dashboard (join view)
+- [ ] Reorder highlighting
+- [ ] Tests
+
+### Phase 5 / 6 / 7
+- [ ] (separate branches plan; email; mobile) — deferred
+
+---
+
+## 16. Out of scope (explicitly not now)
+
+- Branch app, internal request, branch catalog, branch tiered prices.
+- Offline order queue / sync; PWA; mobile packaging.
+- Google OAuth, public signup, password reset.
+- Categories, LLM/vector search, bulk import.
+- Real email sending.
+
+---
+
+## 17. Risks & notes
+
+1. **Cost-price ambiguity (O1)** — resolve at Phase 1 start; Option A assumed.
+2. **Docs drift** — README/AGENTS.md claim `branches` and offline catalogue are done; they are not in code. Correct in §8.9.
+3. **Rappel semantics** — simple % now may need rework if it becomes a true periodic accrual later.
+4. **Stock concurrency** — ledger + `select_for_update()` (existing pattern) avoids lost updates on concurrent receipts; keep this discipline.
+5. **Snapshot-on-line** — PO/GR lines must snapshot description, code, unit cost, VAT so later master-data edits don't rewrite history.
