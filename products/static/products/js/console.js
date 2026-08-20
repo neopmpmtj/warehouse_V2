@@ -1109,9 +1109,9 @@ function formPayload() {
         unit_of_measure: document.getElementById("field-unit").value,
         reorder_level: document.getElementById("field-reorder").value,
         vat_rate_id: Number(document.getElementById("field-vat-rate").value),
-        retail_price: document.getElementById("field-retail-price").value,
-        wholesale_price: document.getElementById("field-wholesale-price").value,
-        special_price: document.getElementById("field-special-price").value,
+        retail_price: document.getElementById("field-retail-price").value || "0",
+        wholesale_price: document.getElementById("field-wholesale-price").value || "0",
+        special_price: document.getElementById("field-special-price").value || "0",
         reason: document.getElementById("field-reason").value,
     };
 }
@@ -1288,7 +1288,7 @@ async function submitSupplierPriceAdd(event) {
             body: JSON.stringify({
                 supplier_id: supplierId,
                 item_id: Number(itemId),
-                cost_price: costPrice,
+                cost_price: costPrice || "0",
                 primary,
             }),
         });

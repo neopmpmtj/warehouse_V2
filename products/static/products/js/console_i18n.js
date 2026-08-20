@@ -142,6 +142,9 @@ const CONSOLE_I18N = {
         "unit.m2": "Square meter",
         "unit.m3": "Cubic meter",
         "unit.l": "Liter",
+        duplicate_internal_code: "This internal code is already used.",
+        duplicate_supplier_item_price: "This supplier already has a price for this item.",
+        invalid_cost_price: "Cost price must be zero or greater.",
     },
     "pt-PT": {
         title: "Gestão de artigos",
@@ -286,5 +289,8 @@ const CONSOLE_I18N = {
         "unit.m2": "Metro quadrado",
         "unit.m3": "Metro cúbico",
         "unit.l": "Litro",
+        duplicate_internal_code: "Este código interno já está em uso.",
+        duplicate_supplier_item_price: "Este fornecedor já tem um preço para este artigo.",
+        invalid_cost_price: "O preço de custo tem de ser zero ou superior.",
     },
 };
