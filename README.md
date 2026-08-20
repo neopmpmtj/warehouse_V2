@@ -12,7 +12,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ### Where we stand
 
-The **item catalogue** is the current module: warehouse staff create and manage **items**, **families**, and **suppliers** at `/manage/items/`. Items start inactive until Genesis. There is **no stock or price on the item** — quantity waits for a later inbound-receipt design. Branch orders wait until then.
+The **item catalogue + pricing** is the current module: warehouse staff create and manage **items**, **families**, and **suppliers** at `/manage/items/`. Items start inactive until Genesis and carry **three manual selling prices** (retail / wholesale / special). **Cost prices are dynamic**, held per supplier in a `SupplierItemPrice` table (the source for later purchase orders). There is **no stock** — quantity waits for the inbound-receipt design. Branch orders wait until then.
 
 Held for later dedicated sessions (do not start in passing): shared page chrome, branch phone-catalogue UX, staff-console polish.
 
@@ -21,13 +21,14 @@ Held for later dedicated sessions (do not start in passing): shared page chrome,
 | Phase | Status | Notes |
 |-------|--------|-------|
 | **Product catalogue MVP** | Done | Model, API, offline HTML/JS, Service Worker, IndexedDB — see [`products/README.md`](products/README.md) |
-| **Auth & tenancy foundation** | Done | `accounts` (email login), `branches` (Branch, BranchMembership, roles, middleware, picker) |
+| **Auth foundation** | Done | `accounts` (email login), warehouse groups |
 | **Login-protected catalogue** | Done | `/` and `/api/products/` require session; API returns 401 when logged out |
 | **Centralized logging** | Done | `logging_utils` → rotating files in `logs/` |
 | **Catalog management & audit** | Done | Item / family / supplier lifecycle, `ItemChangeLog` + `FamilyChangeLog` + `SupplierChangeLog`, soft delete, staff admin via `products/services.py` |
 | **Catalog polish** | Done | Duplicate `internal_code` validation; optional item audit `reason` |
 | **Staff item console** | Done | `/manage/items/` — table, filters, column sort, inactive-by-default create + Genesis, family/supplier drawers, EN/pt-PT, light/dark |
 | **Family & supplier priors** | Done | Console create/deactivate; case-insensitive unique names (no rename in the console UI); PostgreSQL audit logs |
+| **Pricing (selling + supplier cost)** | Done | 3 manual selling prices on `Item`; `SupplierItemPrice` (supplier × item cost, one primary) + audit; console, admin, API, seed |
 | **Dev seed script** | Done | [`scripts/seed_dev_data.sh`](scripts/seed_dev_data.sh) — branches, branch users, **warehouse user**, sample products |
 | **Project setup docs** | Done | Root README, `requirements.txt`, `config/settings.example.py`, `AGENTS.md`, `.cursor/` rules |
 
@@ -38,7 +39,7 @@ Held for later dedicated sessions (do not start in passing): shared page chrome,
 - Dev login: email + password. Production: **Google OAuth** (not implemented yet).
 - Users are provisioned in admin or seed script — no public signup.
 - Orders (future, after inbound stock) will be **branch-scoped** with `branch` + `created_by` FKs. The sketch in [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) §6 is **not** an implementation spec (`item_name` is leftover).
-- **Items have no stock or price field.** Inbound receipts from suppliers are expected to become the source of quantity later.
+- **Items have no stock field** (inbound receipts will become the source of quantity later). Selling prices are **manual**; **cost prices are dynamic** from `SupplierItemPrice`.
 
 ### User roles (important — practice with these)
 
@@ -129,21 +130,22 @@ No React, Vue, or similar frontend framework.
 
 ## What works today
 
-### Authentication and tenancy
+### Authentication
 
 - Custom `User` model (`accounts`) — email login, no username field
 - Session login/logout at `/accounts/login/` and `/accounts/logout/`
-- `Branch` and `BranchMembership` models (`branches`) — roles per branch: Admin, Manager, User
-- Active branch stored in session; branch picker when user belongs to multiple branches
-- Permission helpers in `branches/permissions.py` (ready for orders)
-- Django admin for users, branches, and memberships
+- Warehouse roles via Django groups (`warehouse_admins` / `warehouse_managers` / `warehouse_data_operators`)
+- Django admin (superuser only) for users and groups
 - Catalogue requires login; API returns 401 when unauthenticated
+
+> **Branches (tenancy) are NOT built yet.** The `branches` app (`Branch`, `BranchMembership`, active-branch middleware, picker) is documented in [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) but **deferred** until after inbound stock. There is no `branches/` directory in the code today.
 
 Production will use Google OAuth (not implemented in dev — email/password login only).
 
 ### Item catalogue (server)
 
-- `Item` model: required `family`, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (soft delete; **new items start inactive**), timestamps. No stock or price.
+- `Item` model: required `family`, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (soft delete; **new items start inactive**), timestamps, plus three **manual selling prices** — `retail_price`, `wholesale_price`, `special_price`. No stock.
+- `SupplierItemPrice` model: `supplier` × `item` → `cost_price` + `primary` (one primary per item). This is the **dynamic cost source** for later purchase orders. Audit via `SupplierItemPriceChangeLog`.
 - `FamilyProduct` / `Supplier` — family is required on item create; suppliers are independent master data (not linked to items yet). Names are case-insensitive unique. The console UI does not rename them.
 - Audit: `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Item deactivate/reactivate require a reason; family/supplier lifecycle does not.
 - Service layer in [`products/services.py`](products/services.py): item, family, and supplier mutations.

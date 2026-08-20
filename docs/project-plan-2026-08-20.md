@@ -3,7 +3,7 @@
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
 - **Last updated:** 20 August 2026
-- **Current phase:** Phase 1 — Pricing (selling prices + supplier price list)
+- **Current phase:** Phase 1 complete ✅ — next: Phase 2 (procurement)
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is deferred — see [Phase 5](#phase-5--branches--internal-request-deferred).
 
 ---
@@ -95,12 +95,13 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D8 | Rappel | simple per-line % now; shape later |
 | D9 | Email automation | deferred to a **pending phase**; model a stub seam now |
 | D10 | Branches | **not now**; only keep products branch-ready |
+| D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — **auto-suggested by default** when procuring (PO line), **always overridable** |
 
 ### Open ⚠️
 
 | # | Decision | Working default | Confirm at |
 |---|----------|-----------------|------------|
-| O1 | Item-level "buying price" display when an item has multiple suppliers | **Option A** — `SupplierItemPrice.primary` flag (one primary per item); fall back to cheapest if none marked | Phase 1 start |
+| O1 | Item-level "buying price" display when an item has multiple suppliers | **Option A** — `SupplierItemPrice.primary` flag (one primary per item); fall back to cheapest if none marked | Resolved — Option A implemented |
 
 > **O1 options recap:** A = primary supplier flag (recommended) · B = always show cheapest · C = per-supplier only, no single item-level cost.
 
@@ -124,7 +125,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | Phase | Name | Status | Depends on |
 |-------|------|--------|------------|
 | 0 | Catalogue identity + auth + console | ✅ **Done** | — |
-| 1 | **Pricing — selling prices + supplier price list** | 🔵 Current | Phase 0 |
+| 1 | **Pricing — selling prices + supplier price list** | ✅ Done | Phase 0 |
 | 2 | Procurement — purchase orders, discounts, approval | ⚪ Not started | Phase 1 |
 | 3 | Goods receipt + stock ledger | ⚪ Not started | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ⚪ Not started | Phase 3 |
@@ -134,7 +135,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ---
 
-## 8. Phase 1 — Pricing (current) 🔵
+## 8. Phase 1 — Pricing ✅
 
 **Goal:** items carry 3 manually-entered selling prices; suppliers carry dynamic cost prices; the console lets warehouse staff manage both with full audit.
 
@@ -249,7 +250,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ### Service layer
 
-- `create_purchase_order`, `add_line` (auto-fill cost), `update_line`, `submit`, `approve`, `reject`, `receive` (transition hook for Phase 3), `close`.
+- `create_purchase_order`, `add_line` (auto-fill cost from `SupplierItemPrice`; auto-suggest the item's **primary** supplier — overridable, D11), `update_line`, `submit`, `approve`, `reject`, `receive` (transition hook for Phase 3), `close`.
 - Discounts: **commercial & financial & rappel as simple line %** (D8). Net line = `unit_cost × (1 − Σ discounts)`. Rappel treated as a plain % for now.
 - Status transitions enforced (e.g. only `draft→submitted`, `submitted→approved/rejected`).
 - Email seam: `notify_supplier_on_approval(po)` → **stub** that logs "would send" (D9).
@@ -332,15 +333,15 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 > Tick `[x]` as tasks complete. Move `🔵 Current` in §7 forward each phase.
 
 ### Phase 1 — Pricing
-- [ ] 8.1 Models + migrations (Item prices, `SupplierItemPrice`, `SupplierItemPriceChangeLog`)
-- [ ] 8.2 Service layer (selling prices + supplier-price CRUD + primary + buying-price)
-- [ ] 8.3 Permissions
-- [ ] 8.4 Django admin
-- [ ] 8.5 Console API
-- [ ] 8.6 Console UI
-- [ ] 8.7 Seed data
-- [ ] 8.8 Tests
-- [ ] 8.9 Docs pass (fix branches/offline drift)
+- [x] 8.1 Models + migrations (Item prices, `SupplierItemPrice`, `SupplierItemPriceChangeLog`)
+- [x] 8.2 Service layer (selling prices + supplier-price CRUD + primary + buying-price)
+- [x] 8.3 Permissions
+- [x] 8.4 Django admin
+- [x] 8.5 Console API
+- [x] 8.6 Console UI
+- [x] 8.7 Seed data
+- [x] 8.8 Tests
+- [x] 8.9 Docs pass (fix branches/offline drift)
 
 ### Phase 2 — Procurement
 - [ ] Models + migrations

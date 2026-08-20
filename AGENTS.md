@@ -8,13 +8,13 @@ Staff product console (this phase): [`docs/product-console-session-2026-08-18.md
 
 ## Session handoff (August 2026)
 
-**Done:** Auth, catalog management (admin + audit + soft delete), staff item console (`/manage/items/` — sort, inactive-by-default create, family/supplier drawers), family and supplier PostgreSQL audit logs, dev seed script with **warehouse users**.
+**Done:** Auth (email login + warehouse groups), catalog management (admin + audit + soft delete), staff item console (`/manage/items/` — sort, inactive-by-default create, family/supplier drawers), family/supplier PostgreSQL audit logs, **pricing** (3 manual selling prices on `Item` + `SupplierItemPrice` cost table with audit), dev seed script with **warehouse users**.
 
 **Not done:** inbound stock / procurement app, `orders` app, offline order queue, shared page chrome, branch phone UX, console polish, production OAuth/deployment.
 
 **Next:** Keep enhancing items, families, and suppliers. Quantity is **not** typed on the item. Do **not** implement `orders/` or the tenancy-doc Order stub. Hold shared chrome, `/` restyle, and console polish for dedicated sessions.
 
-**Stock today:** `Item` has no stock or price field. Inbound receipts from suppliers are a later design.
+**Stock today:** `Item` has **no stock** field (inbound receipts are a later design). Selling prices are **manual** (retail/wholesale/special); **cost prices are dynamic** from `SupplierItemPrice` (supplier × item, one primary).
 
 ## User roles (do not confuse these)
 
@@ -35,23 +35,23 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 | App | Purpose |
 |-----|---------|
 | `accounts` | Custom `User` (email login), login/logout |
-| `branches` | `Branch`, `BranchMembership`, `permissions.py`, `ActiveBranchMiddleware`, branch picker, `seed_dev_data` command |
+| `branches` | ⚠️ **Not built yet** — deferred (`Branch`, `BranchMembership`, middleware, picker are designed in `docs/warehouse-tenancy-setup.md` but no `branches/` app exists) |
 | `products` | Catalogue model, service layer, API, CLI, offline web UI, staff admin, staff console, tests |
 | `logging_utils` | `get_logger("centcompras.<app>")`, rotating logs in `logs/` |
 
-### Auth and tenancy
+### Auth
 
 - `AUTH_USER_MODEL = "accounts.User"`
-- Roles per branch via `BranchMembership`: admin, manager, user
-- Active branch in session (`active_branch_id`); auto-set for single-branch users
+- Warehouse roles via Django groups: `warehouse_admins` / `warehouse_managers` / `warehouse_data_operators`
 - Catalogue and API require login; API returns 401 when unauthenticated
 - Google OAuth planned for production — not implemented in dev
-- Logout on no-branch page uses POST form (Django 6.1 `LogoutView`)
+- **Branches (tenancy) deferred** — `Branch`/`BranchMembership`/middleware/picker are designed but **not built** (no `branches/` app yet)
 
 ### Catalogue
 
-- **Item fields:** family, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (new items start inactive), timestamps. No stock or price. Suppliers are independent master data (not linked to items yet).
-- **Audit:** `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog` — who changed what (create / update / deactivate / reactivate). Item lifecycle reasons required; family/supplier deactivate is confirm-only
+- **Item fields:** family, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (new items start inactive), timestamps, plus **3 manual selling prices** (`retail_price`, `wholesale_price`, `special_price`). No stock. Suppliers are independent master data.
+- **Supplier prices:** `SupplierItemPrice` (supplier × item → `cost_price`, one `primary` per item) — the dynamic cost source for purchase orders.
+- **Audit:** `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`, `SupplierItemPriceChangeLog` — who changed what (create / update / deactivate / reactivate). Item lifecycle reasons required; family/supplier deactivate is confirm-only
 - **Names:** family and supplier names are case-insensitive unique; the console UI does not rename them
 - **Global catalogue** — no `branch_id` on `Item`
 - **Management:** warehouse users via `/manage/items/` (groups `warehouse_admins` / `warehouse_managers` / `warehouse_data_operators` and Django model permissions). Django admin (`/admin/`) is **superuser only**. All mutations through `products/services.py`
