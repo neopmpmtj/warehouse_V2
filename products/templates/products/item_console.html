@@ -336,11 +336,11 @@
                 <input type="checkbox" id="supplier-price-primary">
                 <span data-i18n="primary">Primary</span>
             </label>
-            <div class="drawer-actions">
-                <button type="submit" id="supplier-price-add" class="btn btn-primary" data-i18n="addSupplierPrice">Add price</button>
-                <button type="button" id="supplier-price-cancel" class="btn" data-i18n="close">Close</button>
-            </div>
         </form>
+        <div class="drawer-actions">
+            <button type="submit" form="supplier-price-form" id="supplier-price-add" class="btn btn-primary" data-i18n="addSupplierPrice">Add price</button>
+            <button type="button" id="supplier-price-cancel" class="btn" data-i18n="close">Close</button>
+        </div>
         <p id="supplier-price-error" class="field-error" hidden></p>
         <div class="table-wrap">
             <table class="grid">
@@ -375,6 +375,6 @@
     </div>
 
     <script src="{% static 'products/js/console_i18n.js' %}?v=12"></script>
-    <script src="{% static 'products/js/console.js' %}?v=13"></script>
+    <script src="{% static 'products/js/console.js' %}?v=14"></script>
 </body>
 </html>

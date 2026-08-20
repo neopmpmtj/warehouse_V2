@@ -1313,8 +1313,9 @@ async function openSupplierPrices(supplier) {
     });
     document.getElementById("supplier-prices-backdrop").hidden = false;
     document.getElementById("supplier-prices-dialog").hidden = false;
-    const perms = catalogPermissions();
-    document.getElementById("supplier-price-form").hidden = !perms.addSupplierItemPrice;
+    const canAdd = catalogPermissions().addSupplierItemPrice;
+    document.getElementById("supplier-price-form").hidden = !canAdd;
+    document.getElementById("supplier-price-add").hidden = !canAdd;
     document.getElementById("supplier-price-error").hidden = true;
     document.getElementById("supplier-price-cost").value = "";
     document.getElementById("supplier-price-primary").checked = false;
