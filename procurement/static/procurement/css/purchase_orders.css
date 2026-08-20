@@ -1,0 +1,60 @@
+:root {
+    --warn: #b54708;
+    --warn-bg: #fef0c7;
+}
+
+[data-theme="dark"] {
+    --warn: #fbbf24;
+    --warn-bg: #3a2e0f;
+}
+
+.pill-info {
+    background: var(--surface-2);
+    color: var(--accent);
+}
+
+.pill-warn {
+    background: var(--warn-bg);
+    color: var(--warn);
+}
+
+.pill-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.po-summary {
+    display: grid;
+    gap: 0.4rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 0.9rem;
+}
+
+.po-summary p {
+    margin: 0;
+}
+
+.po-total {
+    font-weight: 600;
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-head h3 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+body[data-can-add-purchaseorder="false"] #new-po {
+    display: none !important;
+}
+
+.drawer-body .table-wrap {
+    margin-top: 0.5rem;
+}

@@ -7,13 +7,14 @@ GROUP_OPERATORS = "warehouse_data_operators"
 WAREHOUSE_GROUP_NAMES = (GROUP_ADMINS, GROUP_MANAGERS, GROUP_OPERATORS)
 LEGACY_WAREHOUSE_GROUP_NAME = "Warehouse"
 
-CATALOG_MODELS = ("item", "familyproduct", "supplier", "supplieritemprice")
+CATALOG_MODELS = ("item", "familyproduct", "supplier", "supplieritemprice", "purchaseorder")
 CATALOG_VIEW_ONLY_MODELS = (
     "vatrate",
     "itemchangelog",
     "familychangelog",
     "supplierchangelog",
     "supplieritempricechangelog",
+    "purchaseorderchangelog",
 )
 
 VIEW_ITEM = "products.view_item"
@@ -28,6 +29,7 @@ CHANGE_SUPPLIER = "products.change_supplier"
 DELETE_SUPPLIER = "products.delete_supplier"
 ADD_SUPPLIER_ITEM_PRICE = "products.add_supplieritemprice"
 CHANGE_SUPPLIER_ITEM_PRICE = "products.change_supplieritemprice"
+APPROVE_PURCHASE_ORDER = "procurement.can_approve"
 
 WAREHOUSE_USERS = (
     ("warehouse.admin@centcompras.dev", GROUP_ADMINS),
@@ -43,15 +45,18 @@ def _codenames_for_group(group_name):
     change = [f"change_{model}" for model in CATALOG_MODELS]
     delete = [f"delete_{model}" for model in CATALOG_MODELS]
     if group_name == GROUP_ADMINS:
-        return view + add + change + delete
+        return view + add + change + delete + ["can_approve"]
     if group_name == GROUP_MANAGERS:
         return view + add + change
     return view
 
 
-def _products_permissions(codenames):
+CATALOG_APP_LABELS = ("products", "procurement")
+
+
+def _catalog_permissions(codenames):
     return Permission.objects.filter(
-        content_type__app_label="products",
+        content_type__app_label__in=CATALOG_APP_LABELS,
         codename__in=codenames,
     )
 
@@ -59,13 +64,13 @@ def _products_permissions(codenames):
 def sync_warehouse_groups():
     for group_name in WAREHOUSE_GROUP_NAMES:
         group, _ = Group.objects.get_or_create(name=group_name)
-        desired = set(_products_permissions(_codenames_for_group(group_name)))
+        desired = set(_catalog_permissions(_codenames_for_group(group_name)))
         if set(group.permissions.all()) != desired:
             group.permissions.set(desired)
 
 
 def ensure_warehouse_groups(sender, **kwargs):
-    if getattr(sender, "name", None) != "products":
+    if getattr(sender, "name", None) not in ("products", "procurement"):
         return
     sync_warehouse_groups()
 

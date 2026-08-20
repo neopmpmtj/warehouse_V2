@@ -33,6 +33,7 @@
     <ul>
         <li><a href="/">/</a> — this dashboard</li>
         <li><a href="/manage/items/">/manage/items/</a> — item console (staff catalogue)</li>
+        <li><a href="/manage/purchase-orders/">/manage/purchase-orders/</a> — purchase orders</li>
         {% if user.is_superuser %}
         <li><a href="/admin/">/admin/</a> — Django admin (superuser only)</li>
         {% endif %}
@@ -73,6 +74,20 @@
         <li><a href="/api/manage/supplier-prices/" target="_blank" rel="noopener noreferrer">/api/manage/supplier-prices/</a> — list / create</li>
         <li>/api/manage/supplier-prices/&lt;id&gt;/</li>
         <li>/api/manage/supplier-prices/&lt;id&gt;/history/</li>
+    </ul>
+
+    <h2>Purchase orders API</h2>
+    <ul>
+        <li><a href="/api/manage/purchase-orders/" target="_blank" rel="noopener noreferrer">/api/manage/purchase-orders/</a> — list / create</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/lines/ — add line</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/lines/&lt;line_id&gt;/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/submit/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/approve/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/reject/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/receive/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/close/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/history/</li>
     </ul>
 </body>
 </html>

@@ -1,0 +1,201 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Purchase orders — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            var lang = "en";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "en";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=12">
+    <link rel="stylesheet" href="{% static 'procurement/css/purchase_orders.css' %}?v=1">
+</head>
+<body
+    data-can-add-purchaseorder="{% if perms.procurement.add_purchaseorder %}true{% else %}false{% endif %}"
+    data-can-change-purchaseorder="{% if perms.procurement.change_purchaseorder %}true{% else %}false{% endif %}"
+    data-can-approve-purchaseorder="{% if perms.procurement.can_approve %}true{% else %}false{% endif %}"
+>
+    <header class="topbar">
+        <div class="topbar-title">
+            <p class="eyebrow" data-i18n="eyebrow">CentCompras</p>
+            <h1 data-i18n="title">Purchase orders</h1>
+        </div>
+        <div class="topbar-actions">
+            <p class="user-line">
+                <span data-i18n="signedInAs">Signed in as</span>
+                <strong>{{ user.email }}</strong>
+            </p>
+            <label class="control-inline">
+                <span data-i18n="language">Language</span>
+                <select id="language-select" aria-label="Language">
+                    <option value="en">English</option>
+                    <option value="pt-PT">Português</option>
+                </select>
+            </label>
+            <button type="button" id="theme-toggle" class="btn btn-ghost"></button>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost" data-i18n="signOut">Sign out</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="page">
+        <section class="toolbar" aria-label="Filters">
+            <select id="status-filter">
+                <option value="all" data-i18n="allStatuses">All statuses</option>
+                <option value="draft" data-i18n="status.draft">Draft</option>
+                <option value="submitted" data-i18n="status.submitted">Submitted</option>
+                <option value="approved" data-i18n="status.approved">Approved</option>
+                <option value="received" data-i18n="status.received">Received</option>
+                <option value="closed" data-i18n="status.closed">Closed</option>
+                <option value="rejected" data-i18n="status.rejected">Rejected</option>
+            </select>
+            <div class="toolbar-spacer"></div>
+            <button type="button" id="new-po" class="btn btn-primary" data-i18n="newPurchaseOrder">New purchase order</button>
+        </section>
+
+        <p id="result-count" class="result-count"></p>
+        <p id="banner" class="banner" hidden></p>
+
+        <div class="table-wrap">
+            <table class="grid">
+                <thead>
+                    <tr>
+                        <th data-i18n="colId">PO #</th>
+                        <th data-i18n="colSupplier">Supplier</th>
+                        <th data-i18n="colStatus">Status</th>
+                        <th data-i18n="colTotal">Total</th>
+                        <th data-i18n="colCreated">Created</th>
+                        <th data-i18n="colActions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="po-table-body"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="drawer-backdrop" class="backdrop" hidden></div>
+    <aside id="drawer" class="drawer" hidden>
+        <div class="drawer-head">
+            <h2 id="drawer-title"></h2>
+            <button type="button" id="drawer-close" class="btn btn-ghost" data-i18n="close">Close</button>
+        </div>
+        <div class="drawer-body">
+            <div class="po-summary">
+                <p class="drawer-help"><span data-i18n="supplier">Supplier</span>: <strong id="po-supplier"></strong></p>
+                <p class="drawer-help"><span data-i18n="status">Status</span>: <span id="po-status-pill" class="pill"></span></p>
+                <p class="drawer-help"><span data-i18n="supplierRef">Supplier ref</span>: <span id="po-ref"></span></p>
+                <p class="drawer-help"><span data-i18n="notes">Notes</span>: <span id="po-notes"></span></p>
+                <p class="drawer-help"><span data-i18n="createdBy">Created by</span>: <span id="po-created-by"></span></p>
+                <p class="drawer-help"><span data-i18n="approvedBy">Approved by</span>: <span id="po-approved-by"></span> · <span data-i18n="approvedAt">Approved at</span>: <span id="po-approved-at"></span></p>
+                <p class="drawer-help po-total"><span data-i18n="totalNet">Total (net)</span>: <span id="po-total"></span></p>
+            </div>
+            <div id="po-status-actions" class="drawer-actions"></div>
+            <section>
+                <div class="section-head">
+                    <h3 data-i18n="lines">Lines</h3>
+                    <div class="toolbar-spacer"></div>
+                    <button type="button" id="add-line" class="btn" data-i18n="addLine">Add line</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="grid">
+                        <thead>
+                            <tr>
+                                <th data-i18n="colCode">Code</th>
+                                <th data-i18n="colDescription">Description</th>
+                                <th data-i18n="colQty">Qty</th>
+                                <th data-i18n="colUnitCost">Unit cost</th>
+                                <th data-i18n="colCommercial">Com. %</th>
+                                <th data-i18n="colFinancial">Fin. %</th>
+                                <th data-i18n="colRappel">Rappel %</th>
+                                <th data-i18n="colNet">Net</th>
+                                <th data-i18n="colLineTotal">Total</th>
+                                <th data-i18n="colActions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="po-lines-body"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="history">
+                <h3 data-i18n="history">History</h3>
+                <ol id="po-history-list"></ol>
+            </section>
+        </div>
+    </aside>
+
+    <div id="new-po-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
+    <div id="new-po-dialog" class="dialog" hidden>
+        <h2 data-i18n="newPurchaseOrder">New purchase order</h2>
+        <label>
+            <span data-i18n="supplier">Supplier</span>
+            <select id="new-po-supplier" required></select>
+        </label>
+        <label>
+            <span data-i18n="supplierRef">Supplier ref</span>
+            <input type="text" id="new-po-ref" maxlength="255">
+        </label>
+        <label>
+            <span data-i18n="notes">Notes</span>
+            <textarea id="new-po-notes" rows="3"></textarea>
+        </label>
+        <p id="new-po-error" class="field-error" hidden></p>
+        <div class="drawer-actions">
+            <button type="button" id="new-po-confirm" class="btn btn-primary" data-i18n="create">Create</button>
+            <button type="button" id="new-po-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <div id="line-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
+    <div id="line-dialog" class="dialog" hidden>
+        <h2 id="line-dialog-title"></h2>
+        <label>
+            <span data-i18n="item">Item</span>
+            <select id="line-item" required></select>
+        </label>
+        <label>
+            <span data-i18n="quantity">Quantity</span>
+            <input type="number" id="line-quantity" step="0.001" min="0" required>
+        </label>
+        <label>
+            <span data-i18n="unitCost">Unit cost</span>
+            <input type="number" id="line-unit-cost" step="0.01" min="0">
+        </label>
+        <p class="drawer-help" data-i18n="unitCostHint">Leave blank to auto-fill from the supplier price list.</p>
+        <label>
+            <span data-i18n="discountCommercial">Commercial discount %</span>
+            <input type="number" id="line-discount-commercial" step="0.01" min="0" max="100" value="0">
+        </label>
+        <label>
+            <span data-i18n="discountFinancial">Financial discount %</span>
+            <input type="number" id="line-discount-financial" step="0.01" min="0" max="100" value="0">
+        </label>
+        <label>
+            <span data-i18n="rappel">Rappel %</span>
+            <input type="number" id="line-rappel" step="0.01" min="0" max="100" value="0">
+        </label>
+        <p id="line-error" class="field-error" hidden></p>
+        <div class="drawer-actions">
+            <button type="button" id="line-confirm" class="btn btn-primary" data-i18n="save">Save</button>
+            <button type="button" id="line-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <script src="{% static 'procurement/js/purchase_orders_i18n.js' %}?v=1"></script>
+    <script src="{% static 'procurement/js/purchase_orders.js' %}?v=1"></script>
+</body>
+</html>
