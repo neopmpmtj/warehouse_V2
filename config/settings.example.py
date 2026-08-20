@@ -8,6 +8,7 @@ Copy to config/settings.py and adjust values for your local environment.
 #   DJANGO_SECRET_KEY, DJANGO_DEBUG, POSTGRES_PASSWORD
 
 import os
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -15,6 +16,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production")
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
+
+# True when running under `manage.py test` — used to keep test output quiet/fast.
+TESTING = "test" in sys.argv
+
+if TESTING:
+    # PBKDF2 (~870k iterations) dominates test time; use a fast hasher under test.
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 

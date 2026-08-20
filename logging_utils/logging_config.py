@@ -105,6 +105,17 @@ def set_console_level(logger: logging.Logger, level: str) -> None:
             handler.setLevel(log_level)
 
 
+def _is_testing() -> bool:
+    try:
+        from django.conf import settings
+
+        if settings.configured:
+            return bool(getattr(settings, "TESTING", False))
+    except Exception:  # pragma: no cover
+        pass
+    return False
+
+
 def get_logger(
     logger_name: str,
     log_dir: Optional[Path] = None,
@@ -133,6 +144,13 @@ def get_logger(
 
     config = {**defaults, **logger_config}
 
+    testing = _is_testing()
+    if testing:
+        # Under the test runner, keep logs quiet and skip disk writes entirely.
+        config["console_level"] = "WARNING"
+        config["file_level"] = "WARNING"
+        config["file_output"] = False
+
     if console_level is not None:
         config["console_level"] = console_level
     if file_level is not None:
@@ -143,7 +161,7 @@ def get_logger(
     logger = logging.getLogger(logger_name)
 
     if not logger.handlers:
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.WARNING if testing else logging.DEBUG)
         logger.propagate = False
 
         formatter = logging.Formatter(
