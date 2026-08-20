@@ -11,13 +11,13 @@
 | 0 — Auth + catalogue identity + staff console | ✅ Done |
 | 1 — Pricing (selling prices + supplier price list) | ✅ Done |
 | 2 — Procurement (purchase orders) | ✅ Done |
-| **3 — Goods receipt + stock ledger** | ▶ **NEXT** |
-| 4 — Manager catalog (stock + price view) | ⚪ Not started |
+| **3 — Goods receipt + stock ledger** | ✅ **Done** |
+| **4 — Manager catalog (stock + price view)** | ▶ **NEXT** |
 | 5 — Branches + internal request | ⏸ Deferred |
 | 6 — Email automation | ⏸ Pending (stub exists) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**What we build next: Phase 3** — when goods arrive, a **goods receipt** is recorded against an approved PO and **writes stock**; stock becomes a movement ledger (never typed on the item).
+**What we build next: Phase 4** — a join-heavy, read-only **manager catalog**: item + 3 selling prices + buying price (primary supplier, O1) + cached stock balance + reorder level + supplier(s). Cost **visible** to warehouse groups only; reorder-level highlighting.
 
 ---
 
@@ -42,14 +42,14 @@
 
 ---
 
-## The exact next task (Phase 3)
+## The exact next task (Phase 4)
 
-**Goods receipt + stock ledger** — full spec in [`project-plan-2026-08-20.md` §10](project-plan-2026-08-20.md).
+**Manager catalog (stock + price view)** — full spec in [`project-plan-2026-08-20.md` §11](project-plan-2026-08-20.md).
 
-- New models: `GoodsReceipt` + `GoodsReceiptLine` (FK → PO / PO line, partial receipts), `StockMovement` (signed ledger), `Item.quantity` (cached balance).
-- `receive_goods(po, lines)` → creates receipt + movements, updates `Item.quantity`, marks PO `received`/`closed`.
-- Stock is **never** written directly on `Item` — always via a movement.
-- **Decision to make at start:** the current "Receive" button only flips PO status (no stock). Either remove/hide it until the receipt flow exists, or wire it to the receipt flow.
+- Read-only, join-heavy dashboard joining `Item`, `SupplierItemPrice`, `StockMovement` (cached `quantity`), and `Supplier`.
+- Cost **visible** to warehouse groups only (branch view hides cost — Phase 5).
+- Reorder-level highlighting (below `reorder_level` → flag).
+- Do **not** start branches, orders, offline, email, or shared page chrome in passing.
 
 ---
 
@@ -58,6 +58,7 @@
 ```
 products/       catalogue + pricing (models, services, console_views, admin, tests)
 procurement/    purchase orders (models, services, console_views, admin, permissions, tests)
+inventory/      goods receipt + stock ledger (models, services, console_views, admin, permissions, tests)
 accounts/       custom User (email, timezone), warehouse groups, login, timezone middleware
 config/         settings, urls
 logging_utils/  rotating per-app logs
@@ -75,13 +76,13 @@ source .venv/bin/activate
 python manage.py migrate
 ./scripts/seed_dev_data.sh          # idempotent; VAT rates come from migration 0002
 python manage.py runserver
-python manage.py test products accounts procurement
+python manage.py test products accounts procurement inventory
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…`, `warehouse.operator@…` (groups `warehouse_admins`/`_managers`/`_data_operators`).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/purchase-orders/` PO console · `/admin/` superuser only.
-- **Test state at sign-off:** full suite green (~156 tests: products 113 + accounts 16 + procurement 27).
-- **Git:** branch `item-purchase-feat`. Phase-2 refinements may be **uncommitted** — run `git status` and commit before continuing.
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/purchase-orders/` PO console · `/manage/goods-receipts/` goods receipt + stock · `/admin/` superuser only.
+- **Test state at sign-off:** full suite green (~170 tests: products 113 + accounts 16 + procurement 27 + inventory 14). Tests run fast (~18s) — `TESTING` flag in settings enables a fast password hasher + quiet logging.
+- **Git:** branch `phase3-stock-ledger` (Phase 3 committed on top of `main`).
 
 ---
 

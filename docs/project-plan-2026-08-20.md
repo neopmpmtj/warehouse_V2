@@ -3,7 +3,7 @@
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
 - **Last updated:** 20 August 2026
-- **Current phase:** Phase 2 (procurement) complete ✅ — next: Phase 3 (goods receipt + stock)
+- **Current phase:** Phase 3 (goods receipt + stock) complete ✅ — next: Phase 4 (manager catalog)
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is deferred — see [Phase 5](#phase-5--branches--internal-request-deferred).
 
 ---
@@ -127,7 +127,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | 0 | Catalogue identity + auth + console | ✅ **Done** | — |
 | 1 | **Pricing — selling prices + supplier price list** | ✅ Done | Phase 0 |
 | 2 | Procurement — purchase orders, discounts, approval | ✅ Done | Phase 1 |
-| 3 | Goods receipt + stock ledger | ⚪ Not started | Phase 2 |
+| 3 | Goods receipt + stock ledger | ✅ Done | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ⚪ Not started | Phase 3 |
 | 5 | Branches + internal request + branch catalog | ⏸ Deferred | Phase 4 |
 | 6 | Email automation (supplier notifications) | ⏸ Pending | Phase 2 (stub) |
@@ -267,7 +267,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ---
 
-## 10. Phase 3 — Goods receipt + stock ledger ⚪
+## 10. Phase 3 — Goods receipt + stock ledger ✅
 
 **Goal:** receiving goods writes stock; stock is a ledger, never typed on the product.
 
@@ -286,8 +286,16 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 
 ### Definition of Done
 
-- [ ] Goods receipt writes stock; ledger complete; partial receipts supported; PO closes when fully received.
-- [ ] Cached `Item.quantity` correct and never manually edited.
+- [x] Goods receipt writes stock; ledger complete; partial receipts supported; PO closes when fully received.
+- [x] Cached `Item.quantity` correct and never manually edited.
+
+### Implementation notes (as built)
+
+- New **`inventory` app**: `GoodsReceipt` + `GoodsReceiptLine` (unique per receipt+PO line), `StockMovement` (signed ledger with `GenericForeignKey` reference: receipt / future issue / adjustment), `Item.quantity` (cached, updated transactionally).
+- `receive_goods(po, lines, user)` validates status (`approved`/`received`), rejects over-receipt (`qty > remaining`), creates receipt + movements, updates `Item.quantity`, then drives PO status `approved → received` (and `→ closed` when fully received) via the existing `procurement.services.receive`/`close`.
+- `adjust_stock(item, qty, reason, user)` — manual adjustment, warehouse-admin only (`can_adjust_stock`).
+- PO console "Receive" no-stock action removed; approved/received POs now link to `/manage/goods-receipts/?po=<id>`.
+- Console at `/manage/goods-receipts/` (receipts list, new receipt, stock movements, adjust stock).
 
 ---
 
@@ -351,10 +359,10 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 - [x] Tests
 
 ### Phase 3 — Goods receipt + stock
-- [ ] Models + migrations
-- [ ] Service layer (receive → stock movement → cached quantity)
-- [ ] Console UI
-- [ ] Tests
+- [x] Models + migrations
+- [x] Service layer (receive → stock movement → cached quantity)
+- [x] Console UI
+- [x] Tests
 
 ### Phase 4 — Manager catalog
 - [ ] Dashboard (join view)

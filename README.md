@@ -8,13 +8,13 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status (handoff)
 
-*Last updated: 19 August 2026 — read this section first when resuming work.*
+*Last updated: 20 August 2026 — read this section first when resuming work.*
 
 ### Where we stand
 
 **Purchase orders (Phase 2) are done.** Warehouse staff raise purchase orders against suppliers: lines auto-cost from the supplier's price list (a line is **rejected** if the supplier has no price for the item), three discount types (commercial / financial / rappel), an approval workflow (draft → submitted → approved/rejected → received → closed), and an approved-totals snapshot (net / VAT / gross) frozen at approval. Items and pricing (Phase 1) are also complete: items carry three **manual** selling prices and suppliers carry **cost prices** in `SupplierItemPrice`.
 
-**There is still no stock** — quantity does not exist yet. The **next phase is the goods receipt + stock ledger**: recording goods received against an approved PO writes stock. Branch orders wait until then.
+**Goods receipt + stock ledger (Phase 3) is done.** Warehouse staff record a **goods receipt** against an approved PO — partial shipments supported — and each receipt writes a signed `StockMovement` and updates the cached `Item.quantity`. Stock is never typed on the item; it is always a movement. The PO moves `approved → received → closed` as it is (fully) received, and an admin-only manual `adjust_stock` handles corrections. The **next phase is the manager catalog (Phase 4)**: a read-only stock + price view. Branch orders wait until after that.
 
 > ▶ **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state + locked decisions + the exact next task.
 
@@ -32,6 +32,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 | **Family & supplier priors** | Done | Console create/deactivate; case-insensitive unique names (no rename in the console UI); PostgreSQL audit logs |
 | **Pricing (selling + supplier cost)** | Done | 3 manual selling prices on `Item`; `SupplierItemPrice` (supplier × item cost, one primary) + audit; console, admin, API, seed |
 | **Purchase orders (procurement)** | Done | New `procurement` app: `PurchaseOrder` + lines, 3 discount types, approval workflow, approved totals snapshot (net/VAT/gross), email stub, console at `/manage/purchase-orders/` |
+| **Goods receipt + stock ledger** | Done | New `inventory` app: `GoodsReceipt`/`GoodsReceiptLine` (partial receipts), `StockMovement` (signed ledger), `Item.quantity` (cached); `receive_goods()` + admin-only `adjust_stock()`; console at `/manage/goods-receipts/` |
 | **Timezone + dates** | Done | Per-user timezone (default `Europe/Lisbon`) + middleware; DD/MM/YYYY dates |
 | **Dev seed script** | Done | [`scripts/seed_dev_data.sh`](scripts/seed_dev_data.sh) — warehouse users, families, suppliers, items, supplier prices |
 | **Project setup docs** | Done | Root README, `requirements.txt`, `config/settings.example.py`, `AGENTS.md`, `.cursor/` rules |
@@ -65,13 +66,13 @@ After `./scripts/seed_dev_data.sh`, all seeded users share password **`devpass12
 
 | Area | Priority | Notes |
 |------|----------|-------|
-| **Goods receipt + stock ledger** | **Next (Phase 3)** | Recording goods received against an approved PO writes stock; stock becomes a movement ledger (`StockMovement`) with a cached `Item.quantity`. No app yet — see [`docs/handoff.md`](docs/handoff.md). |
+| **Manager catalog (stock + price view)** | **Next (Phase 4)** | Read-only, join-heavy dashboard: item + 3 selling prices + buying price (primary supplier) + cached stock + reorder level + supplier(s). Cost visible to warehouse groups only. |
 | **Orders workflow** | After inbound stock | Branch requests against central stock. Sketch only: [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) §6–7. Do not implement the stub `item_name` model. |
 | **Order business rules** | Before coding orders | Multi-line cart vs single line; stock decrement timing; cancel/edit policy |
 | **Shared page chrome** | Later session | Same header/CSS on login, branch picker, `/`, so new pages do not look like a different app |
 | **Branch phone catalogue UX** | Later session | Search, family, unit, human stock/price — hold; `/` stays a scaffold until that session |
 | **Staff console polish** | Later session | History diffs, default Active filter, Genesis copy — hold |
-| **Tests** | Later | `products` + `procurement` + `accounts` suites green (~156 tests); integration tests not started |
+| **Tests** | Later | `products` + `procurement` + `accounts` + `inventory` suites green (~170 tests); integration tests not started |
 | **Integration tests** | Later | Full auth → branch middleware → catalogue API → offline flow |
 | **Google OAuth** | Production | `django-allauth` or similar |
 | **Public signup / password reset** | Later | |
@@ -84,7 +85,7 @@ After `./scripts/seed_dev_data.sh`, all seeded users share password **`devpass12
 1. Read [`docs/handoff.md`](docs/handoff.md) (condensed state + decisions) and the plan [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and create a superuser with `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/` (items, families, suppliers, supplier prices) and `/manage/purchase-orders/` (create PO → add line → submit → approve).
-4. **Start Phase 3 (goods receipt + stock ledger)** — see plan §10 and the handoff's "exact next task".
+4. **Start Phase 4 (manager catalog)** — see plan §11 and the handoff's "exact next task".
 5. Do **not** in passing: branches, orders, offline, email, shared page chrome.
 
 ### Key files
@@ -196,11 +197,16 @@ Production will use Google OAuth (not implemented in dev — email/password logi
 | `/` | Staff dashboard (catalogue view permission) |
 | `/manage/items/` | Warehouse item console (view permission) |
 | `/manage/purchase-orders/` | Purchase-order console (view permission) |
+| `/manage/goods-receipts/` | Goods receipt + stock console (view permission) |
 | `/api/manage/items/` | Warehouse item JSON API (view; writes need add/change) |
 | `/api/manage/families/` | Warehouse family JSON API (view; writes need add/change) |
 | `/api/manage/suppliers/` | Warehouse supplier JSON API (view; writes need add/change) |
 | `/api/manage/supplier-prices/` | Supplier price JSON API (view; writes need add/change) |
 | `/api/manage/purchase-orders/` | Purchase-order JSON API (view; writes need add/change; approve needs `can_approve`) |
+| `/api/manage/goods-receipts/` | Goods receipt JSON API (view; create needs `add_goodsreceipt`) |
+| `/api/manage/purchase-orders/<id>/receipt-summary/` | Per-line ordered/received/remaining for a PO |
+| `/api/manage/stock-movements/` | Stock movement ledger (view; `?item_id=` filter) |
+| `/api/manage/stock-adjustments/` | Manual stock adjustment (POST; needs `can_adjust_stock`) |
 | `/accounts/login/` | Email + password login |
 | `/accounts/logout/` | Log out |
 | `/admin/` | Django admin (**superuser only**) |
@@ -428,9 +434,8 @@ The following do **not** exist today. The [Project status](#project-status-hando
 
 ### Business features
 
-- **Goods receipt + stock ledger** (Phase 3, next) — recording received goods writes stock
-- Stock as a movement ledger (no stock exists yet)
-- `orders` app — create, list, edit, delete orders (after inbound stock)
+- **Manager catalog (stock + price view)** (Phase 4, next) — read-only join of item, prices, stock, supplier(s)
+- **Orders workflow** (after inbound stock)
 - Shopping cart
 - Customers
 - Offline order queue in IndexedDB
@@ -450,13 +455,13 @@ The following do **not** exist today. The [Project status](#project-status-hando
 
 ### Quality & operations
 
-- **Unit tests** — `products`, `procurement`, `accounts` suites green (~156 tests); integration tests not started
+- **Unit tests** — `products`, `procurement`, `accounts`, `inventory` suites green (~170 tests); integration tests not started
 - **Integration tests** — not started
 - Production deployment and HTTPS
 - PWA manifest / install prompt
 
 ### Planned next major phase
 
-**Goods receipt + stock ledger (Phase 3):** recording goods received against an approved PO writes stock; stock becomes a movement ledger. Branch **ordering** comes after that, so orders are not placed against zero stock.
+**Manager catalog (Phase 4):** a read-only, join-heavy dashboard showing item + 3 selling prices + buying price (primary supplier) + cached stock balance + reorder level + supplier(s), with cost visible to warehouse groups only and reorder-level highlighting.
 
 Ordering (later): branch users create orders online or queue them offline, then sync to the central warehouse with duplicate-safe retries. Builds on the future `branches` app (Branch, BranchMembership, permissions, `request.active_branch`). Do not implement the `item_name` Order stub in the tenancy doc.

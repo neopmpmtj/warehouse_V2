@@ -1,18 +1,18 @@
 # CentCompras — Agent instructions
 
-Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders are done. **Goods receipt + stock ledger is the next phase (Phase 3)**; branch orders wait until stock exists.
+Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock are done. **Manager catalog (stock + price view) is the next phase (Phase 4)**; branch orders wait until then.
 
 **▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md` → Project status](README.md#project-status-handoff) and [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for detail.
 
 ## Session handoff (August 2026)
 
-**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), dev seed script.
+**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), **goods receipt + stock ledger** (`inventory` app: `GoodsReceipt`/`GoodsReceiptLine`, `StockMovement` signed ledger, cached `Item.quantity`, `receive_goods()` + admin-only `adjust_stock()`), dev seed script.
 
-**Not done:** goods receipt + stock ledger (Phase 3), `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
+**Not done:** `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
 
-**Next (Phase 3):** goods receipt + stock ledger — recording received goods against an approved PO writes stock. See [`docs/handoff.md`](docs/handoff.md) and plan §10. Do **not** implement `orders/` or the tenancy-doc Order stub.
+**Next (Phase 4):** manager catalog (stock + price view) — read-only join of item + 3 selling prices + buying price (primary supplier) + cached stock + reorder level + supplier(s); cost visible to warehouse groups only. See [`docs/handoff.md`](docs/handoff.md) and plan §11. Do **not** implement `orders/` or the tenancy-doc Order stub.
 
-**Stock today:** `Item` has **no stock** field. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice`. PO lines are **rejected** if the supplier has no price for the item; `approved_net/vat/gross` are frozen at approval.
+**Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly). Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice`. PO lines are **rejected** if the supplier has no price for the item; `approved_net/vat/gross` are frozen at approval.
 
 ## User roles (do not confuse these)
 
@@ -35,6 +35,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 | `accounts` | Custom `User` (email login, timezone), login/logout, warehouse groups, timezone middleware |
 | `products` | Catalogue + pricing: model, service layer, API, staff admin, staff console, tests |
 | `procurement` | Purchase orders: models, service layer, console API, admin, tests |
+| `inventory` | Goods receipt + stock ledger: `GoodsReceipt`/`StockMovement`, services, console API, admin, tests |
 | `branches` | ⚠️ **Not built yet** — deferred (designed in `docs/warehouse-tenancy-setup.md`) |
 | `logging_utils` | `get_logger("centcompras.<app>")`, rotating logs in `logs/` |
 
@@ -48,7 +49,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 
 ### Catalogue
 
-- **Item fields:** family, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (new items start inactive), timestamps, plus **3 manual selling prices** (`retail_price`, `wholesale_price`, `special_price`). No stock. Suppliers are independent master data.
+- **Item fields:** family, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (new items start inactive), timestamps, plus **3 manual selling prices** (`retail_price`, `wholesale_price`, `special_price`) and a cached `quantity` balance (updated via `StockMovement`). Suppliers are independent master data.
 - **Supplier prices:** `SupplierItemPrice` (supplier × item → `cost_price`, one `primary` per item) — the dynamic cost source for purchase orders.
 - **Audit:** `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`, `SupplierItemPriceChangeLog` — who changed what (create / update / deactivate / reactivate). Item lifecycle reasons required; family/supplier deactivate is confirm-only
 - **Names:** family and supplier names are case-insensitive unique; the console UI does not rename them
@@ -61,15 +62,14 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 ### Logging
 
 - `logging_utils` — console + `logs/*.log` (gitignored)
-- Loggers: `centcompras.products`, `centcompras.procurement`, `centcompras.accounts`, `centcompras.django`, etc.
+- Loggers: `centcompras.products`, `centcompras.procurement`, `centcompras.inventory`, `centcompras.accounts`, `centcompras.django`, etc.
 - Config: `logging_utils/logging_config.py`
 
 PostgreSQL is the source of truth.
 
 ## Not implemented yet
 
-- **Goods receipt + stock ledger** (Phase 3, next) — received goods write stock
-- Stock as a movement ledger (no stock exists yet)
+- **Manager catalog (stock + price view)** (Phase 4, next) — read-only join of item, prices, stock, supplier(s)
 - `orders` app and order workflow (**after** stock)
 - Branches app (`Branch`, `BranchMembership`, middleware, picker)
 - Order business rules not locked (stock timing, cart shape, cancel policy)
@@ -89,7 +89,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 ```
 
 - Business logic in `services.py`, not views or management commands
-- Catalog/PO management via Django groups + model permissions (both `products` and `procurement` apps)
+- Catalog/PO/inventory management via Django groups + model permissions (`products`, `procurement`, `inventory` apps)
 - Branch tenancy (`branches`, `request.active_branch`) is **future** — not built yet
 - Plain Django + plain JavaScript — no React, Vue
 - One concept per phase; no large application dumps
@@ -103,13 +103,13 @@ python manage.py migrate
 python manage.py createsuperuser                 # optional site admin
 ./scripts/seed_dev_data.sh                         # warehouse users, families, suppliers, items, supplier prices
 python manage.py runserver
-python manage.py test products accounts procurement
+python manage.py test products accounts procurement inventory
 ```
 
 **Tests:** always use the project virtualenv — do not use system `python`/`python3`. Either activate first (`source .venv/bin/activate`) or invoke the venv interpreter directly:
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement
+.venv/bin/python manage.py test products accounts procurement inventory
 ```
 
 Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, not both).
