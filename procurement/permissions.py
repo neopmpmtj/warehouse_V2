@@ -3,6 +3,7 @@ from functools import wraps
 from django.contrib.auth.views import redirect_to_login
 from django.http import HttpResponseForbidden, JsonResponse
 
+from accounts.authz import deny_if_inactive, user_is_active
 from accounts.groups import APPROVE_PURCHASE_ORDER
 
 VIEW_PO = "procurement.view_purchaseorder"
@@ -11,7 +12,7 @@ CHANGE_PO = "procurement.change_purchaseorder"
 
 
 def can_view_purchase_orders(user):
-    if not getattr(user, "is_authenticated", False) or not getattr(user, "pk", None):
+    if not user_is_active(user):
         return False
     return user.has_perm(VIEW_PO)
 
@@ -29,6 +30,9 @@ def procurement_required(view_func):
     @wraps(view_func)
     def wrapped(request, *args, **kwargs):
         wants_json = request.path.startswith("/api/")
+        inactive = deny_if_inactive(request)
+        if inactive is not None:
+            return inactive
         if not request.user.is_authenticated:
             if wants_json:
                 return JsonResponse({"error": "Authentication required"}, status=401)

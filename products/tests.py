@@ -1682,6 +1682,34 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
             ],
         )
 
+    def test_db_rejects_two_primary_prices_for_same_item(self):
+        from django.db import IntegrityError
+
+        create_supplier_item_price(
+            self.supplier, self.item, "12.50", primary=True, user=self.user
+        )
+        other = create_supplier(name="Porto Materials Co")
+        second = create_supplier_item_price(
+            other, self.item, "11.00", primary=False, user=self.user
+        )
+        with self.assertRaises(IntegrityError):
+            SupplierItemPrice.objects.filter(pk=second.pk).update(primary=True)
+
+    def test_create_primary_locks_item_for_update(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        with CaptureQueriesContext(connection) as ctx:
+            create_supplier_item_price(
+                self.supplier, self.item, "12.50", primary=True, user=self.user
+            )
+        for_update = [
+            query["sql"]
+            for query in ctx.captured_queries
+            if "FOR UPDATE" in query["sql"] and "products_item" in query["sql"].lower()
+        ]
+        self.assertGreaterEqual(len(for_update), 1)
+
 
 class SupplierItemPricePermissionTests(TestCase):
     def test_operator_has_view_only_permission(self):

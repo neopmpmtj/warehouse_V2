@@ -241,6 +241,11 @@ class SupplierItemPrice(models.Model):
                 fields=["supplier", "item"],
                 name="unique_supplier_item_price",
             ),
+            models.UniqueConstraint(
+                fields=["item"],
+                condition=models.Q(primary=True),
+                name="unique_primary_supplier_item_price",
+            ),
         ]
 
     def __str__(self):

@@ -236,3 +236,45 @@ class UserTimezoneTests(TestCase):
 
         self.assertEqual(timezone.get_current_timezone_name(), "UTC")
         timezone.deactivate()
+
+
+class InactiveSessionTests(TestCase):
+    """Deactivated users must lose console/API access even with a live session."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="inactive-session@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(self.user, GROUP_ADMINS)
+        self.client = Client()
+        self.host = {"HTTP_HOST": "localhost"}
+
+    def test_inactive_user_denied_api_and_session_cleared(self):
+        self.client.force_login(self.user)
+        self.assertIn("_auth_user_id", self.client.session)
+
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+
+        response = self.client.get(
+            reverse("manage_item_list"),
+            **self.host,
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["error"], "Account is inactive")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_inactive_user_denied_staff_page(self):
+        self.client.force_login(self.user)
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+
+        response = self.client.get(reverse("staff_dashboard"), **self.host)
+        self.assertEqual(response.status_code, 403)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_can_view_catalog_false_when_inactive(self):
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        self.assertFalse(can_view_catalog(self.user))

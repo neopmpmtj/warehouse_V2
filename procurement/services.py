@@ -75,6 +75,11 @@ def _resolve_po(po):
     return PurchaseOrder.objects.get(pk=po)
 
 
+def _lock_po(po):
+    """Lock the PO row so draft checks cannot race with submit/approve."""
+    return PurchaseOrder.objects.select_for_update().get(pk=_resolve_po(po).pk)
+
+
 def _log(po, user, action, changes, reason=""):
     PurchaseOrderChangeLog.objects.create(
         purchase_order=po,
@@ -183,7 +188,7 @@ def add_line(
     discount_financial="0",
     rappel="0",
 ):
-    po = _resolve_po(po)
+    po = _lock_po(po)
     _ensure_draft(po)
     item = _resolve_item(item)
     quantity = _validate_quantity(quantity)
@@ -251,8 +256,10 @@ def update_line(line, user=None, **fields):
     if unknown:
         raise ValueError(f"Cannot update fields: {', '.join(sorted(unknown))}")
 
+    # Lock PO before line (same order as submit/approve) to avoid deadlocks.
+    po = _lock_po(line.purchase_order_id)
     line = PurchaseOrderLine.objects.select_for_update().get(pk=line.pk)
-    _ensure_draft(line.purchase_order)
+    _ensure_draft(po)
 
     changes = {}
     for field_name, new_value in fields.items():
@@ -278,7 +285,7 @@ def update_line(line, user=None, **fields):
     )
     line.save(update_fields=[*changes.keys(), "updated_at"])
     _log(
-        line.purchase_order,
+        po,
         user,
         PurchaseOrderChangeLog.Action.LINE_UPDATED,
         {"line_id": line.id, **changes},
@@ -295,9 +302,10 @@ def update_line(line, user=None, **fields):
 
 @transaction.atomic
 def remove_line(line, user=None):
+    # Lock PO before line (same order as submit/approve) to avoid deadlocks.
+    po = _lock_po(line.purchase_order_id)
     line = PurchaseOrderLine.objects.select_for_update().get(pk=line.pk)
-    _ensure_draft(line.purchase_order)
-    po = line.purchase_order
+    _ensure_draft(po)
     line_id = line.id
 
     _log(

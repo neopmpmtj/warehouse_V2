@@ -3,7 +3,9 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.test import Client, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from accounts.groups import (
@@ -254,6 +256,35 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertTrue(
             po.change_logs.filter(action=PurchaseOrderChangeLog.Action.LINE_REMOVED).exists()
         )
+
+    def _assert_po_for_update(self, ctx):
+        for_update = [
+            query["sql"]
+            for query in ctx.captured_queries
+            if "FOR UPDATE" in query["sql"]
+            and "procurement_purchaseorder" in query["sql"].lower()
+        ]
+        self.assertGreaterEqual(len(for_update), 1)
+
+    def test_add_line_locks_purchase_order_for_update(self):
+        po = self.create_draft_po()
+        with CaptureQueriesContext(connection) as ctx:
+            services.add_line(po, self.item, quantity="1")
+        self._assert_po_for_update(ctx)
+
+    def test_update_line_locks_purchase_order_for_update(self):
+        po = self.create_draft_po()
+        line = services.add_line(po, self.item, quantity="1")
+        with CaptureQueriesContext(connection) as ctx:
+            services.update_line(line, quantity="2")
+        self._assert_po_for_update(ctx)
+
+    def test_remove_line_locks_purchase_order_for_update(self):
+        po = self.create_draft_po()
+        line = services.add_line(po, self.item, quantity="1")
+        with CaptureQueriesContext(connection) as ctx:
+            services.remove_line(line, self.user)
+        self._assert_po_for_update(ctx)
 
 
 class PurchaseOrderPermissionTests(TestCase):

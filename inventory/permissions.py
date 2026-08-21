@@ -3,6 +3,8 @@ from functools import wraps
 from django.contrib.auth.views import redirect_to_login
 from django.http import HttpResponseForbidden, JsonResponse
 
+from accounts.authz import deny_if_inactive, user_is_active
+
 VIEW_GOODS_RECEIPT = "inventory.view_goodsreceipt"
 ADD_GOODS_RECEIPT = "inventory.add_goodsreceipt"
 CHANGE_GOODS_RECEIPT = "inventory.change_goodsreceipt"
@@ -10,7 +12,7 @@ ADJUST_STOCK = "inventory.can_adjust_stock"
 
 
 def can_view_inventory(user):
-    if not getattr(user, "is_authenticated", False) or not getattr(user, "pk", None):
+    if not user_is_active(user):
         return False
     return user.has_perm(VIEW_GOODS_RECEIPT)
 
@@ -28,6 +30,9 @@ def inventory_required(view_func):
     @wraps(view_func)
     def wrapped(request, *args, **kwargs):
         wants_json = request.path.startswith("/api/")
+        inactive = deny_if_inactive(request)
+        if inactive is not None:
+            return inactive
         if not request.user.is_authenticated:
             if wants_json:
                 return JsonResponse({"error": "Authentication required"}, status=401)

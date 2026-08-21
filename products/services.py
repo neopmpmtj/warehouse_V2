@@ -805,6 +805,11 @@ def create_supplier_item_price(supplier, item, cost_price, primary=False, user=N
     cost_price = _validate_cost_price(cost_price)
     primary = bool(primary)
 
+    if primary:
+        # Serialize primary mutations; clear others before insert (partial unique).
+        item = Item.objects.select_for_update().get(pk=item.pk)
+        _clear_other_primaries(item, exclude_id=None, user=user)
+
     supplier_item_price = SupplierItemPrice(
         supplier=supplier,
         item=item,
@@ -812,9 +817,6 @@ def create_supplier_item_price(supplier, item, cost_price, primary=False, user=N
         primary=primary,
     )
     _save_supplier_item_price(supplier_item_price)
-
-    if primary:
-        _clear_other_primaries(item, exclude_id=supplier_item_price.pk, user=user)
 
     _log_supplier_item_price_change(
         supplier_item_price,
@@ -850,6 +852,10 @@ def update_supplier_item_price(supplier_item_price, user=None, **fields):
     if unknown:
         raise ValueError(f"Cannot update fields: {', '.join(sorted(unknown))}")
 
+    # Lock item before price when promoting to primary (same order as create).
+    if "primary" in fields and bool(fields["primary"]):
+        Item.objects.select_for_update().get(pk=supplier_item_price.item_id)
+
     supplier_item_price = SupplierItemPrice.objects.select_for_update().get(
         pk=supplier_item_price.pk
     )
@@ -871,16 +877,19 @@ def update_supplier_item_price(supplier_item_price, user=None, **fields):
     if not changes:
         return supplier_item_price
 
-    _save_supplier_item_price(
-        supplier_item_price, update_fields=[*changes.keys(), "updated_at"]
+    becoming_primary = (
+        "primary" in changes and changes["primary"]["new"] is True
     )
-
-    if "primary" in changes and changes["primary"]["new"] is True:
+    if becoming_primary:
         _clear_other_primaries(
             supplier_item_price.item,
             exclude_id=supplier_item_price.pk,
             user=user,
         )
+
+    _save_supplier_item_price(
+        supplier_item_price, update_fields=[*changes.keys(), "updated_at"]
+    )
 
     _log_supplier_item_price_change(
         supplier_item_price,
