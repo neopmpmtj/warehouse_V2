@@ -4,10 +4,104 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Branch catalog — CentCompras</title>
+    <style>
+        :root { --border: #ddd; --muted: #666; --none: #b00020; --low: #b26a00; --ok: #1e7d32; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+        header h1 { font-size: 1.2rem; margin: 0; }
+        header .user { color: var(--muted); font-size: .9rem; }
+        header a, header button { margin-left: 12px; color: #0b57d0; text-decoration: none; }
+        header form { display: inline; }
+        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
+        main { padding: 20px; }
+        .banner { padding: 10px 14px; border-radius: 4px; background: #fdecea; color: #b00020; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        th { color: var(--muted); font-weight: 600; font-size: .85rem; }
+        .avail-none { color: var(--none); font-weight: 600; }
+        .avail-low { color: var(--low); font-weight: 600; }
+        .avail-ok { color: var(--ok); font-weight: 600; }
+        .empty { color: var(--muted); }
+    </style>
 </head>
 <body>
-    <h1>{{ branch.name }}</h1>
-    <p>The branch catalogue arrives in Slice 2.</p>
-    <p><a href="{% url 'branch_select' %}">Switch branch</a></p>
+    <header>
+        <h1>{{ branch.name }} — Catalog</h1>
+        <div class="user">
+            <span>{{ user.email }}</span>
+            <a href="{% url 'branch_select' %}">Switch branch</a>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+        </div>
+    </header>
+
+    <main>
+        <p id="banner" class="banner" hidden></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Family</th>
+                    <th>Unit</th>
+                    <th>Retail</th>
+                    <th>Wholesale</th>
+                    <th>Special</th>
+                    <th>Availability</th>
+                </tr>
+            </thead>
+            <tbody id="catalog-body"></tbody>
+        </table>
+        <p id="empty" class="empty" hidden>No items to show.</p>
+    </main>
+
+    <script>
+        (function () {
+            var body = document.getElementById("catalog-body");
+            var empty = document.getElementById("empty");
+            var banner = document.getElementById("banner");
+            var AVAIL = { none: "None", low: "Low", "in stock": "In stock" };
+            var AVAIL_CLASS = { none: "avail-none", low: "avail-low", "in stock": "avail-ok" };
+
+            function cell(text, className) {
+                var td = document.createElement("td");
+                td.textContent = text == null ? "" : text;
+                if (className) td.className = className;
+                return td;
+            }
+
+            function render(rows) {
+                body.textContent = "";
+                rows.forEach(function (row) {
+                    var tr = document.createElement("tr");
+                    tr.appendChild(cell(row.internal_code));
+                    tr.appendChild(cell(row.description));
+                    tr.appendChild(cell(row.family));
+                    tr.appendChild(cell(row.unit_of_measure));
+                    tr.appendChild(cell(row.retail_price));
+                    tr.appendChild(cell(row.wholesale_price));
+                    tr.appendChild(cell(row.special_price));
+                    tr.appendChild(cell(AVAIL[row.availability] || row.availability, AVAIL_CLASS[row.availability]));
+                    body.appendChild(tr);
+                });
+                empty.hidden = rows.length !== 0;
+            }
+
+            fetch("/api/branch/catalog/", { headers: { "Accept": "application/json" } })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().then(function (data) {
+                            throw new Error(data.error || ("HTTP " + resp.status));
+                        });
+                    }
+                    return resp.json();
+                })
+                .then(function (data) { render(data.catalog || []); })
+                .catch(function (err) {
+                    banner.textContent = err.message || "Failed to load catalog.";
+                    banner.hidden = false;
+                    empty.hidden = true;
+                });
+        })();
+    </script>
 </body>
 </html>

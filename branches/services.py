@@ -170,3 +170,16 @@ def post_login_landing(request):
         if len(active) == 1:
             set_active_branch(request, active[0].branch)
     return landing
+
+
+def availability_hint(item):
+    """Lock 7 stock hint for branch UI: ``none`` / ``low`` / ``in stock``.
+
+    Derived from warehouse quantity + reorder level. The exact quantity is
+    never exposed to the branch.
+    """
+    if item.quantity == 0:
+        return "none"
+    if item.reorder_level > 0 and item.quantity <= item.reorder_level:
+        return "low"
+    return "in stock"

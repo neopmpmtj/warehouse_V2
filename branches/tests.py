@@ -1,9 +1,12 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 
 from accounts.groups import GROUP_ADMINS, assign_warehouse_group
+from products.models import FamilyProduct, Item, Supplier, SupplierItemPrice, VatRate
 
 from .capabilities import (
     ROLE_ADMIN,
@@ -31,6 +34,22 @@ from .services import (
 
 def _make_user(email):
     return get_user_model().objects.create_user(email=email, password="test-pass-123")
+
+
+def _make_catalog_item(family, vat, description, quantity=0, reorder=0, code="", active=True):
+    return Item.objects.create(
+        family=family,
+        vat_rate=vat,
+        description=description,
+        internal_code=code,
+        unit_of_measure=Item.UnitOfMeasure.PIECE,
+        quantity=quantity,
+        reorder_level=reorder,
+        is_active=active,
+        retail_price=Decimal("10.00"),
+        wholesale_price=Decimal("5.00"),
+        special_price=Decimal("8.00"),
+    )
 
 
 class BranchModelTests(TestCase):
@@ -304,6 +323,18 @@ class BranchViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.north.name)
 
+    def test_catalog_page_lists_price_columns(self):
+        user = _make_user("catalog-page@example.com")
+        assign_membership(user, self.north, ROLE_OPERATOR)
+        self._login(user)
+        session = self.client.session
+        session[SESSION_KEY] = self.north.id
+        session.save()
+        response = self.client.get(reverse("branch_catalog"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Wholesale")
+        self.assertContains(response, "Availability")
+
 
 class IsolationTests(TestCase):
     def setUp(self):
@@ -330,6 +361,75 @@ class IsolationTests(TestCase):
         self.client.force_login(user)
         response = self.client.get(reverse("admin:index"))
         self.assertIn(response.status_code, (302, 403))
+
+
+class BranchCatalogApiTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.branch = create_branch("North")
+        self.user = _make_user("catalog-api@example.com")
+        assign_membership(self.user, self.branch, ROLE_OPERATOR)
+        self.vat = VatRate.objects.get(code="VAT16")
+        self.family = FamilyProduct.objects.create(name="Branch Catalog", is_active=True)
+        _make_catalog_item(self.family, self.vat, "None", quantity=0, reorder=0, code="NONE")
+        _make_catalog_item(self.family, self.vat, "Low", quantity=3, reorder=5, code="LOW")
+        ok_item = _make_catalog_item(self.family, self.vat, "OK", quantity=10, reorder=5, code="OK")
+        _make_catalog_item(self.family, self.vat, "Inactive", quantity=10, reorder=0, code="OFF", active=False)
+        supplier = Supplier.objects.create(name="Supplier A", is_active=True)
+        SupplierItemPrice.objects.create(
+            supplier=supplier, item=ok_item, cost_price=Decimal("3.00"), primary=True
+        )
+
+    def _select_branch(self):
+        session = self.client.session
+        session[SESSION_KEY] = self.branch.id
+        session.save()
+
+    def _login_and_select(self):
+        self.client.force_login(self.user)
+        self._select_branch()
+
+    def test_returns_catalog_with_availability_hints(self):
+        self._login_and_select()
+        response = self.client.get(reverse("branch_catalog_list"))
+        self.assertEqual(response.status_code, 200)
+        rows = {r["internal_code"]: r for r in response.json()["catalog"]}
+        self.assertEqual(rows["NONE"]["availability"], "none")
+        self.assertEqual(rows["LOW"]["availability"], "low")
+        self.assertEqual(rows["OK"]["availability"], "in stock")
+
+    def test_omits_cost_and_exact_stock(self):
+        self._login_and_select()
+        rows = self.client.get(reverse("branch_catalog_list")).json()["catalog"]
+        for row in rows:
+            self.assertNotIn("buying_price", row)
+            self.assertNotIn("cost_price", row)
+            self.assertNotIn("suppliers", row)
+            self.assertNotIn("quantity", row)
+            self.assertNotIn("reorder_level", row)
+
+    def test_excludes_inactive_items(self):
+        self._login_and_select()
+        rows = self.client.get(reverse("branch_catalog_list")).json()["catalog"]
+        codes = {r["internal_code"] for r in rows}
+        self.assertIn("OK", codes)
+        self.assertNotIn("OFF", codes)
+
+    def test_warehouse_user_forbidden(self):
+        wuser = _make_user("catalog-api-warehouse@example.com")
+        assign_warehouse_group(wuser, GROUP_ADMINS)
+        self.client.force_login(wuser)
+        response = self.client.get(reverse("branch_catalog_list"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_branch_user_without_active_branch_forbidden(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("branch_catalog_list"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_unauthenticated_returns_401(self):
+        response = self.client.get(reverse("branch_catalog_list"))
+        self.assertEqual(response.status_code, 401)
 
 
 class LoginRedirectTests(TestCase):

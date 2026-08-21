@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026, 19:23 WEST.
+> **Read this first when resuming work.** Last updated: 21 August 2026, 20:46 WEST.
 
 ---
 
@@ -13,21 +13,21 @@
 | 2 — Procurement (purchase orders) | ✅ Done |
 | **3 — Goods receipt + stock ledger** | ✅ **Done** |
 | **4 — Manager catalog (stock + price view)** | ✅ **Done** |
-| 5 — Branches + internal request | 🔜 **In progress** — Slice 1 (tenancy) ✅; Slice 2 (catalog) next |
+| 5 — Branches + internal request | 🔜 **In progress** — Slices 1–2 ✅ (tenancy, catalog); Slice 3 (requisição) next |
 | 6 — Email automation | ⏸ Pending (stub exists) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–4 are complete.** Phase 5 decisions are **locked**; **Slice 1 (tenancy — `branches` app) is done**, Slice 2 (branch catalog) is next. Phases 6–7 stay pending/future.
+**Phases 0–4 are complete.** Phase 5 decisions are **locked**; **Slices 1–2 are done** (tenancy — `branches` app; branch catalog with cost hidden + stock hint). Slice 3 (requisição interna) is next. Phases 6–7 stay pending/future.
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable; the full suite is green (328 tests, incl. 34 new `branches` tests).**
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable; the full suite is green (338 tests, incl. 44 `branches` tests).**
 
-**Next task:** **Slice 2 — branch catalog** (cost hidden, stock hint). Build spec: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8; roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 3. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions. L13 (login rate limiting) stays deferred — production-only.
+**Next task:** **Slice 3 — requisição (internal request)** — `orders` app, branch-only. Build spec: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8; roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 4. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions. L13 (login rate limiting) stays deferred — production-only.
 
 ---
 
 ## Next session — do this
 
-1. **Next task:** **Slice 2 — branch catalog** — see [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8 and [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 3. **Slice 1 (tenancy) is done**: `branches` app (Branch + BranchMembership), `ActiveBranchMiddleware`, `/branch/select/` picker, Django admin, seed (North/South + branch users), and role-based post-login redirect (lock 5). Do **not** start the requisição (Slice 3) or goods issue (Slice 4) yet. M7 (console pagination) is done.
+1. **Next task:** **Slice 3 — requisição (internal request)** — see [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8 and [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 4. **Slices 1–2 are done**: tenancy (`branches` app, picker, middleware, post-login redirect) and branch catalog (cost hidden, stock hint). Do **not** start goods issue (Slice 4) yet. M7 (console pagination) is done.
 2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
 3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; L13 (login rate limiting) is the only one still open (production-only, deferred).
 4. **Do not start** orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
@@ -162,10 +162,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 21 Aug 2026, 19:23 WEST)
+## Git (as of 21 Aug 2026, 20:46 WEST)
 
-- Branch: **`phase5-branches`** (local). `main` tracks `origin/main`. The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are **committed** on `main`. The 1303 review is archived under `docs/archive/`.
-- **Slice 1 (tenancy) is uncommitted** — new `branches/` app plus edits to `accounts/`, `config/`, `logging_utils/`, and the seed command. Review before committing.
+- Branch: **`phase5-branches`**. Slices 1 (tenancy) and 2 (branch catalog) are committed here; `main` tracks `origin/main`.
+- The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are committed on `main`. The 1303 review is archived under `docs/archive/`.
 - Working tree has local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -176,7 +176,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches --noinput
 ```
 
-- Last full suite: **328 OK** without `--keepdb` (294 prior + 34 new `branches` tests).
+- Last full suite: **338 OK** without `--keepdb` (294 prior + 44 `branches` tests).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -210,7 +210,7 @@ python manage.py runserver
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded). **Branch:** `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…` (North), `branch.operator.south@…` / `branch.manager.south@…` (South), and `branch.dual@…` (both branches).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (placeholder until Slice 2) · `/admin/` superuser only.
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden) · `/admin/` superuser only.
 
 ---
 

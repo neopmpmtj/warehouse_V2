@@ -1,8 +1,11 @@
 from django.urls import path
 
-from . import views
+from . import console_views
 
 urlpatterns = [
-    path("select/", views.branch_select, name="branch_select"),
-    path("catalog/", views.branch_catalog, name="branch_catalog"),
+    path(
+        "branch/catalog/",
+        console_views.branch_catalog_list,
+        name="branch_catalog_list",
+    ),
 ]
