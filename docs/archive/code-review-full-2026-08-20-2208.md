@@ -1,6 +1,6 @@
 # CentCompras — Full-Codebase Deep Review (read-only)
 
-> **Status: OPEN — in progress.** P0–P3 are applied (H1–H3, M2–M6, M8–M10). **Next: P4 = M1 + L1–L14.** M7 is deferred. When every ⏳ item is ✅ or ⏸ with rationale, move this file to `docs/archive/` and update [`handoff.md`](handoff.md).
+> **Status: COMPLETE.** P0–P3 (H1–H3, M2–M6, M8–M10) and P4 (M1 + L1–L14) are applied. M7 is deferred (scale). L13 (login rate limiting) is deferred as a documented pre-production blocker. Archived on completion; see [`handoff.md`](handoff.md) for current state.
 
 > Originally a read-only review (20 Aug 2026, 22:08 WEST). Remediation is underway; this file is the live backlog.
 
@@ -107,7 +107,7 @@ Cost prices reject negatives/NaN via `_validate_cost_price`, but `retail_price`,
 
 **Suggested fix:** Add non-negative validation in services; optionally `MinValueValidator(0)` on model fields.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — `_validate_non_negative` applied to `reorder_level` + the three selling prices in `create_item`/`update_item`; `MinValueValidator(0)` + DB `CheckConstraint`s on the four fields.
 
 ---
 
@@ -293,7 +293,7 @@ H1 is the only path that can silently break the link between **approved totals**
 | **P1** | M3, M2, M4, M9 | ✅ Applied |
 | **P2** | M5, M6, M8 | ✅ Applied — **M7 skipped** (pagination deferred; consoles assume full lists in memory) |
 | **P3** | M10 | ✅ Applied — grades, approval limits, reasons, `on_commit` stub |
-| **P4** | M1 + L1–L14 | ⏳ **Next** |
+| **P4** | M1 + L1–L14 | ✅ Applied — validation, dead-code removal, parser/serializer/middleware fixes, prod-settings block; L13 deferred |
 
 ---
 
@@ -321,7 +321,7 @@ Update this table as work completes. Move the whole doc to `docs/archive/` when 
 | H1 | ✅ Done |
 | H2 | ✅ Done |
 | H3 | ✅ Done |
-| M1 | ⏳ Open |
+| M1 | ✅ Done |
 | M2 | ✅ Done |
 | M3 | ✅ Done |
 | M4 | ✅ Done |
@@ -331,7 +331,7 @@ Update this table as work completes. Move the whole doc to `docs/archive/` when 
 | M8 | ✅ Done |
 | M9 | ✅ Done |
 | M10 | ✅ Done |
-| L1–L14 | ⏳ Open |
+| L1–L14 | ✅ Done (L13 ⏸ Deferred — rate limiting documented as prod blocker) |
 
 ---
 

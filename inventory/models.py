@@ -74,7 +74,6 @@ class StockMovement(models.Model):
         RECEIPT = "receipt", "Receipt"
         GOODS_ISSUE = "goods_issue", "Goods issue"
         ADJUSTMENT = "adjustment", "Adjustment"
-        INITIAL = "initial", "Initial"
 
     item = models.ForeignKey(
         "products.Item",

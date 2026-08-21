@@ -1,4 +1,7 @@
+import zoneinfo
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.exceptions import ValidationError
 from django.db import models
 
 DEFAULT_USER_TIMEZONE = "Europe/Lisbon"
@@ -67,3 +70,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    def clean(self):
+        super().clean()
+        try:
+            zoneinfo.ZoneInfo(self.timezone)
+        except (ValueError, KeyError) as exc:
+            raise ValidationError(
+                {"timezone": f"Unknown timezone: {self.timezone}"}
+            ) from exc

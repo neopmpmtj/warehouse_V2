@@ -8,7 +8,6 @@ from accounts.capabilities import has_effective_perm
 
 VIEW_GOODS_RECEIPT = "inventory.view_goodsreceipt"
 ADD_GOODS_RECEIPT = "inventory.add_goodsreceipt"
-CHANGE_GOODS_RECEIPT = "inventory.change_goodsreceipt"
 ADJUST_STOCK = "inventory.can_adjust_stock"
 
 

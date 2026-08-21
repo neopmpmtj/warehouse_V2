@@ -20,6 +20,7 @@
     </form>
 
     <h1>CentCompras</h1>
+    {% if permissions %}
     <h2>Your Django permissions</h2>
     <p>These come from your group (plus every permission if you are a superuser).</p>
     <ul>
@@ -29,6 +30,7 @@
         <li>none</li>
         {% endfor %}
     </ul>
+    {% endif %}
     <h2>Pages</h2>
     <ul>
         <li><a href="/">/</a> — this dashboard</li>

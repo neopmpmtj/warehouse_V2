@@ -361,6 +361,8 @@ def _validate_quantity(quantity):
     value = _parse_decimal(quantity, "quantity")
     if value <= 0:
         raise ValidationError("quantity must be greater than zero.", code="invalid_quantity")
+    if value >= Decimal("1000000000"):
+        raise ValidationError("quantity is too large.", code="invalid_quantity")
     return value
 
 

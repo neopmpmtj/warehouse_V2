@@ -595,6 +595,11 @@ class FamilyProductAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def get_readonly_fields(self, request, obj=None):
+        if obj is not None:
+            return ("name", "created_at", "updated_at")
+        return ("created_at", "updated_at")
+
     def save_model(self, request, obj, form, change):
         if not request.user.is_superuser:
             raise PermissionDenied
@@ -604,7 +609,6 @@ class FamilyProductAdmin(admin.ModelAdmin):
                 update_family(
                     obj,
                     user=request.user,
-                    name=form.cleaned_data["name"],
                     is_active=form.cleaned_data["is_active"],
                 )
             else:

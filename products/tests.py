@@ -28,13 +28,18 @@ from products.models import (
 from products.permissions import can_view_catalog
 from products.services import (
     DeactivateReasonRequiredError,
+    DescriptionRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
     InactiveFamilyError,
+    InactiveItemError,
+    InactiveSupplierError,
     InvalidCostPriceError,
+    InvalidReorderLevelError,
+    InvalidSellingPriceError,
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
     SupplierNameRequiredError,
@@ -347,12 +352,11 @@ class FamilyProductServiceTests(TestCase):
 
         self.assertEqual(names, ["Active Family"])
 
-    def test_update_family_changes_name(self):
+    def test_update_family_rejects_name_change(self):
         family = create_family("Original")
 
-        updated = update_family(family, name="Renamed")
-
-        self.assertEqual(updated.name, "Renamed")
+        with self.assertRaises(ValueError):
+            update_family(family, name="Renamed")
 
     def test_create_family_respects_is_active(self):
         inactive = create_family("Inactive on create", is_active=False)
@@ -381,20 +385,10 @@ class FamilyProductServiceTests(TestCase):
 
         self.assertEqual(get_families(active_only=False).count(), 1)
 
-    def test_update_family_rejects_duplicate_name(self):
-        create_family("Cement")
-        pipes = create_family("Pipes")
-
-        with self.assertRaises(DuplicateFamilyNameError):
-            update_family(pipes, name="cement")
-
-        pipes.refresh_from_db()
-        self.assertEqual(pipes.name, "Pipes")
-
-    def test_update_family_allows_unchanged_name(self):
+    def test_update_family_toggles_is_active(self):
         family = create_family("Cement")
 
-        updated = update_family(family, name="Cement", is_active=False)
+        updated = update_family(family, is_active=False)
 
         self.assertEqual(updated.name, "Cement")
         self.assertFalse(updated.is_active)
@@ -419,15 +413,6 @@ class FamilyProductServiceTests(TestCase):
         log = family.change_logs.get(action=FamilyChangeLog.Action.CREATED)
         self.assertIsNone(log.user)
 
-    def test_update_family_writes_updated_log(self):
-        family = create_family("Original")
-
-        update_family(family, name="Renamed")
-
-        log = family.change_logs.get(action=FamilyChangeLog.Action.UPDATED)
-        self.assertEqual(log.changes["name"]["old"], "Original")
-        self.assertEqual(log.changes["name"]["new"], "Renamed")
-
     def test_deactivate_and_reactivate_family_write_lifecycle_logs(self):
         family = create_family("Cement")
 
@@ -442,7 +427,7 @@ class FamilyProductServiceTests(TestCase):
     def test_unchanged_family_update_does_not_write_audit_log(self):
         family = create_family("Cement")
 
-        update_family(family, name="Cement", is_active=True)
+        update_family(family, is_active=True)
 
         self.assertEqual(family.change_logs.count(), 1)
         self.assertEqual(
@@ -565,6 +550,29 @@ class FamilyProductAdminAccessTests(TestCase):
             FamilyProduct.objects.filter(name__iexact="Cement").count(),
             1,
         )
+
+    def test_admin_can_toggle_family_is_active(self):
+        family = create_family("Cement", is_active=True)
+        self.client.force_login(self.superuser)
+        url = reverse("admin:products_familyproduct_change", args=[family.pk])
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        data = {"is_active": "", "_save": "Save"}
+        for inline in response.context["inline_admin_formsets"]:
+            prefix = inline.formset.prefix
+            data[f"{prefix}-TOTAL_FORMS"] = inline.formset.total_form_count()
+            data[f"{prefix}-INITIAL_FORMS"] = inline.formset.initial_form_count()
+            data[f"{prefix}-MIN_NUM_FORMS"] = inline.formset.min_num
+            data[f"{prefix}-MAX_NUM_FORMS"] = inline.formset.max_num
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 302)
+        family.refresh_from_db()
+        self.assertFalse(family.is_active)
+        self.assertEqual(family.name, "Cement")
 
 
 class SupplierServiceTests(TestCase):
@@ -770,6 +778,20 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertNotContains(response, "/api/items/")
         self.assertContains(response, self.staff_user.email)
         self.assertContains(response, "warehouse_admins")
+        self.assertNotContains(response, "products.view_item")
+        self.assertNotContains(response, "products.delete_item")
+
+    def test_superuser_sees_permission_codenames_on_dashboard(self):
+        user_model = get_user_model()
+        superuser = user_model.objects.create_superuser(
+            email="root@example.com",
+            password="test-pass-123",
+        )
+        self.client.force_login(superuser)
+
+        response = self.client.get(reverse("staff_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
         self.assertContains(response, "products.view_item")
         self.assertContains(response, "products.delete_item")
 
@@ -1131,7 +1153,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(duplicate_case.status_code, 400)
         self.assertEqual(duplicate_case.json()["code"], "duplicate_family_name")
 
-    def test_staff_can_rename_and_deactivate_family_through_console_api(self):
+    def test_staff_cannot_rename_family_through_console_api(self):
         family = self.create_test_family("Original")
         self.client.force_login(self.staff_user)
 
@@ -1141,7 +1163,12 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
             content_type="application/json",
         )
         self.assertEqual(rename.status_code, 200)
-        self.assertEqual(rename.json()["family"]["name"], "Renamed")
+        family.refresh_from_db()
+        self.assertEqual(family.name, "Original")
+
+    def test_staff_can_deactivate_family_through_console_api(self):
+        family = self.create_test_family("Original")
+        self.client.force_login(self.staff_user)
 
         deactivate = self.client.patch(
             reverse("manage_family_detail", args=[family.id]),
@@ -1467,6 +1494,95 @@ class ServiceValidationTests(ItemTestCaseMixin, TestCase):
                 vat_rate=self.vat_rate,
             )
 
+    def test_create_item_rejects_empty_description(self):
+        with self.assertRaises(DescriptionRequiredError):
+            create_item(
+                self.user,
+                family=self.family,
+                description="   ",
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+            )
+
+    def test_update_item_rejects_empty_description(self):
+        item = self.create_test_item(self.user, description="OK")
+
+        with self.assertRaises(DescriptionRequiredError):
+            update_item(self.user, item, description="   ")
+
+    def test_create_item_rejects_negative_selling_prices(self):
+        for field in ("retail_price", "wholesale_price", "special_price"):
+            with self.assertRaises(InvalidSellingPriceError):
+                create_item(
+                    self.user,
+                    family=self.family,
+                    description="OK",
+                    unit_of_measure=Item.UnitOfMeasure.PIECE,
+                    vat_rate=self.vat_rate,
+                    **{field: "-1"},
+                )
+
+    def test_create_item_rejects_nan_and_infinite_prices(self):
+        for value in ("NaN", "Infinity", "-Infinity"):
+            with self.assertRaises(InvalidSellingPriceError):
+                create_item(
+                    self.user,
+                    family=self.family,
+                    description="OK",
+                    unit_of_measure=Item.UnitOfMeasure.PIECE,
+                    vat_rate=self.vat_rate,
+                    retail_price=value,
+                )
+
+    def test_create_item_rejects_negative_reorder_level(self):
+        with self.assertRaises(InvalidReorderLevelError):
+            create_item(
+                self.user,
+                family=self.family,
+                description="OK",
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+                reorder_level="-1",
+            )
+
+    def test_update_item_rejects_negative_selling_price(self):
+        item = self.create_test_item(self.user, description="OK")
+
+        with self.assertRaises(InvalidSellingPriceError):
+            update_item(self.user, item, retail_price="-5")
+
+    def test_update_item_rejects_negative_reorder_level(self):
+        item = self.create_test_item(self.user, description="OK")
+
+        with self.assertRaises(InvalidReorderLevelError):
+            update_item(self.user, item, reorder_level="-1")
+
+    def test_create_item_allows_zero_prices_and_reorder(self):
+        item = create_item(
+            self.user,
+            family=self.family,
+            description="Free item",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+            retail_price="0",
+            wholesale_price="0",
+            special_price="0",
+            reorder_level="0",
+        )
+        self.assertEqual(item.retail_price, Decimal("0"))
+        self.assertEqual(item.reorder_level, Decimal("0"))
+
+    def test_vat_rate_rejects_out_of_range(self):
+        from django.db import IntegrityError, transaction
+
+        for rate in ("-0.1", "1.5"):
+            with self.assertRaises(IntegrityError), transaction.atomic():
+                VatRate.objects.create(
+                    code=f"VAT-BAD-{rate}",
+                    label="Bad",
+                    rate=rate,
+                )
+
     def test_create_family_rejects_overlong_name(self):
         with self.assertRaises(ValidationError):
             create_family(name="F" * 256)
@@ -1600,6 +1716,18 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
     def test_negative_cost_price_is_rejected(self):
         with self.assertRaises(InvalidCostPriceError):
             create_supplier_item_price(self.supplier, self.item, "-1")
+
+    def test_create_supplier_item_price_rejects_inactive_supplier(self):
+        update_supplier(self.supplier, user=self.user, is_active=False)
+
+        with self.assertRaises(InactiveSupplierError):
+            create_supplier_item_price(self.supplier, self.item, "12.50")
+
+    def test_create_supplier_item_price_rejects_inactive_item(self):
+        deactivate_item(self.user, self.item, reason="discontinued")
+
+        with self.assertRaises(InactiveItemError):
+            create_supplier_item_price(self.supplier, self.item, "12.50")
 
     def test_update_supplier_item_price_writes_audit_and_diff(self):
         sip = create_supplier_item_price(self.supplier, self.item, "12.50")

@@ -106,6 +106,52 @@ class InvalidSupplierEmailError(ValidationError):
         )
 
 
+class DescriptionRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Description is required.",
+            code="description_required",
+        )
+
+
+class InvalidSellingPriceError(ValidationError):
+    def __init__(self, field_label="selling price"):
+        super().__init__(
+            f"{field_label} must be zero or greater.",
+            code="invalid_selling_price",
+        )
+
+
+class InvalidReorderLevelError(ValidationError):
+    def __init__(self, field_label="reorder level"):
+        super().__init__(
+            f"{field_label} must be zero or greater.",
+            code="invalid_reorder_level",
+        )
+
+
+class InactiveSupplierError(ValidationError):
+    def __init__(self, supplier=None):
+        name = getattr(supplier, "name", None) or "supplier"
+        super().__init__(
+            f"Cannot use inactive supplier '{name}'.",
+            code="inactive_supplier",
+        )
+
+
+class InactiveItemError(ValidationError):
+    def __init__(self, item=None):
+        label = (
+            getattr(item, "internal_code", None)
+            or getattr(item, "description", None)
+            or "item"
+        )
+        super().__init__(
+            f"Cannot use inactive item '{label}'.",
+            code="inactive_item",
+        )
+
+
 def _serialize_value(value):
     if isinstance(value, Decimal):
         return str(value)
@@ -155,6 +201,26 @@ def _resolve_family(family):
 def _ensure_family_active(family):
     if not FamilyProduct.objects.filter(pk=family.pk, is_active=True).exists():
         raise InactiveFamilyError(family)
+
+
+def _ensure_supplier_active(supplier):
+    if not Supplier.objects.filter(pk=supplier.pk, is_active=True).exists():
+        raise InactiveSupplierError(supplier)
+
+
+def _ensure_item_active(item):
+    if not Item.objects.filter(pk=item.pk, is_active=True).exists():
+        raise InactiveItemError(item)
+
+
+def _validate_non_negative(value, field_label, error_cls):
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise error_cls(field_label) from exc
+    if not parsed.is_finite() or parsed < 0:
+        raise error_cls(field_label)
+    return parsed
 
 
 def _resolve_vat_rate(vat_rate):
@@ -209,19 +275,35 @@ def create_item(
 ):
     internal_code = _normalize_internal_code(internal_code)
     validate_internal_code_available(internal_code)
+    description = (description or "").strip()
+    if not description:
+        raise DescriptionRequiredError()
     family = _resolve_family(family)
     _ensure_family_active(family)
     vat_rate = _resolve_vat_rate(vat_rate)
+
+    reorder_level = _validate_non_negative(
+        reorder_level, "reorder_level", InvalidReorderLevelError
+    )
+    retail_price = _validate_non_negative(
+        retail_price, "retail_price", InvalidSellingPriceError
+    )
+    wholesale_price = _validate_non_negative(
+        wholesale_price, "wholesale_price", InvalidSellingPriceError
+    )
+    special_price = _validate_non_negative(
+        special_price, "special_price", InvalidSellingPriceError
+    )
 
     item = Item(
         family=family,
         internal_code=internal_code,
         description=description,
         unit_of_measure=unit_of_measure,
-        reorder_level=Decimal(str(reorder_level)),
-        retail_price=Decimal(str(retail_price)),
-        wholesale_price=Decimal(str(wholesale_price)),
-        special_price=Decimal(str(special_price)),
+        reorder_level=reorder_level,
+        retail_price=retail_price,
+        wholesale_price=wholesale_price,
+        special_price=special_price,
         vat_rate=vat_rate,
         is_active=False,
     )
@@ -272,11 +354,21 @@ def update_item(user, item, reason="", **fields):
     pending_internal_code = None
 
     for field_name, new_value in fields.items():
-        if field_name in ("reorder_level", "retail_price", "wholesale_price", "special_price"):
-            new_value = Decimal(str(new_value))
+        if field_name == "reorder_level":
+            new_value = _validate_non_negative(
+                new_value, "reorder_level", InvalidReorderLevelError
+            )
+        elif field_name in ("retail_price", "wholesale_price", "special_price"):
+            new_value = _validate_non_negative(
+                new_value, field_name, InvalidSellingPriceError
+            )
         elif field_name == "internal_code":
             new_value = _normalize_internal_code(new_value)
             pending_internal_code = new_value
+        elif field_name == "description":
+            new_value = (new_value or "").strip()
+            if not new_value:
+                raise DescriptionRequiredError()
         elif field_name == "family":
             new_value = _resolve_family(new_value)
             _ensure_family_active(new_value)
@@ -417,7 +509,7 @@ def _action_for_field_changes(changes, action_cls):
     return action_cls.UPDATED, changes
 
 
-FAMILY_UPDATABLE_FIELDS = ("name", "is_active")
+FAMILY_UPDATABLE_FIELDS = ("is_active",)
 
 
 def _normalize_family_name(name):
@@ -506,11 +598,6 @@ def update_family(family, user=None, **fields):
 
     changes = {}
     for field_name, new_value in fields.items():
-        if field_name == "name":
-            new_value = validate_family_name_available(
-                new_value,
-                exclude_family_id=family.pk,
-            )
         old_value = getattr(family, field_name)
         if old_value != new_value:
             changes[field_name] = {
@@ -818,6 +905,8 @@ def _clear_other_primaries(item, exclude_id=None, user=None):
 def create_supplier_item_price(supplier, item, cost_price, primary=False, user=None):
     supplier = _resolve_supplier(supplier)
     item = _resolve_item(item)
+    _ensure_supplier_active(supplier)
+    _ensure_item_active(item)
     cost_price = _validate_cost_price(cost_price)
     primary = bool(primary)
 

@@ -282,13 +282,40 @@ class UserTimezoneTests(TestCase):
 
         request = RequestFactory().get("/")
         request.user = user
-        UserTimezoneMiddleware(lambda r: None)(request)
 
-        self.assertEqual(
-            timezone.get_current_timezone().utcoffset(datetime(2026, 1, 1)),
-            timedelta(hours=8),
-        )
+        observed = {}
+
+        def get_response(req):
+            observed["offset"] = timezone.get_current_timezone().utcoffset(
+                datetime(2026, 1, 1)
+            )
+
+        UserTimezoneMiddleware(get_response)(request)
+
+        self.assertEqual(observed["offset"], timedelta(hours=8))
+        # After the request the timezone must be deactivated (no leak).
+        self.assertEqual(timezone.get_current_timezone_name(), "UTC")
         timezone.deactivate()
+
+    def test_clean_rejects_unknown_timezone(self):
+        from django.core.exceptions import ValidationError
+
+        user = get_user_model().objects.create_user(
+            email="tz-bad@example.com",
+            password="test-pass-123",
+        )
+        user.timezone = "Not/AZone"
+
+        with self.assertRaises(ValidationError):
+            user.full_clean()
+
+    def test_clean_accepts_valid_timezone(self):
+        user = get_user_model().objects.create_user(
+            email="tz-ok@example.com",
+            password="test-pass-123",
+        )
+        user.timezone = "Europe/Lisbon"
+        user.full_clean()
 
     def test_middleware_deactivates_for_anonymous_user(self):
         from django.contrib.auth.models import AnonymousUser

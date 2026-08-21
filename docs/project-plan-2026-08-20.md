@@ -3,7 +3,7 @@
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
 - **Last updated:** 21 August 2026
-- **Current phase:** Phase 4 (manager catalog) complete ✅ — phases 0–4 done; branches/email/mobile remain deferred/pending/future. **Session work:** live review [`docs/code-review-full-2026-08-20-2208.md`](code-review-full-2026-08-20-2208.md) — next is **P4 = M1 + L1–L14**. See [`docs/handoff.md`](handoff.md).
+- **Current phase:** Phase 4 (manager catalog) complete ✅ — phases 0–4 done; branches/email/mobile remain deferred/pending/future. **Live review:** [`docs/code-review-full-2026-08-21-1303.md`](code-review-full-2026-08-21-1303.md) (N1 first). 2208 is archived ([`docs/archive/code-review-full-2026-08-20-2208.md`](archive/code-review-full-2026-08-20-2208.md)). See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is deferred — see [Phase 5](#phase-5--branches--internal-request-deferred).
 
 ---
@@ -104,6 +104,14 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D17 | Warehouse groups | Code-owned `permissions.set()` on migrate; `assign_warehouse_group` is exclusive (one warehouse group) and resets grade to 1 |
 | D18 | Warehouse grades + PO approval limits | Operator 1–2, manager 1–3; `ApprovalLimit` EUR gross; admin-only `/manage/approval-limits/`; operators never approve |
 | D19 | PO/stock audit reasons + email stub | Required reason on reject, manual close, `adjust_stock`; `on_commit` around notify stub |
+| D20 | Non-negative selling prices & reorder level | Finite and ≥ 0 (0 allowed); service validation + `MinValueValidator(0)` + DB `CheckConstraint`s |
+| D21 | Family names immutable | Create-only; `name` not updatable; family PATCH does not rename |
+| D22 | Supplier-item price activity | Only for an **active** supplier **and** item |
+| D23 | VAT rate range | Fraction in `[0, 1]` (DB `CheckConstraint`) |
+| D24 | PO line quantity bound | ≤ `1e9` (matches inventory) |
+| D25 | Timezone validation | `User.clean()` (IANA); middleware `finally: deactivate()` |
+| D26 | Dashboard permission list | Shown only to superusers / `DEBUG` |
+| D27 | Login rate limiting | **Pre-production blocker** — deferred (`django-axes` or proxy) |
 | O1 | Item-level buying-price display | **Option A** — `primary` flag (one per item); fall back to cheapest if none marked — **implemented** |
 
 ### Open ⚠️

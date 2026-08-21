@@ -8,11 +8,11 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 21 August 2026.*
+*Last updated: 21 August 2026, 13:14 WEST.*
 
-Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. A live full-codebase review is in progress — next is M1 + L1–L14; see [`docs/handoff.md`](docs/handoff.md).
+Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. Live review: [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md) (start with N1). See [`docs/handoff.md`](docs/handoff.md).
 
-> **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md). Live review: [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md).
+> **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md). Live review: [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md).
 
 ### User roles (practice with these)
 
@@ -30,10 +30,10 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 
 ### Recommended next session
 
-1. Read [`docs/handoff.md`](docs/handoff.md) and the plan [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md).
+1. Read [`docs/handoff.md`](docs/handoff.md) and the live review [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
-3. Practice: warehouse user → `/manage/items/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`.
-4. Pick the next piece of work — email (Phase 6, smallest) or a branches plan (Phase 5). No forced next build after Phase 4.
+3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
+4. **Next work is that 1303 review** — start with **N1** (cancel an approved PO that has zero receipts). Do not re-open 2208 findings.
 5. Do **not** in passing: branches, orders, offline, email, shared page chrome.
 
 ---
@@ -44,7 +44,7 @@ A central warehouse holds the master product catalogue and stock. Stock is a **m
 
 Satellite branches will later order against that stock. The `branches` app and orders are **future** (Phase 5). PostgreSQL is the **source of truth**.
 
-Warehouse staff work at `/manage/items/`, `/manage/purchase-orders/`, and `/manage/goods-receipts/` via groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators`. Django admin is reserved for superusers.
+Warehouse staff work at `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/approval-limits/` (admins), and `/manage/goods-receipts/` via groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators`. Django admin is reserved for superusers.
 
 ---
 
@@ -66,7 +66,7 @@ No React, Vue, or similar frontend framework.
 
 ### Authentication
 
-- Custom `User` model (`accounts`) — email login, no username field; optional per-user timezone (default `Europe/Lisbon`)
+- Custom `User` model (`accounts`) — email login, no username field; `warehouse_grade`; optional per-user timezone (default `Europe/Lisbon`)
 - Session login/logout at `/accounts/login/` and `/accounts/logout/`
 - Warehouse roles via Django groups
 - Django admin (superuser only) for users and groups
@@ -90,7 +90,8 @@ Production will use Google OAuth (not implemented in dev).
 - `/` — staff dashboard
 - `/manage/items/` — items, families, suppliers, selling prices, supplier prices
 - `/manage/catalog/` — read-only manager catalog: stock, reorder level, selling + buying price, suppliers (cost visible to warehouse groups only)
-- `/manage/purchase-orders/` — POs, lines, discounts, submit/approve; a line is **rejected** if the supplier has no price for the item
+- `/manage/purchase-orders/` — POs, lines, discounts, submit/approve (grades + EUR gross caps); a line is **rejected** if the supplier has no price for the item
+- `/manage/approval-limits/` — PO approval caps (warehouse admins may edit)
 - `/manage/goods-receipts/` — receipts (partial OK), stock movements, admin stock adjust
 - Supplier email on PO approval is a **stub** (Phase 6)
 
@@ -130,7 +131,7 @@ warehouse/
 ├── manage.py
 ├── requirements.txt
 ├── config/                   # settings.example.py (copy to settings.py), urls.py
-├── accounts/                 # custom User (email, timezone), login/logout, groups, middleware
+├── accounts/                 # custom User (email, timezone, warehouse_grade), login, groups, authz
 ├── products/                 # catalogue + pricing
 ├── procurement/              # purchase orders
 ├── inventory/                # goods receipt + stock ledger
@@ -218,7 +219,7 @@ python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16
 
 1. Open `http://localhost:8000/` — redirected to login.
 2. Log in as `warehouse.admin@centcompras.dev` / `devpass123`.
-3. Open `/manage/items/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`.
+3. Open `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`.
 
 Use **one hostname** consistently (`localhost` **or** `127.0.0.1`, not both).
 
@@ -261,7 +262,7 @@ Tests:
 .venv/bin/python manage.py test products accounts procurement inventory
 ```
 
-Migrations: `accounts/0001–0002`, `products/0001–0005` (quantity is `0005`), `procurement/0001–0003`, `inventory/0001–0002`. Run `migrate` after pull if schema changed.
+Migrations: `accounts/0001–0003`, `products/0001–0008`, `procurement/0001–0005`, `inventory/0001–0003`. Run `migrate` after pull if schema changed.
 
 ---
 
@@ -271,7 +272,7 @@ Migrations: `accounts/0001–0002`, `products/0001–0005` (quantity is `0005`),
 PostgreSQL
     ↑
 User, Item, FamilyProduct, Supplier, SupplierItemPrice,
-PurchaseOrder(+lines), GoodsReceipt(+lines), StockMovement
+PurchaseOrder(+lines), ApprovalLimit, GoodsReceipt(+lines), StockMovement
     ↑
 services.py / permissions.py   (all mutations)
     ↑
@@ -285,8 +286,8 @@ views (login required) → API + HTML
 
 - **Start here:** [`docs/handoff.md`](docs/handoff.md)
 - [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — phased plan + status tracker
-- [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md) — **live** full-codebase review (P0–P3 done; next P4 = M1 + L*)
-- [`docs/archive/code-review-full-2026-08-20-1928.md`](docs/archive/code-review-full-2026-08-20-1928.md) — prior full review (concluded)
+- [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md) — **live** follow-up review (start with N1)
+- [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) — prior full review (concluded)
 - [`docs/archive/code-review-inventory-2026-08-20.md`](docs/archive/code-review-inventory-2026-08-20.md) — Phase 3 review (concluded)
 - [`docs/archive/code-review-2026-08-20.md`](docs/archive/code-review-2026-08-20.md) · [`docs/archive/code-review-audit.md`](docs/archive/code-review-audit.md) — archived reviews
 - [`docs/user-manuals/01-items.md`](docs/user-manuals/01-items.md) · [`docs/user-manuals/02-purchase-orders.md`](docs/user-manuals/02-purchase-orders.md) · [`docs/user-manuals/03-goods-receipts.md`](docs/user-manuals/03-goods-receipts.md)
@@ -304,5 +305,6 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Branches + internal request** (Phase 5)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
-- Integration tests (unit suites are green, ~249 tests)
+- Integration tests (unit suites are green, ~264 tests)
 - Frontend pagination UI (API supports `?page`; console still loads all items)
+- Login rate limiting (pre-production blocker; documented in `settings.example.py`)

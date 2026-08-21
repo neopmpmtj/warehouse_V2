@@ -109,3 +109,22 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Production (later): Google OAuth via django-allauth — not used in dev.
 # GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 # GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+
+
+# ---------------------------------------------------------------------------
+# Production deploy checklist (commented out for dev).
+# Enable before going live behind HTTPS + a trusted reverse proxy.
+# ---------------------------------------------------------------------------
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# SECURE_REFERRER_POLICY = "same-origin"
+# SECURE_HSTS_SECONDS = 31536000
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
+# SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# CSRF_TRUSTED_ORIGINS = ["https://example.com"]
+
+# Login rate limiting (BLOCKER before production): add django-axes or a
+# reverse-proxy rate limit on /accounts/login/. Not implemented in dev.

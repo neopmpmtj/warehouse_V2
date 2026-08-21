@@ -48,9 +48,12 @@ def _parse_decimal(payload, field_name, required=True):
             raise ValidationError(f"{field_name} is required.")
         return None
     try:
-        return Decimal(str(payload[field_name]))
+        parsed = Decimal(str(payload[field_name]))
     except (InvalidOperation, TypeError, ValueError) as exc:
         raise ValidationError(f"{field_name} must be a number.") from exc
+    if not parsed.is_finite():
+        raise ValidationError(f"{field_name} must be a finite number.")
+    return parsed
 
 
 def _parse_int_id(value, field_name):
@@ -84,6 +87,7 @@ def _serialize_line(line):
         "vat_rate": _dec(line.vat_rate),
         "net_unit_cost": _dec(line.net_unit_cost),
         "line_net": _dec(line.line_net),
+        "line_vat": _dec(line.line_vat),
         "line_total": _dec(line.line_total),
     }
 

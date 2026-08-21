@@ -20,7 +20,6 @@ from accounts.groups import (
 ADD_PO = "procurement.add_purchaseorder"
 CHANGE_PO = "procurement.change_purchaseorder"
 ADD_GOODS_RECEIPT = "inventory.add_goodsreceipt"
-CHANGE_GOODS_RECEIPT = "inventory.change_goodsreceipt"
 ADJUST_STOCK = "inventory.can_adjust_stock"
 
 MUTATE_PERMISSIONS = frozenset(
@@ -36,7 +35,6 @@ MUTATE_PERMISSIONS = frozenset(
         ADD_PO,
         CHANGE_PO,
         ADD_GOODS_RECEIPT,
-        CHANGE_GOODS_RECEIPT,
     }
 )
 

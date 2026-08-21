@@ -36,5 +36,6 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - @docs/handoff.md — **read first** (state, decisions, next task)
 - @README.md — setup
 - @docs/project-plan-2026-08-20.md — sequencing
-- @docs/code-review-full-2026-08-20-2208.md — **live** review backlog (next: P4 = M1 + L1–L14); do not archive until remaining findings are done or deferred
+- @docs/code-review-full-2026-08-21-1303.md — **live** review backlog (start with N1); do not archive until remaining findings are done or deferred
+- @docs/archive/code-review-full-2026-08-20-2208.md — concluded 2208 review (do not re-open)
 - @docs/warehouse-tenancy-setup.md — Phase 5 design (**not built**); Order sketch is not the next build

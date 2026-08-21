@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026.
+> **Read this first when resuming work.** Last updated: 21 August 2026, 13:09 WEST.
 
 ---
 
@@ -19,39 +19,55 @@
 
 **Phases 0–4 are complete.** Product phases 5–7 stay deferred/pending/future.
 
-**Current work is not a new product phase.** It is the live full-codebase review [`docs/code-review-full-2026-08-20-2208.md`](code-review-full-2026-08-20-2208.md). **Do not archive that file** until every remaining ⏳ item is ✅ or ⏸ with rationale.
+**Next work is the live review** [`docs/code-review-full-2026-08-21-1303.md`](code-review-full-2026-08-21-1303.md) — net-new + residuals after 2208. Do **not** re-open 2208 IDs (that review is archived).
 
 ---
 
 ## Next session — do this
 
-1. **Apply pending migrations** on the **dev** DB (test DB is applied by the suite):
-   ```bash
-   source .venv/bin/activate
-   python manage.py migrate
-   ```
-   Expected if not already applied: `accounts.0003` (`warehouse_grade`), `procurement.0005` (`ApprovalLimit`). Also `products.0006`/`0007` and `procurement.0004` if those were skipped earlier.
-2. **Continue the review at P4 = M1** (negative selling prices / reorder) and **L1–L14**.
-3. **M7 (pagination) stays deferred** — consoles (`loadCatalog()` and similar) assume the full list is in memory. Do not paginate APIs without a frontend plan.
-
-Do **not** start branches, orders, offline, shared chrome, or a full Phase 6 email product.
+1. **Read** [`docs/code-review-full-2026-08-21-1303.md`](code-review-full-2026-08-21-1303.md) — that is the live backlog. Mark findings there as you fix them.
+2. **Start with N1** (cancel/void an approved PO that has zero receipts, required reason). Then P1: N7 (money rounding), N5 / N8 / N3 (M2 residuals). Then P2: N12 (int IDs on products/inventory), N9 (approve overflow). Lows N4 / N10 / N11 when touching related code.
+3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done. M7 (pagination) and L13 (login rate limiting) stay deferred.
+4. **Do not start** branches, orders, offline, shared chrome, or Phase 6 email without a plan.
+5. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
 
 ---
 
-## Review progress (2208)
+## Live review (1303)
 
-Live tracker: [`docs/code-review-full-2026-08-20-2208.md`](code-review-full-2026-08-20-2208.md). Prior concluded review: [`docs/archive/code-review-full-2026-08-20-1928.md`](archive/code-review-full-2026-08-20-1928.md).
+Tracker: [`docs/code-review-full-2026-08-21-1303.md`](code-review-full-2026-08-21-1303.md).
+
+| ID | Sev | Summary | Status |
+|----|-----|---------|--------|
+| N1 | High | Approved PO with zero receipts cannot be cancelled | ⏳ Open |
+| N7 | Medium | Banker's rounding on `approved_*` totals | ⏳ Open |
+| N3 | Medium | PO pickers list inactive suppliers/items | ⏳ Open |
+| N5 | Medium | `reactivate_item` ignores inactive family | ⏳ Open |
+| N8 | Medium | Admin `InactiveFamilyError` → 500 | ⏳ Open |
+| N9 | Medium | Approve overflow on `approved_*` (14,2) | ⏳ Open |
+| N12 | Medium | `_parse_int_id` not used in products/inventory | ⏳ Open |
+| N4 | Low | `update_line` skips `full_clean` | ⏳ Open |
+| N10 | Low | Price `IntegrityError` always reported as duplicate | ⏳ Open |
+| N11 | Low | Receipt qty silent 3 dp quantize | ⏳ Open |
+
+When every ⏳ item is ✅ or ⏸ with rationale, archive `1303` under `docs/archive/` and clear this table.
+
+---
+
+## Review progress (2208 — concluded)
+
+Archived: [`docs/archive/code-review-full-2026-08-20-2208.md`](archive/code-review-full-2026-08-20-2208.md). Do not treat as a work queue.
 
 | Batch | IDs | Status |
 |-------|-----|--------|
-| P0 | H1, H2, H3 | ✅ Done (committed on `main`) |
-| P1 | M2, M3, M4, M9 | ✅ Done (committed on `main`) |
-| P2 | M5, M6, M8 | ✅ Done (committed on `main`); M7 skipped |
+| P0 | H1, H2, H3 | ✅ Done |
+| P1 | M2, M3, M4, M9 | ✅ Done |
+| P2 | M5, M6, M8 | ✅ Done; M7 skipped |
 | P3 | M10 | ✅ Done (grades, approval limits, reasons, `on_commit` stub) |
-| P4 | M1 + L1–L14 | ⏳ **Next** |
+| P4 | M1 + L1–L14 | ✅ Done (L13 deferred); review **archived** |
 | — | M7 | ⏸ Deferred (scale / frontend) |
 
-Plans (reference only; do not treat as live status): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m2-m9_387eec3a.plan.md`, `fix_p2_m5_m6_m8_2372dbfd.plan.md`.
+Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m2-m9_387eec3a.plan.md`, `fix_p2_m5_m6_m8_2372dbfd.plan.md`, `p4_m1_l1-l14_71ae16a5.plan.md`.
 
 ---
 
@@ -78,11 +94,19 @@ Plans (reference only; do not treat as live status): `.cursor/plans/fix_h1_h2_h3
 | D17 | Warehouse groups are **code-owned**: `sync_warehouse_groups()` still `permissions.set()` (extras in `/admin/` wiped on migrate). `assign_warehouse_group` is **exclusive** (one warehouse group per user) and **resets `warehouse_grade` to 1** |
 | D18 | **Warehouse grades:** operator 1–2, manager 1–3, admin unlimited. Operator 1 view-only; operator 2 / manager 1 mutate the closed circuit; manager 2+ approve. Operators never approve. Caps in `ApprovalLimit` (EUR **gross**); admin-only edit at `/manage/approval-limits/`. Seed defaults: manager 2 self 100 / others 5_000; manager 3 self 500 / others 50_000 |
 | D19 | **PO/stock reasons:** reject, manual close (remaining qty), and `adjust_stock` require a non-empty reason. Full receipt auto-close uses `"Fully received"`; `receive()` logs `"Goods received"`. Submit/approve/reopen reasons optional but wired. Email stub via `transaction.on_commit` (Phase 6 still pending) |
+| D20 | Selling prices & `reorder_level` must be **finite and ≥ 0** (0 allowed). Enforced in services (`_validate_non_negative`), `MinValueValidator(0)`, and DB `CheckConstraint`s |
+| D21 | **Family names are immutable** — create-only. `name` is not an updatable field; the family PATCH API does not rename |
+| D22 | `SupplierItemPrice` can only be created for an **active** supplier **and** item |
+| D23 | `VatRate.rate` is a fraction in `[0, 1]` (DB `CheckConstraint`) |
+| D24 | PO line quantity upper bound = `1e9` (matches inventory) |
+| D25 | `User.timezone` validated (IANA) in `clean()`; middleware `finally: deactivate()` so the timezone never leaks across requests |
+| D26 | Dashboard shows permission codenames only for superusers / `DEBUG` |
+| D27 | **Login rate limiting is a pre-production blocker** — deferred (`django-axes` or proxy); documented in `settings.example.py` |
 | — | Dates DD/MM/YYYY (24h); per-user timezone (default `Europe/Lisbon`); EN + pt-PT |
 
 ---
 
-## What landed this review (for the next agent)
+## What already landed (2208 — do not re-do)
 
 **P0 — Highs**
 
@@ -110,6 +134,24 @@ Plans (reference only; do not treat as live status): `.cursor/plans/fix_h1_h2_h3
 - **Reasons** — required on `reject`, manual `close` (remaining qty), `adjust_stock`. Status changelog `reason` populated. Auto-close `"Fully received"`.
 - **Email stub** — `transaction.on_commit(notify_supplier_on_approval)`; Phase 6 product not built.
 
+**P4 — M1 + L1–L14 (review complete)**
+
+- **M1** — `_validate_non_negative` for `reorder_level` + the three selling prices; `MinValueValidator(0)` + DB `CheckConstraint`s (`products/0008`).
+- **L1** — non-empty `description` enforced in `create_item`/`update_item`.
+- **L2** — family `name` removed from updatable fields + PATCH API.
+- **L3** — `create_supplier_item_price` requires active supplier + item.
+- **L4** — `VatRate.rate` in `[0, 1]`.
+- **L5** — `line_vat` added to the line serializer.
+- **L6** — console `_parse_decimal` now rejects NaN/Infinity (products + procurement).
+- **L7** — PO `quantity` upper bound (1e9).
+- **L8** — `User.clean()` timezone validation; middleware `finally: deactivate()`.
+- **L9** — dashboard permission codenames hidden except superuser/DEBUG.
+- **L10** — removed `StockMovement.Type.INITIAL` and `SupplierItemPriceChangeLog` DEACTIVATED/REACTIVATED (`inventory/0003`, `products/0008`).
+- **L11** — removed unused `CHANGE_GOODS_RECEIPT`.
+- **L12** — commented production-settings block in `settings.example.py`.
+- **L13** — deferred (rate limiting) — documented blocker.
+- **L14** — ledger-sum / concurrency / primary-race tests already present from H1/H3/M5.
+
 **Seed bug (verified, fixed in `seed_dev_data`)**
 
 `update_family()` returns a **new** `select_for_update` instance. The command stored the old object (`is_active=False`) after temporarily reactivating “Legacy stock”, so the follow-up pass skipped writing False and left the family **active**. A second seed then put LEG items in `get_catalog`.
@@ -118,10 +160,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 21 Aug 2026)
+## Git (as of 21 Aug 2026, 13:09 WEST)
 
-- Branch: **`main`** (tracks `origin/main`). P0–P3 review fixes and this handoff are committed when you commit. Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
-- Next product work: **P4 = M1 + L1–L14**. Do not archive `docs/code-review-full-2026-08-20-2208.md` until those are done or deferred.
+- Branch: **`p4-m1-l-fixes`**. P4 (M1 + L*) plus 2208 archive/handoff updates are in the working tree (uncommitted). Live review file `docs/code-review-full-2026-08-21-1303.md` is untracked until committed.
+- Working tree also has local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
 
@@ -131,7 +173,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
 ```
 
-- Last full suite: **249 OK** in ~87s with `--keepdb`.
+- Last full suite: **264 OK** in ~25s without `--keepdb`.
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -146,7 +188,7 @@ inventory/      goods receipt + stock ledger (models, services, console_views, a
 accounts/       custom User, warehouse groups, grades, login, timezone middleware, authz.py, capabilities.py
 config/         settings, urls
 logging_utils/  rotating per-app logs
-docs/           plan, handoff, live 2208 review, user-manuals/, tenancy design
+docs/           plan, handoff, live 1303 review, user-manuals/, tenancy design
 ```
 
 **Conventions:** all mutations go through each app's `services.py`; audit-by-design (`*ChangeLog`); plain Django + vanilla JS; `select_for_update()` on updates.
@@ -174,7 +216,8 @@ python manage.py runserver
 |-----|---------|
 | `README.md` | setup, URLs, seed, how to run |
 | `docs/project-plan-2026-08-20.md` | phased plan + status tracker + locked decisions |
-| **`docs/code-review-full-2026-08-20-2208.md`** | **LIVE review backlog** — P0–P3 done; P4 next; do not archive yet |
+| `docs/code-review-full-2026-08-21-1303.md` | Live follow-up review (after 2208 fixes) |
+| `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; M7 + L13 deferred) |
 | `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |

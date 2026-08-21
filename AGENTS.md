@@ -2,7 +2,7 @@
 
 Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done. Branches, orders, offline, and email are deferred.
 
-**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup, [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing, and the **live** review [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md) (P0–P3 done; **next is P4 = M1 + L1–L14**). Do **not** archive 2208 until remaining findings are done or deferred. The prior review is [`docs/archive/code-review-full-2026-08-20-1928.md`](docs/archive/code-review-full-2026-08-20-1928.md) (concluded).
+**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup and [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing. Live review backlog: [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md). The 2208 review is **archived** ([`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md)).
 
 ## Session handoff (August 2026)
 
@@ -10,9 +10,9 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 
 **Not done:** `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
 
-**Next:** finish the 2208 review — **P4 = M1** (negative selling prices / reorder) and **L1–L14**. M7 pagination stays deferred. Product phases 5–7 remain deferred/pending/future. Do **not** implement `orders/` or the tenancy-doc Order stub.
+**Next:** live review [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md) — start with **N1** (cancel approved PO with zero receipts). Do not re-open 2208 IDs. Product phases 5–7 remain deferred/pending/future. Do **not** implement `orders/` or the tenancy-doc Order stub.
 
-**Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive and resets grade to 1. Approval uses grades + `ApprovalLimit` (EUR gross); reject/manual close/`adjust_stock` require a reason.
+**Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive and resets grade to 1. Approval uses grades + `ApprovalLimit` (EUR gross); reject/manual close/`adjust_stock` require a reason. Selling prices & `reorder_level` must be finite and ≥ 0 (DB `CheckConstraint`s); PO line quantity capped at 1e9; login rate limiting is a documented pre-production blocker (deferred).
 
 ## User roles (do not confuse these)
 
@@ -52,7 +52,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 - **Item fields:** family, optional `internal_code`, `description`, `unit_of_measure`, `reorder_level`, `vat_rate`, `is_active` (new items start inactive), timestamps, plus **3 manual selling prices** (`retail_price`, `wholesale_price`, `special_price`) and a cached `quantity` balance (updated via `StockMovement`). Suppliers are independent master data.
 - **Supplier prices:** `SupplierItemPrice` (supplier × item → `cost_price`, one `primary` per item) — the dynamic cost source for purchase orders.
 - **Audit:** `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`, `SupplierItemPriceChangeLog` — who changed what (create / update / deactivate / reactivate). Item lifecycle reasons required; family/supplier deactivate is confirm-only
-- **Names:** family and supplier names are case-insensitive unique; the console UI does not rename them
+- **Names:** family and supplier names are case-insensitive unique; family names are **immutable** (create-only) and the console UI does not rename them
 - **Global catalogue** — no `branch_id` on `Item`
 - **Management:** warehouse users via `/manage/items/` (groups `warehouse_admins` / `warehouse_managers` / `warehouse_data_operators` and Django model permissions). Django admin (`/admin/`) is **superuser only**. All mutations through `products/services.py`
 - **Validation:** duplicate non-empty `internal_code` rejected in services/admin
@@ -97,7 +97,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 ## Documentation conventions
 
 - **Always put a full timestamp (date + time) in document filenames** — e.g. `code-review-full-2026-08-20-1928.md` (format `YYYY-MM-DD-HHMM`). The timestamp makes the chronological order self-evident when many similarly-named docs accumulate.
-- Reviews/audits are worked to completion, marked done, then archived under `docs/archive/` — never left as a live backlog. The 2208 review is still live until M1 and L1–L14 are done or deferred.
+- Reviews/audits are worked to completion, marked done, then archived under `docs/archive/` — never left as a live backlog. Live backlog: [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md). The 2208 review is concluded and archived.
 
 ## Commands
 

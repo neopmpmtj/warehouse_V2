@@ -192,9 +192,12 @@ def _parse_decimal(payload, field_name, required=True):
             raise ValidationError(f"{field_name} is required.")
         return None
     try:
-        return Decimal(str(payload[field_name]))
+        parsed = Decimal(str(payload[field_name]))
     except (InvalidOperation, TypeError, ValueError) as exc:
         raise ValidationError(f"{field_name} must be a number.") from exc
+    if not parsed.is_finite():
+        raise ValidationError(f"{field_name} must be a finite number.")
+    return parsed
 
 
 def _parse_unit(payload, required=True):
@@ -524,8 +527,6 @@ def manage_family_detail(request, family_id):
     try:
         payload = _parse_json(request)
         fields = {}
-        if "name" in payload:
-            fields["name"] = str(payload["name"])
         if "is_active" in payload:
             if not isinstance(payload["is_active"], bool):
                 raise ValidationError("is_active must be a boolean.")

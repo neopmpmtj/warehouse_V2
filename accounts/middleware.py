@@ -34,4 +34,7 @@ class UserTimezoneMiddleware:
         else:
             timezone.deactivate()
 
-        return self.get_response(request)
+        try:
+            return self.get_response(request)
+        finally:
+            timezone.deactivate()

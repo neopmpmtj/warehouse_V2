@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.functions import Lower
 
@@ -6,10 +7,20 @@ from django.db.models.functions import Lower
 class VatRate(models.Model):
     code = models.CharField(max_length=32, unique=True)
     label = models.CharField(max_length=64)
-    rate = models.DecimalField(max_digits=5, decimal_places=4)
+    rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        validators=[MinValueValidator(0)],
+    )
 
     class Meta:
         ordering = ["rate"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(rate__gte=0, rate__lte=1),
+                name="vat_rate_gte_zero_lte_one",
+            ),
+        ]
 
     def __str__(self):
         return self.label
@@ -67,6 +78,7 @@ class Item(models.Model):
         max_digits=12,
         decimal_places=3,
         default=0,
+        validators=[MinValueValidator(0)],
     )
     quantity = models.DecimalField(
         max_digits=12,
@@ -79,9 +91,9 @@ class Item(models.Model):
         on_delete=models.PROTECT,
         related_name="items",
     )
-    retail_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    wholesale_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    special_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    retail_price = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    wholesale_price = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    special_price = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -98,6 +110,22 @@ class Item(models.Model):
             models.CheckConstraint(
                 condition=models.Q(quantity__gte=0),
                 name="item_quantity_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(reorder_level__gte=0),
+                name="item_reorder_level_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(retail_price__gte=0),
+                name="item_retail_price_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(wholesale_price__gte=0),
+                name="item_wholesale_price_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(special_price__gte=0),
+                name="item_special_price_gte_zero",
             ),
         ]
 
@@ -260,8 +288,6 @@ class SupplierItemPriceChangeLog(models.Model):
     class Action(models.TextChoices):
         CREATED = "created", "Created"
         UPDATED = "updated", "Updated"
-        DEACTIVATED = "deactivated", "Deactivated"
-        REACTIVATED = "reactivated", "Reactivated"
 
     supplier_item_price = models.ForeignKey(
         SupplierItemPrice,

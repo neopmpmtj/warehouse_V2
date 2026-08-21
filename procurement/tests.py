@@ -118,6 +118,12 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         with self.assertRaises(ValidationError):
             services.add_line(po, self.item, quantity="-1")
 
+    def test_quantity_upper_bound_is_rejected(self):
+        po = self.create_draft_po()
+        with self.assertRaises(ValidationError) as ctx:
+            services.add_line(po, self.item, quantity="1000000000")
+        self.assertEqual(ctx.exception.code, "invalid_quantity")
+
     def test_nan_values_are_rejected(self):
         po = self.create_draft_po()
         with self.assertRaises(ValidationError):
@@ -446,6 +452,24 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
             reverse("manage_purchase_order_approve", args=[po["id"]]), **self.host
         )
         self.assertEqual(approve.json()["purchase_order"]["status"], "approved")
+
+    def test_line_serializer_includes_line_vat(self):
+        self.client.force_login(self.user)
+        po = self._create_po_via_api()
+        self.client.post(
+            reverse("manage_purchase_order_lines", args=[po["id"]]),
+            data=json.dumps({"item_id": self.item.id, "quantity": "10"}),
+            content_type="application/json",
+            **self.host,
+        )
+
+        resp = self.client.get(
+            reverse("manage_purchase_order_lines", args=[po["id"]]),
+            **self.host,
+        )
+        line = resp.json()["lines"][0]
+        self.assertIn("line_vat", line)
+        self.assertEqual(line["line_vat"], "20.00")
 
     def test_approved_po_exposes_approved_totals(self):
         self.client.force_login(self.user)
