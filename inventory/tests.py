@@ -157,6 +157,11 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
         )
         self.assertEqual(movements.first().reason, "correction")
 
+    def test_adjust_stock_rounds_quantity_half_up(self):
+        services.adjust_stock(self.item, "10.0005", "rounding", self.user)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("10.001"))
+
     def test_adjust_stock_requires_reason(self):
         with self.assertRaises(ValidationError) as ctx:
             services.adjust_stock(self.item, "5", "   ", self.user)
@@ -462,6 +467,44 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("manage_stock_movements") + "?item_id=abc")
         self.assertEqual(response.status_code, 400)
+
+    def test_stock_adjustment_rejects_bool_item_id(self):
+        self.client.force_login(self.user)
+        resp = self.client.post(
+            reverse("manage_stock_adjustment"),
+            data=json.dumps({"item_id": True, "quantity": "-5", "reason": "x"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("integer", resp.json()["error"].lower())
+
+    def test_stock_adjustment_rejects_float_item_id(self):
+        self.client.force_login(self.user)
+        resp = self.client.post(
+            reverse("manage_stock_adjustment"),
+            data=json.dumps({"item_id": 1.9, "quantity": "1", "reason": "x"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("integer", resp.json()["error"].lower())
+
+    def test_receipt_rejects_bool_purchase_order_id(self):
+        self.client.force_login(self.user)
+        resp = self.client.post(
+            reverse("manage_goods_receipt_list"),
+            data=json.dumps(
+                {
+                    "purchase_order_id": True,
+                    "lines": [{"line_id": 1, "quantity_received": "1"}],
+                }
+            ),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("integer", resp.json()["error"].lower())
 
     def test_malformed_receipt_returns_400(self):
         self.client.force_login(self.user)

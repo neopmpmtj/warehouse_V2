@@ -1,8 +1,8 @@
 # CentCompras — Full-Codebase Deep Review (read-only)
 
-> **Status: OPEN — findings not yet applied.** When all actionable items are fixed (or explicitly deferred with rationale), move this file to `docs/archive/` and update [`handoff.md`](handoff.md).
+> **Status: CLOSED — all N1–N12 findings applied (21 Aug 2026).** Archived; see [`handoff.md`](../handoff.md) for the current state. Do not treat as a work queue.
 
-> **Read-only review.** No product code was changed for this document. Two independent passes (21 Aug 2026 morning) were merged, then re-checked against the tree **after** the 2208 remediation (P0–P4). Anything already closed in [`docs/archive/code-review-full-2026-08-20-2208.md`](archive/code-review-full-2026-08-20-2208.md) is **not** repeated.
+> **Read-only review.** No product code was changed for this document. Two independent passes (21 Aug 2026 morning) were merged, then re-checked against the tree **after** the 2208 remediation (P0–P4). Anything already closed in [`docs/archive/code-review-full-2026-08-20-2208.md`](code-review-full-2026-08-20-2208.md) is **not** repeated.
 
 - **Date:** 21 August 2026, 13:03 WEST
 - **Scope:** Phases 0–4 — `accounts`, `products`, `procurement`, `inventory`, `config`, `logging_utils` (working tree on `p4-m1-l-fixes`, including uncommitted P4)
@@ -54,7 +54,7 @@ PurchaseOrder.Status.RECEIVED: {PurchaseOrder.Status.CLOSED},
 
 **Suggested fix:** `approved → cancelled` (or equivalent) when received qty is zero, with a required reason and changelog. Do not allow cancel once any receipt exists (use existing short-shipment `close()`).
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — added `PurchaseOrder.Status.CANCELLED` (migration `procurement/0006`), `services.cancel()` (reason required; rejects POs with any receipt), console endpoint `manage_purchase_order_cancel` (`CHANGE_PO`), frontend cancel action + status pill/filter + i18n (EN/pt-PT), and 6 tests.
 
 ---
 
@@ -72,7 +72,7 @@ Every `.quantize()` uses the ambient decimal context (`ROUND_HALF_EVEN`). There 
 
 **Suggested fix:** One explicit quantizer (`ROUND_HALF_UP` at 4 dp then 2 dp) used by `PurchaseOrderLine` (and later by orders). State the convention in handoff.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — added `round_money()` (`ROUND_HALF_UP`) with `MONEY_4DP` / `MONEY_2DP` in `procurement/models.py`; applied to `net_unit_cost` (4 dp) → `line_net` / `line_vat` (2 dp). Convention documented as D28 in handoff. 3 tests.
 
 ---
 
@@ -86,7 +86,7 @@ M2 correctly rejects inactive supplier/item in `create_purchase_order` / `add_li
 
 **Suggested fix:** Filter the PO dropdowns to `is_active === true` (and skip items whose family is inactive if that flag is present). Do not change the item-console API.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — `fillSupplierSelect` / `fillItemSelect` filter to `is_active === true` (items also require `family.is_active`).
 
 ---
 
@@ -106,7 +106,7 @@ D16 still stands: do **not** cascade-deactivate items when a family is deactivat
 
 **Suggested fix:** `_ensure_family_active(item.family)` in `reactivate_item`. Optionally also reject `add_line` when `family.is_active` is false.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — `reactivate_item` calls `_ensure_family_active`; procurement `_ensure_item_active` now also requires `family__is_active`, so add/submit/approve reject items under an inactive family (closes the D16 non-cascade door).
 
 ---
 
@@ -118,7 +118,7 @@ D16 still stands: do **not** cascade-deactivate items when a family is deactivat
 
 **Suggested fix:** Catch `InactiveFamilyError` (and map to `{"family": ...}`). Filter autocomplete to active families.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — `ItemAdminForm.clean_family` rejects inactive families (form error instead of a 500; note a `save_model` `ValidationError` would not attach to the form). `FamilyProductAdmin.get_search_results` filters the family autocomplete to active families; bulk-reactivate (admin + console) handles `InactiveFamilyError` gracefully.
 
 ---
 
@@ -130,7 +130,7 @@ L7 capped **line quantity** at `< 1e9`. `unit_cost` is still `(12, 2)`. Individu
 
 **Suggested fix:** After `po.totals()`, reject if any of net/vat/gross has `copy_abs() >= 1e12` (or raise `ValidationError` before save). Same cap on `_validate_unit_cost` if product wants a tighter bound.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — `approve()` raises `ApprovalTotalOverflowError` (caught by `_status_action` → 400) when any of net/vat/gross is `>= 1e12` (the `(14,2)` limit), before `po.save()`. Added `MAX_APPROVED_TOTAL`. Unit-cost bound left as-is (the approve-time guard fully prevents the 500).
 
 ---
 
@@ -144,7 +144,7 @@ L7 capped **line quantity** at `< 1e9`. `unit_cost` is still `(12, 2)`. Individu
 
 **Suggested fix:** Reuse `_parse_int_id` (or one shared parser) on products + inventory mutating IDs. Catch `OperationalError` on receive is **not** required now that M6 sorts locks — do not treat that as a separate item.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — copied `_parse_int_id` into `products/console_views.py` and `inventory/console_views.py` (matching the codebase's per-app helper duplication) and applied to all mutating IDs: item create/update (`family_id`, `vat_rate_id`), bulk `ids`, supplier-item-price create (`supplier_id`, `item_id`), goods-receipt (`purchase_order_id`, `line_id`), and stock adjustment (`item_id`).
 
 ---
 
@@ -212,16 +212,16 @@ A shared request-parser is **how you finish N12**, not a third enhancement. Pagi
 
 | ID | Status |
 |----|--------|
-| N1 | ⏳ Open |
-| N7 | ⏳ Open |
-| N3 | ⏳ Open |
-| N5 | ⏳ Open |
-| N8 | ⏳ Open |
-| N9 | ⏳ Open |
-| N12 | ⏳ Open |
-| N4 | ⏳ Open |
-| N10 | ⏳ Open |
-| N11 | ⏳ Open |
+| N1 | ✅ Done |
+| N7 | ✅ Done |
+| N3 | ✅ Done |
+| N5 | ✅ Done |
+| N8 | ✅ Done |
+| N9 | ✅ Done |
+| N12 | ✅ Done |
+| N4 | ✅ Done |
+| N10 | ✅ Done |
+| N11 | ✅ Done |
 | M7 / L13 | ⏸ Already deferred in 2208 — not this backlog |
 
 ---

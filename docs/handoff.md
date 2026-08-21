@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026, 13:09 WEST.
+> **Read this first when resuming work.** Last updated: 21 August 2026, 14:11 WEST.
 
 ---
 
@@ -19,38 +19,39 @@
 
 **Phases 0–4 are complete.** Product phases 5–7 stay deferred/pending/future.
 
-**Next work is the live review** [`docs/code-review-full-2026-08-21-1303.md`](code-review-full-2026-08-21-1303.md) — net-new + residuals after 2208. Do **not** re-open 2208 IDs (that review is archived).
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. M7 (pagination) and L13 (login rate limiting) stay deferred from 2208.
+
+**Next task:** **L13** — add login rate limiting (a documented pre-production blocker; see `config/settings.example.py`). Then **M7** (pagination). Deferred product phases (5–7) need a written plan first.
 
 ---
 
 ## Next session — do this
 
-1. **Read** [`docs/code-review-full-2026-08-21-1303.md`](code-review-full-2026-08-21-1303.md) — that is the live backlog. Mark findings there as you fix them.
-2. **Start with N1** (cancel/void an approved PO that has zero receipts, required reason). Then P1: N7 (money rounding), N5 / N8 / N3 (M2 residuals). Then P2: N12 (int IDs on products/inventory), N9 (approve overflow). Lows N4 / N10 / N11 when touching related code.
-3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done. M7 (pagination) and L13 (login rate limiting) stay deferred.
-4. **Do not start** branches, orders, offline, shared chrome, or Phase 6 email without a plan.
-5. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
+1. **Next task: L13** — add login rate limiting (pre-production blocker; see `config/settings.example.py`). Then **M7** (pagination).
+2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
+3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; M7 and L13 are the only two still open.
+4. **Do not start** branches, orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
 
 ---
 
-## Live review (1303)
+## Live review (1303 — concluded & archived)
 
-Tracker: [`docs/code-review-full-2026-08-21-1303.md`](code-review-full-2026-08-21-1303.md).
+Archived: [`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md). Do not treat as a work queue.
 
 | ID | Sev | Summary | Status |
 |----|-----|---------|--------|
-| N1 | High | Approved PO with zero receipts cannot be cancelled | ⏳ Open |
-| N7 | Medium | Banker's rounding on `approved_*` totals | ⏳ Open |
-| N3 | Medium | PO pickers list inactive suppliers/items | ⏳ Open |
-| N5 | Medium | `reactivate_item` ignores inactive family | ⏳ Open |
-| N8 | Medium | Admin `InactiveFamilyError` → 500 | ⏳ Open |
-| N9 | Medium | Approve overflow on `approved_*` (14,2) | ⏳ Open |
-| N12 | Medium | `_parse_int_id` not used in products/inventory | ⏳ Open |
-| N4 | Low | `update_line` skips `full_clean` | ⏳ Open |
-| N10 | Low | Price `IntegrityError` always reported as duplicate | ⏳ Open |
-| N11 | Low | Receipt qty silent 3 dp quantize | ⏳ Open |
+| N1 | High | Approved PO with zero receipts cannot be cancelled | ✅ Done |
+| N7 | Medium | Banker's rounding on `approved_*` totals | ✅ Done |
+| N3 | Medium | PO pickers list inactive suppliers/items | ✅ Done |
+| N5 | Medium | `reactivate_item` ignores inactive family | ✅ Done |
+| N8 | Medium | Admin `InactiveFamilyError` → 500 | ✅ Done |
+| N9 | Medium | Approve overflow on `approved_*` (14,2) | ✅ Done |
+| N12 | Medium | `_parse_int_id` not used in products/inventory | ✅ Done |
+| N4 | Low | `update_line` skips `full_clean` | ✅ Done |
+| N10 | Low | Price `IntegrityError` always reported as duplicate | ✅ Done |
+| N11 | Low | Receipt qty silent 3 dp quantize | ✅ Done |
 
-When every ⏳ item is ✅ or ⏸ with rationale, archive `1303` under `docs/archive/` and clear this table.
+All N1–N12 findings applied. M7 and L13 remain deferred from 2208 (not part of this review).
 
 ---
 
@@ -102,6 +103,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D25 | `User.timezone` validated (IANA) in `clean()`; middleware `finally: deactivate()` so the timezone never leaks across requests |
 | D26 | Dashboard shows permission codenames only for superusers / `DEBUG` |
 | D27 | **Login rate limiting is a pre-production blocker** — deferred (`django-axes` or proxy); documented in `settings.example.py` |
+| D28 | **Money rounding:** `ROUND_HALF_UP` (half away from zero). Unit costs → 4 dp first, then monetary amounts (net / vat / gross) → 2 dp. Implemented via `procurement.models.round_money`; the future `orders` app must reuse it |
 | — | Dates DD/MM/YYYY (24h); per-user timezone (default `Europe/Lisbon`); EN + pt-PT |
 
 ---
@@ -160,10 +162,11 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 21 Aug 2026, 13:09 WEST)
+## Git (as of 21 Aug 2026, 14:11 WEST)
 
-- Branch: **`p4-m1-l-fixes`**. P4 (M1 + L*) plus 2208 archive/handoff updates are in the working tree (uncommitted). Live review file `docs/code-review-full-2026-08-21-1303.md` is untracked until committed.
-- Working tree also has local `.venv` noise — do **not** commit `.venv` deletions.
+- Branch: **`main`**. The 1303 review fixes (N1–N12) are **committed** (see `git log` for the latest commit). The review is archived under `docs/archive/`.
+- No `p4-m1-l-fixes` branch exists locally or on origin.
+- Working tree has local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
 
@@ -173,7 +176,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
 ```
 
-- Last full suite: **264 OK** in ~25s without `--keepdb`.
+- Last full suite: **288 OK** without `--keepdb`.
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -188,7 +191,7 @@ inventory/      goods receipt + stock ledger (models, services, console_views, a
 accounts/       custom User, warehouse groups, grades, login, timezone middleware, authz.py, capabilities.py
 config/         settings, urls
 logging_utils/  rotating per-app logs
-docs/           plan, handoff, live 1303 review, user-manuals/, tenancy design
+docs/           plan, handoff, archived reviews (incl. 1303), user-manuals/, tenancy design
 ```
 
 **Conventions:** all mutations go through each app's `services.py`; audit-by-design (`*ChangeLog`); plain Django + vanilla JS; `select_for_update()` on updates.
@@ -216,7 +219,7 @@ python manage.py runserver
 |-----|---------|
 | `README.md` | setup, URLs, seed, how to run |
 | `docs/project-plan-2026-08-20.md` | phased plan + status tracker + locked decisions |
-| `docs/code-review-full-2026-08-21-1303.md` | Live follow-up review (after 2208 fixes) |
+| `docs/archive/code-review-full-2026-08-21-1303.md` | Follow-up review — **concluded & archived** (N1–N12 applied) |
 | `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; M7 + L13 deferred) |
 | `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |

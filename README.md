@@ -8,11 +8,11 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 21 August 2026, 13:14 WEST.*
+*Last updated: 21 August 2026, 14:11 WEST.*
 
-Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. Live review: [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md) (start with N1). See [`docs/handoff.md`](docs/handoff.md).
+Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. The 1303 review is **done and archived** (all N1–N12 applied; see [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md)). See [`docs/handoff.md`](docs/handoff.md).
 
-> **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md). Live review: [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md).
+> **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md).
 
 ### User roles (practice with these)
 
@@ -30,10 +30,10 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 
 ### Recommended next session
 
-1. Read [`docs/handoff.md`](docs/handoff.md) and the live review [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md).
+1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next work is that 1303 review** — start with **N1** (cancel an approved PO that has zero receipts). Do not re-open 2208 findings.
+4. **Next task: L13** — add login rate limiting (pre-production blocker), then **M7** (pagination). The 1303 review is done and archived; deferred phases (branches, orders, offline, email, chrome) need a plan first.
 5. Do **not** in passing: branches, orders, offline, email, shared page chrome.
 
 ---
@@ -286,7 +286,7 @@ views (login required) → API + HTML
 
 - **Start here:** [`docs/handoff.md`](docs/handoff.md)
 - [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — phased plan + status tracker
-- [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md) — **live** follow-up review (start with N1)
+- [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md) — follow-up review (concluded, N1–N12 applied)
 - [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) — prior full review (concluded)
 - [`docs/archive/code-review-inventory-2026-08-20.md`](docs/archive/code-review-inventory-2026-08-20.md) — Phase 3 review (concluded)
 - [`docs/archive/code-review-2026-08-20.md`](docs/archive/code-review-2026-08-20.md) · [`docs/archive/code-review-audit.md`](docs/archive/code-review-audit.md) — archived reviews

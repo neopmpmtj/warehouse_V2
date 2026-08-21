@@ -193,6 +193,8 @@ function statusPillClass(status) {
             return "pill pill-danger";
         case "closed":
             return "pill pill-muted";
+        case "cancelled":
+            return "pill pill-danger";
         case "submitted":
             return "pill pill-warn";
         case "draft":
@@ -405,6 +407,10 @@ function renderStatusActions(po, perms) {
         if (perms.change) {
             actions.push({ endpoint: "reject/", labelKey: "actionReject", successKey: "rejected", danger: true, reasonKey: "reasonReject" });
         }
+    } else if (po.status === "approved") {
+        if (perms.change) {
+            actions = [{ endpoint: "cancel/", labelKey: "actionCancel", successKey: "cancelled", danger: true, confirmKey: "confirmCancel", reasonKey: "reasonCancel" }];
+        }
     } else if (po.status === "received") {
         if (perms.change) {
             actions = [{ endpoint: "close/", labelKey: "actionClose", successKey: "closed", confirmKey: "confirmClose", reasonKey: "reasonClose" }];
@@ -568,10 +574,12 @@ async function ensureSuppliersLoaded() {
 function fillSupplierSelect() {
     fillSelect(
         document.getElementById("new-po-supplier"),
-        state.suppliers.map((supplier) => ({
-            value: String(supplier.id),
-            label: supplier.name,
-        })),
+        state.suppliers
+            .filter((supplier) => supplier.is_active)
+            .map((supplier) => ({
+                value: String(supplier.id),
+                label: supplier.name,
+            })),
         t("supplier")
     );
 }
@@ -580,10 +588,12 @@ function fillItemSelect(selectedId) {
     const select = document.getElementById("line-item");
     fillSelect(
         select,
-        state.items.map((item) => ({
-            value: String(item.id),
-            label: `${item.internal_code || "—"} — ${item.description}`,
-        })),
+        state.items
+            .filter((item) => item.is_active && item.family && item.family.is_active)
+            .map((item) => ({
+                value: String(item.id),
+                label: `${item.internal_code || "—"} — ${item.description}`,
+            })),
         t("item")
     );
     if (selectedId && [...select.options].some((option) => option.value === String(selectedId))) {

@@ -21,6 +21,7 @@ from .services import (
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
+    InactiveFamilyError,
     InvalidCostPriceError,
     InvalidSupplierEmailError,
     SupplierNameRequiredError,
@@ -70,6 +71,14 @@ class ItemAdminForm(forms.ModelForm):
             exclude_item_id=exclude_item_id,
         )
         return internal_code
+
+    def clean_family(self):
+        family = self.cleaned_data.get("family")
+        if family is not None and not family.is_active:
+            raise ValidationError(
+                f"Cannot assign items to inactive family '{family.name}'."
+            )
+        return family
 
 
 class ItemChangeLogInline(admin.TabularInline):
@@ -315,7 +324,11 @@ class ItemAdmin(admin.ModelAdmin):
                     messages.ERROR,
                 )
                 return None
-            bulk_reactivate_items(request.user, queryset, reason=reason)
+            try:
+                bulk_reactivate_items(request.user, queryset, reason=reason)
+            except InactiveFamilyError as exc:
+                self.message_user(request, exc.messages[0], messages.ERROR)
+                return None
             self.message_user(
                 request,
                 f"Reactivated {queryset.count()} item(s).",
@@ -579,6 +592,15 @@ class FamilyProductAdmin(admin.ModelAdmin):
     @admin.display(description="Items")
     def item_count(self, obj):
         return obj.items.count()
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
+        # Item's family autocomplete must not offer inactive families (D16).
+        if "autocomplete" in request.path:
+            queryset = queryset.filter(is_active=True)
+        return queryset, use_distinct
 
     def has_module_permission(self, request):
         return request.user.is_superuser

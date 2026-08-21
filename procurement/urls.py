@@ -49,6 +49,11 @@ urlpatterns = [
         name="manage_purchase_order_close",
     ),
     path(
+        "manage/purchase-orders/<int:po_id>/cancel/",
+        console_views.manage_purchase_order_cancel,
+        name="manage_purchase_order_cancel",
+    ),
+    path(
         "manage/purchase-orders/<int:po_id>/history/",
         console_views.manage_purchase_order_history,
         name="manage_purchase_order_history",

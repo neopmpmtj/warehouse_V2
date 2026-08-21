@@ -113,6 +113,41 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertEqual(line.line_net, Decimal("118.75"))
         self.assertEqual(line.line_total, Decimal("137.75"))
 
+    def test_line_net_rounds_half_away_from_zero(self):
+        po = self.create_draft_po()
+        line = services.add_line(po, self.item, quantity="1", unit_cost="2.01")
+        services.update_line(line, discount_commercial="50")
+        line.refresh_from_db()
+
+        # 2.01 * (1 - 0.50) = 1.005 → round half away from zero to 1.01 (not 1.00).
+        self.assertEqual(line.net_unit_cost, Decimal("1.0050"))
+        self.assertEqual(line.line_net, Decimal("1.01"))
+
+    def test_line_vat_rounds_half_away_from_zero(self):
+        po = self.create_draft_po()
+        line = services.add_line(po, self.item, quantity="1", unit_cost="2.01")
+        services.update_line(line, discount_commercial="50")
+        line.vat_rate = Decimal("0.5000")
+        line.save(update_fields=["vat_rate"])
+        line.refresh_from_db()
+
+        # 1.01 * 0.50 = 0.505 → round half away from zero to 0.51 (not 0.50).
+        self.assertEqual(line.line_vat, Decimal("0.51"))
+
+    def test_approve_rounds_totals_half_away_from_zero(self):
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1", unit_cost="2.01")
+        line = po.lines.get()
+        services.update_line(line, discount_commercial="50")
+        services.submit(po, self.user)
+
+        po = services.approve(po, self.user)
+
+        # net 1.005 → 1.01; VAT16 on 1.01 → 0.1616 → 0.16; gross 1.17
+        self.assertEqual(po.approved_net, Decimal("1.01"))
+        self.assertEqual(po.approved_vat, Decimal("0.16"))
+        self.assertEqual(po.approved_gross, Decimal("1.17"))
+
     def test_negative_quantity_is_rejected(self):
         po = self.create_draft_po()
         with self.assertRaises(ValidationError):
@@ -161,6 +196,18 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
                 discount_financial="50",
                 rappel="10",
             )
+
+    def test_update_line_rejects_over_precise_quantity(self):
+        po = self.create_draft_po()
+        line = services.add_line(po, self.item, quantity="1")
+        with self.assertRaises(ValidationError):
+            services.update_line(line, quantity="1.2345")
+
+    def test_update_line_rejects_over_precise_unit_cost(self):
+        po = self.create_draft_po()
+        line = services.add_line(po, self.item, quantity="1")
+        with self.assertRaises(ValidationError):
+            services.update_line(line, unit_cost="1.999")
 
     def test_lines_cannot_change_after_submit(self):
         po = self.create_draft_po()
@@ -335,6 +382,23 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         deactivate_item(self.user, self.item, reason="Delisted")
         with self.assertRaises(services.InactiveItemError):
             services.add_line(po, self.item, quantity="1")
+
+    def test_add_line_rejects_item_under_inactive_family(self):
+        from products.services import update_family
+
+        po = self.create_draft_po()
+        update_family(self.family, is_active=False)
+        with self.assertRaises(services.InactiveItemError):
+            services.add_line(po, self.item, quantity="1")
+
+    def test_submit_rejects_item_under_inactive_family(self):
+        from products.services import update_family
+
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        update_family(self.family, is_active=False)
+        with self.assertRaises(services.InactiveItemError):
+            services.submit(po, self.user)
 
     def test_submit_rejects_when_item_deactivated(self):
         from products.services import deactivate_item
@@ -561,6 +625,46 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["purchase_order"]["status"], "draft")
 
+    def _approve_po_via_api(self, po_id):
+        self.client.post(
+            reverse("manage_purchase_order_lines", args=[po_id]),
+            data=json.dumps({"item_id": self.item.id, "quantity": "1"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.client.post(reverse("manage_purchase_order_submit", args=[po_id]), **self.host)
+        return self.client.post(
+            reverse("manage_purchase_order_approve", args=[po_id]), **self.host
+        )
+
+    def test_cancel_approved_po_through_api(self):
+        self.client.force_login(self.user)
+        po = self._create_po_via_api()
+        self._approve_po_via_api(po["id"])
+
+        resp = self.client.post(
+            reverse("manage_purchase_order_cancel", args=[po["id"]]),
+            data=json.dumps({"reason": "Supplier cannot fulfil"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["purchase_order"]["status"], "cancelled")
+
+    def test_cancel_requires_reason_through_api(self):
+        self.client.force_login(self.user)
+        po = self._create_po_via_api()
+        self._approve_po_via_api(po["id"])
+
+        resp = self.client.post(
+            reverse("manage_purchase_order_cancel", args=[po["id"]]),
+            data=json.dumps({"reason": ""}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()["code"], "cancel_reason_required")
+
     def test_add_line_unknown_item_returns_404(self):
         self.client.force_login(self.user)
         po = self._create_po_via_api()
@@ -674,6 +778,13 @@ class PurchaseOrderGradeAndAuditTests(PurchaseOrderTestCaseMixin, TestCase):
         po = services.approve(po, self.user)
         self.assertEqual(po.approved_by, self.user)
 
+    def test_approve_rejects_totals_overflow(self):
+        po = self._submitted_po(quantity="1000", unit_cost="9999999999.99")
+        with self.assertRaises(services.ApprovalTotalOverflowError):
+            services.approve(po, self.user)
+        po.refresh_from_db()
+        self.assertEqual(po.status, PurchaseOrder.Status.SUBMITTED)
+
     def test_approve_stores_optional_reason(self):
         po = self._submitted_po(quantity="1")
         po = services.approve(po, self.user, reason="OK to buy")
@@ -740,6 +851,46 @@ class PurchaseOrderGradeAndAuditTests(PurchaseOrderTestCaseMixin, TestCase):
             changes__status__new=PurchaseOrder.Status.RECEIVED,
         ).latest("created_at")
         self.assertEqual(receive_log.reason, "Goods received")
+
+    def _approved_po(self, quantity="1"):
+        po = self._submitted_po(quantity=quantity)
+        return services.approve(po, self.user)
+
+    def test_cancel_approved_po_with_no_receipts(self):
+        po = self._approved_po()
+        po = services.cancel(po, self.user, reason="Supplier cannot fulfil")
+
+        self.assertEqual(po.status, PurchaseOrder.Status.CANCELLED)
+        log = po.change_logs.filter(
+            action=PurchaseOrderChangeLog.Action.STATUS_CHANGED,
+            changes__status__new=PurchaseOrder.Status.CANCELLED,
+        ).latest("created_at")
+        self.assertEqual(log.reason, "Supplier cannot fulfil")
+
+    def test_cancel_requires_reason(self):
+        po = self._approved_po()
+        with self.assertRaises(ValidationError) as ctx:
+            services.cancel(po, self.user, reason="   ")
+        self.assertEqual(ctx.exception.code, "cancel_reason_required")
+
+    def test_cancel_non_approved_is_invalid(self):
+        po = self._submitted_po()
+        with self.assertRaises(services.InvalidStatusTransitionError):
+            services.cancel(po, self.user, reason="Changed my mind")
+
+    def test_cancel_with_receipts_is_rejected(self):
+        from inventory.models import GoodsReceipt, GoodsReceiptLine
+
+        po = self._approved_po()
+        line = po.lines.get()
+        receipt = GoodsReceipt.objects.create(purchase_order=po, received_by=self.user)
+        GoodsReceiptLine.objects.create(
+            goods_receipt=receipt,
+            purchase_order_line=line,
+            quantity_received=Decimal("1"),
+        )
+        with self.assertRaises(services.PurchaseOrderCancelError):
+            services.cancel(po, self.user, reason="Void")
 
     def test_notify_stub_runs_on_commit(self):
         from unittest.mock import patch

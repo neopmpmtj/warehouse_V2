@@ -342,6 +342,12 @@ def manage_purchase_order_close(request, po_id):
 
 
 @procurement_required
+@require_POST
+def manage_purchase_order_cancel(request, po_id):
+    return _status_action(request, po_id, services.cancel, CHANGE_PO)
+
+
+@procurement_required
 @require_GET
 def manage_purchase_order_history(request, po_id):
     try:

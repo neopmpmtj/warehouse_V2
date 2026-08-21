@@ -328,6 +328,22 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
             1,
         )
 
+    def test_reactivate_item_rejects_inactive_family(self):
+        item = create_item(
+            self.user,
+            family=self.family,
+            description="Under inactive family",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+        )
+        update_family(self.family, is_active=False)
+
+        with self.assertRaises(InactiveFamilyError):
+            reactivate_item(self.user, item, reason="Back in stock")
+
+        item.refresh_from_db()
+        self.assertFalse(item.is_active)
+
     def test_deactivate_already_inactive_does_not_require_reason(self):
         item = self.create_test_item(self.user, description="Already hidden")
         deactivate_item(self.user, item, reason="End of line")
@@ -503,6 +519,35 @@ class ItemAdminAccessTests(TestCase):
         response = self.client.get(self.changelist_url)
 
         self.assertIn(response.status_code, (302, 403))
+
+    def test_admin_create_rejects_inactive_family(self):
+        inactive = create_family("Legacy", is_active=False)
+        vat = VatRate.objects.get(code="VAT16")
+        self.client.force_login(self.superuser)
+
+        response = self.client.post(
+            reverse("admin:products_item_add"),
+            {
+                "family": str(inactive.pk),
+                "internal_code": "",
+                "description": "Under inactive family",
+                "unit_of_measure": "piece",
+                "reorder_level": "0",
+                "retail_price": "0",
+                "wholesale_price": "0",
+                "special_price": "0",
+                "vat_rate": str(vat.pk),
+                "_save": "Save",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        form = response.context["adminform"].form
+        self.assertFormError(
+            form,
+            "family",
+            "Cannot assign items to inactive family 'Legacy'.",
+        )
 
 
 class FamilyProductAdminAccessTests(TestCase):
@@ -1101,6 +1146,39 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(response.json()["code"], "deactivate_reason_required")
         item.refresh_from_db()
         self.assertTrue(item.is_active)
+
+    def test_item_create_rejects_bool_family_id(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps({
+                "family_id": True,
+                "description": "Bad family id",
+                "unit_of_measure": Item.UnitOfMeasure.PIECE,
+                "vat_rate_id": self.vat_rate.id,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("integer", response.json()["error"].lower())
+
+    def test_bulk_rejects_bool_ids(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_bulk"),
+            data=json.dumps({
+                "action": "reactivate",
+                "ids": [True],
+                "reason": "x",
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("integer", response.json()["error"].lower())
 
     def test_staff_can_create_family_through_console_api(self):
         self.client.force_login(self.staff_user)
@@ -1712,6 +1790,26 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
             create_supplier_item_price(self.supplier, self.item, "9.99")
 
         self.assertEqual(SupplierItemPrice.objects.count(), 1)
+
+    def test_primary_unique_violation_reports_primary_error(self):
+        from products.services import (
+            DuplicatePrimarySupplierItemPriceError,
+            _save_supplier_item_price,
+        )
+
+        other_supplier = create_supplier(name="Porto Materials Co")
+        create_supplier_item_price(
+            self.supplier, self.item, "12.50", primary=True, user=self.user
+        )
+
+        duplicate_primary = SupplierItemPrice(
+            supplier=other_supplier,
+            item=self.item,
+            cost_price=Decimal("11.00"),
+            primary=True,
+        )
+        with self.assertRaises(DuplicatePrimarySupplierItemPriceError):
+            _save_supplier_item_price(duplicate_primary)
 
     def test_negative_cost_price_is_rejected(self):
         with self.assertRaises(InvalidCostPriceError):

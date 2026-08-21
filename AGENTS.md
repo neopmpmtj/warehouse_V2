@@ -2,7 +2,7 @@
 
 Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done. Branches, orders, offline, and email are deferred.
 
-**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup and [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing. Live review backlog: [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md). The 2208 review is **archived** ([`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md)).
+**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup and [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing. Reviews are concluded and archived: [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md) (N1–N12) and [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) (P0–P4).
 
 ## Session handoff (August 2026)
 
@@ -10,7 +10,7 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 
 **Not done:** `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
 
-**Next:** live review [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md) — start with **N1** (cancel approved PO with zero receipts). Do not re-open 2208 IDs. Product phases 5–7 remain deferred/pending/future. Do **not** implement `orders/` or the tenancy-doc Order stub.
+**Next:** **L13** — add login rate limiting (pre-production blocker; see `config/settings.example.py`), then **M7** (pagination). The 1303 review is **done and archived** (all N1–N12 applied). Product phases 5–7 remain deferred/pending/future; do **not** implement `orders/` or the tenancy-doc Order stub without a plan.
 
 **Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive and resets grade to 1. Approval uses grades + `ApprovalLimit` (EUR gross); reject/manual close/`adjust_stock` require a reason. Selling prices & `reorder_level` must be finite and ≥ 0 (DB `CheckConstraint`s); PO line quantity capped at 1e9; login rate limiting is a documented pre-production blocker (deferred).
 
@@ -97,7 +97,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 ## Documentation conventions
 
 - **Always put a full timestamp (date + time) in document filenames** — e.g. `code-review-full-2026-08-20-1928.md` (format `YYYY-MM-DD-HHMM`). The timestamp makes the chronological order self-evident when many similarly-named docs accumulate.
-- Reviews/audits are worked to completion, marked done, then archived under `docs/archive/` — never left as a live backlog. Live backlog: [`docs/code-review-full-2026-08-21-1303.md`](docs/code-review-full-2026-08-21-1303.md). The 2208 review is concluded and archived.
+- Reviews/audits are worked to completion, marked done, then archived under `docs/archive/` — never left as a live backlog. Both the 2208 and 1303 reviews are concluded and archived.
 
 ## Commands
 

@@ -37,7 +37,10 @@ STATUS_TRANSITIONS = {
         PurchaseOrder.Status.APPROVED,
         PurchaseOrder.Status.REJECTED,
     },
-    PurchaseOrder.Status.APPROVED: {PurchaseOrder.Status.RECEIVED},
+    PurchaseOrder.Status.APPROVED: {
+        PurchaseOrder.Status.RECEIVED,
+        PurchaseOrder.Status.CANCELLED,
+    },
     PurchaseOrder.Status.RECEIVED: {PurchaseOrder.Status.CLOSED},
     PurchaseOrder.Status.REJECTED: {PurchaseOrder.Status.DRAFT},
 }
@@ -147,12 +150,30 @@ class ApprovalPolicyForbiddenError(ValidationError):
         )
 
 
+class PurchaseOrderCancelError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A purchase order with receipts cannot be cancelled. Close it instead to accept a short shipment.",
+            code="purchase_order_not_cancelable",
+        )
+
+
+class ApprovalTotalOverflowError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Purchase order totals exceed the maximum supported value.",
+            code="approval_total_overflow",
+        )
+
+
 DEFAULT_APPROVAL_LIMITS = (
     (GROUP_MANAGERS, 2, Decimal("5000.00"), Decimal("100.00")),
     (GROUP_MANAGERS, 3, Decimal("50000.00"), Decimal("500.00")),
 )
 CLOSE_REASON_FULLY_RECEIVED = "Fully received"
 RECEIVE_REASON_GOODS_RECEIVED = "Goods received"
+# approved_net/vat/gross are (14,2); totals must stay below 1e12 to avoid a DataError.
+MAX_APPROVED_TOTAL = Decimal("1000000000000")
 
 
 def _resolve_supplier(supplier):
@@ -211,7 +232,12 @@ def _ensure_supplier_active(supplier):
 
 
 def _ensure_item_active(item):
-    if not Item.objects.filter(pk=item.pk, is_active=True).exists():
+    # Usable only when the item AND its family are active (D16: deactivating a
+    # family does not cascade-deactivate items, so an item can still be active
+    # under an inactive family).
+    if not Item.objects.filter(
+        pk=item.pk, is_active=True, family__is_active=True
+    ).exists():
         raise InactiveItemError(item)
 
 
@@ -248,6 +274,15 @@ def _po_has_remaining(po):
         (line.quantity - received_map.get(line.id, Decimal("0"))) > 0
         for line in po.lines.all()
     )
+
+
+def _po_has_receipts(po):
+    """True if any goods receipt line exists against this PO (i.e. stock was written)."""
+    from inventory.models import GoodsReceiptLine
+
+    return GoodsReceiptLine.objects.filter(
+        purchase_order_line__purchase_order=po
+    ).exists()
 
 
 def ensure_default_approval_limits():
@@ -544,6 +579,7 @@ def update_line(line, user=None, **fields):
         line.discount_financial,
         line.rappel,
     )
+    line.full_clean(exclude=None, validate_unique=False, validate_constraints=False)
     line.save(update_fields=[*changes.keys(), "updated_at"])
     _log(
         po,
@@ -672,6 +708,9 @@ def approve(po, user=None, reason=""):
     _validate_all_lines_have_supplier_price(po)
     net, vat, gross = po.totals()
     _assert_can_approve(po, user, gross)
+    for total in (net, vat, gross):
+        if total.copy_abs() >= MAX_APPROVED_TOTAL:
+            raise ApprovalTotalOverflowError()
     po.status = PurchaseOrder.Status.APPROVED
     po.approved_by = user
     po.approved_at = timezone.now()
@@ -771,6 +810,31 @@ def close(po, user=None, reason=""):
         reason=reason,
     )
     logger.info("Closed purchase order id=%s user=%s", po.id, getattr(user, "email", None))
+    return po
+
+
+@transaction.atomic
+def cancel(po, user=None, reason=""):
+    """Cancel an approved PO that has no receipts. Terminal void; use close() for short shipments."""
+    po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
+    _transition(po, PurchaseOrder.Status.CANCELLED)
+    reason = _require_reason(
+        reason,
+        "cancel_reason_required",
+        "A reason is required to cancel a purchase order.",
+    )
+    if _po_has_receipts(po):
+        raise PurchaseOrderCancelError()
+    po.status = PurchaseOrder.Status.CANCELLED
+    po.save(update_fields=["status", "updated_at"])
+    _log(
+        po,
+        user,
+        PurchaseOrderChangeLog.Action.STATUS_CHANGED,
+        {"status": {"old": PurchaseOrder.Status.APPROVED, "new": PurchaseOrder.Status.CANCELLED}},
+        reason=reason,
+    )
+    logger.info("Cancelled purchase order id=%s user=%s", po.id, getattr(user, "email", None))
     return po
 
 

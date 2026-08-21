@@ -450,6 +450,8 @@ def reactivate_item(user, item, reason=""):
     if not reason:
         raise ReactivateReasonRequiredError()
 
+    _ensure_family_active(item.family)
+
     item.is_active = True
     _save_item(item, update_fields=["is_active", "updated_at"])
     _log_item_change(
@@ -821,6 +823,14 @@ class DuplicateSupplierItemPriceError(ValidationError):
         )
 
 
+class DuplicatePrimarySupplierItemPriceError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "This item already has a primary supplier price.",
+            code="duplicate_primary_supplier_item_price",
+        )
+
+
 class InvalidCostPriceError(ValidationError):
     def __init__(self):
         super().__init__(
@@ -861,8 +871,11 @@ def _save_supplier_item_price(supplier_item_price, update_fields=None):
                 supplier_item_price.save()
             else:
                 supplier_item_price.save(update_fields=update_fields)
-    except IntegrityError:
-        raise DuplicateSupplierItemPriceError()
+    except IntegrityError as exc:
+        cause = exc.__cause__ if exc.__cause__ is not None else exc
+        if "unique_primary_supplier_item_price" in str(cause):
+            raise DuplicatePrimarySupplierItemPriceError() from exc
+        raise DuplicateSupplierItemPriceError() from exc
     except DataError as exc:
         raise ValidationError(f"Invalid value: {exc}") from exc
 

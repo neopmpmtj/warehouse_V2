@@ -1,7 +1,19 @@
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.db import models
+
+
+# Money rounding convention (locked decision D28): round half away from zero
+# (ROUND_HALF_UP). Unit costs are rounded to 4 dp first, then monetary line
+# amounts (net / vat / gross) to 2 dp. The future `orders` app must reuse these.
+MONEY_4DP = Decimal("0.0001")
+MONEY_2DP = Decimal("0.01")
+
+
+def round_money(value, places):
+    """Quantize a Decimal to a monetary precision, rounding half away from zero."""
+    return value.quantize(places, rounding=ROUND_HALF_UP)
 
 
 class PurchaseOrder(models.Model):
@@ -12,6 +24,7 @@ class PurchaseOrder(models.Model):
         RECEIVED = "received", "Received"
         CLOSED = "closed", "Closed"
         REJECTED = "rejected", "Rejected"
+        CANCELLED = "cancelled", "Cancelled"
 
     supplier = models.ForeignKey(
         "products.Supplier",
@@ -102,15 +115,15 @@ class PurchaseOrderLine(models.Model):
     @property
     def net_unit_cost(self):
         value = self.unit_cost * (Decimal("1") - self.total_discount_rate / Decimal("100"))
-        return value.quantize(Decimal("0.0001"))
+        return round_money(value, MONEY_4DP)
 
     @property
     def line_net(self):
-        return (self.net_unit_cost * self.quantity).quantize(Decimal("0.01"))
+        return round_money(self.net_unit_cost * self.quantity, MONEY_2DP)
 
     @property
     def line_vat(self):
-        return (self.line_net * self.vat_rate).quantize(Decimal("0.01"))
+        return round_money(self.line_net * self.vat_rate, MONEY_2DP)
 
     @property
     def line_total(self):

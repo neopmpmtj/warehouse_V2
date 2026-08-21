@@ -1,4 +1,4 @@
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -117,14 +117,14 @@ def ledger_quantity(item):
 
 
 def _parse_decimal_quantity(value):
-    """Parse, bound and quantise a quantity to the field precision (12,3)."""
+    """Parse, bound and quantise a quantity to the field precision (12,3), rounding half away from zero."""
     try:
         qty = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError) as exc:
         raise InvalidQuantityError() from exc
     if not qty.is_finite():
         raise InvalidQuantityError()
-    rounded = qty.quantize(Decimal("0.001"))
+    rounded = qty.quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
     if qty != 0 and rounded == 0:
         raise InvalidQuantityError("Quantity is too small (rounds to zero).")
     if rounded.copy_abs() >= Decimal("1000000000"):

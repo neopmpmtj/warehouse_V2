@@ -52,6 +52,22 @@ def _parse_decimal(payload, field_name, required=True):
         raise ValidationError(f"{field_name} must be a number.") from exc
 
 
+def _parse_int_id(value, field_name):
+    """Accept a positive integer id; reject floats/bools that int() would coerce."""
+    if isinstance(value, bool) or value is None:
+        raise ValidationError(f"{field_name} must be an integer.")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        raise ValidationError(f"{field_name} must be an integer.")
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or not stripped.isdigit():
+            raise ValidationError(f"{field_name} must be an integer.")
+        return int(stripped)
+    raise ValidationError(f"{field_name} must be an integer.")
+
+
 def _serialize_receipt_line(line):
     po_line = line.purchase_order_line
     return {
@@ -153,9 +169,18 @@ def manage_goods_receipt_list(request):
         lines = payload.get("lines")
         if not isinstance(lines, list) or not lines:
             raise ValidationError("lines must be a non-empty list.")
+        normalized_lines = []
+        for entry in lines:
+            if not isinstance(entry, dict):
+                normalized_lines.append(entry)
+                continue
+            raw_line_id = entry.get("line_id", entry.get("purchase_order_line_id"))
+            if raw_line_id is not None:
+                entry = {**entry, "line_id": _parse_int_id(raw_line_id, "line_id")}
+            normalized_lines.append(entry)
         receipt = services.receive_goods(
-            po=purchase_order_id,
-            lines=lines,
+            po=_parse_int_id(purchase_order_id, "purchase_order_id"),
+            lines=normalized_lines,
             user=request.user,
             reference=str(payload.get("reference", "")),
             notes=str(payload.get("notes", "")),
@@ -238,7 +263,7 @@ def manage_stock_adjustment(request):
         if "quantity" not in payload:
             raise ValidationError("quantity is required.")
         movement = services.adjust_stock(
-            item=item_id,
+            item=_parse_int_id(item_id, "item_id"),
             quantity=_parse_decimal(payload, "quantity"),
             reason=str(payload.get("reason", "")),
             user=request.user,

@@ -200,6 +200,22 @@ def _parse_decimal(payload, field_name, required=True):
     return parsed
 
 
+def _parse_int_id(value, field_name):
+    """Accept a positive integer id; reject floats/bools that int() would coerce."""
+    if isinstance(value, bool) or value is None:
+        raise ValidationError(f"{field_name} must be an integer.")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        raise ValidationError(f"{field_name} must be an integer.")
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or not stripped.isdigit():
+            raise ValidationError(f"{field_name} must be an integer.")
+        return int(stripped)
+    raise ValidationError(f"{field_name} must be an integer.")
+
+
 def _parse_unit(payload, required=True):
     if "unit_of_measure" not in payload:
         if required:
@@ -280,10 +296,10 @@ def manage_item_list(request):
             raise ValidationError("vat_rate_id is required.")
         item = create_item(
             request.user,
-            family=int(family_id),
+            family=_parse_int_id(family_id, "family_id"),
             description=description,
             unit_of_measure=_parse_unit(payload),
-            vat_rate=int(vat_rate_id),
+            vat_rate=_parse_int_id(vat_rate_id, "vat_rate_id"),
             internal_code=str(payload.get("internal_code", "")),
             reorder_level=_parse_decimal(payload, "reorder_level")
             if "reorder_level" in payload
@@ -335,7 +351,7 @@ def manage_item_detail(request, item_id):
         if "internal_code" in payload:
             fields["internal_code"] = str(payload["internal_code"])
         if "family_id" in payload:
-            fields["family"] = int(payload["family_id"])
+            fields["family"] = _parse_int_id(payload["family_id"], "family_id")
         if "unit_of_measure" in payload:
             fields["unit_of_measure"] = _parse_unit(payload)
         if "reorder_level" in payload:
@@ -347,7 +363,7 @@ def manage_item_detail(request, item_id):
         if "special_price" in payload:
             fields["special_price"] = _parse_decimal(payload, "special_price")
         if "vat_rate_id" in payload:
-            fields["vat_rate"] = int(payload["vat_rate_id"])
+            fields["vat_rate"] = _parse_int_id(payload["vat_rate_id"], "vat_rate_id")
 
         item = update_item(
             request.user,
@@ -416,7 +432,7 @@ def manage_item_bulk(request):
         ids = payload.get("ids")
         if not isinstance(ids, list) or not ids:
             raise ValidationError("ids must be a non-empty list.")
-        item_ids = [int(item) for item in ids]
+        item_ids = [_parse_int_id(item, "ids") for item in ids]
     except (ValidationError, TypeError, ValueError) as exc:
         message = exc.messages[0] if isinstance(exc, ValidationError) and getattr(exc, "messages", None) else str(exc)
         return _json_error(message)
@@ -435,6 +451,8 @@ def manage_item_bulk(request):
         action(request.user, items, reason=reason)
     except (DeactivateReasonRequiredError, ReactivateReasonRequiredError) as exc:
         return _json_error(exc.messages[0], code=exc.code)
+    except ValidationError as exc:
+        return _json_error(exc.messages[0] if exc.messages else str(exc))
 
     refreshed = (
         Item.objects.select_related("family", "vat_rate")
@@ -767,8 +785,8 @@ def manage_supplier_item_price_list(request):
         if not isinstance(primary, bool):
             raise ValidationError("primary must be a boolean.")
         sip = create_supplier_item_price(
-            supplier=int(supplier_id),
-            item=int(item_id),
+            supplier=_parse_int_id(supplier_id, "supplier_id"),
+            item=_parse_int_id(item_id, "item_id"),
             cost_price=_parse_decimal(payload, "cost_price"),
             primary=primary,
             user=request.user,
