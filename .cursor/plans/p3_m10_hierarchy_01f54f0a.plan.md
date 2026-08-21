@@ -207,5 +207,5 @@ Prefer `TestCase`. Cover at least:
 ## 9. Docs after green
 
 - [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md) — **all five M10 bullets Done**. Tracker M10 → ✅. Do **not** archive (M1 + L* remain).
-- [`docs/handoff.md`](docs/handoff.md) + [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — **D18** (grades + approval limits); **D19** (PO/stock reason rules + `on_commit` stub). Next: P4 = M1 + L1–L14.
+- [`docs/handoff.md`](docs/handoff.md) + [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) — **D18** (grades + approval limits); **D19** (PO/stock reason rules + `on_commit` stub). Next: P4 = M1 + L1–L14.
 - [`AGENTS.md`](AGENTS.md) / [`README.md`](README.md) — extra seed users; managers need grade ≥ 2 to approve; close/reject/adjust require a reason.

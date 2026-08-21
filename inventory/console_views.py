@@ -68,6 +68,30 @@ def _parse_int_id(value, field_name):
     raise ValidationError(f"{field_name} must be an integer.")
 
 
+def _paginate(queryset, request):
+    """Return (items, meta) from ?page=&page_size=; full list when params omitted."""
+    page_raw = request.GET.get("page")
+    size_raw = request.GET.get("page_size")
+    if page_raw is None and size_raw is None:
+        return list(queryset), None
+    try:
+        page = max(int(page_raw) if page_raw is not None else 1, 1)
+        size = max(int(size_raw) if size_raw is not None else 50, 1)
+    except (TypeError, ValueError):
+        page, size = 1, 50
+    size = min(size, 200)
+    total = queryset.count()
+    start = (page - 1) * size
+    items = list(queryset[start:start + size])
+    meta = {
+        "total": total,
+        "page": page,
+        "page_size": size,
+        "num_pages": (total + size - 1) // size if size else 0,
+    }
+    return items, meta
+
+
 def _serialize_receipt_line(line):
     po_line = line.purchase_order_line
     return {
@@ -147,15 +171,16 @@ def _get_receipt(receipt_id):
 @require_http_methods(["GET", "POST"])
 def manage_goods_receipt_list(request):
     if request.method == "GET":
-        receipts = services.get_goods_receipts()
-        return JsonResponse(
-            {
-                "goods_receipts": [
-                    _serialize_receipt(receipt, include_lines=False)
-                    for receipt in receipts
-                ]
-            }
-        )
+        receipts, meta = _paginate(services.get_goods_receipts().order_by("-id"), request)
+        payload = {
+            "goods_receipts": [
+                _serialize_receipt(receipt, include_lines=False)
+                for receipt in receipts
+            ]
+        }
+        if meta is not None:
+            payload.update(meta)
+        return JsonResponse(payload)
 
     denied = deny_unless(request, ADD_GOODS_RECEIPT)
     if denied:
@@ -222,10 +247,17 @@ def manage_receipt_summary(request, po_id):
 @require_GET
 def manage_stock_movements(request):
     item_id = request.GET.get("item_id")
-    try:
-        movements = list(services.get_stock_movements(item=item_id))
-    except ValueError:
-        return _json_error("Invalid item_id.", status=400)
+    if item_id:
+        try:
+            item_id = _parse_int_id(item_id, "item_id")
+        except ValidationError:
+            return _json_error("Invalid item_id.", status=400)
+    else:
+        item_id = None
+
+    movements, meta = _paginate(
+        services.get_stock_movements(item=item_id).order_by("-id"), request
+    )
     receipt_ct = ContentType.objects.get_for_model(GoodsReceipt)
     receipt_ids = [
         m.object_id
@@ -233,19 +265,20 @@ def manage_stock_movements(request):
         if m.content_type_id == receipt_ct.id and m.object_id
     ]
     receipts = {r.id: r for r in GoodsReceipt.objects.filter(pk__in=receipt_ids)}
-    return JsonResponse(
-        {
-            "stock_movements": [
-                _serialize_movement(
-                    m,
-                    receipt=receipts.get(m.object_id)
-                    if m.content_type_id == receipt_ct.id
-                    else None,
-                )
-                for m in movements
-            ]
-        }
-    )
+    payload = {
+        "stock_movements": [
+            _serialize_movement(
+                m,
+                receipt=receipts.get(m.object_id)
+                if m.content_type_id == receipt_ct.id
+                else None,
+            )
+            for m in movements
+        ]
+    }
+    if meta is not None:
+        payload.update(meta)
+    return JsonResponse(payload)
 
 
 @inventory_required

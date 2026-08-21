@@ -31,6 +31,8 @@ const state = {
     editingId: null,
     sortKey: null,
     sortDir: "asc",
+    page: 1,
+    pageSize: 50,
     familyHistoryId: null,
     familyHistoryEntries: [],
     supplierHistoryId: null,
@@ -403,20 +405,57 @@ function fillFormLookups() {
     );
 }
 
+function currentPageItems() {
+    const full = sortedItems(filteredItems());
+    const start = (state.page - 1) * state.pageSize;
+    return {
+        full,
+        rows: full.slice(start, start + state.pageSize),
+    };
+}
+
+function resetPage() {
+    state.page = 1;
+}
+
+function renderPagination(total) {
+    const prev = document.getElementById("items-prev");
+    const next = document.getElementById("items-next");
+    const label = document.getElementById("items-page-label");
+    if (!prev || !next || !label) {
+        return;
+    }
+    const numPages = Math.max(Math.ceil(total / state.pageSize), 1);
+    label.textContent = t("pageOf", { page: state.page, pages: numPages });
+    prev.disabled = state.page <= 1;
+    next.disabled = state.page >= numPages;
+}
+
+function goToPage(page) {
+    const numPages = Math.max(Math.ceil(filteredItems().length / state.pageSize), 1);
+    if (page < 1 || page > numPages) {
+        return;
+    }
+    state.page = page;
+    renderTable();
+}
+
 function renderTable() {
     const body = document.getElementById("item-table-body");
     if (!body) {
         return;
     }
-    const rows = sortedItems(filteredItems());
+    const { full, rows } = currentPageItems();
     body.replaceChildren();
 
     document.getElementById("result-count").textContent = t("showingCount", {
-        shown: rows.length,
+        shown: full.length,
         total: state.items.length,
     });
 
-    if (rows.length === 0) {
+    renderPagination(full.length);
+
+    if (full.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
         cell.colSpan = 9;
@@ -1907,11 +1946,11 @@ function bindEvents() {
         setTheme(currentTheme() === "dark" ? "light" : "dark");
     });
     ["search-input", "family-filter", "status-filter", "unit-filter"].forEach((id) => {
-        document.getElementById(id).addEventListener("input", renderTable);
-        document.getElementById(id).addEventListener("change", renderTable);
+        document.getElementById(id).addEventListener("input", () => { resetPage(); renderTable(); });
+        document.getElementById(id).addEventListener("change", () => { resetPage(); renderTable(); });
     });
     document.getElementById("select-all").addEventListener("change", (event) => {
-        const rows = filteredItems();
+        const { rows } = currentPageItems();
         if (event.target.checked) {
             rows.forEach((item) => state.selectedIds.add(item.id));
         } else {
@@ -1919,6 +1958,8 @@ function bindEvents() {
         }
         renderTable();
     });
+    document.getElementById("items-prev").addEventListener("click", () => goToPage(state.page - 1));
+    document.getElementById("items-next").addEventListener("click", () => goToPage(state.page + 1));
     document.getElementById("bulk-apply").addEventListener("click", applyBulk);
     document.getElementById("manage-families").addEventListener("click", () => {
         openFamilyDrawer();
@@ -1956,6 +1997,7 @@ function bindEvents() {
             event.preventDefault();
             const key = button.closest("th").getAttribute("data-sort");
             toggleSort(key);
+            resetPage();
             renderTable();
         });
     }

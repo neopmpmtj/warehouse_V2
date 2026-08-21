@@ -3,8 +3,21 @@
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
 - **Last updated:** 21 August 2026
-- **Current phase:** Phase 4 (manager catalog) complete ✅ — phases 0–4 done; branches/email/mobile remain deferred/pending/future. **Live review:** [`docs/code-review-full-2026-08-21-1303.md`](code-review-full-2026-08-21-1303.md) (N1 first). 2208 is archived ([`docs/archive/code-review-full-2026-08-20-2208.md`](archive/code-review-full-2026-08-20-2208.md)). See [`docs/handoff.md`](handoff.md).
-- **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is deferred — see [Phase 5](#phase-5--branches--internal-request-deferred).
+- **Current phase:** Phase 4 (manager catalog) complete ✅ — phases 0–4 done and stable (**294 tests green**). The 1303 review is **archived** (all N1–N12 applied; [`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)); 2208 is archived too. **Next: Phase 5 — branches** (plan to be authored). See [`docs/handoff.md`](handoff.md) — the live source of truth.
+- **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is **next** — see Phase 5 below.
+
+## Status vocabulary
+
+| Marker | Meaning |
+|--------|---------|
+| ✅ **Done** | Built, tested, shipped |
+| 🔜 **Next** | The current work item — actionable now |
+| ⏸ **Deferred** | Deliberately postponed (dependency, or a "not now" decision); returns to Next once the reason clears |
+| ⏸ **Pending** | Waiting on a trigger/decision; often a stub/seam already exists |
+| ⏸ **Future** | Long-term "someday"; no near-term commitment |
+| `[x]` / `[ ]` | §15 status-tracker checklist *within* a phase (done / to-do) |
+
+> **"Deferred" is a *decision*, not "not done yet".** It graduates to **Next** when its dependency clears — e.g. Phase 5 was deferred until Phases 0–4 completed.
 
 ---
 
@@ -91,11 +104,11 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D4 | Supplier price storage | separate table `SupplierItemPrice`, `unique(supplier, item)`, **no** supplier SKU / validity dates for now |
 | D5 | Stock model | movement **ledger** + cached quantity on `Item` |
 | D6 | Goods receipt ↔ PO | **many receipts per PO** (partial / split shipments) |
-| D7 | Approval workflow | `draft → submitted → approved → received → closed` (+ `rejected`) |
+| D7 | Approval workflow | `draft → submitted → approved/rejected → received → closed`, plus **`cancelled`** (approved PO with zero receipts; required reason) |
 | D8 | Rappel | simple per-line % now; shape later |
 | D9 | Email automation | deferred to a **pending phase**; model a stub seam now |
 | D10 | Branches | **not now**; only keep products branch-ready |
-| D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — **auto-suggested by default** when procuring (PO line), **always overridable** |
+| D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
 | D13 | Approved totals snapshot | `approved_net` / `approved_vat` / `approved_gross` frozen at `approve()` |
 | D14 | One primary supplier price per item | DB partial unique `unique_primary_supplier_item_price`; lock Item; clear other primaries before save |
@@ -112,6 +125,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D25 | Timezone validation | `User.clean()` (IANA); middleware `finally: deactivate()` |
 | D26 | Dashboard permission list | Shown only to superusers / `DEBUG` |
 | D27 | Login rate limiting | **Pre-production blocker** — deferred (`django-axes` or proxy) |
+| D28 | Money rounding | `ROUND_HALF_UP` (half away from zero) via `procurement.models.round_money` — unit costs to 4 dp first, then monetary amounts to 2 dp |
 | O1 | Item-level buying-price display | **Option A** — `primary` flag (one per item); fall back to cheapest if none marked — **implemented** |
 
 ### Open ⚠️
@@ -125,6 +139,8 @@ None. O1 was resolved as Option A (see locked table).
 ## 6. Current state
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
+
+**Current (Aug 2026):** phases 0–4 complete; both review backlogs cleared (2208 P0–P4, 1303 N1–N12) and archived; M7 console pagination done; **294 tests green**. Remaining: Phase 5 (branches — **next**), Phase 6 (email), Phase 7 (mobile/offline/OAuth), and L13 (login rate limiting, production-only).
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -143,7 +159,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 2 | Procurement — purchase orders, discounts, approval | ✅ Done | Phase 1 |
 | 3 | Goods receipt + stock ledger | ✅ Done | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ✅ Done | Phase 3 |
-| 5 | Branches + internal request + branch catalog | ⏸ Deferred | Phase 4 |
+| 5 | Branches + internal request + branch catalog | 🔜 **Next** (plan to be authored) | Phase 4 |
 | 6 | Email automation (supplier notifications) | ⏸ Pending | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
@@ -291,7 +307,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 
 - `GoodsReceipt`: FK → `PurchaseOrder` (many receipts per PO, D6), `received_by`, `received_at`, `reference` (supplier delivery note / guia), notes.
 - `GoodsReceiptLine`: FK → `PurchaseOrderLine`, `quantity_received` `Decimal(12,3)` (≤ remaining qty on PO line), optional over/under tolerance decision at build.
-- `StockMovement`: `item` FK, `quantity` (signed: `+in / −out`), `movement_type` (`receipt`, `goods_issue`, `adjustment`, `initial`), `reference` FK (polymorphic: receipt / order / adjustment), `created_by`, `created_at`.
+- `StockMovement`: `item` FK, `quantity` (signed: `+in / −out`), `movement_type` (`receipt`, `goods_issue`, `adjustment`), `reference` FK (polymorphic: receipt / order / adjustment), `created_by`, `created_at`.
 - `Item.quantity` (cached balance) — updated transactionally with each `StockMovement`.
 
 ### Service layer (new `inventory` app, or `procurement` + helper in `products`)
@@ -338,9 +354,9 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 
 ---
 
-## 12. Phase 5 — Branches + internal request (deferred) ⏸
+## 12. Phase 5 — Branches + internal request (next) 🔜
 
-**Explicitly not now.** Only note for completeness; a **separate "branches plan"** will be authored when we get here.
+**Next task.** This is a whole new app, so a **separate "branches plan"** will be authored before any code. Design lives in [`docs/warehouse-tenancy-setup.md`](warehouse-tenancy-setup.md).
 
 - Build the missing `branches` app: `Branch`, `BranchMembership`, `ActiveBranchMiddleware`, branch picker.
 - Internal request ("Requisição Interna") flow: branch requests item → stock check → **ship** (in stock) or **procure then ship** (out of stock).
@@ -399,7 +415,8 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - [x] Tests
 
 ### Phase 5 / 6 / 7
-- [ ] (separate branches plan; email; mobile) — deferred
+- [ ] Phase 5 — branches (separate plan; **next**)
+- [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---
 

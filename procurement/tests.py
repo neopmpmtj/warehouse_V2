@@ -690,6 +690,49 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertIn("integer", response.json()["error"].lower())
 
 
+    def test_po_list_pagination(self):
+        self.client.force_login(self.user)
+        for _ in range(3):
+            self._create_po_via_api()
+
+        resp = self.client.get(
+            reverse("manage_purchase_order_list") + "?page=1&page_size=2",
+            **self.host,
+        )
+        self.assertEqual(resp.status_code, 200)
+        payload = resp.json()
+        self.assertEqual(len(payload["purchase_orders"]), 2)
+        self.assertEqual(payload["total"], 3)
+        self.assertEqual(payload["num_pages"], 2)
+
+        page2 = self.client.get(
+            reverse("manage_purchase_order_list") + "?page=2&page_size=2",
+            **self.host,
+        ).json()
+        self.assertEqual(len(page2["purchase_orders"]), 1)
+
+    def test_po_list_status_filter(self):
+        self.client.force_login(self.user)
+        self._create_po_via_api()  # stays draft
+        po = self._create_po_via_api()
+        self.client.post(
+            reverse("manage_purchase_order_lines", args=[po["id"]]),
+            data=json.dumps({"item_id": self.item.id, "quantity": "1"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.client.post(reverse("manage_purchase_order_submit", args=[po["id"]]), **self.host)
+
+        submitted = self.client.get(
+            reverse("manage_purchase_order_list") + "?status=submitted&page=1&page_size=50", **self.host
+        ).json()
+        self.assertEqual(submitted["total"], 1)
+        drafts = self.client.get(
+            reverse("manage_purchase_order_list") + "?status=draft&page=1&page_size=50", **self.host
+        ).json()
+        self.assertEqual(drafts["total"], 1)
+
+
 class PurchaseOrderGradeAndAuditTests(PurchaseOrderTestCaseMixin, TestCase):
     def setUp(self):
         super().setUp()

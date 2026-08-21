@@ -2,7 +2,7 @@ import json
 from decimal import Decimal, DecimalException, InvalidOperation
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
@@ -145,11 +145,84 @@ def _unit_choices():
     ]
 
 
-def _console_payload(request):
-    queryset = get_items(active_only=False)
+ITEM_SORT_FIELDS = {
+    "internal_code": "internal_code",
+    "description": "description",
+    "family": "family__name",
+    "unit_of_measure": "unit_of_measure",
+    "reorder_level": "reorder_level",
+    "vat_rate": "vat_rate__rate",
+    "status": "is_active",
+}
 
+
+def _paginate(queryset, request):
+    """Return (items, meta) from ?page=&page_size=; full list when params omitted."""
     page_raw = request.GET.get("page")
-    page_size_raw = request.GET.get("page_size")
+    size_raw = request.GET.get("page_size")
+    if page_raw is None and size_raw is None:
+        return list(queryset), None
+    try:
+        page = max(int(page_raw) if page_raw is not None else 1, 1)
+        size = max(int(size_raw) if size_raw is not None else 50, 1)
+    except (TypeError, ValueError):
+        page, size = 1, 50
+    size = min(size, 200)
+    total = queryset.count()
+    start = (page - 1) * size
+    items = list(queryset[start:start + size])
+    meta = {
+        "total": total,
+        "page": page,
+        "page_size": size,
+        "num_pages": (total + size - 1) // size if size else 0,
+    }
+    return items, meta
+
+
+def _apply_item_filters(queryset, request):
+    query = (request.GET.get("q") or "").strip()
+    if query:
+        queryset = queryset.filter(
+            Q(internal_code__icontains=query)
+            | Q(description__icontains=query)
+            | Q(family__name__icontains=query)
+        )
+    family_id = request.GET.get("family_id")
+    if family_id:
+        try:
+            queryset = queryset.filter(family_id=int(family_id))
+        except (TypeError, ValueError):
+            pass
+    status = request.GET.get("status")
+    if status == "active":
+        queryset = queryset.filter(is_active=True)
+    elif status == "inactive":
+        queryset = queryset.filter(is_active=False)
+    unit = request.GET.get("unit")
+    if unit:
+        queryset = queryset.filter(unit_of_measure=unit)
+    return queryset
+
+
+def _apply_item_sort(queryset, request):
+    sort_key = request.GET.get("sort")
+    direction = request.GET.get("dir", "asc")
+    order_field = ITEM_SORT_FIELDS.get(sort_key)
+    if order_field is None:
+        return queryset.order_by("id")
+    if order_field == "is_active":
+        field = "-is_active" if direction == "asc" else "is_active"
+    else:
+        field = f"-{order_field}" if direction == "desc" else order_field
+    return queryset.order_by(field, "id")
+
+
+def _console_payload(request):
+    queryset = _apply_item_sort(
+        _apply_item_filters(get_items(active_only=False), request), request
+    )
+    items, meta = _paginate(queryset, request)
 
     payload = {
         "families": [
@@ -159,30 +232,10 @@ def _console_payload(request):
         "units": _unit_choices(),
         "vat_rates": [_serialize_vat_rate(vr) for vr in get_vat_rates()],
         "permissions": catalog_permissions(request.user),
+        "items": [_serialize_item(item) for item in items],
     }
-
-    if page_raw is None and page_size_raw is None:
-        payload["items"] = [_serialize_item(item) for item in queryset]
-        return payload
-
-    try:
-        page = max(int(page_raw) if page_raw is not None else 1, 1)
-        page_size = max(int(page_size_raw) if page_size_raw is not None else 50, 1)
-    except (TypeError, ValueError):
-        page, page_size = 1, 50
-    page_size = min(page_size, 200)
-
-    total = queryset.count()
-    start = (page - 1) * page_size
-    payload.update({
-        "items": [
-            _serialize_item(item) for item in queryset[start:start + page_size]
-        ],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-        "num_pages": (total + page_size - 1) // page_size,
-    })
+    if meta is not None:
+        payload.update(meta)
     return payload
 
 

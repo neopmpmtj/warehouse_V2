@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026, 14:38 WEST.
+> **Read this first when resuming work.** Last updated: 21 August 2026, 15:19 WEST.
 
 ---
 
@@ -19,17 +19,17 @@
 
 **Phases 0–4 are complete.** Product phases 5–7 stay deferred/pending/future.
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 — auth, catalogue + pricing, purchase orders, goods receipt + stock, manager catalog — are complete and stable (288 tests green).**
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 — auth, catalogue + pricing, purchase orders, goods receipt + stock, manager catalog — are complete and stable (294 tests green).**
 
-**Next task:** **M7** — pagination on the item / purchase-order / goods-receipt consoles (deferred from 2208, scale-only). Then write a plan for **Phase 5 — branches** (a new app; design in `docs/warehouse-tenancy-setup.md`). L13 (login rate limiting) stays deferred — production-only.
+**Next task:** write a plan for **Phase 5 — branches** (a new app; design in `docs/warehouse-tenancy-setup.md`). M7 (console pagination) is done; L13 (login rate limiting) stays deferred — production-only.
 
 ---
 
 ## Next session — do this
 
-1. **Next task: M7** — pagination on the consoles (item / purchase-order / goods-receipt lists). Then **write a plan for Phase 5 — branches** (a new app; design in `docs/warehouse-tenancy-setup.md`).
+1. **Next task: Phase 5 — branches** — write a plan first (a new app; design in `docs/warehouse-tenancy-setup.md`). M7 (console pagination) is done.
 2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
-3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; M7 and L13 are the only two still open (L13 is production-only, deferred).
+3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; L13 (login rate limiting) is the only one still open (production-only, deferred).
 4. **Do not start** orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
 
 ---
@@ -51,7 +51,7 @@ Archived: [`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-revi
 | N10 | Low | Price `IntegrityError` always reported as duplicate | ✅ Done |
 | N11 | Low | Receipt qty silent 3 dp quantize | ✅ Done |
 
-All N1–N12 findings applied. M7 and L13 remain deferred from 2208 (not part of this review).
+All N1–N12 findings applied. (M7 and L13 were 2208 items, outside this review's scope — M7 is now done; L13 remains deferred.)
 
 ---
 
@@ -63,10 +63,10 @@ Archived: [`docs/archive/code-review-full-2026-08-20-2208.md`](archive/code-revi
 |-------|-----|--------|
 | P0 | H1, H2, H3 | ✅ Done |
 | P1 | M2, M3, M4, M9 | ✅ Done |
-| P2 | M5, M6, M8 | ✅ Done; M7 skipped |
+| P2 | M5, M6, M8 | ✅ Done; M7 done later (pagination) |
 | P3 | M10 | ✅ Done (grades, approval limits, reasons, `on_commit` stub) |
 | P4 | M1 + L1–L14 | ✅ Done (L13 deferred); review **archived** |
-| — | M7 | ⏸ Deferred (scale / frontend) |
+| — | M7 | ✅ Done (console pagination, 2026-08-21) |
 
 Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m2-m9_387eec3a.plan.md`, `fix_p2_m5_m6_m8_2372dbfd.plan.md`, `p4_m1_l1-l14_71ae16a5.plan.md`.
 
@@ -162,9 +162,9 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 21 Aug 2026, 14:11 WEST)
+## Git (as of 21 Aug 2026, 15:19 WEST)
 
-- Branch: **`main`**. The 1303 review fixes (N1–N12) are **committed and pushed to `origin/main`** (`b32c108`). The review is archived under `docs/archive/`.
+- Branch: **`main`**. The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are **committed** (see `git log`). The 1303 review is archived under `docs/archive/`.
 - No `p4-m1-l-fixes` branch exists locally or on origin.
 - Working tree has local `.venv` noise — do **not** commit `.venv` deletions.
 
@@ -176,7 +176,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
 ```
 
-- Last full suite: **288 OK** without `--keepdb`.
+- Last full suite: **294 OK** without `--keepdb`.
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -218,9 +218,9 @@ python manage.py runserver
 | Doc | Purpose |
 |-----|---------|
 | `README.md` | setup, URLs, seed, how to run |
-| `docs/project-plan-2026-08-20.md` | phased plan + status tracker + locked decisions |
+| `docs/PROJECT-PLAN.md` | **Living plan** — sequencing + status tracker + locked decisions; tick its tracker every session |
 | `docs/archive/code-review-full-2026-08-21-1303.md` | Follow-up review — **concluded & archived** (N1–N12 applied) |
-| `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; M7 + L13 deferred) |
+| `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; L13 deferred) |
 | `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |

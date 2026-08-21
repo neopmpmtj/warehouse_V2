@@ -1180,6 +1180,49 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("integer", response.json()["error"].lower())
 
+    def test_item_list_pagination(self):
+        self.client.force_login(self.staff_user)
+        for i in range(3):
+            self.create_test_item(
+                self.staff_user,
+                description=f"Item {i}",
+                internal_code=f"PG-{i}",
+            )
+
+        resp = self.client.get(reverse("manage_item_list") + "?page=1&page_size=2")
+        self.assertEqual(resp.status_code, 200)
+        payload = resp.json()
+        self.assertEqual(len(payload["items"]), 2)
+        self.assertEqual(payload["total"], 3)
+        self.assertEqual(payload["page"], 1)
+        self.assertEqual(payload["page_size"], 2)
+        self.assertEqual(payload["num_pages"], 2)
+
+        page2 = self.client.get(reverse("manage_item_list") + "?page=2&page_size=2").json()
+        self.assertEqual(len(page2["items"]), 1)
+
+    def test_item_list_filters_and_sort(self):
+        self.client.force_login(self.staff_user)
+        family_b = self.create_test_family("Other Family")
+        self.create_test_item(self.staff_user, description="Alpha cement", internal_code="AA")
+        self.create_test_item(self.staff_user, description="Beta sand", internal_code="BB", active=False)
+        self.create_test_item(self.staff_user, family=family_b, description="Gamma", internal_code="CC")
+
+        self.assertEqual(
+            self.client.get(reverse("manage_item_list") + "?q=cement&page=1&page_size=50").json()["total"], 1
+        )
+        self.assertEqual(
+            self.client.get(reverse("manage_item_list") + "?status=active&page=1&page_size=50").json()["total"], 2
+        )
+        self.assertEqual(
+            self.client.get(reverse("manage_item_list") + f"?family_id={family_b.id}&page=1&page_size=50").json()["total"], 1
+        )
+
+        resp = self.client.get(reverse("manage_item_list") + "?sort=description&dir=desc&page=1&page_size=50").json()
+        self.assertEqual(
+            [item["internal_code"] for item in resp["items"]], ["CC", "BB", "AA"]
+        )
+
     def test_staff_can_create_family_through_console_api(self):
         self.client.force_login(self.staff_user)
 

@@ -28,6 +28,14 @@ const state = {
     items: [],
     purchaseOrders: [],
     receiptSummary: [],
+    receiptsPage: 1,
+    receiptsPageSize: 50,
+    receiptsTotal: 0,
+    receiptsNumPages: 0,
+    movementsPage: 1,
+    movementsPageSize: 50,
+    movementsTotal: 0,
+    movementsNumPages: 0,
     busy: false,
 };
 
@@ -202,11 +210,53 @@ function textTd(value) {
     return td;
 }
 
+function renderPagination(prefix, page, numPages) {
+    const prev = document.getElementById(`${prefix}-prev`);
+    const next = document.getElementById(`${prefix}-next`);
+    const label = document.getElementById(`${prefix}-page-label`);
+    if (!prev || !next || !label) {
+        return;
+    }
+    label.textContent = t("pageOf", { page, pages: Math.max(numPages, 1) });
+    prev.disabled = page <= 1;
+    next.disabled = page >= numPages;
+}
+
+async function goReceiptsPage(page) {
+    if (page < 1 || (state.receiptsNumPages > 0 && page > state.receiptsNumPages)) {
+        return;
+    }
+    state.receiptsPage = page;
+    try {
+        await loadReceipts();
+    } catch (error) {
+        showBanner(error.message, true);
+    }
+}
+
+async function goMovementsPage(page) {
+    if (page < 1 || (state.movementsNumPages > 0 && page > state.movementsNumPages)) {
+        return;
+    }
+    state.movementsPage = page;
+    try {
+        await loadMovements();
+    } catch (error) {
+        showBanner(error.message, true);
+    }
+}
+
 /* ------------------------------- receipts ------------------------------ */
 
 async function loadReceipts() {
-    const data = await api(GR_API);
+    const params = new URLSearchParams({
+        page: String(state.receiptsPage),
+        page_size: String(state.receiptsPageSize),
+    });
+    const data = await api(`${GR_API}?${params.toString()}`);
     state.receipts = data.goods_receipts;
+    state.receiptsTotal = data.total || 0;
+    state.receiptsNumPages = data.num_pages || 0;
     renderReceipts();
 }
 
@@ -214,6 +264,7 @@ function renderReceipts() {
     const body = document.getElementById("receipts-body");
     body.replaceChildren();
     document.getElementById("receipts-empty").hidden = state.receipts.length > 0;
+    renderPagination("receipts", state.receiptsPage, state.receiptsNumPages);
 
     state.receipts.forEach((receipt) => {
         const row = document.createElement("tr");
@@ -232,9 +283,17 @@ function renderReceipts() {
 
 async function loadMovements() {
     const itemId = document.getElementById("movement-item-filter").value;
-    const suffix = itemId ? `?item_id=${encodeURIComponent(itemId)}` : "";
-    const data = await api(`${MOVEMENTS_API}${suffix}`);
+    const params = new URLSearchParams({
+        page: String(state.movementsPage),
+        page_size: String(state.movementsPageSize),
+    });
+    if (itemId) {
+        params.set("item_id", itemId);
+    }
+    const data = await api(`${MOVEMENTS_API}?${params.toString()}`);
     state.movements = data.stock_movements;
+    state.movementsTotal = data.total || 0;
+    state.movementsNumPages = data.num_pages || 0;
     renderMovements();
 }
 
@@ -242,6 +301,7 @@ function renderMovements() {
     const body = document.getElementById("movements-body");
     body.replaceChildren();
     document.getElementById("movements-empty").hidden = state.movements.length > 0;
+    renderPagination("movements", state.movementsPage, state.movementsNumPages);
 
     state.movements.forEach((movement) => {
         const row = document.createElement("tr");
@@ -543,8 +603,13 @@ function bindEvents() {
     });
 
     document.getElementById("movement-item-filter").addEventListener("change", () => {
+        state.movementsPage = 1;
         loadMovements().catch((error) => showBanner(error.message, true));
     });
+    document.getElementById("receipts-prev").addEventListener("click", () => goReceiptsPage(state.receiptsPage - 1));
+    document.getElementById("receipts-next").addEventListener("click", () => goReceiptsPage(state.receiptsPage + 1));
+    document.getElementById("movements-prev").addEventListener("click", () => goMovementsPage(state.movementsPage - 1));
+    document.getElementById("movements-next").addEventListener("click", () => goMovementsPage(state.movementsPage + 1));
 
     document.getElementById("new-receipt").addEventListener("click", () => openReceiptDialog());
     document.getElementById("receipt-po").addEventListener("change", onReceiptPoChange);

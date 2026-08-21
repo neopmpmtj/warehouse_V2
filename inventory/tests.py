@@ -468,6 +468,34 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         response = self.client.get(reverse("manage_stock_movements") + "?item_id=abc")
         self.assertEqual(response.status_code, 400)
 
+    def test_goods_receipts_pagination(self):
+        self.client.force_login(self.user)
+        for _ in range(2):
+            po, line = self.create_approved_po("10")
+            services.receive_goods(po, [{"line_id": line.id, "quantity_received": "1"}], self.user)
+
+        resp = self.client.get(
+            reverse("manage_goods_receipt_list") + "?page=1&page_size=1", **self.host
+        )
+        payload = resp.json()
+        self.assertEqual(len(payload["goods_receipts"]), 1)
+        self.assertEqual(payload["total"], 2)
+        self.assertEqual(payload["num_pages"], 2)
+
+    def test_stock_movements_pagination(self):
+        self.client.force_login(self.user)
+        for _ in range(2):
+            po, line = self.create_approved_po("10")
+            services.receive_goods(po, [{"line_id": line.id, "quantity_received": "1"}], self.user)
+
+        resp = self.client.get(
+            reverse("manage_stock_movements") + "?page=1&page_size=1", **self.host
+        )
+        payload = resp.json()
+        self.assertEqual(len(payload["stock_movements"]), 1)
+        self.assertEqual(payload["total"], 2)
+        self.assertEqual(payload["num_pages"], 2)
+
     def test_stock_adjustment_rejects_bool_item_id(self):
         self.client.force_login(self.user)
         resp = self.client.post(

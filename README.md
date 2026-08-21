@@ -12,7 +12,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. The 1303 review is **done and archived** (all N1–N12 applied; see [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md)). See [`docs/handoff.md`](docs/handoff.md).
 
-> **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md).
+> **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
 ### User roles (practice with these)
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next task: M7** — pagination on the consoles, then a written plan for **Phase 5 (branches)**. The 1303 review is done and archived; L13 (login rate limiting) stays deferred (production-only).
+4. **Next task: Phase 5 (branches)** — write a plan first. M7 (console pagination) is done; the 1303 review is done and archived; L13 (login rate limiting) stays deferred (production-only).
 5. Do **not** in passing: branches, orders, offline, email, shared page chrome.
 
 ---
@@ -285,7 +285,7 @@ views (login required) → API + HTML
 ## Further reading
 
 - **Start here:** [`docs/handoff.md`](docs/handoff.md)
-- [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — phased plan + status tracker
+- [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) — **living plan**: sequencing + status tracker + locked decisions (update every session)
 - [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md) — follow-up review (concluded, N1–N12 applied)
 - [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) — prior full review (concluded)
 - [`docs/archive/code-review-inventory-2026-08-20.md`](docs/archive/code-review-inventory-2026-08-20.md) — Phase 3 review (concluded)

@@ -25,6 +25,10 @@ const state = {
     suppliers: [],
     items: [],
     statusFilter: "all",
+    page: 1,
+    pageSize: 50,
+    total: 0,
+    numPages: 0,
     openId: null,
     openPo: null,
     editingLineId: null,
@@ -245,25 +249,51 @@ function replacePurchaseOrder(po) {
     }
 }
 
+function renderPagination() {
+    const prev = document.getElementById("po-prev");
+    const next = document.getElementById("po-next");
+    const label = document.getElementById("po-page-label");
+    if (!prev || !next || !label) {
+        return;
+    }
+    label.textContent = t("pageOf", { page: state.page, pages: Math.max(state.numPages, 1) });
+    prev.disabled = state.page <= 1;
+    next.disabled = state.page >= state.numPages;
+}
+
+async function goToPage(page) {
+    if (page < 1 || (state.numPages > 0 && page > state.numPages)) {
+        return;
+    }
+    state.page = page;
+    try {
+        await loadPurchaseOrders();
+    } catch (error) {
+        showBanner(error.message, true);
+    }
+}
+
 function renderTable() {
     const body = document.getElementById("po-table-body");
     if (!body) {
         return;
     }
-    const rows = filteredPurchaseOrders().sort((left, right) => left.id - right.id);
+    const rows = state.purchaseOrders;
     body.replaceChildren();
 
     document.getElementById("result-count").textContent = t("showingCount", {
         shown: rows.length,
-        total: state.purchaseOrders.length,
+        total: state.total,
     });
+
+    renderPagination();
 
     if (rows.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
         cell.colSpan = 6;
         cell.className = "empty-row";
-        cell.textContent = state.purchaseOrders.length === 0 ? t("empty") : t("noMatch");
+        cell.textContent = state.total === 0 ? t("empty") : t("noMatch");
         row.appendChild(cell);
         body.appendChild(row);
         return;
@@ -456,9 +486,8 @@ async function performStatusAction(poId, endpoint, successKey, button, reason) {
             body: JSON.stringify({ reason: reason || "" }),
         });
         state.openPo = data.purchase_order;
-        replacePurchaseOrder(data.purchase_order);
         renderDrawer(data.purchase_order);
-        renderTable();
+        await loadPurchaseOrders();
         loadHistory(poId);
         showBanner(t(successKey));
     } catch (error) {
@@ -652,9 +681,8 @@ async function createNewPo() {
             }),
         });
         const po = data.purchase_order;
-        replacePurchaseOrder(po);
         closeNewPoDialog();
-        renderTable();
+        await loadPurchaseOrders();
         showBanner(t("poCreated"));
         openDrawer(po.id);
     } catch (error) {
@@ -798,8 +826,11 @@ function bindEvents() {
     });
     document.getElementById("status-filter").addEventListener("change", (event) => {
         state.statusFilter = event.target.value;
-        renderTable();
+        state.page = 1;
+        loadPurchaseOrders().catch((error) => showBanner(error.message, true));
     });
+    document.getElementById("po-prev").addEventListener("click", () => goToPage(state.page - 1));
+    document.getElementById("po-next").addEventListener("click", () => goToPage(state.page + 1));
     document.getElementById("new-po").addEventListener("click", openNewPoDialog);
     document.getElementById("new-po-confirm").addEventListener("click", createNewPo);
     document.getElementById("new-po-cancel").addEventListener("click", closeNewPoDialog);
@@ -813,8 +844,17 @@ function bindEvents() {
 }
 
 async function loadPurchaseOrders() {
-    const data = await api(PO_API);
+    const params = new URLSearchParams({
+        page: String(state.page),
+        page_size: String(state.pageSize),
+    });
+    if (state.statusFilter !== "all") {
+        params.set("status", state.statusFilter);
+    }
+    const data = await api(`${PO_API}?${params.toString()}`);
     state.purchaseOrders = data.purchase_orders;
+    state.total = data.total || 0;
+    state.numPages = data.num_pages || 0;
     renderTable();
 }
 

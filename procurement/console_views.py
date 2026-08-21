@@ -72,6 +72,30 @@ def _parse_int_id(value, field_name):
     raise ValidationError(f"{field_name} must be an integer.")
 
 
+def _paginate(queryset, request):
+    """Return (items, meta) from ?page=&page_size=; full list when params omitted."""
+    page_raw = request.GET.get("page")
+    size_raw = request.GET.get("page_size")
+    if page_raw is None and size_raw is None:
+        return list(queryset), None
+    try:
+        page = max(int(page_raw) if page_raw is not None else 1, 1)
+        size = max(int(size_raw) if size_raw is not None else 50, 1)
+    except (TypeError, ValueError):
+        page, size = 1, 50
+    size = min(size, 200)
+    total = queryset.count()
+    start = (page - 1) * size
+    items = list(queryset[start:start + size])
+    meta = {
+        "total": total,
+        "page": page,
+        "page_size": size,
+        "num_pages": (total + size - 1) // size if size else 0,
+    }
+    return items, meta
+
+
 def _serialize_line(line):
     return {
         "id": line.id,
@@ -173,14 +197,17 @@ def _status_action(request, po_id, service_fn, perm):
 @require_http_methods(["GET", "POST"])
 def manage_purchase_order_list(request):
     if request.method == "GET":
-        queryset = services.get_purchase_orders()
-        return JsonResponse(
-            {
-                "purchase_orders": [
-                    _serialize_po(po, include_lines=False) for po in queryset
-                ]
-            }
-        )
+        status = request.GET.get("status") or None
+        queryset = services.get_purchase_orders(status=status).order_by("id")
+        pos, meta = _paginate(queryset, request)
+        payload = {
+            "purchase_orders": [
+                _serialize_po(po, include_lines=False) for po in pos
+            ]
+        }
+        if meta is not None:
+            payload.update(meta)
+        return JsonResponse(payload)
 
     denied = deny_unless(request, ADD_PO)
     if denied:
