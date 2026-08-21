@@ -121,19 +121,16 @@ class Command(BaseCommand):
                 ).first()
                 if existing:
                     family = existing
-                    if family.is_active != family_data["is_active"]:
-                        update_family(
-                            family,
-                            is_active=family_data["is_active"],
-                        )
+                    # Keep active while seeding items under this family.
+                    if not family.is_active:
+                        update_family(family, is_active=True)
                     families_by_name[family_data["name"].casefold()] = family
                     self.stdout.write(f"Exists family: {family.name}")
                     continue
 
-                family = create_family(
-                    family_data["name"],
-                    is_active=family_data["is_active"],
-                )
+                # Create active first so items can be assigned; apply target
+                # is_active after the item loop.
+                family = create_family(family_data["name"], is_active=True)
                 families_by_name[family_data["name"].casefold()] = family
                 self.stdout.write(f"Created family: {family.name}")
 
@@ -219,6 +216,14 @@ class Command(BaseCommand):
                         f"Created item: {item.internal_code} — {item.description}"
                     )
                 )
+
+            for family_data in FAMILIES:
+                family = families_by_name[family_data["name"].casefold()]
+                if family.is_active != family_data["is_active"]:
+                    update_family(family, is_active=family_data["is_active"])
+                    self.stdout.write(
+                        f"Family activity: {family.name} -> {family_data['is_active']}"
+                    )
 
             suppliers_by_name = {
                 supplier.name.casefold(): supplier

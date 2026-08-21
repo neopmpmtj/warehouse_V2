@@ -121,7 +121,7 @@ Family deactivation does not affect items. PO creation/add/submit never checks `
 
 **Suggested fix:** Decide explicit rules; enforce at create/add/submit boundaries; optionally exclude items whose family is inactive from `get_catalog`.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — inactive supplier/item blocked on create/add/submit/approve; inactive family blocked on create/update item; `get_catalog` excludes inactive families; seed creates Legacy stock items then deactivates family.
 
 ---
 
@@ -135,7 +135,7 @@ If `SupplierItemPrice` is deleted while PO is draft/submitted, submit/approve pr
 
 **Suggested fix:** `_validate_all_lines_have_supplier_price(po)` called from `submit()` (minimum).
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — price re-check on `submit()` and `approve()`; tests cover deleted `SupplierItemPrice`.
 
 ---
 
@@ -149,7 +149,7 @@ No `UniqueConstraint(purchase_order, item)` and no service check.
 
 **Suggested fix:** Enforce uniqueness or merge quantities; document chosen behaviour.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — reject duplicates (`unique_po_line_item` + `DuplicatePOLineError`); no merge.
 
 ---
 
@@ -214,7 +214,7 @@ Each line locks items in payload order. Two concurrent receipts touching overlap
 | `int(1.9)` silently truncates IDs | procurement console views | Wrong entity selected |
 | Cumulative stock balance overflow | `inventory/services.py` `_write_movement` | `DataError` at save instead of clean 400 |
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — add-line catches missing item (404); `_parse_int_id` rejects floats; `_write_movement` rejects balance ≥ 1e9.
 
 ---
 
@@ -322,14 +322,14 @@ Update this table as work completes. Move the whole doc to `docs/archive/` when 
 | H2 | ✅ Done |
 | H3 | ✅ Done |
 | M1 | ⏳ Open |
-| M2 | ⏳ Open |
-| M3 | ⏳ Open |
-| M4 | ⏳ Open |
+| M2 | ✅ Done |
+| M3 | ✅ Done |
+| M4 | ✅ Done |
 | M5 | ⏳ Open |
 | M6 | ⏳ Open |
 | M7 | ⏸ Deferred (scale) |
 | M8 | ⏳ Open |
-| M9 | ⏳ Open |
+| M9 | ✅ Done |
 | M10 | ⏳ Open |
 | L1–L14 | ⏳ Open |
 

@@ -166,6 +166,12 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
         with self.assertRaises(services.NegativeStockError):
             services.adjust_stock(self.item, "-10", "over-adjust", self.user)
 
+    def test_adjust_stock_rejects_balance_overflow(self):
+        self.item.quantity = Decimal("999999999.000")
+        self.item.save(update_fields=["quantity", "updated_at"])
+        with self.assertRaises(services.InvalidQuantityError):
+            services.adjust_stock(self.item, "1", "overflow", self.user)
+
     def test_receipt_summary_reports_remaining(self):
         po, line = self.create_approved_po("10")
         services.receive_goods(po, [{"line_id": line.id, "quantity_received": "4"}], self.user)

@@ -286,6 +286,87 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
             services.remove_line(line, self.user)
         self._assert_po_for_update(ctx)
 
+    def test_submit_rejects_when_supplier_price_deleted(self):
+        from products.models import SupplierItemPrice, SupplierItemPriceChangeLog
+
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        sip = SupplierItemPrice.objects.get(supplier=self.supplier, item=self.item)
+        SupplierItemPriceChangeLog.objects.filter(supplier_item_price=sip).delete()
+        sip.delete()
+
+        with self.assertRaises(services.SupplierPriceMissingError):
+            services.submit(po, self.user)
+
+    def test_approve_rejects_when_supplier_price_deleted(self):
+        from products.models import SupplierItemPrice, SupplierItemPriceChangeLog
+
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        services.submit(po, self.user)
+        sip = SupplierItemPrice.objects.get(supplier=self.supplier, item=self.item)
+        SupplierItemPriceChangeLog.objects.filter(supplier_item_price=sip).delete()
+        sip.delete()
+
+        with self.assertRaises(services.SupplierPriceMissingError):
+            services.approve(po, self.user)
+
+    def test_inactive_supplier_cannot_create_po(self):
+        from products.services import update_supplier
+
+        update_supplier(self.supplier, is_active=False)
+        with self.assertRaises(services.InactiveSupplierError):
+            services.create_purchase_order(self.supplier, self.user)
+
+    def test_inactive_item_cannot_add_line(self):
+        from products.services import deactivate_item
+
+        po = self.create_draft_po()
+        deactivate_item(self.user, self.item, reason="Delisted")
+        with self.assertRaises(services.InactiveItemError):
+            services.add_line(po, self.item, quantity="1")
+
+    def test_submit_rejects_when_item_deactivated(self):
+        from products.services import deactivate_item
+
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        deactivate_item(self.user, self.item, reason="Delisted")
+        with self.assertRaises(services.InactiveItemError):
+            services.submit(po, self.user)
+
+    def test_submit_rejects_when_supplier_deactivated(self):
+        from products.services import update_supplier
+
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        update_supplier(self.supplier, is_active=False)
+        with self.assertRaises(services.InactiveSupplierError):
+            services.submit(po, self.user)
+
+    def test_duplicate_po_line_is_rejected(self):
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        with self.assertRaises(services.DuplicatePOLineError):
+            services.add_line(po, self.item, quantity="2")
+        self.assertEqual(po.lines.count(), 1)
+
+    def test_db_rejects_duplicate_po_line_item(self):
+        from django.db import IntegrityError, transaction
+        from procurement.models import PurchaseOrderLine
+
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                PurchaseOrderLine.objects.create(
+                    purchase_order=po,
+                    item=self.item,
+                    description=self.item.description,
+                    quantity=Decimal("1"),
+                    unit_cost=Decimal("1"),
+                )
+
 
 class PurchaseOrderPermissionTests(TestCase):
     def test_operator_is_view_only(self):
@@ -442,3 +523,27 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         response = self.client.post(reverse("manage_purchase_order_reopen", args=[po["id"]]), **self.host)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["purchase_order"]["status"], "draft")
+
+    def test_add_line_unknown_item_returns_404(self):
+        self.client.force_login(self.user)
+        po = self._create_po_via_api()
+        response = self.client.post(
+            reverse("manage_purchase_order_lines", args=[po["id"]]),
+            data=json.dumps({"item_id": 999999, "quantity": "1"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("not found", response.json()["error"].lower())
+
+    def test_add_line_rejects_float_item_id(self):
+        self.client.force_login(self.user)
+        po = self._create_po_via_api()
+        response = self.client.post(
+            reverse("manage_purchase_order_lines", args=[po["id"]]),
+            data=json.dumps({"item_id": 1.9, "quantity": "1"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("integer", response.json()["error"].lower())

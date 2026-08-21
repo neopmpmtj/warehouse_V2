@@ -73,6 +73,15 @@ class DuplicateFamilyNameError(ValidationError):
         )
 
 
+class InactiveFamilyError(ValidationError):
+    def __init__(self, family=None):
+        name = getattr(family, "name", None) or "family"
+        super().__init__(
+            f"Cannot assign items to inactive family '{name}'.",
+            code="inactive_family",
+        )
+
+
 class SupplierNameRequiredError(ValidationError):
     def __init__(self):
         super().__init__(
@@ -143,6 +152,11 @@ def _resolve_family(family):
     return FamilyProduct.objects.get(pk=family)
 
 
+def _ensure_family_active(family):
+    if not FamilyProduct.objects.filter(pk=family.pk, is_active=True).exists():
+        raise InactiveFamilyError(family)
+
+
 def _resolve_vat_rate(vat_rate):
     if isinstance(vat_rate, VatRate):
         return vat_rate
@@ -196,6 +210,7 @@ def create_item(
     internal_code = _normalize_internal_code(internal_code)
     validate_internal_code_available(internal_code)
     family = _resolve_family(family)
+    _ensure_family_active(family)
     vat_rate = _resolve_vat_rate(vat_rate)
 
     item = Item(
@@ -264,6 +279,7 @@ def update_item(user, item, reason="", **fields):
             pending_internal_code = new_value
         elif field_name == "family":
             new_value = _resolve_family(new_value)
+            _ensure_family_active(new_value)
         elif field_name == "vat_rate":
             new_value = _resolve_vat_rate(new_value)
 
@@ -946,7 +962,7 @@ def get_catalog(active_only=True, family=None):
         .order_by("id")
     )
     if active_only:
-        queryset = queryset.active()
+        queryset = queryset.active().filter(family__is_active=True)
     if family is not None:
         queryset = queryset.filter(family=_resolve_family(family))
     return queryset

@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from logging_utils import get_logger
@@ -50,10 +50,42 @@ class PurchaseOrderNotDraftError(ValidationError):
 
 
 class SupplierPriceMissingError(ValidationError):
-    def __init__(self):
+    def __init__(self, item=None):
+        if item is not None:
+            label = item.internal_code or item.description or str(item.pk)
+            message = (
+                f"This supplier does not have a price for item {label} "
+                f"(id={item.pk})."
+            )
+        else:
+            message = "This supplier does not have a price for this item."
+        super().__init__(message, code="supplier_price_missing")
+
+
+class InactiveSupplierError(ValidationError):
+    def __init__(self, supplier=None):
+        name = getattr(supplier, "name", None) or "supplier"
         super().__init__(
-            "This supplier does not have a price for this item.",
-            code="supplier_price_missing",
+            f"Cannot use inactive supplier '{name}'.",
+            code="inactive_supplier",
+        )
+
+
+class InactiveItemError(ValidationError):
+    def __init__(self, item=None):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or "item"
+        super().__init__(
+            f"Cannot use inactive item '{label}'.",
+            code="inactive_item",
+        )
+
+
+class DuplicatePOLineError(ValidationError):
+    def __init__(self, item=None):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or "item"
+        super().__init__(
+            f"This purchase order already has a line for '{label}'.",
+            code="duplicate_po_line",
         )
 
 
@@ -93,6 +125,36 @@ def _log(po, user, action, changes, reason=""):
 def _ensure_draft(po):
     if po.status != PurchaseOrder.Status.DRAFT:
         raise PurchaseOrderNotDraftError()
+
+
+def _line_has_supplier_price(po, item):
+    return SupplierItemPrice.objects.filter(
+        supplier=po.supplier, item=item
+    ).exists()
+
+
+def _validate_all_lines_have_supplier_price(po):
+    for line in po.lines.select_related("item"):
+        if not _line_has_supplier_price(po, line.item):
+            raise SupplierPriceMissingError(line.item)
+
+
+def _ensure_supplier_active(supplier):
+    if not Supplier.objects.filter(pk=supplier.pk, is_active=True).exists():
+        raise InactiveSupplierError(supplier)
+
+
+def _ensure_item_active(item):
+    if not Item.objects.filter(pk=item.pk, is_active=True).exists():
+        raise InactiveItemError(item)
+
+
+def _validate_po_entities_active(po):
+    # Refresh supplier in case it was deactivated after PO create.
+    supplier = Supplier.objects.get(pk=po.supplier_id)
+    _ensure_supplier_active(supplier)
+    for line in po.lines.select_related("item"):
+        _ensure_item_active(line.item)
 
 
 def _parse_decimal(value, field_name):
@@ -146,6 +208,7 @@ def _validate_total_discount(commercial, financial, rappel):
 @transaction.atomic
 def create_purchase_order(supplier, user, supplier_ref="", notes=""):
     supplier = _resolve_supplier(supplier)
+    _ensure_supplier_active(supplier)
     po = PurchaseOrder(
         supplier=supplier,
         created_by=user,
@@ -191,13 +254,17 @@ def add_line(
     po = _lock_po(po)
     _ensure_draft(po)
     item = _resolve_item(item)
+    _ensure_item_active(item)
     quantity = _validate_quantity(quantity)
+
+    if po.lines.filter(item=item).exists():
+        raise DuplicatePOLineError(item)
 
     supplier_price = SupplierItemPrice.objects.filter(
         supplier=po.supplier, item=item
     ).first()
     if supplier_price is None:
-        raise SupplierPriceMissingError()
+        raise SupplierPriceMissingError(item)
 
     if unit_cost is None:
         unit_cost = supplier_price.cost_price
@@ -220,8 +287,11 @@ def add_line(
         rappel=rappel,
         vat_rate=item.vat_rate.rate,
     )
-    line.full_clean(exclude=None, validate_unique=False, validate_constraints=False)
-    line.save()
+    try:
+        line.full_clean(exclude=None, validate_unique=False, validate_constraints=False)
+        line.save()
+    except IntegrityError as exc:
+        raise DuplicatePOLineError(item) from exc
 
     _log(
         po,
@@ -387,6 +457,8 @@ def submit(po, user=None):
             "Cannot submit a purchase order without lines.",
             code="empty_purchase_order",
         )
+    _validate_po_entities_active(po)
+    _validate_all_lines_have_supplier_price(po)
     _transition(po, PurchaseOrder.Status.SUBMITTED)
     po.status = PurchaseOrder.Status.SUBMITTED
     po.save(update_fields=["status", "updated_at"])
@@ -404,6 +476,8 @@ def submit(po, user=None):
 def approve(po, user=None):
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.APPROVED)
+    _validate_po_entities_active(po)
+    _validate_all_lines_have_supplier_price(po)
     net, vat, gross = po.totals()
     po.status = PurchaseOrder.Status.APPROVED
     po.approved_by = user

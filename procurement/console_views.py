@@ -52,6 +52,22 @@ def _parse_decimal(payload, field_name, required=True):
         raise ValidationError(f"{field_name} must be a number.") from exc
 
 
+def _parse_int_id(value, field_name):
+    """Accept a positive integer id; reject floats/bools that int() would coerce."""
+    if isinstance(value, bool) or value is None:
+        raise ValidationError(f"{field_name} must be an integer.")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        raise ValidationError(f"{field_name} must be an integer.")
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or not stripped.isdigit():
+            raise ValidationError(f"{field_name} must be an integer.")
+        return int(stripped)
+    raise ValidationError(f"{field_name} must be an integer.")
+
+
 def _serialize_line(line):
     return {
         "id": line.id,
@@ -117,7 +133,13 @@ def _po_error(exc):
     if isinstance(exc, ValidationError):
         message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
         return _json_error(message, code=getattr(exc, "code", None))
-    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError, DecimalException)):
+    if isinstance(exc, ObjectDoesNotExist):
+        text = str(exc)
+        if " matching query does not exist." in text:
+            name = text.split(" matching query does not exist.", 1)[0]
+            return _json_error(f"{name} not found.", status=404)
+        return _json_error(text or "Not found.", status=404)
+    if isinstance(exc, (ValueError, TypeError, DecimalException)):
         return _json_error(str(exc))
     raise exc
 
@@ -160,7 +182,7 @@ def manage_purchase_order_list(request):
         if supplier_id is None:
             raise ValidationError("supplier_id is required.")
         po = services.create_purchase_order(
-            supplier=int(supplier_id),
+            supplier=_parse_int_id(supplier_id, "supplier_id"),
             user=request.user,
             supplier_ref=str(payload.get("supplier_ref", "")),
             notes=str(payload.get("notes", "")),
@@ -227,7 +249,7 @@ def manage_purchase_order_lines(request, po_id):
         if "quantity" not in payload:
             raise ValidationError("quantity is required.")
         kwargs = {
-            "item": int(item_id),
+            "item": _parse_int_id(item_id, "item_id"),
             "quantity": _parse_decimal(payload, "quantity"),
             "user": request.user,
         }
@@ -237,7 +259,7 @@ def manage_purchase_order_lines(request, po_id):
             if field in payload:
                 kwargs[field] = _parse_decimal(payload, field)
         services.add_line(po, **kwargs)
-    except ValidationError as exc:
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
         return _po_error(exc)
 
     po = _get_po(po_id)

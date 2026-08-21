@@ -152,6 +152,10 @@ def _write_movement(item, quantity, movement_type, user, content_object=None, re
     new_quantity = (item.quantity or Decimal("0")) + quantity
     if quantity < 0 and new_quantity < 0:
         raise NegativeStockError()
+    if new_quantity.copy_abs() >= Decimal("1000000000"):
+        raise InvalidQuantityError(
+            "Resulting stock balance is too large for the quantity field."
+        )
     kwargs = {
         "item": item,
         "quantity": quantity,

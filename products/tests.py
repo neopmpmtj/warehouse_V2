@@ -33,6 +33,7 @@ from products.services import (
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
+    InactiveFamilyError,
     InvalidCostPriceError,
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
@@ -1941,6 +1942,26 @@ class CatalogServiceTests(ItemTestCaseMixin, TestCase):
 
         item = get_catalog().get(pk=self.item.pk)
         self.assertEqual(catalog_buying_price(item), Decimal("9.99"))
+
+    def test_get_catalog_excludes_items_under_inactive_family(self):
+        update_family(self.family, is_active=False)
+        self.assertEqual(list(get_catalog()), [])
+
+    def test_create_item_rejects_inactive_family(self):
+        inactive = create_family("Legacy", is_active=False)
+        with self.assertRaises(InactiveFamilyError):
+            create_item(
+                self.user,
+                family=inactive,
+                description="Should fail",
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+            )
+
+    def test_update_item_rejects_inactive_family(self):
+        inactive = create_family("Legacy", is_active=False)
+        with self.assertRaises(InactiveFamilyError):
+            update_item(self.user, self.item, family=inactive)
 
 
 class CatalogConsoleTests(ItemTestCaseMixin, TestCase):

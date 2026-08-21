@@ -85,6 +85,12 @@ class PurchaseOrderLine(models.Model):
 
     class Meta:
         ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["purchase_order", "item"],
+                name="unique_po_line_item",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.purchase_order_id}: {self.description} x {self.quantity}"
