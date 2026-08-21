@@ -37,6 +37,7 @@ from products.services import (
     update_supplier_item_price,
 )
 from procurement.services import ensure_default_approval_limits
+from orders.services import ensure_default_branch_approval_limits
 
 
 DEFAULT_PASSWORD = "devpass123"
@@ -354,6 +355,7 @@ class Command(BaseCommand):
                 )
 
         ensure_default_approval_limits()
+        ensure_default_branch_approval_limits()
 
         self.stdout.write("")
         self.stdout.write(self.style.WARNING("Dev login credentials:"))

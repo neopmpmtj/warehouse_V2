@@ -49,6 +49,9 @@ LOGGING_CONFIG = {
         "centcompras.branches": {
             "log_filename": "branches.log",
         },
+        "centcompras.orders": {
+            "log_filename": "orders.log",
+        },
         "centcompras.django": {
             "log_filename": "django.log",
             "console_level": "INFO",

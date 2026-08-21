@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "procurement",
     "inventory",
     "branches",
+    "orders",
 ]
 
 MIDDLEWARE = [

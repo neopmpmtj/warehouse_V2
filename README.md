@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 21 August 2026, 20:46 WEST.*
+*Last updated: 21 August 2026, 21:06 WEST.*
 
-Phases 0–4 are done. **Phase 5 is in progress** — decisions locked; **Slices 1–2 (tenancy + branch catalog) are done**, Slice 3 (requisição interna) is next. See [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) and [`docs/handoff.md`](docs/handoff.md).
+Phases 0–4 are done. **Phase 5 is in progress** — decisions locked; **Slices 1–3 (tenancy + branch catalog + requisição) are done**, Slice 4 (goods issue) is next. See [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) and [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -21,7 +21,7 @@ Phases 0–4 are done. **Phase 5 is in progress** — decisions locked; **Slices
 | **Warehouse admin** | `warehouse.admin@centcompras.dev` | Full catalogue, POs (including approve any amount), goods receipts, stock adjust, `/manage/approval-limits/` (`warehouse_admins`). Cannot log into `/admin/`. |
 | **Warehouse manager** | `warehouse.manager@centcompras.dev` (grade 1); also `manager2` / `manager3` | Grade 1: add/edit catalogue and POs (submit, no approve). Grade 2+: approve within caps. No delete / no stock adjust. |
 | **Warehouse operator** | `warehouse.operator@centcompras.dev` (grade 1); also `operator2` | Grade 1: read-only. Grade 2: mutate closed circuit. Never approve. |
-| **Branch users** | `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…`, `branch.operator.south@…` / `branch.manager.south@…`, `branch.dual@…` | Branch picker + read-only catalogue (cost hidden, stock hint). Requisição interna (Slice 3) — coming. |
+| **Branch users** | `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…`, `branch.operator.south@…` / `branch.manager.south@…`, `branch.dual@…` | Branch picker, read-only catalogue (cost hidden, stock hint), and requisição interna. |
 | **Django superuser** | from `createsuperuser` | Site admin at `/admin/` only. The only users who may use Django admin. |
 
 After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed creates **branches** (North, South) and **branch users**, but does **not** create a superuser.
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 4 — Slice 3: requisição (internal request).
+4. **Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 5 — Slice 4: goods issue.
 
 ---
 
@@ -41,7 +41,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 
 A central warehouse holds the master product catalogue and stock. Stock is a **movement ledger**: goods receipts write `StockMovement` rows and update cached `Item.quantity`. Quantity is never typed on the item form.
 
-Satellite branches will order against that stock via **Requisição interna** (Phase 5 — planning; decisions locked). PostgreSQL is the **source of truth**.
+Satellite branches order against that stock via **Requisição interna** (Phase 5 — in progress; Slices 1–3 done). PostgreSQL is the **source of truth**.
 
 Warehouse staff work at `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/approval-limits/` (admins), and `/manage/goods-receipts/` via groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators`. Django admin is reserved for superusers.
 
@@ -71,7 +71,7 @@ No React, Vue, or similar frontend framework.
 - Django admin (superuser only) for users and groups
 - Consoles and APIs require login; APIs return 401 when unauthenticated
 
-> **Branches are built (Slices 1–2).** `Branch` + `BranchMembership` (`operator` / `manager` / `admin`), `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, and the read-only `/branch/catalog/` (cost hidden, stock hint). Requisição interna (Slice 3) is **not** built yet. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md).
+> **Branches + requisição are built (Slices 1–3).** `Branch` + `BranchMembership` (`operator` / `manager` / `admin`), `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (cost hidden, stock hint), and `/branch/requests/` (requisição interna through `approved`, manager caps). Goods issue (Slice 4) is **not** built yet. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md).
 
 Production will use Google OAuth (not implemented in dev).
 
@@ -120,6 +120,8 @@ Production will use Google OAuth (not implemented in dev).
 | `/branch/select/` | Branch picker (0 / 1 / N memberships) |
 | `/branch/catalog/` | Branch catalog (read-only; cost hidden, stock hint) |
 | `/api/branch/catalog/` | Branch catalog JSON API (cost hidden, stock hint) |
+| `/branch/requests/` | Requisição interna (branch list + editor) |
+| `/api/branch/requests/` | Requisição interna JSON API (draft → approved) |
 | `/admin/` | Django admin (**superuser only**) |
 
 There is no `GET /api/products/` and no `/service-worker.js`.
@@ -308,7 +310,7 @@ views (login required) → API + HTML
 
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
-- **Internal request (Requisição interna), goods issue, and branch stock** (Phase 5, Slices 3–6 — tenancy + catalog / Slices 1–2 are done)
+- **Goods issue and branch stock** (Phase 5, Slices 4–6 — tenancy + catalog + requisição / Slices 1–3 are done)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
 - Integration tests (unit suites are green, **294 tests**)
