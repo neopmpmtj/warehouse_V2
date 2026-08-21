@@ -4,17 +4,8 @@ from django.contrib.auth.views import redirect_to_login
 from django.http import HttpResponseForbidden, JsonResponse
 
 from accounts.authz import deny_if_inactive, user_is_active
-from accounts.groups import (
-    ADD_FAMILY,
-    ADD_ITEM,
-    ADD_SUPPLIER,
-    ADD_SUPPLIER_ITEM_PRICE,
-    CHANGE_FAMILY,
-    CHANGE_ITEM,
-    CHANGE_SUPPLIER,
-    CHANGE_SUPPLIER_ITEM_PRICE,
-    VIEW_ITEM,
-)
+from accounts.capabilities import catalog_permission_flags, has_effective_perm
+from accounts.groups import VIEW_ITEM
 
 
 def can_view_catalog(user):
@@ -24,20 +15,11 @@ def can_view_catalog(user):
 
 
 def catalog_permissions(user):
-    return {
-        "add_item": user.has_perm(ADD_ITEM),
-        "change_item": user.has_perm(CHANGE_ITEM),
-        "add_family": user.has_perm(ADD_FAMILY),
-        "change_family": user.has_perm(CHANGE_FAMILY),
-        "add_supplier": user.has_perm(ADD_SUPPLIER),
-        "change_supplier": user.has_perm(CHANGE_SUPPLIER),
-        "add_supplier_item_price": user.has_perm(ADD_SUPPLIER_ITEM_PRICE),
-        "change_supplier_item_price": user.has_perm(CHANGE_SUPPLIER_ITEM_PRICE),
-    }
+    return catalog_permission_flags(user)
 
 
 def deny_unless(request, perm):
-    if request.user.has_perm(perm):
+    if has_effective_perm(request.user, perm):
         return None
     message = f"Missing permission: {perm}"
     if request.path.startswith("/api/"):

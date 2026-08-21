@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Approval limits — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+            } catch (e) {
+                /* ignore */
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=12">
+</head>
+<body data-can-edit="{% if can_edit_approval_policy %}true{% else %}false{% endif %}">
+    <header class="topbar">
+        <div class="topbar-title">
+            <p class="eyebrow">CentCompras</p>
+            <h1>Approval limits (EUR gross)</h1>
+        </div>
+        <div class="topbar-actions">
+            <p class="user-line">
+                <span>Signed in as</span>
+                <strong>{{ user.email }}</strong>
+            </p>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost">Sign out</button>
+            </form>
+        </div>
+    </header>
+    <main class="page">
+        <p class="hint">Amounts are EUR, VAT included. Only warehouse admins can edit.</p>
+        <p id="banner" class="banner" hidden></p>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Group</th>
+                    <th>Grade</th>
+                    <th>Approve others</th>
+                    <th>Self-approve</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="limits-body"></tbody>
+        </table>
+    </main>
+    <script src="{% static 'procurement/js/approval_limits.js' %}?v=1"></script>
+</body>
+</html>

@@ -53,4 +53,14 @@ urlpatterns = [
         console_views.manage_purchase_order_history,
         name="manage_purchase_order_history",
     ),
+    path(
+        "manage/approval-limits/",
+        console_views.manage_approval_limit_list,
+        name="manage_approval_limit_list",
+    ),
+    path(
+        "manage/approval-limits/<int:limit_id>/",
+        console_views.manage_approval_limit_detail,
+        name="manage_approval_limit_detail",
+    ),
 ]

@@ -278,11 +278,11 @@ def receive_goods(po, lines, user, reference="", notes=""):
     if po.status == PurchaseOrder.Status.APPROVED:
         from procurement.services import receive
 
-        po = receive(po, user)
+        po = receive(po, user, reason="Goods received")
     if _is_fully_received(po):
         from procurement.services import close
 
-        close(po, user)
+        close(po, user, reason="Fully received")
 
     logger.info(
         "Received goods receipt id=%s po=%s lines=%s user=%s",
@@ -301,6 +301,13 @@ def adjust_stock(item, quantity, reason, user):
     quantity = _parse_decimal_quantity(quantity)
     if quantity == 0:
         raise InvalidAdjustmentQuantityError()
+
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError(
+            "A reason is required to adjust stock.",
+            code="adjust_reason_required",
+        )
 
     movement = _write_movement(
         item,

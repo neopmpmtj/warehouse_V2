@@ -16,6 +16,7 @@ from accounts.groups import (
     GROUP_OPERATORS,
     assign_warehouse_group,
 )
+from accounts.capabilities import can_mutate_catalog
 from products.models import Item, VatRate
 from products.services import (
     create_family,
@@ -155,6 +156,11 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
             movements.filter(movement_type=StockMovement.Type.ADJUSTMENT).count(), 2
         )
         self.assertEqual(movements.first().reason, "correction")
+
+    def test_adjust_stock_requires_reason(self):
+        with self.assertRaises(ValidationError) as ctx:
+            services.adjust_stock(self.item, "5", "   ", self.user)
+        self.assertEqual(ctx.exception.code, "adjust_reason_required")
 
     def test_adjust_stock_zero_is_rejected(self):
         with self.assertRaises(services.InvalidAdjustmentQuantityError):
@@ -483,8 +489,9 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         self.assertTrue(admin.has_perm("inventory.can_adjust_stock"))
         self.assertTrue(manager.has_perm("inventory.add_goodsreceipt"))
         self.assertFalse(manager.has_perm("inventory.can_adjust_stock"))
-        self.assertFalse(operator.has_perm("inventory.add_goodsreceipt"))
+        self.assertTrue(operator.has_perm("inventory.add_goodsreceipt"))
         self.assertTrue(operator.has_perm("inventory.view_goodsreceipt"))
+        self.assertFalse(can_mutate_catalog(operator))
 
 
 class ConcurrentReceiptTests(InventoryTestCaseMixin, TransactionTestCase):

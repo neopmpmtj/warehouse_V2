@@ -403,11 +403,11 @@ function renderStatusActions(po, perms) {
             actions.push({ endpoint: "approve/", labelKey: "actionApprove", successKey: "approved" });
         }
         if (perms.change) {
-            actions.push({ endpoint: "reject/", labelKey: "actionReject", successKey: "rejected", danger: true });
+            actions.push({ endpoint: "reject/", labelKey: "actionReject", successKey: "rejected", danger: true, reasonKey: "reasonReject" });
         }
     } else if (po.status === "received") {
         if (perms.change) {
-            actions = [{ endpoint: "close/", labelKey: "actionClose", successKey: "closed", confirmKey: "confirmClose" }];
+            actions = [{ endpoint: "close/", labelKey: "actionClose", successKey: "closed", confirmKey: "confirmClose", reasonKey: "reasonClose" }];
         }
     } else if (po.status === "rejected") {
         if (perms.change) {
@@ -424,13 +424,21 @@ function renderStatusActions(po, perms) {
             if (action.confirmKey && !window.confirm(t(action.confirmKey))) {
                 return;
             }
-            performStatusAction(po.id, action.endpoint, action.successKey, button);
+            let reason = "";
+            if (action.reasonKey) {
+                const typed = window.prompt(t(action.reasonKey));
+                if (typed === null) {
+                    return;
+                }
+                reason = typed;
+            }
+            performStatusAction(po.id, action.endpoint, action.successKey, button, reason);
         });
         container.appendChild(button);
     });
 }
 
-async function performStatusAction(poId, endpoint, successKey, button) {
+async function performStatusAction(poId, endpoint, successKey, button, reason) {
     if (isBusy()) {
         return;
     }
@@ -439,7 +447,7 @@ async function performStatusAction(poId, endpoint, successKey, button) {
     try {
         const data = await api(`${PO_API}${poId}/${endpoint}`, {
             method: "POST",
-            body: JSON.stringify({}),
+            body: JSON.stringify({ reason: reason || "" }),
         });
         state.openPo = data.purchase_order;
         replacePurchaseOrder(data.purchase_order);

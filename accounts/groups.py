@@ -35,10 +35,19 @@ CHANGE_SUPPLIER_ITEM_PRICE = "products.change_supplieritemprice"
 APPROVE_PURCHASE_ORDER = "procurement.can_approve"
 
 WAREHOUSE_USERS = (
-    ("warehouse.admin@centcompras.dev", GROUP_ADMINS),
-    ("warehouse.manager@centcompras.dev", GROUP_MANAGERS),
-    ("warehouse.operator@centcompras.dev", GROUP_OPERATORS),
+    ("warehouse.admin@centcompras.dev", GROUP_ADMINS, 1),
+    ("warehouse.manager@centcompras.dev", GROUP_MANAGERS, 1),
+    ("warehouse.operator@centcompras.dev", GROUP_OPERATORS, 1),
+    ("warehouse.operator2@centcompras.dev", GROUP_OPERATORS, 2),
+    ("warehouse.manager2@centcompras.dev", GROUP_MANAGERS, 2),
+    ("warehouse.manager3@centcompras.dev", GROUP_MANAGERS, 3),
 )
+
+GRADE_MAX_BY_GROUP = {
+    GROUP_ADMINS: 1,
+    GROUP_MANAGERS: 3,
+    GROUP_OPERATORS: 2,
+}
 
 
 def _codenames_for_group(group_name):
@@ -50,8 +59,8 @@ def _codenames_for_group(group_name):
     if group_name == GROUP_ADMINS:
         return view + add + change + delete + ["can_approve", "can_adjust_stock"]
     if group_name == GROUP_MANAGERS:
-        return view + add + change
-    return view
+        return view + add + change + ["can_approve"]
+    return view + add + change
 
 
 CATALOG_APP_LABELS = ("products", "procurement", "inventory")
@@ -89,6 +98,16 @@ def clear_permission_cache(user):
             delattr(user, cache_name)
 
 
+def warehouse_group_name(user):
+    if not getattr(user, "pk", None):
+        return None
+    names = set(user.groups.values_list("name", flat=True))
+    for name in WAREHOUSE_GROUP_NAMES:
+        if name in names:
+            return name
+    return None
+
+
 def assign_warehouse_group(user, group_name=GROUP_ADMINS):
     if group_name not in WAREHOUSE_GROUP_NAMES:
         raise ValueError(f"Unknown warehouse group: {group_name}")
@@ -96,5 +115,28 @@ def assign_warehouse_group(user, group_name=GROUP_ADMINS):
     group = Group.objects.get(name=group_name)
     user.groups.remove(*Group.objects.filter(name__in=WAREHOUSE_GROUP_NAMES))
     user.groups.add(group)
+    user.warehouse_grade = 1
+    user.save(update_fields=["warehouse_grade"])
     clear_permission_cache(user)
     return group
+
+
+def set_warehouse_grade(user, grade):
+    group_name = warehouse_group_name(user)
+    if group_name is None:
+        raise ValueError("User is not in a warehouse group")
+    try:
+        grade = int(grade)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("warehouse_grade must be an integer") from exc
+    max_grade = GRADE_MAX_BY_GROUP[group_name]
+    if group_name == GROUP_ADMINS:
+        grade = 1
+    elif grade < 1 or grade > max_grade:
+        raise ValueError(
+            f"warehouse_grade for {group_name} must be between 1 and {max_grade}"
+        )
+    user.warehouse_grade = grade
+    user.save(update_fields=["warehouse_grade"])
+    clear_permission_cache(user)
+    return user

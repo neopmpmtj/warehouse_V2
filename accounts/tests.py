@@ -14,8 +14,10 @@ from accounts.groups import (
     VIEW_ITEM,
     WAREHOUSE_GROUP_NAMES,
     assign_warehouse_group,
+    set_warehouse_grade,
     sync_warehouse_groups,
 )
+from accounts.capabilities import can_approve_purchase_order, can_mutate_catalog
 from products.permissions import can_view_catalog
 
 
@@ -76,7 +78,7 @@ class WarehouseGroupTests(TestCase):
         self.assertTrue(user.has_perm(CHANGE_ITEM))
         self.assertFalse(user.has_perm(DELETE_ITEM))
 
-    def test_operator_is_read_only(self):
+    def test_operator_grade_one_cannot_mutate(self):
         user = get_user_model().objects.create_user(
             email="operator@example.com",
             password="test-pass-123",
@@ -85,9 +87,11 @@ class WarehouseGroupTests(TestCase):
 
         self.assertTrue(user.has_perm(VIEW_ITEM))
         self.assertTrue(can_view_catalog(user))
-        self.assertFalse(user.has_perm(ADD_ITEM))
-        self.assertFalse(user.has_perm(CHANGE_ITEM))
+        self.assertTrue(user.has_perm(ADD_ITEM))
+        self.assertTrue(user.has_perm(CHANGE_ITEM))
         self.assertFalse(user.has_perm(DELETE_ITEM))
+        self.assertFalse(can_mutate_catalog(user))
+        self.assertEqual(user.warehouse_grade, 1)
 
     def test_sync_warehouse_groups_is_idempotent(self):
         admins = Group.objects.get(name=GROUP_ADMINS)
@@ -128,8 +132,44 @@ class WarehouseGroupTests(TestCase):
         assign_warehouse_group(user, GROUP_OPERATORS)
         names = set(user.groups.values_list("name", flat=True))
         self.assertEqual(names & set(WAREHOUSE_GROUP_NAMES), {GROUP_OPERATORS})
-        self.assertFalse(user.has_perm(ADD_ITEM))
+        self.assertTrue(user.has_perm(ADD_ITEM))
         self.assertTrue(user.has_perm(VIEW_ITEM))
+        self.assertFalse(can_mutate_catalog(user))
+        self.assertEqual(user.warehouse_grade, 1)
+
+    def test_assign_warehouse_group_resets_grade(self):
+        user = get_user_model().objects.create_user(
+            email="grade-reset@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(user, GROUP_MANAGERS)
+        set_warehouse_grade(user, 3)
+        self.assertEqual(user.warehouse_grade, 3)
+        self.assertTrue(can_approve_purchase_order(user))
+
+        assign_warehouse_group(user, GROUP_MANAGERS)
+        user.refresh_from_db()
+        self.assertEqual(user.warehouse_grade, 1)
+        self.assertFalse(can_approve_purchase_order(user))
+
+    def test_operator_grade_two_can_mutate(self):
+        user = get_user_model().objects.create_user(
+            email="operator2@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(user, GROUP_OPERATORS)
+        set_warehouse_grade(user, 2)
+        self.assertTrue(can_mutate_catalog(user))
+        self.assertFalse(can_approve_purchase_order(user))
+
+    def test_set_warehouse_grade_rejects_out_of_range(self):
+        user = get_user_model().objects.create_user(
+            email="grade-range@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(user, GROUP_OPERATORS)
+        with self.assertRaises(ValueError):
+            set_warehouse_grade(user, 3)
 
     def test_sync_warehouse_groups_replaces_extra_permissions(self):
         admins = Group.objects.get(name=GROUP_ADMINS)

@@ -2,13 +2,23 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from logging_utils import get_logger
 
+from accounts.capabilities import can_approve_purchase_order, can_edit_approval_policy
+from accounts.groups import GROUP_ADMINS, GROUP_MANAGERS, warehouse_group_name
+
 from products.models import Item, Supplier, SupplierItemPrice
 
-from .models import PurchaseOrder, PurchaseOrderChangeLog, PurchaseOrderLine
+from .models import (
+    ApprovalLimit,
+    ApprovalLimitChangeLog,
+    PurchaseOrder,
+    PurchaseOrderChangeLog,
+    PurchaseOrderLine,
+)
 
 logger = get_logger("centcompras.procurement")
 
@@ -89,6 +99,62 @@ class DuplicatePOLineError(ValidationError):
         )
 
 
+class ApprovalDeniedError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "You do not have permission to approve this purchase order.",
+            code="approval_denied",
+        )
+
+
+class ApproverRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "An approver is required.",
+            code="approver_required",
+        )
+
+
+class SelfApprovalLimitError(ValidationError):
+    def __init__(self, gross, limit):
+        super().__init__(
+            f"Self-approval is limited to {limit} EUR gross (this PO is {gross}).",
+            code="self_approval_limit",
+        )
+
+
+class ApprovalLimitExceededError(ValidationError):
+    def __init__(self, gross, limit):
+        super().__init__(
+            f"Approval is limited to {limit} EUR gross (this PO is {gross}).",
+            code="approval_limit_exceeded",
+        )
+
+
+class ApprovalLimitMissingError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "No approval limit is configured for this grade.",
+            code="approval_limit_missing",
+        )
+
+
+class ApprovalPolicyForbiddenError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Only warehouse admins can change approval limits.",
+            code="approval_policy_forbidden",
+        )
+
+
+DEFAULT_APPROVAL_LIMITS = (
+    (GROUP_MANAGERS, 2, Decimal("5000.00"), Decimal("100.00")),
+    (GROUP_MANAGERS, 3, Decimal("50000.00"), Decimal("500.00")),
+)
+CLOSE_REASON_FULLY_RECEIVED = "Fully received"
+RECEIVE_REASON_GOODS_RECEIVED = "Goods received"
+
+
 def _resolve_supplier(supplier):
     if isinstance(supplier, Supplier):
         return supplier
@@ -155,6 +221,129 @@ def _validate_po_entities_active(po):
     _ensure_supplier_active(supplier)
     for line in po.lines.select_related("item"):
         _ensure_item_active(line.item)
+
+
+def _require_reason(reason, code, message):
+    text = (reason or "").strip()
+    if not text:
+        raise ValidationError(message, code=code)
+    if len(text) > 255:
+        raise ValidationError("Reason must be 255 characters or fewer.", code=code)
+    return text
+
+
+def _po_has_remaining(po):
+    from inventory.models import GoodsReceiptLine
+
+    totals = (
+        GoodsReceiptLine.objects.filter(purchase_order_line__purchase_order=po)
+        .values("purchase_order_line_id")
+        .annotate(total=Sum("quantity_received"))
+    )
+    received_map = {
+        row["purchase_order_line_id"]: (row["total"] or Decimal("0"))
+        for row in totals
+    }
+    return any(
+        (line.quantity - received_map.get(line.id, Decimal("0"))) > 0
+        for line in po.lines.all()
+    )
+
+
+def ensure_default_approval_limits():
+    """Create manager grade 2/3 limit rows if missing. Does not overwrite edits."""
+    for group_name, grade, approval, self_approval in DEFAULT_APPROVAL_LIMITS:
+        ApprovalLimit.objects.get_or_create(
+            group_name=group_name,
+            grade=grade,
+            defaults={
+                "approval_limit": approval,
+                "self_approval_limit": self_approval,
+            },
+        )
+
+
+def list_approval_limits():
+    ensure_default_approval_limits()
+    return ApprovalLimit.objects.all()
+
+
+@transaction.atomic
+def update_approval_limit(limit, user, approval_limit=None, self_approval_limit=None):
+    if not can_edit_approval_policy(user):
+        raise ApprovalPolicyForbiddenError()
+    limit = ApprovalLimit.objects.select_for_update().get(pk=limit.pk)
+    changes = {}
+    if approval_limit is not None:
+        value = _parse_decimal(approval_limit, "approval_limit")
+        if value < 0:
+            raise ValidationError(
+                "approval_limit must be zero or greater.",
+                code="invalid_approval_limit",
+            )
+        value = value.quantize(Decimal("0.01"))
+        if limit.approval_limit != value:
+            changes["approval_limit"] = {
+                "old": str(limit.approval_limit),
+                "new": str(value),
+            }
+            limit.approval_limit = value
+    if self_approval_limit is not None:
+        value = _parse_decimal(self_approval_limit, "self_approval_limit")
+        if value < 0:
+            raise ValidationError(
+                "self_approval_limit must be zero or greater.",
+                code="invalid_approval_limit",
+            )
+        value = value.quantize(Decimal("0.01"))
+        if limit.self_approval_limit != value:
+            changes["self_approval_limit"] = {
+                "old": str(limit.self_approval_limit),
+                "new": str(value),
+            }
+            limit.self_approval_limit = value
+    if not changes:
+        return limit
+    limit.save(update_fields=[*changes.keys(), "updated_at"])
+    ApprovalLimitChangeLog.objects.create(
+        approval_limit=limit,
+        user=user,
+        action=ApprovalLimitChangeLog.Action.UPDATED,
+        changes=changes,
+    )
+    logger.info(
+        "Updated approval limit id=%s changes=%s user=%s",
+        limit.id,
+        list(changes.keys()),
+        getattr(user, "email", None),
+    )
+    return limit
+
+
+def _approval_limit_for(user):
+    ensure_default_approval_limits()
+    group = warehouse_group_name(user)
+    grade = int(getattr(user, "warehouse_grade", 1) or 1)
+    return ApprovalLimit.objects.filter(group_name=group, grade=grade).first()
+
+
+def _assert_can_approve(po, user, gross):
+    if user is None or not getattr(user, "pk", None):
+        raise ApproverRequiredError()
+    if not can_approve_purchase_order(user):
+        raise ApprovalDeniedError()
+    if warehouse_group_name(user) == GROUP_ADMINS or getattr(user, "is_superuser", False):
+        return
+    limit = _approval_limit_for(user)
+    if limit is None:
+        raise ApprovalLimitMissingError()
+    gross = gross.quantize(Decimal("0.01"))
+    is_self = user.pk == po.created_by_id
+    cap = limit.self_approval_limit if is_self else limit.approval_limit
+    if gross > cap:
+        if is_self:
+            raise SelfApprovalLimitError(gross, cap)
+        raise ApprovalLimitExceededError(gross, cap)
 
 
 def _parse_decimal(value, field_name):
@@ -450,7 +639,7 @@ def update_purchase_order(po, user=None, **fields):
 
 
 @transaction.atomic
-def submit(po, user=None):
+def submit(po, user=None, reason=""):
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     if not po.lines.exists():
         raise ValidationError(
@@ -467,18 +656,20 @@ def submit(po, user=None):
         user,
         PurchaseOrderChangeLog.Action.STATUS_CHANGED,
         {"status": {"old": PurchaseOrder.Status.DRAFT, "new": PurchaseOrder.Status.SUBMITTED}},
+        reason=reason,
     )
     logger.info("Submitted purchase order id=%s user=%s", po.id, getattr(user, "email", None))
     return po
 
 
 @transaction.atomic
-def approve(po, user=None):
+def approve(po, user=None, reason=""):
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.APPROVED)
     _validate_po_entities_active(po)
     _validate_all_lines_have_supplier_price(po)
     net, vat, gross = po.totals()
+    _assert_can_approve(po, user, gross)
     po.status = PurchaseOrder.Status.APPROVED
     po.approved_by = user
     po.approved_at = timezone.now()
@@ -506,15 +697,22 @@ def approve(po, user=None):
             "approved_vat": str(vat),
             "approved_gross": str(gross),
         },
+        reason=reason,
     )
-    notify_supplier_on_approval(po)
+    po_id = po.pk
+    transaction.on_commit(lambda po_id=po_id: notify_supplier_on_approval(po_id))
     logger.info("Approved purchase order id=%s user=%s", po.id, getattr(user, "email", None))
     return po
 
 
 @transaction.atomic
-def reject(po, user=None):
+def reject(po, user=None, reason=""):
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
+    reason = _require_reason(
+        reason,
+        "reject_reason_required",
+        "A reason is required to reject a purchase order.",
+    )
     _transition(po, PurchaseOrder.Status.REJECTED)
     po.status = PurchaseOrder.Status.REJECTED
     po.save(update_fields=["status", "updated_at"])
@@ -523,13 +721,14 @@ def reject(po, user=None):
         user,
         PurchaseOrderChangeLog.Action.STATUS_CHANGED,
         {"status": {"old": PurchaseOrder.Status.SUBMITTED, "new": PurchaseOrder.Status.REJECTED}},
+        reason=reason,
     )
     logger.info("Rejected purchase order id=%s user=%s", po.id, getattr(user, "email", None))
     return po
 
 
 @transaction.atomic
-def receive(po, user=None):
+def receive(po, user=None, reason=""):
     """Transition approved -> received. Called by inventory.receive_goods() after stock is written."""
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.RECEIVED)
@@ -540,16 +739,26 @@ def receive(po, user=None):
         user,
         PurchaseOrderChangeLog.Action.STATUS_CHANGED,
         {"status": {"old": PurchaseOrder.Status.APPROVED, "new": PurchaseOrder.Status.RECEIVED}},
+        reason=(reason or "").strip() or RECEIVE_REASON_GOODS_RECEIVED,
     )
     logger.info("Received purchase order id=%s user=%s", po.id, getattr(user, "email", None))
     return po
 
 
 @transaction.atomic
-def close(po, user=None):
+def close(po, user=None, reason=""):
     """Transition received -> closed. Called by inventory.receive_goods() when fully received, or manually to accept a short shipment."""
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.CLOSED)
+    reason = (reason or "").strip()
+    if _po_has_remaining(po):
+        reason = _require_reason(
+            reason,
+            "close_reason_required",
+            "A reason is required to close a purchase order with remaining quantity.",
+        )
+    elif not reason:
+        reason = CLOSE_REASON_FULLY_RECEIVED
     po.status = PurchaseOrder.Status.CLOSED
     po.save(update_fields=["status", "updated_at"])
     _log(
@@ -557,13 +766,14 @@ def close(po, user=None):
         user,
         PurchaseOrderChangeLog.Action.STATUS_CHANGED,
         {"status": {"old": PurchaseOrder.Status.RECEIVED, "new": PurchaseOrder.Status.CLOSED}},
+        reason=reason,
     )
     logger.info("Closed purchase order id=%s user=%s", po.id, getattr(user, "email", None))
     return po
 
 
 @transaction.atomic
-def reopen(po, user=None):
+def reopen(po, user=None, reason=""):
     """Transition rejected -> draft so the order can be corrected and resubmitted."""
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.DRAFT)
@@ -574,6 +784,7 @@ def reopen(po, user=None):
         user,
         PurchaseOrderChangeLog.Action.STATUS_CHANGED,
         {"status": {"old": PurchaseOrder.Status.REJECTED, "new": PurchaseOrder.Status.DRAFT}},
+        reason=reason,
     )
     logger.info("Reopened purchase order id=%s user=%s", po.id, getattr(user, "email", None))
     return po
@@ -581,6 +792,8 @@ def reopen(po, user=None):
 
 def notify_supplier_on_approval(po):
     """Stub for Phase 6 (email automation). Logs intent only."""
+    if not isinstance(po, PurchaseOrder):
+        po = PurchaseOrder.objects.select_related("supplier").get(pk=po)
     logger.info(
         "Would notify supplier %s about approval of PO #%s (stub)",
         po.supplier.name,

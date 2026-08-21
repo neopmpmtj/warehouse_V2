@@ -52,6 +52,13 @@ class User(AbstractBaseUser, PermissionsMixin):
             "or Asia/Singapore (UTC+8). Used for server-rendered dates."
         ),
     )
+    warehouse_grade = models.PositiveSmallIntegerField(
+        default=1,
+        help_text=(
+            "Grade within the warehouse group: operator 1–2, manager 1–3. "
+            "warehouse_admins ignore this (always treated as 1 / unlimited)."
+        ),
+    )
 
     objects = UserManager()
 

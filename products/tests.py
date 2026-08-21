@@ -1727,10 +1727,13 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
 
 class SupplierItemPricePermissionTests(TestCase):
     def test_operator_has_view_only_permission(self):
+        from accounts.capabilities import can_mutate_catalog
+
         operator = make_warehouse_user("op-sip@example.com", group_name=GROUP_OPERATORS)
         self.assertTrue(operator.has_perm("products.view_supplieritemprice"))
-        self.assertFalse(operator.has_perm("products.add_supplieritemprice"))
-        self.assertFalse(operator.has_perm("products.change_supplieritemprice"))
+        self.assertTrue(operator.has_perm("products.add_supplieritemprice"))
+        self.assertTrue(operator.has_perm("products.change_supplieritemprice"))
+        self.assertFalse(can_mutate_catalog(operator))
 
     def test_manager_can_add_and_change_but_not_delete(self):
         manager = make_warehouse_user("mgr-sip@example.com", group_name=GROUP_MANAGERS)

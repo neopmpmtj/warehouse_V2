@@ -247,7 +247,11 @@ def _item_response(item):
 @catalog_required
 @require_GET
 def item_console(request):
-    return render(request, "products/item_console.html")
+    return render(
+        request,
+        "products/item_console.html",
+        {"catalog_flags": catalog_permissions(request.user)},
+    )
 
 
 @catalog_required

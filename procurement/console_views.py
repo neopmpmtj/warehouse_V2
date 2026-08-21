@@ -5,11 +5,12 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from accounts.capabilities import can_edit_approval_policy
 from accounts.groups import APPROVE_PURCHASE_ORDER
 from logging_utils import get_logger
 
 from . import services
-from .models import PurchaseOrder
+from .models import ApprovalLimit, PurchaseOrder
 from .permissions import (
     ADD_PO,
     CHANGE_PO,
@@ -149,8 +150,13 @@ def _status_action(request, po_id, service_fn, perm):
     if denied:
         return denied
     try:
+        reason = ""
+        content_type = request.content_type or ""
+        if request.body and "json" in content_type.lower():
+            payload = _parse_json(request)
+            reason = str(payload.get("reason", ""))
         po = _get_po(po_id)
-        po = service_fn(po, request.user)
+        po = service_fn(po, request.user, reason=reason)
     except PurchaseOrder.DoesNotExist:
         return _json_error("Purchase order not found.", status=404)
     except ValidationError as exc:
@@ -355,3 +361,49 @@ def manage_purchase_order_history(request, po_id):
             ]
         }
     )
+
+
+def _serialize_approval_limit(limit):
+    return {
+        "id": limit.id,
+        "group_name": limit.group_name,
+        "grade": limit.grade,
+        "approval_limit": _dec(limit.approval_limit),
+        "self_approval_limit": _dec(limit.self_approval_limit),
+        "updated_at": limit.updated_at.isoformat(),
+    }
+
+
+@procurement_required
+@require_GET
+def manage_approval_limit_list(request):
+    limits = services.list_approval_limits()
+    return JsonResponse(
+        {
+            "limits": [_serialize_approval_limit(limit) for limit in limits],
+            "can_edit": can_edit_approval_policy(request.user),
+        }
+    )
+
+
+@procurement_required
+@require_http_methods(["PATCH"])
+def manage_approval_limit_detail(request, limit_id):
+    if not can_edit_approval_policy(request.user):
+        return _json_error("Only warehouse admins can change approval limits.", status=403)
+
+    try:
+        limit = ApprovalLimit.objects.get(pk=limit_id)
+        payload = _parse_json(request)
+        fields = {}
+        if "approval_limit" in payload:
+            fields["approval_limit"] = payload["approval_limit"]
+        if "self_approval_limit" in payload:
+            fields["self_approval_limit"] = payload["self_approval_limit"]
+        limit = services.update_approval_limit(limit, request.user, **fields)
+    except ApprovalLimit.DoesNotExist:
+        return _json_error("Approval limit not found.", status=404)
+    except ValidationError as exc:
+        return _po_error(exc)
+
+    return JsonResponse({"limit": _serialize_approval_limit(limit)})

@@ -7,6 +7,7 @@ from accounts.groups import (
     GROUP_ADMINS,
     WAREHOUSE_USERS,
     assign_warehouse_group,
+    set_warehouse_grade,
 )
 from accounts.models import DEFAULT_USER_TIMEZONE
 from products.models import (
@@ -33,6 +34,7 @@ from products.services import (
     update_supplier,
     update_supplier_item_price,
 )
+from procurement.services import ensure_default_approval_limits
 
 
 DEFAULT_PASSWORD = "devpass123"
@@ -48,7 +50,7 @@ def _demo_selling_prices(internal_code):
 
 class Command(BaseCommand):
     help = (
-        "Seed local dev data: warehouse users (3 groups), families, "
+        "Seed local dev data: warehouse users (grades + groups), families, "
         "suppliers, and ~50 items (idempotent)."
     )
 
@@ -82,7 +84,7 @@ class Command(BaseCommand):
 
         warehouse_user = None
         if not options["skip_warehouse"]:
-            for email, group_name in WAREHOUSE_USERS:
+            for email, group_name, grade in WAREHOUSE_USERS:
                 user, created = user_model.objects.get_or_create(
                     email=email,
                     defaults={
@@ -105,11 +107,12 @@ class Command(BaseCommand):
                 if changed_fields:
                     user.save(update_fields=changed_fields)
                 assign_warehouse_group(user, group_name)
+                set_warehouse_grade(user, grade)
                 if group_name == GROUP_ADMINS:
                     warehouse_user = user
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f"Warehouse user: {user.email} (group {group_name})"
+                        f"Warehouse user: {user.email} (group {group_name}, grade {grade})"
                     )
                 )
 
@@ -268,15 +271,18 @@ class Command(BaseCommand):
                     f"Supplier price: {supplier.name} -> {item.internal_code} @ {cost_price}"
                 )
 
+        ensure_default_approval_limits()
+
         self.stdout.write("")
         self.stdout.write(self.style.WARNING("Dev login credentials:"))
         self.stdout.write(f"  Password: {password}")
         self.stdout.write("")
         self.stdout.write("Warehouse website (/ and /manage/items/) — not /admin/:")
-        for email, group_name in WAREHOUSE_USERS:
-            self.stdout.write(f"  {email}  ({group_name})")
+        for email, group_name, grade in WAREHOUSE_USERS:
+            self.stdout.write(f"  {email}  ({group_name}, grade {grade})")
         self.stdout.write("")
         self.stdout.write(
-            "Django permissions: admins view/add/change/delete; "
-            "managers view/add/change; operators view only."
+            "Operators grade 1 are view-only; operator 2 and managers mutate the "
+            "closed circuit. Managers grade 2+ can approve (caps on /manage/approval-limits/). "
+            "Admins can approve anything, delete, and adjust stock."
         )

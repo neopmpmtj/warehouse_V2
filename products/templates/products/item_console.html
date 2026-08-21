@@ -23,14 +23,14 @@
     <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=12">
 </head>
 <body
-    data-can-add-item="{% if perms.products.add_item %}true{% else %}false{% endif %}"
-    data-can-change-item="{% if perms.products.change_item %}true{% else %}false{% endif %}"
-    data-can-add-family="{% if perms.products.add_familyproduct %}true{% else %}false{% endif %}"
-    data-can-change-family="{% if perms.products.change_familyproduct %}true{% else %}false{% endif %}"
-    data-can-add-supplier="{% if perms.products.add_supplier %}true{% else %}false{% endif %}"
-    data-can-change-supplier="{% if perms.products.change_supplier %}true{% else %}false{% endif %}"
-    data-can-add-supplier-item-price="{% if perms.products.add_supplieritemprice %}true{% else %}false{% endif %}"
-    data-can-change-supplier-item-price="{% if perms.products.change_supplieritemprice %}true{% else %}false{% endif %}"
+    data-can-add-item="{% if catalog_flags.add_item %}true{% else %}false{% endif %}"
+    data-can-change-item="{% if catalog_flags.change_item %}true{% else %}false{% endif %}"
+    data-can-add-family="{% if catalog_flags.add_family %}true{% else %}false{% endif %}"
+    data-can-change-family="{% if catalog_flags.change_family %}true{% else %}false{% endif %}"
+    data-can-add-supplier="{% if catalog_flags.add_supplier %}true{% else %}false{% endif %}"
+    data-can-change-supplier="{% if catalog_flags.change_supplier %}true{% else %}false{% endif %}"
+    data-can-add-supplier-item-price="{% if catalog_flags.add_supplier_item_price %}true{% else %}false{% endif %}"
+    data-can-change-supplier-item-price="{% if catalog_flags.change_supplier_item_price %}true{% else %}false{% endif %}"
 >
     <header class="topbar">
         <div class="topbar-title">
