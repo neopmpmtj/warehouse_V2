@@ -1,6 +1,6 @@
 # CentCompras — Full-Codebase Deep Review (read-only)
 
-> **Status: OPEN — in progress.** P0 (H1–H3), P1 (M2/M3/M4/M9), and P2 (M5/M6/M8) are applied. **Next: P3 = M10.** M7 is deferred. M1 and L1–L14 remain. When every ⏳ item is ✅ or ⏸ with rationale, move this file to `docs/archive/` and update [`handoff.md`](handoff.md).
+> **Status: OPEN — in progress.** P0–P3 are applied (H1–H3, M2–M6, M8–M10). **Next: P4 = M1 + L1–L14.** M7 is deferred. When every ⏳ item is ✅ or ⏸ with rationale, move this file to `docs/archive/` and update [`handoff.md`](handoff.md).
 
 > Originally a read-only review (20 Aug 2026, 22:08 WEST). Remediation is underway; this file is the live backlog.
 
@@ -230,7 +230,7 @@ Each line locks items in payload order. Two concurrent receipts touching overlap
 
 **Suggested fix:** Policy decisions first, then implement reasons / self-approval rule / `transaction.on_commit()` for email.
 
-**Status:** ⏳ Open (email part deferred to Phase 6)
+**Status:** ✅ Done — grades + `ApprovalLimit` (EUR gross); `approve()` SoD/caps; required reason on reject / manual close / `adjust_stock`; status `_log` reasons; `transaction.on_commit` around the email stub (Phase 6 product still pending).
 
 ---
 
@@ -292,8 +292,8 @@ H1 is the only path that can silently break the link between **approved totals**
 | **P0** | H1, H2, H3 | ✅ Applied |
 | **P1** | M3, M2, M4, M9 | ✅ Applied |
 | **P2** | M5, M6, M8 | ✅ Applied — **M7 skipped** (pagination deferred; consoles assume full lists in memory) |
-| **P3** | M10 | ⏳ **Next** — segregation of duties, audit reasons, `on_commit` email |
-| **P4** | M1 + L1–L14 | ⏳ After P3 |
+| **P3** | M10 | ✅ Applied — grades, approval limits, reasons, `on_commit` stub |
+| **P4** | M1 + L1–L14 | ⏳ **Next** |
 
 ---
 
@@ -330,11 +330,11 @@ Update this table as work completes. Move the whole doc to `docs/archive/` when 
 | M7 | ⏸ Deferred (scale) |
 | M8 | ✅ Done |
 | M9 | ✅ Done |
-| M10 | ⏳ Open |
+| M10 | ✅ Done |
 | L1–L14 | ⏳ Open |
 
 ---
 
 ## Comparison with prior review
 
-[`docs/archive/code-review-full-2026-08-20-1928.md`](archive/code-review-full-2026-08-20-1928.md) fixed NaN→500, negative adjust stock, XSS, N+1, catalog filter race, etc. **This document remains the live backlog.** Highs and most mediums are done; remaining work is M10 (P3), M1, and L1–L14. M7 is deferred.
+[`docs/archive/code-review-full-2026-08-20-1928.md`](archive/code-review-full-2026-08-20-1928.md) fixed NaN→500, negative adjust stock, XSS, N+1, catalog filter race, etc. **This document remains the live backlog.** Remaining work is M1 and L1–L14. M7 is deferred.

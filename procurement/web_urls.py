@@ -8,4 +8,9 @@ urlpatterns = [
         views.purchase_order_console,
         name="purchase_order_console",
     ),
+    path(
+        "manage/approval-limits/",
+        views.approval_limit_console,
+        name="approval_limit_console",
+    ),
 ]

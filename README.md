@@ -10,7 +10,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 *Last updated: 21 August 2026.*
 
-Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. A live full-codebase review is in progress — next is M10; see [`docs/handoff.md`](docs/handoff.md).
+Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. A live full-codebase review is in progress — next is M1 + L1–L14; see [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md). Live review: [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md).
 
@@ -18,15 +18,15 @@ Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt 
 
 | User type | Example (after seed) | Can do today |
 |-----------|----------------------|--------------|
-| **Warehouse admin** | `warehouse.admin@centcompras.dev` | Full catalogue, POs (including approve), goods receipts, stock adjust (`warehouse_admins`). Cannot log into `/admin/`. |
-| **Warehouse manager** | `warehouse.manager@centcompras.dev` | Add/edit catalogue and POs (submit, no approve); create goods receipts. No delete / no stock adjust. |
-| **Warehouse operator** | `warehouse.operator@centcompras.dev` | Read-only catalogue, POs, and receipts. |
+| **Warehouse admin** | `warehouse.admin@centcompras.dev` | Full catalogue, POs (including approve any amount), goods receipts, stock adjust, `/manage/approval-limits/` (`warehouse_admins`). Cannot log into `/admin/`. |
+| **Warehouse manager** | `warehouse.manager@centcompras.dev` (grade 1); also `manager2` / `manager3` | Grade 1: add/edit catalogue and POs (submit, no approve). Grade 2+: approve within caps. No delete / no stock adjust. |
+| **Warehouse operator** | `warehouse.operator@centcompras.dev` (grade 1); also `operator2` | Grade 1: read-only. Grade 2: mutate closed circuit. Never approve. |
 | **Branch users** | *(not seeded — Phase 5)* | Future: read-only catalogue and branch orders. |
 | **Django superuser** | from `createsuperuser` | Site admin at `/admin/` only. The only users who may use Django admin. |
 
 After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed does **not** create a superuser or any branch.
 
-**Procurement:** admins create + **approve** POs; managers create + submit; operators view. **Stock:** admins may `adjust_stock`; managers/admins record goods receipts.
+**Procurement:** admins approve any PO; managers grade 2+ approve within EUR gross caps (self vs others); operators never approve. Reject / short-shipment close / stock adjust require a reason. **Stock:** admins may `adjust_stock`; operator 2 and managers/admins record goods receipts.
 
 ### Recommended next session
 
@@ -102,13 +102,15 @@ Production will use Google OAuth (not implemented in dev).
 | `/manage/items/` | Warehouse item console |
 | `/manage/catalog/` | Manager catalog (stock + price view, read-only) |
 | `/manage/purchase-orders/` | Purchase-order console |
+| `/manage/approval-limits/` | PO approval caps (EUR gross; warehouse admins may edit) |
 | `/manage/goods-receipts/` | Goods receipt + stock console |
 | `/api/manage/items/` | Item JSON API |
 | `/api/manage/catalog/` | Manager catalog JSON API (joined stock + prices) |
 | `/api/manage/families/` | Family JSON API |
 | `/api/manage/suppliers/` | Supplier JSON API |
 | `/api/manage/supplier-prices/` | Supplier price JSON API |
-| `/api/manage/purchase-orders/` | Purchase-order JSON API (approve needs `can_approve`) |
+| `/api/manage/purchase-orders/` | Purchase-order JSON API (approve needs capability + grade) |
+| `/api/manage/approval-limits/` | Approval-limit JSON API (PATCH is warehouse-admin only) |
 | `/api/manage/goods-receipts/` | Goods receipt JSON API |
 | `/api/manage/purchase-orders/<id>/receipt-summary/` | Per-line ordered/received/remaining |
 | `/api/manage/stock-movements/` | Stock movement ledger (`?item_id=` filter) |
@@ -200,7 +202,7 @@ This creates (idempotent):
 
 | Item | Details |
 |------|---------|
-| **Warehouse users** | `warehouse.admin@…` / `warehouse.manager@…` / `warehouse.operator@…` |
+| **Warehouse users** | `warehouse.admin@…` / `warehouse.manager@…` / `manager2` / `manager3` / `warehouse.operator@…` / `operator2` (grades as seeded) |
 | **Families, suppliers, items, supplier prices** | sample catalogue via `products/services.py` |
 | **Password** | `devpass123` (override with `--password`) |
 
@@ -251,7 +253,7 @@ python manage.py runserver
 
 First-time or reset DB: steps 1–4, then `./scripts/seed_dev_data.sh`.
 
-Practice logins: `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev`, `warehouse.operator@centcompras.dev` — password `devpass123`.
+Practice logins: `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev` / `manager2` / `manager3`, `warehouse.operator@centcompras.dev` / `operator2` — password `devpass123`.
 
 Tests:
 
@@ -283,7 +285,7 @@ views (login required) → API + HTML
 
 - **Start here:** [`docs/handoff.md`](docs/handoff.md)
 - [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — phased plan + status tracker
-- [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md) — **live** full-codebase review (P0–P2 done; next P3 = M10)
+- [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md) — **live** full-codebase review (P0–P3 done; next P4 = M1 + L*)
 - [`docs/archive/code-review-full-2026-08-20-1928.md`](docs/archive/code-review-full-2026-08-20-1928.md) — prior full review (concluded)
 - [`docs/archive/code-review-inventory-2026-08-20.md`](docs/archive/code-review-inventory-2026-08-20.md) — Phase 3 review (concluded)
 - [`docs/archive/code-review-2026-08-20.md`](docs/archive/code-review-2026-08-20.md) · [`docs/archive/code-review-audit.md`](docs/archive/code-review-audit.md) — archived reviews
@@ -302,5 +304,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Branches + internal request** (Phase 5)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
-- Integration tests (unit suites are green, ~226 tests)
+- Integration tests (unit suites are green, ~249 tests)
 - Frontend pagination UI (API supports `?page`; console still loads all items)

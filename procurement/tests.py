@@ -13,7 +13,9 @@ from accounts.groups import (
     GROUP_MANAGERS,
     GROUP_OPERATORS,
     assign_warehouse_group,
+    set_warehouse_grade,
 )
+from accounts.capabilities import can_approve_purchase_order, can_mutate_catalog
 from products.models import Item, Supplier, VatRate
 from products.services import (
     create_family,
@@ -27,9 +29,11 @@ from . import services
 from .models import PurchaseOrder, PurchaseOrderChangeLog
 
 
-def make_warehouse_user(email, password="test-pass-123", group_name=GROUP_ADMINS):
+def make_warehouse_user(email, password="test-pass-123", group_name=GROUP_ADMINS, grade=1):
     user = get_user_model().objects.create_user(email=email, password=password)
     assign_warehouse_group(user, group_name)
+    if grade != 1:
+        set_warehouse_grade(user, grade)
     return user
 
 
@@ -208,7 +212,7 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         services.add_line(po, self.item, quantity="1")
         services.submit(po, self.user)
 
-        po = services.reject(po, self.user)
+        po = services.reject(po, self.user, reason="Supplier lead time too long")
 
         self.assertIsNone(po.approved_net)
         self.assertIsNone(po.approved_vat)
@@ -225,14 +229,14 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         po = self.create_draft_po()
         services.add_line(po, self.item, quantity="1")
         services.submit(po, self.user)
-        po = services.reject(po, self.user)
+        po = services.reject(po, self.user, reason="Supplier lead time too long")
         self.assertEqual(po.status, PurchaseOrder.Status.REJECTED)
 
     def test_reopen_rejected_returns_to_draft_and_resubmit(self):
         po = self.create_draft_po()
         services.add_line(po, self.item, quantity="1")
         services.submit(po, self.user)
-        po = services.reject(po, self.user)
+        po = services.reject(po, self.user, reason="Supplier lead time too long")
         self.assertEqual(po.status, PurchaseOrder.Status.REJECTED)
 
         po = services.reopen(po, self.user)
@@ -369,21 +373,24 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
 
 
 class PurchaseOrderPermissionTests(TestCase):
-    def test_operator_is_view_only(self):
+    def test_operator_grade_one_cannot_mutate(self):
         operator = make_warehouse_user("po-op@example.com", group_name=GROUP_OPERATORS)
         self.assertTrue(operator.has_perm("procurement.view_purchaseorder"))
-        self.assertFalse(operator.has_perm("procurement.add_purchaseorder"))
-        self.assertFalse(operator.has_perm("procurement.change_purchaseorder"))
+        self.assertTrue(operator.has_perm("procurement.add_purchaseorder"))
+        self.assertFalse(can_mutate_catalog(operator))
+        self.assertFalse(can_approve_purchase_order(operator))
 
-    def test_manager_can_add_change_but_not_approve(self):
+    def test_manager_grade_one_cannot_approve(self):
         manager = make_warehouse_user("po-mgr@example.com", group_name=GROUP_MANAGERS)
         self.assertTrue(manager.has_perm("procurement.add_purchaseorder"))
-        self.assertTrue(manager.has_perm("procurement.change_purchaseorder"))
-        self.assertFalse(manager.has_perm("procurement.can_approve"))
+        self.assertTrue(manager.has_perm("procurement.can_approve"))
+        self.assertTrue(can_mutate_catalog(manager))
+        self.assertFalse(can_approve_purchase_order(manager))
 
     def test_admin_can_approve(self):
         admin = make_warehouse_user("po-adm@example.com", group_name=GROUP_ADMINS)
         self.assertTrue(admin.has_perm("procurement.can_approve"))
+        self.assertTrue(can_approve_purchase_order(admin))
 
 
 class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
@@ -518,7 +525,13 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
             **self.host,
         )
         self.client.post(reverse("manage_purchase_order_submit", args=[po["id"]]), **self.host)
-        self.client.post(reverse("manage_purchase_order_reject", args=[po["id"]]), **self.host)
+        reject = self.client.post(
+            reverse("manage_purchase_order_reject", args=[po["id"]]),
+            data=json.dumps({"reason": "Price too high"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(reject.status_code, 200)
 
         response = self.client.post(reverse("manage_purchase_order_reopen", args=[po["id"]]), **self.host)
         self.assertEqual(response.status_code, 200)
@@ -547,3 +560,224 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("integer", response.json()["error"].lower())
+
+
+class PurchaseOrderGradeAndAuditTests(PurchaseOrderTestCaseMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.client = Client()
+        self.host = {"HTTP_HOST": "localhost"}
+
+    def _submitted_po(self, user=None, quantity="1", unit_cost=None):
+        creator = user or self.user
+        po = services.create_purchase_order(self.supplier, creator)
+        kwargs = {"quantity": quantity}
+        if unit_cost is not None:
+            kwargs["unit_cost"] = unit_cost
+        services.add_line(po, self.item, **kwargs)
+        return services.submit(po, creator)
+
+    def test_operator_grade_two_can_submit_but_not_approve(self):
+        operator = make_warehouse_user(
+            "po-op-g2@example.com", group_name=GROUP_OPERATORS, grade=2
+        )
+        po = self._submitted_po(user=operator, quantity="1")
+        with self.assertRaises(services.ApprovalDeniedError):
+            services.approve(po, operator)
+
+    def test_manager_grade_one_cannot_approve(self):
+        manager = make_warehouse_user(
+            "po-mgr-g1@example.com", group_name=GROUP_MANAGERS, grade=1
+        )
+        po = self._submitted_po(quantity="1")
+        with self.assertRaises(services.ApprovalDeniedError):
+            services.approve(po, manager)
+
+    def test_manager_grade_two_self_approve_within_limit(self):
+        manager = make_warehouse_user(
+            "po-mgr-g2@example.com", group_name=GROUP_MANAGERS, grade=2
+        )
+        po = self._submitted_po(user=manager, quantity="1")
+        _, _, gross = po.totals()
+        self.assertLessEqual(gross, Decimal("100.00"))
+        po = services.approve(po, manager)
+        self.assertEqual(po.status, PurchaseOrder.Status.APPROVED)
+
+    def test_manager_grade_two_self_approve_over_limit(self):
+        manager = make_warehouse_user(
+            "po-mgr-g2b@example.com", group_name=GROUP_MANAGERS, grade=2
+        )
+        po = self._submitted_po(user=manager, quantity="1", unit_cost="1000")
+        _, _, gross = po.totals()
+        self.assertGreater(gross, Decimal("100.00"))
+        with self.assertRaises(services.SelfApprovalLimitError):
+            services.approve(po, manager)
+
+    def test_manager_grade_two_approves_others_within_limit(self):
+        manager = make_warehouse_user(
+            "po-mgr-g2c@example.com", group_name=GROUP_MANAGERS, grade=2
+        )
+        po = self._submitted_po(user=self.user, quantity="1", unit_cost="1000")
+        _, _, gross = po.totals()
+        self.assertGreater(gross, Decimal("100.00"))
+        self.assertLessEqual(gross, Decimal("5000.00"))
+        po = services.approve(po, manager)
+        self.assertEqual(po.approved_by, manager)
+
+    def test_manager_grade_two_others_over_limit(self):
+        manager = make_warehouse_user(
+            "po-mgr-g2d@example.com", group_name=GROUP_MANAGERS, grade=2
+        )
+        po = self._submitted_po(user=self.user, quantity="1", unit_cost="5000")
+        _, _, gross = po.totals()
+        self.assertGreater(gross, Decimal("5000.00"))
+        with self.assertRaises(services.ApprovalLimitExceededError):
+            services.approve(po, manager)
+
+    def test_manager_grade_three_higher_cap(self):
+        manager = make_warehouse_user(
+            "po-mgr-g3@example.com", group_name=GROUP_MANAGERS, grade=3
+        )
+        po = self._submitted_po(user=self.user, quantity="1", unit_cost="5000")
+        _, _, gross = po.totals()
+        self.assertGreater(gross, Decimal("5000.00"))
+        self.assertLessEqual(gross, Decimal("50000.00"))
+        po = services.approve(po, manager)
+        self.assertEqual(po.approved_by, manager)
+
+    def test_admin_self_approves_with_no_cap(self):
+        po = self._submitted_po(user=self.user, quantity="1", unit_cost="5000")
+        po = services.approve(po, self.user)
+        self.assertEqual(po.approved_by, self.user)
+
+    def test_approve_stores_optional_reason(self):
+        po = self._submitted_po(quantity="1")
+        po = services.approve(po, self.user, reason="OK to buy")
+        log = po.change_logs.get(changes__has_key="approved_gross")
+        self.assertEqual(log.reason, "OK to buy")
+
+    def test_reject_requires_reason(self):
+        po = self._submitted_po(quantity="1")
+        with self.assertRaises(ValidationError) as ctx:
+            services.reject(po, self.user, reason="   ")
+        self.assertEqual(ctx.exception.code, "reject_reason_required")
+
+    def test_reject_stores_reason(self):
+        po = self._submitted_po(quantity="1")
+        po = services.reject(po, self.user, reason="Duplicate order")
+        log = po.change_logs.filter(
+            action=PurchaseOrderChangeLog.Action.STATUS_CHANGED
+        ).latest("created_at")
+        self.assertEqual(log.reason, "Duplicate order")
+
+    def test_close_partial_requires_reason(self):
+        from inventory.services import receive_goods
+
+        po = self._submitted_po(quantity="10")
+        po = services.approve(po, self.user)
+        line = po.lines.get()
+        receive_goods(
+            po,
+            [{"line_id": line.id, "quantity_received": "4"}],
+            self.user,
+        )
+        po.refresh_from_db()
+        with self.assertRaises(ValidationError) as ctx:
+            services.close(po, self.user, reason="")
+        self.assertEqual(ctx.exception.code, "close_reason_required")
+
+        po = services.close(po, self.user, reason="Supplier short shipped")
+        log = po.change_logs.filter(
+            action=PurchaseOrderChangeLog.Action.STATUS_CHANGED,
+            changes__status__new=PurchaseOrder.Status.CLOSED,
+        ).latest("created_at")
+        self.assertEqual(log.reason, "Supplier short shipped")
+
+    def test_full_receive_auto_close_reason(self):
+        from inventory.services import receive_goods
+
+        po = self._submitted_po(quantity="10")
+        po = services.approve(po, self.user)
+        line = po.lines.get()
+        receive_goods(
+            po,
+            [{"line_id": line.id, "quantity_received": "10"}],
+            self.user,
+        )
+        po.refresh_from_db()
+        self.assertEqual(po.status, PurchaseOrder.Status.CLOSED)
+        close_log = po.change_logs.filter(
+            action=PurchaseOrderChangeLog.Action.STATUS_CHANGED,
+            changes__status__new=PurchaseOrder.Status.CLOSED,
+        ).latest("created_at")
+        self.assertEqual(close_log.reason, "Fully received")
+        receive_log = po.change_logs.filter(
+            action=PurchaseOrderChangeLog.Action.STATUS_CHANGED,
+            changes__status__new=PurchaseOrder.Status.RECEIVED,
+        ).latest("created_at")
+        self.assertEqual(receive_log.reason, "Goods received")
+
+    def test_notify_stub_runs_on_commit(self):
+        from unittest.mock import patch
+
+        po = self._submitted_po(quantity="1")
+        with patch("procurement.services.notify_supplier_on_approval") as notify:
+            with self.captureOnCommitCallbacks(execute=True):
+                services.approve(po, self.user)
+            notify.assert_called_once()
+
+    def test_notify_stub_not_called_when_approve_fails(self):
+        from unittest.mock import patch
+
+        po = self.create_draft_po()
+        services.add_line(po, self.item, quantity="1")
+        with patch("procurement.services.notify_supplier_on_approval") as notify:
+            with self.assertRaises(services.InvalidStatusTransitionError):
+                services.approve(po, self.user)
+            notify.assert_not_called()
+
+    def test_manager_cannot_edit_approval_limits(self):
+        manager = make_warehouse_user(
+            "po-mgr-limits@example.com", group_name=GROUP_MANAGERS, grade=2
+        )
+        limit = services.list_approval_limits().get(grade=2)
+        with self.assertRaises(services.ApprovalPolicyForbiddenError):
+            services.update_approval_limit(
+                limit, manager, self_approval_limit="50"
+            )
+
+    def test_admin_can_edit_approval_limits(self):
+        limit = services.list_approval_limits().get(grade=2)
+        updated = services.update_approval_limit(
+            limit, self.user, self_approval_limit="75.00"
+        )
+        self.assertEqual(updated.self_approval_limit, Decimal("75.00"))
+        self.assertTrue(updated.change_logs.exists())
+
+    def test_approval_limits_api_get_and_admin_patch(self):
+        self.client.force_login(self.user)
+        listing = self.client.get(reverse("manage_approval_limit_list"), **self.host)
+        self.assertEqual(listing.status_code, 200)
+        self.assertTrue(listing.json()["can_edit"])
+        limit_id = listing.json()["limits"][0]["id"]
+
+        patched = self.client.patch(
+            reverse("manage_approval_limit_detail", args=[limit_id]),
+            data=json.dumps({"approval_limit": "6000.00"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(patched.status_code, 200)
+        self.assertEqual(patched.json()["limit"]["approval_limit"], "6000.00")
+
+        manager = make_warehouse_user(
+            "po-mgr-api-limits@example.com", group_name=GROUP_MANAGERS, grade=2
+        )
+        self.client.force_login(manager)
+        denied = self.client.patch(
+            reverse("manage_approval_limit_detail", args=[limit_id]),
+            data=json.dumps({"approval_limit": "1.00"}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(denied.status_code, 403)

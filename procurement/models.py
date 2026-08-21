@@ -149,3 +149,69 @@ class PurchaseOrderChangeLog(models.Model):
 
     def __str__(self):
         return f"{self.purchase_order_id} {self.action} @ {self.created_at:%Y-%m-%d %H:%M}"
+
+
+class ApprovalLimit(models.Model):
+    """Per-grade PO approval caps in EUR (gross, VAT included)."""
+
+    group_name = models.CharField(max_length=64)
+    grade = models.PositiveSmallIntegerField()
+    approval_limit = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        help_text="Max PO gross (EUR) this grade may approve for another user's PO.",
+    )
+    self_approval_limit = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        help_text="Max PO gross (EUR) this grade may approve on a PO they created.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["group_name", "grade"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["group_name", "grade"],
+                name="unique_approval_limit_group_grade",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(approval_limit__gte=0),
+                name="approval_limit_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(self_approval_limit__gte=0),
+                name="self_approval_limit_gte_zero",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.group_name} grade {self.grade}"
+
+
+class ApprovalLimitChangeLog(models.Model):
+    class Action(models.TextChoices):
+        CREATED = "created", "Created"
+        UPDATED = "updated", "Updated"
+
+    approval_limit = models.ForeignKey(
+        ApprovalLimit,
+        on_delete=models.CASCADE,
+        related_name="change_logs",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approval_limit_change_logs",
+    )
+    action = models.CharField(max_length=30, choices=Action.choices)
+    changes = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.approval_limit_id} {self.action} @ {self.created_at:%Y-%m-%d %H:%M}"

@@ -24,8 +24,8 @@
     <link rel="stylesheet" href="{% static 'inventory/css/goods_receipts.css' %}?v=1">
 </head>
 <body
-    data-can-add-goodsreceipt="{% if perms.inventory.add_goodsreceipt %}true{% else %}false{% endif %}"
-    data-can-adjust-stock="{% if perms.inventory.can_adjust_stock %}true{% else %}false{% endif %}"
+    data-can-add-goodsreceipt="{% if can_add_goodsreceipt %}true{% else %}false{% endif %}"
+    data-can-adjust-stock="{% if can_adjust_stock %}true{% else %}false{% endif %}"
 >
     <header class="topbar">
         <div class="topbar-title">

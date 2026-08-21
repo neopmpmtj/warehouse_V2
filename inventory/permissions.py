@@ -4,6 +4,7 @@ from django.contrib.auth.views import redirect_to_login
 from django.http import HttpResponseForbidden, JsonResponse
 
 from accounts.authz import deny_if_inactive, user_is_active
+from accounts.capabilities import has_effective_perm
 
 VIEW_GOODS_RECEIPT = "inventory.view_goodsreceipt"
 ADD_GOODS_RECEIPT = "inventory.add_goodsreceipt"
@@ -18,7 +19,7 @@ def can_view_inventory(user):
 
 
 def deny_unless(request, perm):
-    if request.user.has_perm(perm):
+    if has_effective_perm(request.user, perm):
         return None
     message = f"Missing permission: {perm}"
     if request.path.startswith("/api/"):

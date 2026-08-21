@@ -24,9 +24,9 @@
     <link rel="stylesheet" href="{% static 'procurement/css/purchase_orders.css' %}?v=1">
 </head>
 <body
-    data-can-add-purchaseorder="{% if perms.procurement.add_purchaseorder %}true{% else %}false{% endif %}"
-    data-can-change-purchaseorder="{% if perms.procurement.change_purchaseorder %}true{% else %}false{% endif %}"
-    data-can-approve-purchaseorder="{% if perms.procurement.can_approve %}true{% else %}false{% endif %}"
+    data-can-add-purchaseorder="{% if can_add_purchaseorder %}true{% else %}false{% endif %}"
+    data-can-change-purchaseorder="{% if can_change_purchaseorder %}true{% else %}false{% endif %}"
+    data-can-approve-purchaseorder="{% if can_approve_purchaseorder %}true{% else %}false{% endif %}"
 >
     <header class="topbar">
         <div class="topbar-title">
