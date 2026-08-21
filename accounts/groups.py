@@ -65,6 +65,11 @@ def _catalog_permissions(codenames):
 
 
 def sync_warehouse_groups():
+    """Replace each warehouse group's permissions with the code-defined set.
+
+    These three groups are fully managed in code. Extra permissions added in
+    /admin/ are wiped on migrate. Do not grant extras on warehouse groups.
+    """
     for group_name in WAREHOUSE_GROUP_NAMES:
         group, _ = Group.objects.get_or_create(name=group_name)
         desired = set(_catalog_permissions(_codenames_for_group(group_name)))
@@ -89,6 +94,7 @@ def assign_warehouse_group(user, group_name=GROUP_ADMINS):
         raise ValueError(f"Unknown warehouse group: {group_name}")
 
     group = Group.objects.get(name=group_name)
+    user.groups.remove(*Group.objects.filter(name__in=WAREHOUSE_GROUP_NAMES))
     user.groups.add(group)
     clear_permission_cache(user)
     return group

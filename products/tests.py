@@ -1359,6 +1359,19 @@ class SeedDevDataCommandTests(TestCase):
             1,
         )
 
+    def test_second_seed_keeps_legacy_family_inactive(self):
+        call_command("seed_dev_data", verbosity=0)
+        legacy = FamilyProduct.objects.get(name="Legacy stock")
+        self.assertFalse(legacy.is_active)
+
+        call_command("seed_dev_data", verbosity=0)
+        legacy.refresh_from_db()
+        self.assertFalse(legacy.is_active)
+        self.assertNotIn(
+            "LEG-001",
+            {item.internal_code for item in get_catalog()},
+        )
+
 
 class BulkLifecycleAtomicityTests(ItemTestCaseMixin, TestCase):
     def setUp(self):

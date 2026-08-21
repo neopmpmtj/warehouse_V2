@@ -94,7 +94,11 @@ class Item(models.Model):
                 Lower("internal_code"),
                 condition=~models.Q(internal_code=""),
                 name="unique_item_internal_code_ci",
-            )
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=0),
+                name="item_quantity_gte_zero",
+            ),
         ]
 
     def __str__(self):

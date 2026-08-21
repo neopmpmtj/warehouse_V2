@@ -8,11 +8,11 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 20 August 2026.*
+*Last updated: 21 August 2026.*
 
-Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred.
+Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. A live full-codebase review is in progress — next is M10; see [`docs/handoff.md`](docs/handoff.md).
 
-> **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md).
+> **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md). Live review: [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md).
 
 ### User roles (practice with these)
 
@@ -283,6 +283,8 @@ views (login required) → API + HTML
 
 - **Start here:** [`docs/handoff.md`](docs/handoff.md)
 - [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) — phased plan + status tracker
+- [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md) — **live** full-codebase review (P0–P2 done; next P3 = M10)
+- [`docs/archive/code-review-full-2026-08-20-1928.md`](docs/archive/code-review-full-2026-08-20-1928.md) — prior full review (concluded)
 - [`docs/archive/code-review-inventory-2026-08-20.md`](docs/archive/code-review-inventory-2026-08-20.md) — Phase 3 review (concluded)
 - [`docs/archive/code-review-2026-08-20.md`](docs/archive/code-review-2026-08-20.md) · [`docs/archive/code-review-audit.md`](docs/archive/code-review-audit.md) — archived reviews
 - [`docs/user-manuals/01-items.md`](docs/user-manuals/01-items.md) · [`docs/user-manuals/02-purchase-orders.md`](docs/user-manuals/02-purchase-orders.md) · [`docs/user-manuals/03-goods-receipts.md`](docs/user-manuals/03-goods-receipts.md)
@@ -300,5 +302,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Branches + internal request** (Phase 5)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
-- Integration tests (unit suites are green, ~199 tests)
+- Integration tests (unit suites are green, ~226 tests)
 - Frontend pagination UI (API supports `?page`; console still loads all items)

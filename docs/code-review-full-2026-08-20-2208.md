@@ -1,8 +1,8 @@
 # CentCompras — Full-Codebase Deep Review (read-only)
 
-> **Status: OPEN — findings not yet applied.** When all actionable items are fixed (or explicitly deferred with rationale), move this file to `docs/archive/` and update [`handoff.md`](handoff.md). Archived reviews are concluded backlogs, not live work queues.
+> **Status: OPEN — in progress.** P0 (H1–H3), P1 (M2/M3/M4/M9), and P2 (M5/M6/M8) are applied. **Next: P3 = M10.** M7 is deferred. M1 and L1–L14 remain. When every ⏳ item is ✅ or ⏸ with rationale, move this file to `docs/archive/` and update [`handoff.md`](handoff.md).
 
-> **Read-only review.** No code was changed during this review. This document is the live backlog until remediated.
+> Originally a read-only review (20 Aug 2026, 22:08 WEST). Remediation is underway; this file is the live backlog.
 
 - **Date:** 20 August 2026, 22:08 WEST
 - **Scope:** Phases 0–4 — `accounts`, `products`, `procurement`, `inventory`, `config`, `logging_utils`
@@ -161,7 +161,7 @@ Documented as cached sum of `StockMovement`, but nothing in DB prevents drift (s
 
 **Suggested fix:** Integrity check command/test; long-term `CheckConstraint(quantity >= 0)` after backfill.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — `item_quantity_gte_zero` CheckConstraint; `ledger_quantity()` helper; receive/adjust invariant tests; ORM negative quantity → IntegrityError.
 
 ---
 
@@ -173,7 +173,7 @@ Each line locks items in payload order. Two concurrent receipts touching overlap
 
 **Suggested fix:** Collect all affected item IDs; lock in sorted order before writing movements.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — `receive_goods` locks items by sorted `pk` before writing movements; two-line FOR UPDATE / ORDER BY test.
 
 ---
 
@@ -202,7 +202,7 @@ Each line locks items in payload order. Two concurrent receipts touching overlap
 
 **Suggested fix:** Merge instead of replace, or document code-only management; make role assignment exclusive.
 
-**Status:** ⏳ Open
+**Status:** ✅ Done — `assign_warehouse_group` is exclusive; `sync_warehouse_groups` still `set()` (code-owned) with docstring; extras on migrate documented by test.
 
 ---
 
@@ -289,11 +289,11 @@ H1 is the only path that can silently break the link between **approved totals**
 
 | Priority | Items | Rationale |
 |----------|-------|-----------|
-| **P0** | H1, H2, H3 | Data integrity, auth, pricing determinism |
-| **P1** | M3, M2, M4, M9 | Locked business rules (D12) and API hygiene |
-| **P2** | M5, M6, M7, M8 | Scale, deadlock, drift, role management |
-| **P3** | M10 | Segregation of duties, audit reasons, `on_commit` email |
-| **P4** | L1–L14 | Cleanup when touching related code |
+| **P0** | H1, H2, H3 | ✅ Applied |
+| **P1** | M3, M2, M4, M9 | ✅ Applied |
+| **P2** | M5, M6, M8 | ✅ Applied — **M7 skipped** (pagination deferred; consoles assume full lists in memory) |
+| **P3** | M10 | ⏳ **Next** — segregation of duties, audit reasons, `on_commit` email |
+| **P4** | M1 + L1–L14 | ⏳ After P3 |
 
 ---
 
@@ -325,10 +325,10 @@ Update this table as work completes. Move the whole doc to `docs/archive/` when 
 | M2 | ✅ Done |
 | M3 | ✅ Done |
 | M4 | ✅ Done |
-| M5 | ⏳ Open |
-| M6 | ⏳ Open |
+| M5 | ✅ Done |
+| M6 | ✅ Done |
 | M7 | ⏸ Deferred (scale) |
-| M8 | ⏳ Open |
+| M8 | ✅ Done |
 | M9 | ✅ Done |
 | M10 | ⏳ Open |
 | L1–L14 | ⏳ Open |
@@ -337,4 +337,4 @@ Update this table as work completes. Move the whole doc to `docs/archive/` when 
 
 ## Comparison with prior review
 
-[`docs/archive/code-review-full-2026-08-20-1928.md`](archive/code-review-full-2026-08-20-1928.md) fixed NaN→500, negative adjust stock, XSS, N+1, catalog filter race, etc. **This document is the new live backlog** — especially H1–H3 and cross-cutting M2–M4, which were not in the prior review.
+[`docs/archive/code-review-full-2026-08-20-1928.md`](archive/code-review-full-2026-08-20-1928.md) fixed NaN→500, negative adjust stock, XSS, N+1, catalog filter race, etc. **This document remains the live backlog.** Highs and most mediums are done; remaining work is M10 (P3), M1, and L1–L14. M7 is deferred.

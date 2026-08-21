@@ -2,7 +2,7 @@
 
 Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done. Branches, orders, offline, and email are deferred.
 
-**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup, [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing, and [`docs/archive/code-review-full-2026-08-20-1928.md`](docs/archive/code-review-full-2026-08-20-1928.md) (full-codebase review — all findings resolved). All code reviews are archived under `docs/archive/`; there is no open review backlog.
+**▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup, [`docs/project-plan-2026-08-20.md`](docs/project-plan-2026-08-20.md) for sequencing, and the **live** review [`docs/code-review-full-2026-08-20-2208.md`](docs/code-review-full-2026-08-20-2208.md) (P0–P2 done; **next is P3 = M10**). Do **not** archive 2208 until remaining findings are done or deferred. The prior review is [`docs/archive/code-review-full-2026-08-20-1928.md`](docs/archive/code-review-full-2026-08-20-1928.md) (concluded).
 
 ## Session handoff (August 2026)
 
@@ -10,9 +10,9 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 
 **Not done:** `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
 
-**Next:** no forced next build after Phase 4. Remaining phases are all deferred/pending/future — **email (Phase 6) is the smallest self-contained item**; **branches (Phase 5) needs a dedicated plan**. Do **not** implement `orders/` or the tenancy-doc Order stub.
+**Next:** finish the 2208 review — **P3 = M10** (policy: self-approval, close/adjust reasons, `on_commit` for the email stub), then M1 and L1–L14. M7 pagination stays deferred. Product phases 5–7 remain deferred/pending/future. Do **not** implement `orders/` or the tenancy-doc Order stub.
 
-**Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly). Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice`. PO lines are **rejected** if the supplier has no price for the item; `approved_net/vat/gross` are frozen at approval.
+**Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive.
 
 ## User roles (do not confuse these)
 
@@ -32,7 +32,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 
 | App | Purpose |
 |-----|---------|
-| `accounts` | Custom `User` (email login, timezone), login/logout, warehouse groups, timezone middleware |
+| `accounts` | Custom `User` (email login, timezone), login/logout, warehouse groups, timezone middleware, `authz.py` (inactive-user guard) |
 | `products` | Catalogue + pricing: model, service layer, API, staff admin, staff console, tests |
 | `procurement` | Purchase orders: models, service layer, console API, admin, tests |
 | `inventory` | Goods receipt + stock ledger: `GoodsReceipt`/`StockMovement`, services, console API, admin, tests |
@@ -97,7 +97,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 ## Documentation conventions
 
 - **Always put a full timestamp (date + time) in document filenames** — e.g. `code-review-full-2026-08-20-1928.md` (format `YYYY-MM-DD-HHMM`). The timestamp makes the chronological order self-evident when many similarly-named docs accumulate.
-- Reviews/audits are worked to completion, marked done, then archived under `docs/archive/` — never left as a live backlog.
+- Reviews/audits are worked to completion, marked done, then archived under `docs/archive/` — never left as a live backlog. The 2208 review is still live until M1, M10, and L1–L14 are done or deferred.
 
 ## Commands
 
@@ -108,13 +108,13 @@ python manage.py migrate
 python manage.py createsuperuser                 # optional site admin
 ./scripts/seed_dev_data.sh                         # warehouse users, families, suppliers, items, supplier prices
 python manage.py runserver
-python manage.py test products accounts procurement inventory
+python manage.py test products accounts procurement inventory --keepdb --noinput
 ```
 
-**Tests:** always use the project virtualenv — do not use system `python`/`python3`. Either activate first (`source .venv/bin/activate`) or invoke the venv interpreter directly:
+**Tests:** always use the project virtualenv — do not use system `python`/`python3`. Either activate first (`source .venv/bin/activate`) or invoke the venv interpreter directly. Recreate without `--keepdb` if the test DB is stale after `TransactionTestCase`.
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement inventory
+.venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
 ```
 
 Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, not both).

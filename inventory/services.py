@@ -105,6 +105,17 @@ def _received_qty_map(po):
     }
 
 
+def ledger_quantity(item):
+    """Sum of StockMovement.quantity for an item (source of truth for Item.quantity)."""
+    item = _resolve_item(item)
+    total = StockMovement.objects.filter(item=item).aggregate(total=Sum("quantity"))[
+        "total"
+    ]
+    if total is None:
+        return Decimal("0.000")
+    return total.quantize(Decimal("0.001"))
+
+
 def _parse_decimal_quantity(value):
     """Parse, bound and quantise a quantity to the field precision (12,3)."""
     try:
@@ -217,6 +228,14 @@ def receive_goods(po, lines, user, reference="", notes=""):
 
     if not normalized:
         raise NoLinesToReceiveError()
+
+    # Lock items in pk order so concurrent multi-item receipts cannot deadlock.
+    item_ids = sorted({po_line.item_id for po_line, _qty in normalized})
+    list(
+        Item.objects.filter(pk__in=item_ids)
+        .order_by("pk")
+        .select_for_update()
+    )
 
     receipt = GoodsReceipt.objects.create(
         purchase_order=po,

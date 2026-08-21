@@ -117,6 +117,33 @@ class WarehouseGroupTests(TestCase):
             admins.permissions.filter(codename="change_group").exists()
         )
 
+    def test_assign_warehouse_group_is_exclusive(self):
+        user = get_user_model().objects.create_user(
+            email="role-switch@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(user, GROUP_MANAGERS)
+        self.assertTrue(user.has_perm(ADD_ITEM))
+
+        assign_warehouse_group(user, GROUP_OPERATORS)
+        names = set(user.groups.values_list("name", flat=True))
+        self.assertEqual(names & set(WAREHOUSE_GROUP_NAMES), {GROUP_OPERATORS})
+        self.assertFalse(user.has_perm(ADD_ITEM))
+        self.assertTrue(user.has_perm(VIEW_ITEM))
+
+    def test_sync_warehouse_groups_replaces_extra_permissions(self):
+        admins = Group.objects.get(name=GROUP_ADMINS)
+        extra = Permission.objects.get(
+            content_type__app_label="auth",
+            codename="change_group",
+        )
+        admins.permissions.add(extra)
+        self.assertTrue(admins.permissions.filter(pk=extra.pk).exists())
+
+        sync_warehouse_groups()
+
+        self.assertFalse(admins.permissions.filter(pk=extra.pk).exists())
+
 
 class LoginViewTests(TestCase):
     def setUp(self):

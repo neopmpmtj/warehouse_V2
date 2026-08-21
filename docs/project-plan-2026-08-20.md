@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 20 August 2026
-- **Current phase:** Phase 4 (manager catalog) complete ✅ — phases 0–4 done; branches/email/mobile remain deferred/pending/future
+- **Last updated:** 21 August 2026
+- **Current phase:** Phase 4 (manager catalog) complete ✅ — phases 0–4 done; branches/email/mobile remain deferred/pending/future. **Session work:** live review [`docs/code-review-full-2026-08-20-2208.md`](code-review-full-2026-08-20-2208.md) — next is **P3 = M10**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is deferred — see [Phase 5](#phase-5--branches--internal-request-deferred).
 
 ---
@@ -98,6 +98,10 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — **auto-suggested by default** when procuring (PO line), **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
 | D13 | Approved totals snapshot | `approved_net` / `approved_vat` / `approved_gross` frozen at `approve()` |
+| D14 | One primary supplier price per item | DB partial unique `unique_primary_supplier_item_price`; lock Item; clear other primaries before save |
+| D15 | Duplicate PO lines | **rejected** (`unique_po_line_item`) — do not merge quantities |
+| D16 | Inactive catalogue on POs / catalog | No PO create/submit/approve/add-line for inactive supplier or item; `get_catalog(active_only=True)` excludes inactive families; cannot assign items to an inactive family. Do **not** cascade-deactivate items when a family is deactivated |
+| D17 | Warehouse groups | Code-owned `permissions.set()` on migrate; `assign_warehouse_group` is exclusive (one warehouse group) |
 | O1 | Item-level buying-price display | **Option A** — `primary` flag (one per item); fall back to cheapest if none marked — **implemented** |
 
 ### Open ⚠️

@@ -123,7 +123,7 @@ class Command(BaseCommand):
                     family = existing
                     # Keep active while seeding items under this family.
                     if not family.is_active:
-                        update_family(family, is_active=True)
+                        family = update_family(family, is_active=True)
                     families_by_name[family_data["name"].casefold()] = family
                     self.stdout.write(f"Exists family: {family.name}")
                     continue
@@ -219,6 +219,7 @@ class Command(BaseCommand):
 
             for family_data in FAMILIES:
                 family = families_by_name[family_data["name"].casefold()]
+                family.refresh_from_db()
                 if family.is_active != family_data["is_active"]:
                     update_family(family, is_active=family_data["is_active"])
                     self.stdout.write(

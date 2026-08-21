@@ -95,6 +95,7 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
 
         log = po.change_logs.get(action=PurchaseOrderChangeLog.Action.GOODS_RECEIVED)
         self.assertEqual(log.changes["receipt_id"], receipt.id)
+        self.assertEqual(self.item.quantity, services.ledger_quantity(self.item))
 
     def test_partial_receipt_leaves_po_received_then_closes(self):
         po, line = self.create_approved_po("10")
@@ -165,6 +166,19 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
         self.assertEqual(self.item.quantity, Decimal("5"))
         with self.assertRaises(services.NegativeStockError):
             services.adjust_stock(self.item, "-10", "over-adjust", self.user)
+
+    def test_adjust_stock_matches_ledger_quantity(self):
+        services.adjust_stock(self.item, "5", "add", self.user)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, services.ledger_quantity(self.item))
+
+    def test_db_rejects_negative_item_quantity(self):
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self.item.quantity = Decimal("-1")
+                self.item.save(update_fields=["quantity"])
 
     def test_adjust_stock_rejects_balance_overflow(self):
         self.item.quantity = Decimal("999999999.000")
@@ -252,6 +266,51 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
             if "FOR UPDATE" in query["sql"]
         ]
         self.assertGreaterEqual(len(for_update), 1)
+
+    def test_receive_goods_locks_items_in_pk_order(self):
+        other = create_item(
+            self.user,
+            family=self.family,
+            description="Sand 1kg",
+            internal_code="SAND-1",
+            unit_of_measure=Item.UnitOfMeasure.KG,
+            vat_rate=self.vat_rate,
+        )
+        other = reactivate_item(self.user, other, reason="Genesis")
+        create_supplier_item_price(
+            self.supplier, other, "0.90", primary=True, user=self.user
+        )
+        po = po_services.create_purchase_order(self.supplier, self.user)
+        line_a = po_services.add_line(po, self.item, quantity="3")
+        line_b = po_services.add_line(po, other, quantity="2")
+        po_services.submit(po, self.user)
+        po_services.approve(po, self.user)
+
+        with CaptureQueriesContext(connection) as ctx:
+            services.receive_goods(
+                po,
+                [
+                    {"line_id": line_a.id, "quantity_received": "3"},
+                    {"line_id": line_b.id, "quantity_received": "2"},
+                ],
+                self.user,
+            )
+
+        item_locks = [
+            query["sql"]
+            for query in ctx.captured_queries
+            if "FOR UPDATE" in query["sql"]
+            and "products_item" in query["sql"].lower()
+            and "ORDER BY" in query["sql"]
+        ]
+        self.assertGreaterEqual(len(item_locks), 1)
+
+        self.item.refresh_from_db()
+        other.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("3"))
+        self.assertEqual(other.quantity, Decimal("2"))
+        self.assertEqual(self.item.quantity, services.ledger_quantity(self.item))
+        self.assertEqual(other.quantity, services.ledger_quantity(other))
 
 
 class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):

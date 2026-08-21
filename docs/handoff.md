@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 20 August 2026.
+> **Read this first when resuming work.** Last updated: 21 August 2026.
 
 ---
 
@@ -17,7 +17,42 @@
 | 6 — Email automation | ⏸ Pending (stub exists) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–4 are complete.** Remaining work is branches (deferred), email (pending), and mobile/offline/OAuth (future) — no forced "next" build after Phase 4.
+**Phases 0–4 are complete.** Product phases 5–7 stay deferred/pending/future.
+
+**Current work is not a new product phase.** It is the live full-codebase review [`docs/code-review-full-2026-08-20-2208.md`](code-review-full-2026-08-20-2208.md). **Do not archive that file** until every remaining ⏳ item is ✅ or ⏸ with rationale.
+
+---
+
+## Next session — do this
+
+1. **Apply pending migrations** on the **dev** DB (test DB is applied by the suite):
+   ```bash
+   source .venv/bin/activate
+   python manage.py migrate
+   ```
+   Expected if not already applied: `products.0006` (unique primary supplier price), `products.0007` (quantity ≥ 0), `procurement.0004` (unique PO line per item).
+2. **Continue the review at P3 = M10** (policy first): self-approval, required close/adjust reasons, populate `PurchaseOrderChangeLog.reason`, `transaction.on_commit()` for the email stub.
+3. Then **P4 = M1** (negative selling prices / reorder) and **L1–L14**.
+4. **M7 (pagination) stays deferred** — consoles (`loadCatalog()` and similar) assume the full list is in memory. Do not paginate APIs without a frontend plan.
+
+Do **not** start branches, orders, offline, shared chrome, or a full Phase 6 email product. The M10 `on_commit` change is only wrapping the existing stub.
+
+---
+
+## Review progress (2208)
+
+Live tracker: [`docs/code-review-full-2026-08-20-2208.md`](code-review-full-2026-08-20-2208.md). Prior concluded review: [`docs/archive/code-review-full-2026-08-20-1928.md`](archive/code-review-full-2026-08-20-1928.md).
+
+| Batch | IDs | Status |
+|-------|-----|--------|
+| P0 | H1, H2, H3 | ✅ Done (committed on `main`) |
+| P1 | M2, M3, M4, M9 | ✅ Done (committed on `main`) |
+| P2 | M5, M6, M8 | ✅ Done (committed on `main`); M7 skipped |
+| P3 | M10 | ⏳ **Next** — needs policy decisions |
+| P4 | M1 + L1–L14 | ⏳ After P3 |
+| — | M7 | ⏸ Deferred (scale / frontend) |
+
+Plans (reference only; do not treat as live status): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m2-m9_387eec3a.plan.md`, `fix_p2_m5_m6_m8_2372dbfd.plan.md`.
 
 ---
 
@@ -38,21 +73,59 @@
 | D11 | `primary` = preferred supplier; auto-suggested later; always overridable |
 | D12 | **B-hard:** a PO line is **rejected** if the PO's supplier has no price for the item (no fallback to another supplier's price) |
 | D13 | **Approved totals snapshot:** `approved_net`/`approved_vat`/`approved_gross` stored once at `approve()` (frozen financial record; lines stay computed) |
+| D14 | **One primary** `SupplierItemPrice` per item — DB partial unique `unique_primary_supplier_item_price`; lock Item; clear other primaries **before** save |
+| D15 | **Duplicate PO lines rejected** (`unique_po_line_item`) — do **not** merge quantities |
+| D16 | **Inactive entities:** no PO create/submit/approve/add-line for inactive supplier or item; catalog (`active_only=True`) excludes inactive families; cannot assign items to an inactive family. Do **not** cascade-deactivate items when a family is deactivated |
+| D17 | Warehouse groups are **code-owned**: `sync_warehouse_groups()` still `permissions.set()` (extras in `/admin/` wiped on migrate). `assign_warehouse_group` is **exclusive** (one warehouse group per user) |
 | — | Dates DD/MM/YYYY (24h); per-user timezone (default `Europe/Lisbon`); EN + pt-PT |
 
 ---
 
-## What's next (no forced build)
+## What landed this review (for the next agent)
 
-Phases 0–4 are complete (auth → catalogue → pricing → purchase orders → goods receipt → manager catalog). The remaining phases are **all deferred/pending/future**:
+**P0 — Highs**
 
-- **Phase 5 — branches + internal request** ⏸ deferred (needs its own branches plan).
-- **Phase 6 — email automation** ⏸ pending (the `notify_supplier_on_approval` stub exists).
-- **Phase 7 — mobile / offline / PWA / OAuth** ⏸ future.
+- **H1** — `_lock_po()` before `add_line` / `update_line` / `remove_line` so line edits cannot race with submit/approve (D13 snapshot).
+- **H2** — `accounts/authz.py`: `deny_if_inactive` / `user_is_active`. Django may treat an inactive session user as `AnonymousUser` while leaving `_auth_user_id`. Guards run **before** the auth check in all three `*_required` decorators; 403 `"Account is inactive"` + logout.
+- **H3** — partial unique on primary supplier price; lock Item; clear other primaries before save. Migration `products/0006_unique_primary_supplier_item_price.py`.
 
-There is no single "next" build after Phase 4. Next session, pick one to scope — **email (Phase 6) is the smallest self-contained item**; **branches (Phase 5) needs a dedicated plan**.
+**P1 — Mediums**
 
-**Stability:** a full-codebase review ([`docs/archive/code-review-full-2026-08-20-1928.md`](archive/code-review-full-2026-08-20-1928.md)) was completed and all 14 findings resolved — the app is hardened and the review backlog is empty.
+- **M3** — D12 price check on **submit and approve** (`_validate_all_lines_have_supplier_price`). Tests that delete a price must delete `SupplierItemPriceChangeLog` first (`PROTECT`).
+- **M2** — `InactiveSupplierError` / `InactiveItemError` / `InactiveFamilyError`. Activity checks hit the DB (`filter(pk=..., is_active=True)`), not stale in-memory flags. `get_catalog(active_only=True)` also requires `family__is_active=True`.
+- **M4** — `DuplicatePOLineError` + `unique_po_line_item` (`procurement/0004_unique_po_line_item.py`).
+- **M9** — `_parse_int_id` (reject floats); add-line `DoesNotExist` → 404; `_write_movement` rejects balance ≥ 1e9.
+
+**P2 — Mediums**
+
+- **M5** — `CheckConstraint item_quantity_gte_zero` (`products/0007_item_quantity_gte_zero.py`); `inventory.services.ledger_quantity()`.
+- **M6** — `receive_goods` locks items by sorted `pk` (`order_by("pk").select_for_update()`) before writing movements.
+- **M8** — exclusive `assign_warehouse_group`; docstring on `sync_warehouse_groups`.
+
+**Seed bug (verified, fixed in `seed_dev_data`)**
+
+`update_family()` returns a **new** `select_for_update` instance. The command stored the old object (`is_active=False`) after temporarily reactivating “Legacy stock”, so the follow-up pass skipped writing False and left the family **active**. A second seed then put LEG items in `get_catalog`.
+
+Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass. Test: `test_second_seed_keeps_legacy_family_inactive`.
+
+---
+
+## Git (as of 21 Aug 2026)
+
+- Branch: **`main`** (tracks `origin/main`). P0–P2 review fixes, the seed stale-family fix, and this handoff are committed. Working tree should be clean except local `.venv` noise — do **not** commit `.venv` deletions.
+- Next product work: **P3 = M10**. Do not archive `docs/code-review-full-2026-08-20-2208.md` until M1, M10, and L1–L14 are done or deferred.
+
+---
+
+## Tests
+
+```bash
+.venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
+```
+
+- Last full suite: **226 OK** in ~71s with `--keepdb`. Plus `test_second_seed_keeps_legacy_family_inactive` (run after that count).
+- Fast hasher when `TESTING`. Quiet logging in tests.
+- `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
 ---
 
@@ -62,10 +135,10 @@ There is no single "next" build after Phase 4. Next session, pick one to scope �
 products/       catalogue + pricing (models, services, console_views, admin, tests)
 procurement/    purchase orders (models, services, console_views, admin, permissions, tests)
 inventory/      goods receipt + stock ledger (models, services, console_views, admin, permissions, tests)
-accounts/       custom User (email, timezone), warehouse groups, login, timezone middleware
+accounts/       custom User, warehouse groups, login, timezone middleware, authz.py (inactive-user guard)
 config/         settings, urls
 logging_utils/  rotating per-app logs
-docs/           plan, handoff, code reviews, user-manuals/, tenancy design
+docs/           plan, handoff, live 2208 review, user-manuals/, tenancy design
 ```
 
 **Conventions:** all mutations go through each app's `services.py`; audit-by-design (`*ChangeLog`); plain Django + vanilla JS; `select_for_update()` on updates.
@@ -79,13 +152,11 @@ source .venv/bin/activate
 python manage.py migrate
 ./scripts/seed_dev_data.sh          # idempotent; VAT rates come from migration 0002
 python manage.py runserver
-python manage.py test products accounts procurement inventory
+.venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…`, `warehouse.operator@…` (groups `warehouse_admins`/`_managers`/`_data_operators`).
 - **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog (stock + prices) · `/manage/purchase-orders/` PO console · `/manage/goods-receipts/` goods receipt + stock · `/admin/` superuser only.
-- **Test state at sign-off:** full suite green (~199 tests: products 125 + accounts 16 + procurement 31 + inventory 27). Tests run fast (~18s) — `TESTING` flag in settings enables a fast password hasher + quiet logging.
-- **Git:** branch `phase3-stock-ledger` — Phases 3–4 (goods receipt + manager catalog) and the full-review fixes are committed on top of `main`.
 
 ---
 
@@ -95,14 +166,12 @@ python manage.py test products accounts procurement inventory
 |-----|---------|
 | `README.md` | setup, URLs, seed, how to run |
 | `docs/project-plan-2026-08-20.md` | phased plan + status tracker + locked decisions |
-| `docs/archive/code-review-audit.md` | **historical / completed** — catalogue hardening; “Phase 1/2/3” = audit batches, not product phases |
-| `docs/archive/code-review-2026-08-20.md` | Phase 2 review — **concluded** (all findings fixed); archived |
-| `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — **concluded** (all findings fixed); archived |
-| `docs/archive/code-review-full-2026-08-20-1928.md` | Full-codebase stability review — **concluded** (all 14 findings resolved); archived |
+| **`docs/code-review-full-2026-08-20-2208.md`** | **LIVE review backlog** — P0–P2 done; P3 next; do not archive yet |
+| `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
+| `docs/archive/code-review-audit.md` | historical catalogue hardening |
+| `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |
+| `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — concluded |
 | `docs/user-manuals/` | staff user manuals |
-| `docs/user-manuals/01-items.md` | item console |
-| `docs/user-manuals/02-purchase-orders.md` | purchase orders |
-| `docs/user-manuals/03-goods-receipts.md` | goods receipt & stock |
 | `docs/warehouse-tenancy-setup.md` | Phase 5 tenancy **design** — not built; **§6–7 Order is a sketch, NOT to implement** |
 | `products/products_docs/aux_instructions.md` | learning pace for agents (not live status) |
 | `.cursor/rules/` | agent rules — must match this handoff |
