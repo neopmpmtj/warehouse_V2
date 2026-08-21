@@ -13,21 +13,21 @@
 | 2 — Procurement (purchase orders) | ✅ Done |
 | **3 — Goods receipt + stock ledger** | ✅ **Done** |
 | **4 — Manager catalog (stock + price view)** | ✅ **Done** |
-| 5 — Branches + internal request | 🔜 **In progress** — Slices 1–5 ✅; Slice 6 (polish) next |
-| 6 — Email automation | ⏸ Pending (stub exists) |
+| 5 — Branches + internal request | ✅ **Done** |
+| 6 — Email automation | 🔜 Next (stub exists) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–4 are complete.** Phase 5 decisions are **locked**; **Slices 1–5 are done** (tenancy, branch catalog, requisição interna, warehouse goods issue, branch receipt + branch stock). Slice 6 (polish + docs) is next. Phases 6–7 stay pending/future.
+**Phases 0–5 are complete.** Phase 5 decisions are **locked**; **Slices 1–6 are done** (tenancy, branch catalog, requisição interna, warehouse goods issue, branch receipt + branch stock, and polish). Phase 6 (email automation) is next. Phase 7 stays future.
 
 **The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable; the full suite is green (378 tests).**
 
-**Next task:** **Slice 6 — polish** — seed sample requisição, user-manual stub `04-internal-requests.md`, tick living docs (Phase 5 ✅). Build spec: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8; roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 7. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions. L13 (login rate limiting) stays deferred — production-only.
+**Next task:** **Phase 6 — email automation** — wire the notify stubs to real email (SMTP/provider), templates EN + pt-PT. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13. L13 (login rate limiting) stays deferred — production-only.
 
 ---
 
 ## Next session — do this
 
-1. **Next task:** **Slice 6 — polish + docs** — see [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8 and [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 7. **Slices 1–5 are done**: tenancy, branch catalog, requisição interna, warehouse goods issue, and branch receipt + branch stock. Remaining polish: seed a sample draft + approved requisição, write `04-internal-requests.md`, and tick the living docs (Phase 5 ✅). M7 (console pagination) is done.
+1. **Next task:** **Phase 6 — email automation** — wire the notify stubs (`notify_supplier_on_approval`, and the request/issue/receipt events) to real email. **Phase 5 is complete** (Slices 1–6: tenancy, catalog, requisição, goods issue, branch receipt + stock, polish). M7 (console pagination) is done.
 2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
 3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; L13 (login rate limiting) is the only one still open (production-only, deferred).
 4. **Do not start** orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.

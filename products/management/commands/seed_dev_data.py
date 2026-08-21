@@ -37,6 +37,8 @@ from products.services import (
     update_supplier_item_price,
 )
 from procurement.services import ensure_default_approval_limits
+from orders import services as order_services
+from orders.models import InternalRequest
 from orders.services import ensure_default_branch_approval_limits
 
 
@@ -137,6 +139,37 @@ class Command(BaseCommand):
             )
         )
         return user
+
+    def _seed_sample_requests(self, user_model):
+        """Idempotently seed one draft + one approved requisição for fulfilment practice."""
+        branch = Branch.objects.filter(name__iexact="North").first()
+        if branch is None:
+            return
+        item = Item.objects.filter(
+            is_active=True, family__is_active=True, wholesale_price__gt=0
+        ).first()
+        if item is None:
+            return
+        operator = user_model.objects.filter(
+            email="branch.operator.north@centcompras.dev"
+        ).first()
+        manager = user_model.objects.filter(
+            email="branch.manager.north@centcompras.dev"
+        ).first()
+        if operator is None or manager is None:
+            return
+
+        if not InternalRequest.objects.filter(branch=branch, status="draft").exists():
+            req = order_services.create_internal_request(branch, operator, notes="Sample draft requisição")
+            order_services.add_line(req, item, "2", operator)
+            self.stdout.write(self.style.SUCCESS(f"Sample draft requisição: #{req.id}"))
+
+        if not InternalRequest.objects.filter(branch=branch, status="approved").exists():
+            req = order_services.create_internal_request(branch, operator, notes="Sample approved requisição")
+            order_services.add_line(req, item, "5", operator)
+            req = order_services.submit(req, operator)
+            order_services.approve(req, manager)
+            self.stdout.write(self.style.SUCCESS(f"Sample approved requisição: #{req.id}"))
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -356,6 +389,9 @@ class Command(BaseCommand):
 
         ensure_default_approval_limits()
         ensure_default_branch_approval_limits()
+
+        if not options["skip_branches"] and not options["skip_items"]:
+            self._seed_sample_requests(user_model)
 
         self.stdout.write("")
         self.stdout.write(self.style.WARNING("Dev login credentials:"))
