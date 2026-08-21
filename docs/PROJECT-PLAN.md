@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 21 August 2026, 16:18 WEST
-- **Current phase:** Phase 5 **planning** — phases 0–4 done (**294 tests green**). Decisions locked in [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md); roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Next:** formal `phase5-plan-*.md`, then code. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 21 August 2026, 18:33 WEST
+- **Current phase:** Phase 5 **planning** — phases 0–4 done (**294 tests green**). Plan authored: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md). Decisions locked in [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md); roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Next:** Slice 1 — tenancy (`branches` app). See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is **next** — see Phase 5 below.
 
 ## Status vocabulary
@@ -159,7 +159,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 2 | Procurement — purchase orders, discounts, approval | ✅ Done | Phase 1 |
 | 3 | Goods receipt + stock ledger | ✅ Done | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ✅ Done | Phase 3 |
-| 5 | Branches + internal request + branch catalog | 🔜 **Planning** (decisions locked) | Phase 4 |
+| 5 | Branches + internal request + branch catalog | 🔜 **Planning** (plan authored; Slice 1 next) | Phase 4 |
 | 6 | Email automation (supplier notifications) | ⏸ Pending | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
@@ -356,7 +356,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 
 ## 12. Phase 5 — Branches + internal request (planning) 🔜
 
-**Status:** decisions locked 21 Aug 2026 — see [`phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions and [`phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Next deliverable:** formal `phase5-plan-*.md` before any code.
+**Status:** decisions locked 21 Aug 2026 — see [`phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions and [`phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Build spec authored:** [`phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) (+ proposed additions A–D, §13). **Next:** Slice 1 — tenancy (`branches` app only).
 
 - `branches` app: `Branch`, `BranchMembership` (`operator` / `manager` / `admin`), middleware, branch picker.
 - `orders` app: internal request ("Requisição interna") — priced (wholesale snapshot at approve); branch approve caps mirror PO.
@@ -416,7 +416,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - [x] Tests
 
 ### Phase 5 / 6 / 7
-- [ ] Phase 5 plan authored (`phase5-plan-*.md`)
+- [x] Phase 5 plan authored (`phase5-plan-260821-1756.md`)
 - [ ] Phase 5 — branches + internal request (implementation; see roadmap slices)
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 

@@ -204,3 +204,28 @@ Living docs updated so nothing contradicts locked Phase 5 decisions:
 | 5 | [`PROJECT-PLAN.md`](PROJECT-PLAN.md) §12 |
 
 [`docs/archive/warehouse-tenancy-setup.md`](archive/warehouse-tenancy-setup.md) — archived sketch only.
+
+---
+
+## Appendix — Step 1 done + build-spec locks 1–10 (21 Aug 2026, 17:56 WEST)
+
+**Do not edit the sections above.** This appendix records the formal plan and the session locks that the plan encodes.
+
+**Plan (build spec):** [`phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md)
+
+**Next work session:** Slice 1 (Step 2) — `branches` app only. Do not start requests or stock.
+
+| # | Lock |
+|---|------|
+| 1 | Apps: `branches` + `orders` + extend `inventory` (goods issue **and** branch stock). No `branch_inventory` app. |
+| 2 | One global manager cap table (self vs others), warehouse admin edits. Per-branch later. |
+| 3 | Keep the long **header** status list (`draft` → `submitted` → `approved`/`rejected` → `fulfilling` → `shipped` → `received` → `closed` + `cancelled`). No status on lines. Nullable PO FK on lines for later automation. |
+| 4 | `BranchReceipt` hangs off `GoodsIssue` (the dispatch/guia). |
+| 5 | Post-login: warehouse (including dual) → `/`. Branch-only → `/branch/catalog/` or `/branch/select/`. Do not restyle `/`. |
+| 6 | `wholesale_price == 0` → reject the line (add, submit, approve). |
+| 7 | Stock hint: none / low / in stock. Low = at or below reorder level. No exact warehouse qty. |
+| 8 | Short-close on both sides, never operators, reason required. Warehouse writes off **unshipped** remainder; branch writes off **unreceived** remainder. |
+| 9 | Inactive branch: no new requests/lines/submit/approve. In-flight issue/receipt/close still allowed. |
+| 10 | Head office creates branch users and memberships in `/admin/` (superuser). Branch staff do not create logins. **Manager** = requisição. **Admin** = that plus overrides and branch stock correct — still no hire-colleagues screen in Phase 5. |
+
+Policy A1–B8 remains in the brainstorm locked §. If this appendix and an older brainstorm section disagree, **this appendix + the plan** win.
