@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 21 August 2026, 14:11 WEST.*
+*Last updated: 21 August 2026, 16:18 WEST.*
 
-Phases 0–4 are done (auth, catalogue, pricing, purchase orders, goods receipt + stock ledger, manager catalog). Branches, orders, offline, and email are deferred. The 1303 review is **done and archived** (all N1–N12 applied; see [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md)). See [`docs/handoff.md`](docs/handoff.md).
+Phases 0–4 are done. **Phase 5 is in planning** — decisions locked, no code yet. See [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) and [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,8 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next task: Phase 5 (branches)** — write a plan first. M7 (console pagination) is done; the 1303 review is done and archived; L13 (login rate limiting) stays deferred (production-only).
-5. Do **not** in passing: branches, orders, offline, email, shared page chrome.
+4. **Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 1 — write `phase5-plan-*.md`. Do **not** code before the plan.
 
 ---
 
@@ -42,7 +41,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 
 A central warehouse holds the master product catalogue and stock. Stock is a **movement ledger**: goods receipts write `StockMovement` rows and update cached `Item.quantity`. Quantity is never typed on the item form.
 
-Satellite branches will later order against that stock. The `branches` app and orders are **future** (Phase 5). PostgreSQL is the **source of truth**.
+Satellite branches will order against that stock via **Requisição interna** (Phase 5 — planning; decisions locked). PostgreSQL is the **source of truth**.
 
 Warehouse staff work at `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/approval-limits/` (admins), and `/manage/goods-receipts/` via groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators`. Django admin is reserved for superusers.
 
@@ -72,7 +71,7 @@ No React, Vue, or similar frontend framework.
 - Django admin (superuser only) for users and groups
 - Consoles and APIs require login; APIs return 401 when unauthenticated
 
-> **Branches (tenancy) are not built.** Design is in [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md). There is no `branches/` directory.
+> **Branches (tenancy) are not built.** Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md). There is no `branches/` directory.
 
 Production will use Google OAuth (not implemented in dev).
 
@@ -285,13 +284,15 @@ views (login required) → API + HTML
 ## Further reading
 
 - **Start here:** [`docs/handoff.md`](docs/handoff.md)
+- [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) — Phase 5 step-by-step roadmap
+- [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md) — locked decisions (A1–B8)
 - [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) — **living plan**: sequencing + status tracker + locked decisions (update every session)
 - [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md) — follow-up review (concluded, N1–N12 applied)
 - [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) — prior full review (concluded)
 - [`docs/archive/code-review-inventory-2026-08-20.md`](docs/archive/code-review-inventory-2026-08-20.md) — Phase 3 review (concluded)
 - [`docs/archive/code-review-2026-08-20.md`](docs/archive/code-review-2026-08-20.md) · [`docs/archive/code-review-audit.md`](docs/archive/code-review-audit.md) — archived reviews
 - [`docs/user-manuals/01-items.md`](docs/user-manuals/01-items.md) · [`docs/user-manuals/02-purchase-orders.md`](docs/user-manuals/02-purchase-orders.md) · [`docs/user-manuals/03-goods-receipts.md`](docs/user-manuals/03-goods-receipts.md)
-- [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) — Phase 5 design; **§6–7 Order is a sketch, NOT to implement**
+- [`docs/archive/warehouse-tenancy-setup.md`](docs/archive/warehouse-tenancy-setup.md) — archived Branch/Membership sketch (superseded)
 - [`AGENTS.md`](AGENTS.md)
 - [`products/products_docs/aux_instructions.md`](products/products_docs/aux_instructions.md) — development pace
 - [`products/README.md`](products/README.md) — historical catalogue build log
@@ -305,6 +306,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Branches + internal request** (Phase 5)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
-- Integration tests (unit suites are green, ~264 tests)
-- Frontend pagination UI (API supports `?page`; console still loads all items)
+- Integration tests (unit suites are green, **294 tests**)
 - Login rate limiting (pre-production blocker; documented in `settings.example.py`)

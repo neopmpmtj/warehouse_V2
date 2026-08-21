@@ -7,7 +7,7 @@ alwaysApply: false
 
 **Do not start this work yet.** Phases 0–4 (through manager catalog) are done. Branch orders wait for Phase 5 (`branches` app + internal request). Stock already exists (goods receipt ledger); that is not a reason to start orders now.
 
-The `branches` app is **not built**. Design only: @docs/warehouse-tenancy-setup.md
+The `branches` app is **not built**. Locked decisions: @docs/phase5-brainstorm-260821-1530.md (archived sketch: @docs/archive/warehouse-tenancy-setup.md)
 
 ## Already in place (warehouse, not tenancy)
 

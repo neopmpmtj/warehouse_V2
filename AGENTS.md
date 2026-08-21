@@ -10,7 +10,7 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 
 **Not done:** `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
 
-**Next:** a written plan for **Phase 5 — branches** (new app; design in `docs/warehouse-tenancy-setup.md`). M7 (console pagination) is done. The 1303 review is **done and archived** (all N1–N12 applied). L13 (login rate limiting) is production-only, deferred. Do **not** implement `orders/` or the tenancy-doc Order stub without a plan.
+**Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 1 — formal `phase5-plan-*.md`. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md). Do **not** implement `orders/` without the plan. Do **not** use tenancy-doc §6–7 Order stub.
 
 **Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive and resets grade to 1. Approval uses grades + `ApprovalLimit` (EUR gross); reject/manual close/`adjust_stock` require a reason. Selling prices & `reorder_level` must be finite and ≥ 0 (DB `CheckConstraint`s); PO line quantity capped at 1e9; login rate limiting is a documented pre-production blocker (deferred).
 
@@ -21,7 +21,7 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 | Warehouse admin | group `warehouse_admins` | Full catalogue (view/add/change/delete) via the website; approve any PO; edit `/manage/approval-limits/` | N/A (central) |
 | Warehouse manager | group `warehouse_managers` | Grade 1: mutate closed circuit, no approve. Grade 2+: approve within `ApprovalLimit` caps (no delete) | N/A (central) |
 | Warehouse operator | group `warehouse_data_operators` | Grade 1 view-only; grade 2 mutate closed circuit. Never approve | N/A (central) |
-| Branch admin/manager/user | *(future — Phase 5)* `BranchMembership.role` | Read-only catalogue (not built) | Per-branch permissions (not built) |
+| Branch admin / manager / operator | *(Phase 5 — not built)* `BranchMembership.role` | Read-only catalog; internal request (Requisição interna) per branch |
 | Django superuser | `is_superuser` | May use the website console; **only** role that can log into `/admin/` | Site config in `/admin/` |
 
 Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev` / `manager2` / `manager3`, `warehouse.operator@centcompras.dev` / `operator2`, password `devpass123`.
@@ -36,7 +36,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 | `products` | Catalogue + pricing: model, service layer, API, staff admin, staff console, tests |
 | `procurement` | Purchase orders: models, service layer, console API, admin, tests |
 | `inventory` | Goods receipt + stock ledger: `GoodsReceipt`/`StockMovement`, services, console API, admin, tests |
-| `branches` | ⚠️ **Not built yet** — deferred (designed in `docs/warehouse-tenancy-setup.md`) |
+| `branches` | ⚠️ **Not built yet** — see [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md) |
 | `logging_utils` | `get_logger("centcompras.<app>")`, rotating logs in `logs/` |
 
 ### Auth
@@ -130,4 +130,4 @@ Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, n
 1. [`docs/handoff.md`](docs/handoff.md) — state + decisions + next task
 2. [`README.md`](README.md) — setup, URLs, seed
 3. [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) — phased plan
-4. [`docs/warehouse-tenancy-setup.md`](docs/warehouse-tenancy-setup.md) — tenancy design (**branches not built**); Order sketch §6–7 is **not** the next build
+4. [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) — Phase 5 roadmap; [`docs/archive/warehouse-tenancy-setup.md`](docs/archive/warehouse-tenancy-setup.md) is archived sketch only

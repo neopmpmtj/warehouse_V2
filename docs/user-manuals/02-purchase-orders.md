@@ -21,11 +21,11 @@ Sign in with your email + password (the one your administrator gave you). This m
 | Role | See POs | Create / edit | Approve |
 |------|:---:|:---:|:---:|
 | **Admin** (`warehouse_admins`) | ✅ | ✅ | ✅ |
-| **Manager** (`warehouse_managers`) | ✅ | ✅ (no approve) | ❌ |
+| **Manager** (`warehouse_managers`) | ✅ | ✅ (no approve at grade 1) | ✅ (grade 2+ within EUR caps) |
 | **Operator** (`warehouse_data_operators`) | ✅ (read-only) | ❌ | ❌ |
 
 - **Operator** sees the list but has no "New purchase order" button and no edit/status buttons.
-- **Approve** is the finance step — only admins can do it.
+- **Approve** is the finance step — warehouse **admins** approve any amount; **managers grade 2+** approve within EUR gross caps (self vs others); operators never approve.
 
 ---
 
@@ -112,7 +112,7 @@ The list's **Total** column shows the **gross**.
 | From | Action | To | Who |
 |------|--------|----|-----|
 | Draft | **Submit** | Submitted | manager/admin |
-| Submitted | **Approve** | Approved | **admin only** |
+| Submitted | **Approve** | Approved | manager grade 2+ / admin (within caps) |
 | Submitted | **Reject** | Rejected | manager/admin |
 | Approved | **Receive goods** | Received | manager/admin |
 | Received | **Close** | Closed | manager/admin (when fully received, this can happen automatically) |
@@ -127,7 +127,7 @@ The list's **Total** column shows the **gross**.
 
 ## 8. Approved totals snapshot
 
-When an admin **approves** a purchase order, the **Net / VAT / Gross** figures are **frozen** and stored with the order. From then on the drawer shows those frozen figures, so the approved record is immutable — even if discount or VAT rules change later.
+When a manager or admin **approves** a purchase order, the **Net / VAT / Gross** figures are **frozen** and stored with the order. From then on the drawer shows those frozen figures, so the approved record is immutable — even if discount or VAT rules change later.
 
 ---
 
@@ -149,7 +149,7 @@ It marks the supplier as the *preferred* supplier for that item. On a purchase o
 Lines are editable only while the order is a **Draft**. After **Submit** they're locked.
 
 **Q4. I can't see the "Approve" button — why?**
-Only **admins** can approve. Managers can create and submit; operators are read-only.
+Only **managers grade 2+** and **admins** can approve (within caps for managers). Grade 1 managers and operators cannot approve.
 
 **Q5. What's the difference between Net and Gross?**
 Net is before VAT; Gross is net + VAT — the amount you actually pay.

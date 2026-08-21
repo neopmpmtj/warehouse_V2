@@ -1,8 +1,10 @@
 # Warehouse App — Multi-Tenancy & Role Setup Instructions
 
-> **Phase 5 design — not built.** There is no `branches/` app in the repository. `accounts` (email login) **is** built. The catalogue lives at `/manage/items/`. Live state: [`handoff.md`](handoff.md).
+> **Archived** 21 Aug 2026 — superseded by [`../phase5-brainstorm-260821-1530.md`](../phase5-brainstorm-260821-1530.md) §Locked decisions and [`../phase5-roadmap-260821-1618.md`](../phase5-roadmap-260821-1618.md). Kept for historical Branch/Membership sketch only. Live state: [`../handoff.md`](../handoff.md).
 
-**Do not implement §6–7 as written.** The `Order` example with `item_name` / `quantity` / `notes` was a placeholder from before `Item` existed. Branch orders wait until Phase 5. Order business rules (cart shape, stock decrement timing, cancel policy) are also not locked.
+> **Phase 5 design — not built.** There is no `branches/` app in the repository. `accounts` (email login) **is** built. The catalogue lives at `/manage/items/`.
+
+> **Do not implement §6–7 as written.** Do **not** use the role name `user` (use **`operator`**) or the Order stub.
 
 The catalogue is managed on the **website** by Django groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators` (built-in `view` / `add` / `change` / `delete` model permissions). **`/admin/` is superuser only** — `is_staff` is not a warehouse role. Future branch roles (`BranchMembership`) will **not** grant catalogue edit.
 
@@ -27,7 +29,9 @@ We are adding two things to the app:
 |---------|:---:|:---:|:---:|
 | Admin   | ✅ | ✅ | ✅ |
 | Manager | ✅ | ❌ | ❌ |
-| User    | ✅ | ❌ | ❌ |
+| Operator | ✅ | ❌ | ❌ |
+
+> **Historical table** — used `User` in the original sketch; locked design uses **`operator`**, **`manager`**, **`admin`**. See brainstorm locked §.
 
 - A user's role is **not global** — it's attached to their membership in a *specific* branch. A user can belong to multiple branches with a different role in each (e.g. a regional manager).
 - Orders belong to exactly one branch. A branch only manages its own orders — no cross-branch ordering.

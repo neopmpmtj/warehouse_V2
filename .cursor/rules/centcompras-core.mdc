@@ -16,7 +16,7 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - `procurement` — purchase orders at `/manage/purchase-orders/`
 - `inventory` — goods receipt + `StockMovement` ledger + cached `Item.quantity` at `/manage/goods-receipts/`
 - `logging_utils` — rotating logs in `logs/`
-- `branches` — **not built** (design in `docs/warehouse-tenancy-setup.md`)
+- `branches` — **not built** (Phase 5 plan: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md))
 - `orders` — not built; wait until Phase 5
 - Offline catalogue — **removed** (Phase 7 may re-add it)
 
@@ -38,4 +38,4 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - @docs/PROJECT-PLAN.md — living plan: sequencing + status tracker + locked decisions (update every session)
 - @docs/archive/code-review-full-2026-08-21-1303.md — concluded 1303 review (N1–N12 applied; archived)
 - @docs/archive/code-review-full-2026-08-20-2208.md — concluded 2208 review (do not re-open)
-- @docs/warehouse-tenancy-setup.md — Phase 5 design (**not built**); Order sketch is not the next build
+- @docs/phase5-brainstorm-260821-1530.md — Phase 5 locked decisions; @docs/archive/warehouse-tenancy-setup.md — archived sketch only

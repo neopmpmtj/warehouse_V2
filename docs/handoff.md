@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026, 15:19 WEST.
+> **Read this first when resuming work.** Last updated: 21 August 2026, 16:18 WEST.
 
 ---
 
@@ -13,21 +13,21 @@
 | 2 — Procurement (purchase orders) | ✅ Done |
 | **3 — Goods receipt + stock ledger** | ✅ **Done** |
 | **4 — Manager catalog (stock + price view)** | ✅ **Done** |
-| 5 — Branches + internal request | ⏸ Deferred |
+| 5 — Branches + internal request | 🔜 **Planning** (decisions locked; plan next) |
 | 6 — Email automation | ⏸ Pending (stub exists) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–4 are complete.** Product phases 5–7 stay deferred/pending/future.
+**Phases 0–4 are complete.** Phase 5 decisions are **locked**; implementation has **not** started. Phases 6–7 stay pending/future.
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 — auth, catalogue + pricing, purchase orders, goods receipt + stock, manager catalog — are complete and stable (294 tests green).**
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable (294 tests green).**
 
-**Next task:** write a plan for **Phase 5 — branches** (a new app; design in `docs/warehouse-tenancy-setup.md`). M7 (console pagination) is done; L13 (login rate limiting) stays deferred — production-only.
+**Next task:** write **`docs/phase5-plan-*.md`** (build spec from locked decisions). Follow [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 1. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions. L13 (login rate limiting) stays deferred — production-only.
 
 ---
 
 ## Next session — do this
 
-1. **Next task: Phase 5 — branches** — write a plan first (a new app; design in `docs/warehouse-tenancy-setup.md`). M7 (console pagination) is done.
+1. **Next task:** `docs/phase5-plan-*.md` — see [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). Do **not** start code before the plan. M7 (console pagination) is done.
 2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
 3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; L13 (login rate limiting) is the only one still open (production-only, deferred).
 4. **Do not start** orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
@@ -85,7 +85,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D7 | PO status: `draft → submitted → approved/rejected → received → closed` |
 | D8 | Rappel = simple per-line % for now |
 | D9 | Email = stub (`notify_supplier_on_approval`), deferred to Phase 6 |
-| D10 | Branches **not now** — keep products branch-ready |
+| D10 | Branches **not built yet** — keep `Item` global (no `branch_id`); Phase 5 plan in progress |
 | D11 | `primary` = preferred supplier; auto-suggested later; always overridable |
 | D12 | **B-hard:** a PO line is **rejected** if the PO's supplier has no price for the item (no fallback to another supplier's price) |
 | D13 | **Approved totals snapshot:** `approved_net`/`approved_vat`/`approved_gross` stored once at `approve()` (frozen financial record; lines stay computed) |
@@ -226,6 +226,8 @@ python manage.py runserver
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |
 | `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — concluded |
 | `docs/user-manuals/` | staff user manuals |
-| `docs/warehouse-tenancy-setup.md` | Phase 5 tenancy **design** — not built; **§6–7 Order is a sketch, NOT to implement** |
+| `docs/phase5-roadmap-260821-1618.md` | **Step-by-step Phase 5 roadmap** — read when resuming |
+| `docs/phase5-brainstorm-260821-1530.md` | Brainstorm + **locked decisions** (A1–B8) |
+| `docs/archive/warehouse-tenancy-setup.md` | **Archived** Branch/Membership sketch — superseded by brainstorm |
 | `products/products_docs/aux_instructions.md` | learning pace for agents (not live status) |
 | `.cursor/rules/` | agent rules — must match this handoff |

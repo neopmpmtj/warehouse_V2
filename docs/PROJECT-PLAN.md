@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 21 August 2026
-- **Current phase:** Phase 4 (manager catalog) complete ✅ — phases 0–4 done and stable (**294 tests green**). The 1303 review is **archived** (all N1–N12 applied; [`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)); 2208 is archived too. **Next: Phase 5 — branches** (plan to be authored). See [`docs/handoff.md`](handoff.md) — the live source of truth.
+- **Last updated:** 21 August 2026, 16:18 WEST
+- **Current phase:** Phase 5 **planning** — phases 0–4 done (**294 tests green**). Decisions locked in [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md); roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Next:** formal `phase5-plan-*.md`, then code. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is **next** — see Phase 5 below.
 
 ## Status vocabulary
@@ -159,7 +159,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 2 | Procurement — purchase orders, discounts, approval | ✅ Done | Phase 1 |
 | 3 | Goods receipt + stock ledger | ✅ Done | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ✅ Done | Phase 3 |
-| 5 | Branches + internal request + branch catalog | 🔜 **Next** (plan to be authored) | Phase 4 |
+| 5 | Branches + internal request + branch catalog | 🔜 **Planning** (decisions locked) | Phase 4 |
 | 6 | Email automation (supplier notifications) | ⏸ Pending | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
@@ -354,14 +354,15 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 
 ---
 
-## 12. Phase 5 — Branches + internal request (next) 🔜
+## 12. Phase 5 — Branches + internal request (planning) 🔜
 
-**Next task.** This is a whole new app, so a **separate "branches plan"** will be authored before any code. Design lives in [`docs/warehouse-tenancy-setup.md`](warehouse-tenancy-setup.md).
+**Status:** decisions locked 21 Aug 2026 — see [`phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions and [`phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Next deliverable:** formal `phase5-plan-*.md` before any code.
 
-- Build the missing `branches` app: `Branch`, `BranchMembership`, `ActiveBranchMiddleware`, branch picker.
-- Internal request ("Requisição Interna") flow: branch requests item → stock check → **ship** (in stock) or **procure then ship** (out of stock).
-- Branch catalog view (cost **hidden**, selling prices possibly branch-tiered — revisit D2).
-- Offline order queue + sync.
+- `branches` app: `Branch`, `BranchMembership` (`operator` / `manager` / `admin`), middleware, branch picker.
+- `orders` app: internal request ("Requisição interna") — priced (wholesale snapshot at approve); branch approve caps mirror PO.
+- Warehouse: `GoodsIssue` + queue (approved requests only); manual PO when out of stock (nullable PO FK on lines for later automation).
+- Branch: read-only catalog (cost hidden, stock **hint** only); branch receipt + branch stock ledger.
+- **Not in Phase 5:** offline/sync (Phase 7), email notify (Phase 6), stock reservation (deferred), linked/auto PO (later slice).
 
 ---
 
@@ -415,7 +416,8 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - [x] Tests
 
 ### Phase 5 / 6 / 7
-- [ ] Phase 5 — branches (separate plan; **next**)
+- [ ] Phase 5 plan authored (`phase5-plan-*.md`)
+- [ ] Phase 5 — branches + internal request (implementation; see roadmap slices)
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---
