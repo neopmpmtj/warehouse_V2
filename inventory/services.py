@@ -15,7 +15,17 @@ from procurement.models import (
     PurchaseOrderLine,
 )
 
-from .models import GoodsIssue, GoodsIssueLine, GoodsReceipt, GoodsReceiptLine, StockMovement
+from .models import (
+    BranchItemStock,
+    BranchReceipt,
+    BranchReceiptLine,
+    BranchStockMovement,
+    GoodsIssue,
+    GoodsIssueLine,
+    GoodsReceipt,
+    GoodsReceiptLine,
+    StockMovement,
+)
 from orders.models import InternalRequest, InternalRequestLine
 
 logger = get_logger("centcompras.inventory")
@@ -581,6 +591,330 @@ def get_issue_summary(request):
             "issued": str(issued_map.get(line.id, Decimal("0"))),
             "remaining": str(line.quantity - issued_map.get(line.id, Decimal("0"))),
             "on_hand": str(line.item.quantity),
+        }
+        for line in lines
+    ]
+
+
+class BranchReceiptNotAllowedError(ValidationError):
+    def __init__(self, status):
+        super().__init__(
+            f"Cannot receive against a request with status '{status}'.",
+            code="branch_receipt_not_allowed",
+        )
+
+
+class BranchIssueLineNotFoundError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Goods issue line not found on this dispatch.",
+            code="branch_issue_line_not_found",
+        )
+
+
+class InvalidBranchReceivedQuantityError(ValidationError):
+    def __init__(self, message="Received quantity must be a positive number."):
+        super().__init__(message, code="invalid_branch_received_quantity")
+
+
+class NoBranchLinesToReceiveError(ValidationError):
+    def __init__(self):
+        super().__init__("No lines to receive.", code="no_branch_lines_to_receive")
+
+
+class DuplicateBranchReceiptLineError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A goods issue line was provided more than once in this receipt.",
+            code="duplicate_branch_receipt_line",
+        )
+
+
+class BranchInsufficientShippedError(ValidationError):
+    def __init__(self, remaining, received):
+        super().__init__(
+            f"Received quantity {received} exceeds shipped remaining {remaining}.",
+            code="branch_insufficient_shipped",
+        )
+
+
+class BranchAdjustmentForbiddenError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Only branch admins can adjust branch stock.",
+            code="branch_adjustment_forbidden",
+        )
+
+
+class BranchStockNegativeError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Branch stock cannot be adjusted below zero.",
+            code="branch_stock_negative",
+        )
+
+
+def _resolve_goods_issue(goods_issue):
+    if isinstance(goods_issue, GoodsIssue):
+        return goods_issue
+    return GoodsIssue.objects.get(pk=goods_issue)
+
+
+def _branch_received_qty_map(goods_issue):
+    totals = (
+        BranchReceiptLine.objects.filter(goods_issue_line__goods_issue=goods_issue)
+        .values("goods_issue_line_id")
+        .annotate(total=Sum("quantity_received"))
+    )
+    return {
+        row["goods_issue_line_id"]: (row["total"] or Decimal("0"))
+        for row in totals
+    }
+
+
+def _request_received_qty_map(request):
+    totals = (
+        BranchReceiptLine.objects.filter(
+            goods_issue_line__goods_issue__internal_request=request
+        )
+        .values("goods_issue_line__internal_request_line_id")
+        .annotate(total=Sum("quantity_received"))
+    )
+    return {
+        row["goods_issue_line__internal_request_line_id"]: (row["total"] or Decimal("0"))
+        for row in totals
+    }
+
+
+def _is_request_fully_received(request):
+    issued_map = _issued_qty_map(request)
+    received_map = _request_received_qty_map(request)
+    return all(
+        (issued_map.get(line.id, Decimal("0")) - received_map.get(line.id, Decimal("0"))) <= 0
+        for line in request.lines.all()
+    )
+
+
+def _validate_branch_received_qty(value):
+    qty = _parse_decimal_quantity(value)
+    if qty <= 0:
+        raise InvalidBranchReceivedQuantityError()
+    return qty
+
+
+def _write_branch_movement(branch, item, quantity, movement_type, user, content_object=None, reason=""):
+    stock, _ = BranchItemStock.objects.get_or_create(branch=branch, item=item)
+    stock = BranchItemStock.objects.select_for_update().get(pk=stock.pk)
+    new_quantity = (stock.quantity or Decimal("0")) + quantity
+    if new_quantity < 0:
+        raise BranchStockNegativeError()
+
+    kwargs = {
+        "branch": branch,
+        "item": item,
+        "quantity": quantity,
+        "movement_type": movement_type,
+        "created_by": user,
+        "reason": (reason or "").strip(),
+    }
+    if content_object is not None:
+        kwargs["content_type"] = ContentType.objects.get_for_model(content_object)
+        kwargs["object_id"] = content_object.pk
+    movement = BranchStockMovement.objects.create(**kwargs)
+
+    stock.quantity = new_quantity.quantize(Decimal("0.001"))
+    stock.save(update_fields=["quantity", "updated_at"])
+    return movement
+
+
+@transaction.atomic
+def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
+    """Confirm branch receipt against a dispatch (guia); reject over-receipt."""
+    from orders.services import mark_closed, mark_received
+
+    goods_issue = GoodsIssue.objects.select_for_update().get(
+        pk=_resolve_goods_issue(goods_issue).pk
+    )
+    request = InternalRequest.objects.select_for_update().get(
+        pk=goods_issue.internal_request_id
+    )
+
+    if request.status not in (
+        InternalRequest.Status.SHIPPED,
+        InternalRequest.Status.RECEIVED,
+    ):
+        raise BranchReceiptNotAllowedError(request.status)
+
+    normalized = []
+    seen_line_ids = set()
+    received_map = _branch_received_qty_map(goods_issue)
+    for entry in lines:
+        if not isinstance(entry, dict):
+            raise ValidationError(
+                "Each receipt line must be an object with line_id and quantity_received.",
+                code="invalid_branch_receipt_line",
+            )
+        line_id = entry.get("line_id", entry.get("goods_issue_line_id"))
+        if line_id is None:
+            raise ValidationError("Each receipt line requires a line_id.", code="invalid_branch_receipt_line")
+        if "quantity_received" not in entry:
+            raise ValidationError("Each receipt line requires quantity_received.", code="invalid_branch_receipt_line")
+        qty = _validate_branch_received_qty(entry["quantity_received"])
+        try:
+            issue_line = goods_issue.lines.get(pk=line_id)
+        except GoodsIssueLine.DoesNotExist:
+            raise BranchIssueLineNotFoundError()
+        if issue_line.id in seen_line_ids:
+            raise DuplicateBranchReceiptLineError()
+        seen_line_ids.add(issue_line.id)
+        remaining = issue_line.quantity_issued - received_map.get(issue_line.id, Decimal("0"))
+        if qty > remaining:
+            raise BranchInsufficientShippedError(remaining, qty)
+        normalized.append((issue_line, qty))
+
+    if not normalized:
+        raise NoBranchLinesToReceiveError()
+
+    branch = request.branch
+    item_ids = sorted({issue_line.internal_request_line.item_id for issue_line, _qty in normalized})
+    for item_id in item_ids:
+        stock, _ = BranchItemStock.objects.get_or_create(branch=branch, item_id=item_id)
+        BranchItemStock.objects.select_for_update().get(pk=stock.pk)
+
+    receipt = BranchReceipt.objects.create(
+        goods_issue=goods_issue,
+        received_by=user,
+        reference=(reference or "").strip(),
+        notes=(notes or "").strip(),
+    )
+
+    for issue_line, qty in normalized:
+        BranchReceiptLine.objects.create(
+            branch_receipt=receipt,
+            goods_issue_line=issue_line,
+            quantity_received=qty,
+        )
+        _write_branch_movement(
+            branch,
+            issue_line.internal_request_line.item,
+            qty,
+            BranchStockMovement.Type.RECEIPT,
+            user,
+            content_object=receipt,
+        )
+
+    if _is_request_fully_received(request):
+        mark_closed(request, user)
+    else:
+        mark_received(request, user)
+
+    logger.info(
+        "Branch receipt br=%s gi=%s lines=%s user=%s",
+        receipt.id,
+        goods_issue.id,
+        len(normalized),
+        getattr(user, "email", None),
+    )
+    return receipt
+
+
+@transaction.atomic
+def short_close_receipt(request, user, reason=""):
+    """Branch short-close: write off the unreceived remainder and mark closed."""
+    from orders.services import mark_closed
+
+    request = InternalRequest.objects.select_for_update().get(pk=_resolve_request(request).pk)
+    if request.status not in (
+        InternalRequest.Status.SHIPPED,
+        InternalRequest.Status.RECEIVED,
+    ):
+        raise BranchReceiptNotAllowedError(request.status)
+
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError(
+            "A reason is required to short-close a request.",
+            code="short_close_reason_required",
+        )
+
+    request = mark_closed(request, user, reason=reason)
+    logger.info(
+        "Branch short-closed request id=%s user=%s",
+        request.id,
+        getattr(user, "email", None),
+    )
+    return request
+
+
+@transaction.atomic
+def adjust_branch_stock(branch, item, quantity, reason, user):
+    """Manual branch stock adjustment (branch admin only, reason required)."""
+    from branches.capabilities import ROLE_ADMIN, branch_role
+
+    if branch_role(user, branch) != ROLE_ADMIN:
+        raise BranchAdjustmentForbiddenError()
+
+    item = _resolve_item(item)
+    quantity = _parse_decimal_quantity(quantity)
+    if quantity == 0:
+        raise InvalidAdjustmentQuantityError()
+
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError(
+            "A reason is required to adjust branch stock.",
+            code="branch_adjust_reason_required",
+        )
+
+    movement = _write_branch_movement(
+        branch,
+        item,
+        quantity,
+        BranchStockMovement.Type.ADJUSTMENT,
+        user,
+        reason=reason,
+    )
+    logger.info(
+        "Adjusted branch stock branch=%s item=%s quantity=%s user=%s",
+        branch.id,
+        item.id,
+        str(quantity),
+        getattr(user, "email", None),
+    )
+    return movement
+
+
+def get_branch_goods_issues(branch):
+    """Dispatches awaiting/partially received by a branch (shipped/received requests)."""
+    return (
+        GoodsIssue.objects.filter(
+            internal_request__branch=branch,
+            internal_request__status__in=[
+                InternalRequest.Status.SHIPPED,
+                InternalRequest.Status.RECEIVED,
+            ],
+        )
+        .select_related("internal_request", "issued_by")
+        .prefetch_related("lines__internal_request_line__item")
+        .order_by("-issued_at")
+    )
+
+
+def get_branch_issue_summary(goods_issue):
+    """Per-line shipped / received / remaining for a branch dispatch (guia)."""
+    goods_issue = _resolve_goods_issue(goods_issue)
+    lines = list(goods_issue.lines.select_related("internal_request_line__item").all())
+    received_map = _branch_received_qty_map(goods_issue)
+    return [
+        {
+            "line_id": line.id,
+            "item_id": line.internal_request_line.item_id,
+            "internal_code": line.internal_request_line.internal_code,
+            "description": line.internal_request_line.description,
+            "unit_of_measure": line.internal_request_line.unit_of_measure,
+            "quantity_issued": str(line.quantity_issued),
+            "received": str(received_map.get(line.id, Decimal("0"))),
+            "remaining": str(line.quantity_issued - received_map.get(line.id, Decimal("0"))),
         }
         for line in lines
     ]

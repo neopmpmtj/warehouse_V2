@@ -28,4 +28,29 @@ urlpatterns = [
         console_views.manage_stock_adjustment,
         name="manage_stock_adjustment",
     ),
+    path(
+        "branch/receipts/issues/",
+        console_views.branch_receipt_issue_list,
+        name="branch_receipt_issue_list",
+    ),
+    path(
+        "branch/receipts/issues/<int:issue_id>/",
+        console_views.branch_receipt_issue_detail,
+        name="branch_receipt_issue_detail",
+    ),
+    path(
+        "branch/receipts/issues/<int:issue_id>/receive/",
+        console_views.branch_receipt_receive,
+        name="branch_receipt_receive",
+    ),
+    path(
+        "branch/receipts/issues/<int:issue_id>/short-close/",
+        console_views.branch_receipt_short_close,
+        name="branch_receipt_short_close",
+    ),
+    path(
+        "branch/stock/adjust/",
+        console_views.branch_stock_adjust,
+        name="branch_stock_adjust",
+    ),
 ]

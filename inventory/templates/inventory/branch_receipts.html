@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Receipts — CentCompras</title>
+    <style>
+        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+        header h1 { font-size: 1.2rem; margin: 0; }
+        header .user { color: var(--muted); font-size: .9rem; }
+        header a, header button { margin-left: 12px; color: var(--brand); text-decoration: none; }
+        header form { display: inline; }
+        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
+        main { display: grid; grid-template-columns: 340px 1fr; gap: 20px; padding: 20px; }
+        @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+        .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+        h2 { margin: 0 0 10px; font-size: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+        th { color: var(--muted); font-weight: 600; font-size: .8rem; }
+        .btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
+        .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+        input { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
+        .qty { width: 80px; }
+        .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: #b00020; margin-top: 10px; }
+        .selected { background: #eef4fe; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ branch.name }} — Receipts</h1>
+        <div class="user">
+            <span>{{ user.email }}</span>
+            <a href="{% url 'branch_catalog' %}">Catalog</a>
+            <a href="{% url 'request_console' %}">Requests</a>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2>Dispatches</h2>
+            <table>
+                <thead><tr><th>#</th><th>Request</th><th>Status</th><th>Ref</th></tr></thead>
+                <tbody id="issue-body"></tbody>
+            </table>
+        </section>
+
+        <section class="panel">
+            <h2 id="detail-title">Dispatch</h2>
+            <table>
+                <thead><tr><th>Code</th><th>Description</th><th>Shipped</th><th>Received</th><th>Remaining</th><th>Receive qty</th></tr></thead>
+                <tbody id="line-body"></tbody>
+            </table>
+            <div class="row">
+                <button id="receive-btn" class="btn btn-primary">Receive</button>
+                <button id="short-close-btn" class="btn">Short close</button>
+            </div>
+            <div class="row" id="adjust-row" hidden>
+                <input id="adjust-item" placeholder="Item ID">
+                <input id="adjust-qty" type="number" step="0.001" placeholder="Qty">
+                <input id="adjust-reason" placeholder="Reason">
+                <button id="adjust-btn" class="btn">Adjust stock</button>
+            </div>
+            <p id="banner" class="banner" hidden></p>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            var CSRF = document.querySelector('meta[name="csrf-token"]').content;
+            var CAN_SHORT_CLOSE = {{ can_short_close|yesno:"true,false" }};
+            var CAN_ADJUST = {{ can_adjust|yesno:"true,false" }};
+            var state = { selectedId: null, issues: [] };
+
+            var issueBody = document.getElementById("issue-body");
+            var lineBody = document.getElementById("line-body");
+            var banner = document.getElementById("banner");
+            var detailTitle = document.getElementById("detail-title");
+
+            function el(tag, text, cls) { var n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
+            function showError(m) { banner.textContent = m || "Request failed."; banner.hidden = false; }
+            function clearError() { banner.hidden = true; }
+
+            function api(path, method, body) {
+                var opts = { method: method || "GET", headers: { "Accept": "application/json", "X-CSRFToken": CSRF } };
+                if (body !== undefined) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+                return fetch(path, opts).then(function (r) {
+                    return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || ("HTTP " + r.status)); return d; });
+                });
+            }
+
+            function renderList() {
+                issueBody.textContent = "";
+                state.issues.forEach(function (issue) {
+                    var tr = document.createElement("tr");
+                    if (issue.id === state.selectedId) tr.className = "selected";
+                    tr.appendChild(el("td", issue.id));
+                    tr.appendChild(el("td", issue.request_id));
+                    tr.appendChild(el("td", issue.request_status));
+                    tr.appendChild(el("td", issue.reference));
+                    tr.addEventListener("click", function () { select(issue.id); });
+                    issueBody.appendChild(tr);
+                });
+            }
+
+            function load() {
+                return api("/api/branch/receipts/issues/").then(function (d) {
+                    state.issues = d.goods_issues || [];
+                    renderList();
+                });
+            }
+
+            function renderDetail(issue) {
+                detailTitle.textContent = "Dispatch #" + issue.id + " (request #" + issue.request_id + ", " + issue.request_status + ")";
+                lineBody.textContent = "";
+                issue.lines.forEach(function (line) {
+                    var tr = document.createElement("tr");
+                    tr.appendChild(el("td", line.internal_code));
+                    tr.appendChild(el("td", line.description));
+                    tr.appendChild(el("td", line.quantity_issued));
+                    tr.appendChild(el("td", line.received));
+                    tr.appendChild(el("td", line.remaining));
+                    var td = document.createElement("td");
+                    var input = document.createElement("input");
+                    input.type = "number"; input.step = "0.001"; input.min = "0.001"; input.className = "qty";
+                    input.dataset.lineId = line.line_id;
+                    input.disabled = issue.request_status === "closed";
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                    lineBody.appendChild(tr);
+                });
+            }
+
+            function select(id) {
+                state.selectedId = id;
+                clearError();
+                api("/api/branch/receipts/issues/" + id + "/").then(function (d) {
+                    renderDetail(d.goods_issue);
+                    renderList();
+                }).catch(showError);
+            }
+
+            function receive() {
+                clearError();
+                var lines = [];
+                lineBody.querySelectorAll("input[data-line-id]").forEach(function (input) {
+                    if (input.value) lines.push({ line_id: parseInt(input.dataset.lineId, 10), quantity_received: input.value });
+                });
+                if (!lines.length) { showError("Enter at least one received quantity."); return; }
+                api("/api/branch/receipts/issues/" + state.selectedId + "/receive/", "POST", { lines: lines })
+                    .then(function () { return load().then(function () { select(state.selectedId); }); }).catch(showError);
+            }
+
+            function shortClose() {
+                clearError();
+                var reason = prompt("Reason for short-close:");
+                if (reason === null) return;
+                api("/api/branch/receipts/issues/" + state.selectedId + "/short-close/", "POST", { reason: reason })
+                    .then(function () { return load().then(function () { select(state.selectedId); }); }).catch(showError);
+            }
+
+            function adjust() {
+                clearError();
+                api("/api/branch/stock/adjust/", "POST", {
+                    item_id: document.getElementById("adjust-item").value,
+                    quantity: document.getElementById("adjust-qty").value,
+                    reason: document.getElementById("adjust-reason").value
+                }).then(function () { banner.textContent = "Stock adjusted."; banner.hidden = false; }).catch(showError);
+            }
+
+            document.getElementById("receive-btn").addEventListener("click", receive);
+            document.getElementById("short-close-btn").addEventListener("click", shortClose);
+            document.getElementById("short-close-btn").disabled = !CAN_SHORT_CLOSE;
+            document.getElementById("adjust-btn").addEventListener("click", adjust);
+            if (CAN_ADJUST) document.getElementById("adjust-row").hidden = false;
+
+            load().catch(showError);
+        })();
+    </script>
+</body>
+</html>

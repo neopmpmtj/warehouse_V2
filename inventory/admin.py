@@ -1,6 +1,16 @@
 from django.contrib import admin
 
-from .models import GoodsIssue, GoodsIssueLine, GoodsReceipt, GoodsReceiptLine, StockMovement
+from .models import (
+    BranchItemStock,
+    BranchReceipt,
+    BranchReceiptLine,
+    BranchStockMovement,
+    GoodsIssue,
+    GoodsIssueLine,
+    GoodsReceipt,
+    GoodsReceiptLine,
+    StockMovement,
+)
 
 
 class GoodsIssueLineInline(admin.TabularInline):
@@ -101,6 +111,98 @@ class StockMovementAdmin(admin.ModelAdmin):
     list_filter = ("movement_type",)
     search_fields = ("item__internal_code", "item__description", "reason")
     readonly_fields = (
+        "item",
+        "quantity",
+        "movement_type",
+        "content_type",
+        "object_id",
+        "reason",
+        "created_by",
+        "created_at",
+    )
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class BranchReceiptLineInline(admin.TabularInline):
+    model = BranchReceiptLine
+    extra = 0
+    can_delete = False
+    readonly_fields = ("goods_issue_line", "quantity_received")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BranchReceipt)
+class BranchReceiptAdmin(admin.ModelAdmin):
+    list_display = ("id", "goods_issue", "received_by", "received_at", "reference")
+    search_fields = ("reference", "goods_issue__id", "goods_issue__internal_request__id")
+    inlines = (BranchReceiptLineInline,)
+    readonly_fields = ("goods_issue", "received_by", "received_at", "reference", "notes")
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BranchItemStock)
+class BranchItemStockAdmin(admin.ModelAdmin):
+    list_display = ("id", "branch", "item", "quantity", "updated_at")
+    list_filter = ("branch",)
+    search_fields = ("item__internal_code", "item__description", "branch__name")
+    readonly_fields = ("branch", "item", "quantity", "updated_at")
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BranchStockMovement)
+class BranchStockMovementAdmin(admin.ModelAdmin):
+    list_display = ("id", "branch", "item", "movement_type", "quantity", "created_by", "created_at")
+    list_filter = ("movement_type", "branch")
+    search_fields = ("item__internal_code", "item__description", "reason")
+    readonly_fields = (
+        "branch",
         "item",
         "quantity",
         "movement_type",

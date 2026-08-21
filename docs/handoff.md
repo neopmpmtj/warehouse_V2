@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026, 21:48 WEST.
+> **Read this first when resuming work.** Last updated: 21 August 2026, 22:01 WEST.
 
 ---
 
@@ -13,21 +13,21 @@
 | 2 — Procurement (purchase orders) | ✅ Done |
 | **3 — Goods receipt + stock ledger** | ✅ **Done** |
 | **4 — Manager catalog (stock + price view)** | ✅ **Done** |
-| 5 — Branches + internal request | 🔜 **In progress** — Slices 1–4 ✅; Slice 5 (branch receipt + stock) next |
+| 5 — Branches + internal request | 🔜 **In progress** — Slices 1–5 ✅; Slice 6 (polish) next |
 | 6 — Email automation | ⏸ Pending (stub exists) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–4 are complete.** Phase 5 decisions are **locked**; **Slices 1–4 are done** (tenancy, branch catalog, requisição interna, and warehouse goods issue). Slice 5 (branch receipt + branch stock) is next. Phases 6–7 stay pending/future.
+**Phases 0–4 are complete.** Phase 5 decisions are **locked**; **Slices 1–5 are done** (tenancy, branch catalog, requisição interna, warehouse goods issue, branch receipt + branch stock). Slice 6 (polish + docs) is next. Phases 6–7 stay pending/future.
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable; the full suite is green (368 tests: 44 `branches` + 20 `orders` + 10 new).**
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable; the full suite is green (378 tests).**
 
-**Next task:** **Slice 5 — branch receipt + branch stock** — branch confirms arrival against a `GoodsIssue`, branch stock ledger. Build spec: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8; roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 6. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions. L13 (login rate limiting) stays deferred — production-only.
+**Next task:** **Slice 6 — polish** — seed sample requisição, user-manual stub `04-internal-requests.md`, tick living docs (Phase 5 ✅). Build spec: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8; roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 7. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions. L13 (login rate limiting) stays deferred — production-only.
 
 ---
 
 ## Next session — do this
 
-1. **Next task:** **Slice 5 — branch receipt + branch stock** — see [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8 and [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 6. **Slices 1–4 are done**: tenancy, branch catalog, requisição interna, and warehouse goods issue (`GoodsIssue`, `issue_goods`, `/manage/internal-requests/`, short-close, `/manage/branch-approval-limits/`). **Carry into Slice 5:** `BranchReceipt` on `GoodsIssue`, branch stock ledger, `receive_at_branch`, branch short-close, `adjust_branch_stock`, and the `received`/`closed` request transitions. M7 (console pagination) is done.
+1. **Next task:** **Slice 6 — polish + docs** — see [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8 and [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 7. **Slices 1–5 are done**: tenancy, branch catalog, requisição interna, warehouse goods issue, and branch receipt + branch stock. Remaining polish: seed a sample draft + approved requisição, write `04-internal-requests.md`, and tick the living docs (Phase 5 ✅). M7 (console pagination) is done.
 2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
 3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; L13 (login rate limiting) is the only one still open (production-only, deferred).
 4. **Do not start** orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
@@ -164,7 +164,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ## Git (as of 21 Aug 2026, 21:06 WEST)
 
-- Branch: **`phase5-branches`**. Slices 1 (tenancy), 2 (branch catalog), 3 (requisição), and 4 (goods issue) are committed here; `main` tracks `origin/main`.
+- Branch: **`phase5-branches`**. Slices 1 (tenancy), 2 (branch catalog), 3 (requisição), 4 (goods issue), and 5 (branch receipt + stock) are committed here; `main` tracks `origin/main`.
 - The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are committed on `main`. The 1303 review is archived under `docs/archive/`.
 - Working tree has local `.venv` noise — do **not** commit `.venv` deletions.
 
@@ -176,7 +176,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput
 ```
 
-- Last full suite: **368 OK** without `--keepdb` (294 prior + 44 `branches` + 20 `orders` + 10 goods-issue).
+- Last full suite: **378 OK** without `--keepdb` (294 prior + 44 `branches` + 20 `orders` + 20 goods-issue/branch-receipt).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 

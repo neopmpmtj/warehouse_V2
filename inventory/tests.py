@@ -27,13 +27,21 @@ from products.services import (
 )
 from procurement import services as po_services
 from procurement.models import PurchaseOrder, PurchaseOrderChangeLog
-from branches.capabilities import ROLE_MANAGER, ROLE_OPERATOR
-from branches.services import assign_membership, create_branch
+from branches.capabilities import ROLE_ADMIN, ROLE_MANAGER, ROLE_OPERATOR
+from branches.services import SESSION_KEY, assign_membership, create_branch
 from orders import services as order_services
 from orders.models import InternalRequest
 
 from . import services
-from .models import GoodsIssue, GoodsIssueLine, GoodsReceipt, GoodsReceiptLine, StockMovement
+from .models import (
+    BranchItemStock,
+    BranchStockMovement,
+    GoodsIssue,
+    GoodsIssueLine,
+    GoodsReceipt,
+    GoodsReceiptLine,
+    StockMovement,
+)
 
 
 def make_warehouse_user(email, password="test-pass-123", group_name=GROUP_ADMINS):
@@ -728,3 +736,149 @@ class ConcurrentIssueTests(TransactionTestCase):
         self.assertEqual(item.quantity, Decimal("0.000"))
         self.assertEqual(outcomes.count("ok"), 1)
         self.assertEqual(outcomes.count("rejected"), 1)
+
+
+class BranchReceiptTests(TestCase):
+    def setUp(self):
+        self.branch = create_branch("North")
+        self.operator = _make_branch_user("br-op@example.com", self.branch, ROLE_OPERATOR)
+        self.manager = _make_branch_user("br-mgr@example.com", self.branch, ROLE_MANAGER)
+        self.admin = _make_branch_user("br-adm@example.com", self.branch, ROLE_ADMIN)
+        self.wh_admin = make_warehouse_user("br-wh-admin@example.com")
+        self.item = _make_issue_item("Widget", wholesale="5.00", quantity="10")
+
+    def _shipped_issue(self, qty="4"):
+        req = order_services.create_internal_request(self.branch, self.operator)
+        line = order_services.add_line(req, self.item, qty, self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(req, [{"line_id": line.id, "quantity_issued": qty}], self.wh_admin)
+        req.refresh_from_db()
+        return req, goods_issue
+
+    def test_full_loop_receive_updates_branch_stock_and_closes(self):
+        req, goods_issue = self._shipped_issue("4")
+        issue_line = goods_issue.lines.get()
+
+        services.receive_at_branch(
+            goods_issue,
+            [{"line_id": issue_line.id, "quantity_received": "4"}],
+            self.operator,
+        )
+
+        stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
+        self.assertEqual(stock.quantity, Decimal("4.000"))
+        self.assertTrue(
+            BranchStockMovement.objects.filter(
+                branch=self.branch, item=self.item, movement_type=BranchStockMovement.Type.RECEIPT
+            ).exists()
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+
+    def test_partial_receive_marks_received(self):
+        req, goods_issue = self._shipped_issue("4")
+        issue_line = goods_issue.lines.get()
+        services.receive_at_branch(
+            goods_issue,
+            [{"line_id": issue_line.id, "quantity_received": "2"}],
+            self.operator,
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.RECEIVED)
+        stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
+        self.assertEqual(stock.quantity, Decimal("2.000"))
+
+    def test_over_receipt_rejected(self):
+        req, goods_issue = self._shipped_issue("4")
+        issue_line = goods_issue.lines.get()
+        with self.assertRaises(services.BranchInsufficientShippedError):
+            services.receive_at_branch(
+                goods_issue,
+                [{"line_id": issue_line.id, "quantity_received": "5"}],
+                self.operator,
+            )
+
+    def test_short_close_requires_reason_and_closes(self):
+        req, goods_issue = self._shipped_issue("4")
+        with self.assertRaises(ValidationError):
+            services.short_close_receipt(req, self.manager, reason="")
+        req = services.short_close_receipt(req, self.manager, reason="short shipment")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+
+    def test_adjust_branch_stock_admin_only(self):
+        with self.assertRaises(services.BranchAdjustmentForbiddenError):
+            services.adjust_branch_stock(self.branch, self.item, "1", "reason", self.manager)
+        services.adjust_branch_stock(self.branch, self.item, "3", "reason", self.admin)
+        stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
+        self.assertEqual(stock.quantity, Decimal("3.000"))
+
+
+class BranchReceiptApiTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.branch = create_branch("North")
+        self.operator = _make_branch_user("api-br-op@example.com", self.branch, ROLE_OPERATOR)
+        self.manager = _make_branch_user("api-br-mgr@example.com", self.branch, ROLE_MANAGER)
+        self.admin = _make_branch_user("api-br-adm@example.com", self.branch, ROLE_ADMIN)
+        self.wh_admin = make_warehouse_user("api-br-wh@example.com")
+        self.item = _make_issue_item("Widget", wholesale="5.00", quantity="10")
+
+    def _login(self, user):
+        self.client.force_login(user)
+        session = self.client.session
+        session[SESSION_KEY] = self.branch.id
+        session.save()
+
+    def _post(self, url, payload):
+        return self.client.post(url, data=json.dumps(payload), content_type="application/json")
+
+    def _shipped_issue(self, qty="4"):
+        req = order_services.create_internal_request(self.branch, self.operator)
+        line = order_services.add_line(req, self.item, qty, self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(req, [{"line_id": line.id, "quantity_issued": qty}], self.wh_admin)
+        req.refresh_from_db()
+        return req, goods_issue
+
+    def test_operator_can_receive(self):
+        req, goods_issue = self._shipped_issue("4")
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator)
+        r = self._post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            {"lines": [{"line_id": issue_line.id, "quantity_received": "4"}]},
+        )
+        self.assertEqual(r.status_code, 201)
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+
+    def test_operator_cannot_short_close(self):
+        req, goods_issue = self._shipped_issue("4")
+        self._login(self.operator)
+        r = self._post(reverse("branch_receipt_short_close", args=[goods_issue.id]), {"reason": "x"})
+        self.assertEqual(r.status_code, 403)
+
+    def test_manager_can_short_close(self):
+        req, goods_issue = self._shipped_issue("4")
+        self._login(self.manager)
+        r = self._post(reverse("branch_receipt_short_close", args=[goods_issue.id]), {"reason": "short"})
+        self.assertEqual(r.status_code, 200)
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+
+    def test_non_admin_cannot_adjust(self):
+        self._login(self.manager)
+        r = self._post(reverse("branch_stock_adjust"), {"item_id": self.item.id, "quantity": "1", "reason": "x"})
+        self.assertEqual(r.status_code, 403)
+
+    def test_admin_can_adjust(self):
+        self._login(self.admin)
+        r = self._post(reverse("branch_stock_adjust"), {"item_id": self.item.id, "quantity": "3", "reason": "x"})
+        self.assertEqual(r.status_code, 200)
+        stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
+        self.assertEqual(stock.quantity, Decimal("3.000"))

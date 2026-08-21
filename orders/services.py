@@ -42,7 +42,13 @@ STATUS_TRANSITIONS = {
     InternalRequest.Status.FULFILLING: {
         InternalRequest.Status.SHIPPED,
     },
-    # received / closed transitions added in Slice 5.
+    InternalRequest.Status.SHIPPED: {
+        InternalRequest.Status.RECEIVED,
+        InternalRequest.Status.CLOSED,
+    },
+    InternalRequest.Status.RECEIVED: {
+        InternalRequest.Status.CLOSED,
+    },
 }
 
 # approved_net/vat/gross are (14,2); keep totals below 1e12 (N9 analogue).
@@ -710,6 +716,45 @@ def mark_shipped(request, user=None, reason=""):
         reason=reason,
     )
     logger.info("Request id=%s shipped user=%s", request.id, getattr(user, "email", None))
+    return request
+
+
+@transaction.atomic
+def mark_received(request, user=None):
+    """Transition shipped -> received after the first branch receipt (called by inventory)."""
+    request = InternalRequest.objects.select_for_update().get(pk=request.pk)
+    if request.status == InternalRequest.Status.RECEIVED:
+        return request
+    _transition(request, InternalRequest.Status.RECEIVED)
+    old = request.status
+    request.status = InternalRequest.Status.RECEIVED
+    request.save(update_fields=["status", "updated_at"])
+    _log(
+        request,
+        user,
+        InternalRequestChangeLog.Action.STATUS_CHANGED,
+        {"status": {"old": old, "new": InternalRequest.Status.RECEIVED}},
+    )
+    logger.info("Request id=%s now received user=%s", request.id, getattr(user, "email", None))
+    return request
+
+
+@transaction.atomic
+def mark_closed(request, user=None, reason=""):
+    """Transition shipped/received -> closed (called by inventory)."""
+    request = InternalRequest.objects.select_for_update().get(pk=request.pk)
+    _transition(request, InternalRequest.Status.CLOSED)
+    old = request.status
+    request.status = InternalRequest.Status.CLOSED
+    request.save(update_fields=["status", "updated_at"])
+    _log(
+        request,
+        user,
+        InternalRequestChangeLog.Action.STATUS_CHANGED,
+        {"status": {"old": old, "new": InternalRequest.Status.CLOSED}},
+        reason=reason,
+    )
+    logger.info("Request id=%s closed user=%s", request.id, getattr(user, "email", None))
     return request
 
 

@@ -32,3 +32,8 @@ def can_draft_request(user, branch):
 def can_approve_request(user, branch):
     """Manager (capped) and admin (unlimited) approve / reject / cancel-approved."""
     return branch_role(user, branch) in (ROLE_MANAGER, ROLE_ADMIN)
+
+
+def can_adjust_branch_stock(user, branch):
+    """Branch admin only may adjust branch stock."""
+    return branch_role(user, branch) == ROLE_ADMIN

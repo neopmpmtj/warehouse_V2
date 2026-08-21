@@ -8,8 +8,11 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from logging_utils import get_logger
 
+from branches.capabilities import can_adjust_branch_stock, can_approve_request
+from branches.permissions import active_branch_required
+
 from . import services
-from .models import GoodsReceipt, StockMovement
+from .models import GoodsIssue, GoodsReceipt, StockMovement
 from .permissions import (
     ADD_GOODS_RECEIPT,
     ADJUST_STOCK,
@@ -313,4 +316,116 @@ def manage_stock_adjustment(request):
             "quantity": _dec(movement.quantity),
             "balance": _dec(movement.item.quantity),
         }
+    )
+
+
+def _serialize_branch_goods_issue(goods_issue):
+    return {
+        "id": goods_issue.id,
+        "request_id": goods_issue.internal_request_id,
+        "request_status": goods_issue.internal_request.status,
+        "reference": goods_issue.reference,
+        "notes": goods_issue.notes,
+        "issued_at": goods_issue.issued_at.isoformat(),
+        "lines": services.get_branch_issue_summary(goods_issue),
+    }
+
+
+@active_branch_required
+@require_GET
+def branch_receipt_issue_list(request):
+    issues = services.get_branch_goods_issues(request.active_branch)
+    return JsonResponse(
+        {"goods_issues": [_serialize_branch_goods_issue(i) for i in issues]}
+    )
+
+
+@active_branch_required
+@require_GET
+def branch_receipt_issue_detail(request, issue_id):
+    try:
+        issue = services.get_branch_goods_issues(request.active_branch).get(pk=issue_id)
+    except GoodsIssue.DoesNotExist:
+        return _json_error("Goods issue not found.", status=404)
+    return JsonResponse({"goods_issue": _serialize_branch_goods_issue(issue)})
+
+
+@active_branch_required
+@require_POST
+def branch_receipt_receive(request, issue_id):
+    try:
+        issue = services.get_branch_goods_issues(request.active_branch).get(pk=issue_id)
+    except GoodsIssue.DoesNotExist:
+        return _json_error("Goods issue not found.", status=404)
+
+    try:
+        payload = _parse_json(request)
+        lines = payload.get("lines")
+        if not isinstance(lines, list) or not lines:
+            raise ValidationError("lines must be a non-empty list.")
+        receipt = services.receive_at_branch(
+            issue,
+            lines,
+            request.user,
+            reference=str(payload.get("reference", "")),
+            notes=str(payload.get("notes", "")),
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        return _inv_error(exc)
+    return JsonResponse({"branch_receipt_id": receipt.id}, status=201)
+
+
+@active_branch_required
+@require_POST
+def branch_receipt_short_close(request, issue_id):
+    if not can_approve_request(request.user, request.active_branch):
+        return _json_error(
+            "Short-close requires manager or admin.",
+            status=403,
+            code="short_close_denied",
+        )
+    try:
+        issue = services.get_branch_goods_issues(request.active_branch).get(pk=issue_id)
+    except GoodsIssue.DoesNotExist:
+        return _json_error("Goods issue not found.", status=404)
+
+    try:
+        payload = _parse_json(request)
+        req = services.short_close_receipt(
+            issue.internal_request_id,
+            request.user,
+            reason=str(payload.get("reason", "")),
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        return _inv_error(exc)
+    return JsonResponse({"request_status": req.status})
+
+
+@active_branch_required
+@require_POST
+def branch_stock_adjust(request):
+    if not can_adjust_branch_stock(request.user, request.active_branch):
+        return _json_error(
+            "Only branch admins can adjust branch stock.",
+            status=403,
+            code="branch_adjustment_forbidden",
+        )
+    try:
+        payload = _parse_json(request)
+        item_id = payload.get("item_id")
+        if item_id is None:
+            raise ValidationError("item_id is required.")
+        if "quantity" not in payload:
+            raise ValidationError("quantity is required.")
+        movement = services.adjust_branch_stock(
+            request.active_branch,
+            _parse_int_id(item_id, "item_id"),
+            payload.get("quantity"),
+            str(payload.get("reason", "")),
+            request.user,
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        return _inv_error(exc)
+    return JsonResponse(
+        {"item_id": movement.item_id, "quantity": _dec(movement.quantity)}
     )
