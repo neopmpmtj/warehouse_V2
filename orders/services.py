@@ -36,7 +36,11 @@ STATUS_TRANSITIONS = {
     },
     InternalRequest.Status.APPROVED: {
         InternalRequest.Status.CANCELLED,
-        # fulfilling / shipped added in Slice 4.
+        InternalRequest.Status.FULFILLING,
+        InternalRequest.Status.SHIPPED,
+    },
+    InternalRequest.Status.FULFILLING: {
+        InternalRequest.Status.SHIPPED,
     },
     # received / closed transitions added in Slice 5.
 }
@@ -134,11 +138,27 @@ class ApprovalLimitMissingError(ValidationError):
         )
 
 
+class ApprovalPolicyForbiddenError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Only warehouse admins can change branch approval limits.",
+            code="approval_policy_forbidden",
+        )
+
+
 class ApprovalTotalOverflowError(ValidationError):
     def __init__(self):
         super().__init__(
             "Internal request totals exceed the maximum supported value.",
             code="approval_total_overflow",
+        )
+
+
+class RequestHasGoodsIssueError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A request with goods issues cannot be cancelled.",
+            code="request_has_goods_issue",
         )
 
 
@@ -244,6 +264,49 @@ def ensure_default_branch_approval_limits():
             "self_approval_limit": self_approval,
         },
     )
+
+
+@transaction.atomic
+def update_branch_approval_limit(limit, user, approval_limit=None, self_approval_limit=None):
+    from accounts.capabilities import can_edit_approval_policy
+
+    if not can_edit_approval_policy(user):
+        raise ApprovalPolicyForbiddenError()
+
+    limit = BranchApprovalLimit.objects.select_for_update().get(pk=limit.pk)
+    changes = {}
+    if approval_limit is not None:
+        value = _parse_decimal(approval_limit, "approval_limit")
+        if value < 0:
+            raise ValidationError("approval_limit must be zero or greater.", code="invalid_approval_limit")
+        value = value.quantize(Decimal("0.01"))
+        if limit.approval_limit != value:
+            changes["approval_limit"] = {"old": str(limit.approval_limit), "new": str(value)}
+            limit.approval_limit = value
+    if self_approval_limit is not None:
+        value = _parse_decimal(self_approval_limit, "self_approval_limit")
+        if value < 0:
+            raise ValidationError("self_approval_limit must be zero or greater.", code="invalid_approval_limit")
+        value = value.quantize(Decimal("0.01"))
+        if limit.self_approval_limit != value:
+            changes["self_approval_limit"] = {"old": str(limit.self_approval_limit), "new": str(value)}
+            limit.self_approval_limit = value
+    if not changes:
+        return limit
+    limit.save(update_fields=[*changes.keys(), "updated_at"])
+    BranchApprovalLimitChangeLog.objects.create(
+        branch_approval_limit=limit,
+        user=user,
+        action=BranchApprovalLimitChangeLog.Action.UPDATED,
+        changes=changes,
+    )
+    logger.info(
+        "Updated branch approval limit id=%s changes=%s user=%s",
+        limit.id,
+        list(changes.keys()),
+        getattr(user, "email", None),
+    )
+    return limit
 
 
 def _assert_can_approve(request, user, gross):
@@ -594,7 +657,10 @@ def cancel(request, user=None, reason=""):
             "cancel_reason_required",
             "A reason is required to cancel an approved request.",
         )
-        # Slice 4 adds the "zero goods issues" guard.
+        from inventory.models import GoodsIssue
+
+        if GoodsIssue.objects.filter(internal_request=request).exists():
+            raise RequestHasGoodsIssueError()
 
     request.status = InternalRequest.Status.CANCELLED
     request.save(update_fields=["status", "updated_at"])
@@ -606,6 +672,44 @@ def cancel(request, user=None, reason=""):
         reason=reason,
     )
     logger.info("Cancelled request id=%s user=%s", request.id, getattr(user, "email", None))
+    return request
+
+
+def mark_fulfilling(request, user=None):
+    """Transition approved -> fulfilling after a partial issue (called by inventory)."""
+    request = InternalRequest.objects.select_for_update().get(pk=request.pk)
+    if request.status == InternalRequest.Status.FULFILLING:
+        return request
+    _transition(request, InternalRequest.Status.FULFILLING)
+    old = request.status
+    request.status = InternalRequest.Status.FULFILLING
+    request.save(update_fields=["status", "updated_at"])
+    _log(
+        request,
+        user,
+        InternalRequestChangeLog.Action.STATUS_CHANGED,
+        {"status": {"old": old, "new": InternalRequest.Status.FULFILLING}},
+    )
+    logger.info("Request id=%s now fulfilling user=%s", request.id, getattr(user, "email", None))
+    return request
+
+
+@transaction.atomic
+def mark_shipped(request, user=None, reason=""):
+    """Transition approved/fulfilling -> shipped (called by inventory)."""
+    request = InternalRequest.objects.select_for_update().get(pk=request.pk)
+    _transition(request, InternalRequest.Status.SHIPPED)
+    old = request.status
+    request.status = InternalRequest.Status.SHIPPED
+    request.save(update_fields=["status", "updated_at"])
+    _log(
+        request,
+        user,
+        InternalRequestChangeLog.Action.STATUS_CHANGED,
+        {"status": {"old": old, "new": InternalRequest.Status.SHIPPED}},
+        reason=reason,
+    )
+    logger.info("Request id=%s shipped user=%s", request.id, getattr(user, "email", None))
     return request
 
 

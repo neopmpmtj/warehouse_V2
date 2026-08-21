@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 21 August 2026, 21:06 WEST.*
+*Last updated: 21 August 2026, 21:48 WEST.*
 
-Phases 0–4 are done. **Phase 5 is in progress** — decisions locked; **Slices 1–3 (tenancy + branch catalog + requisição) are done**, Slice 4 (goods issue) is next. See [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) and [`docs/handoff.md`](docs/handoff.md).
+Phases 0–4 are done. **Phase 5 is in progress** — decisions locked; **Slices 1–4 (tenancy + branch catalog + requisição + goods issue) are done**, Slice 5 (branch receipt + stock) is next. See [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) and [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 5 — Slice 4: goods issue.
+4. **Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 6 — Slice 5: branch receipt + branch stock.
 
 ---
 
@@ -41,7 +41,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 
 A central warehouse holds the master product catalogue and stock. Stock is a **movement ledger**: goods receipts write `StockMovement` rows and update cached `Item.quantity`. Quantity is never typed on the item form.
 
-Satellite branches order against that stock via **Requisição interna** (Phase 5 — in progress; Slices 1–3 done). PostgreSQL is the **source of truth**.
+Satellite branches order against that stock via **Requisição interna** (Phase 5 — in progress; Slices 1–4 done). PostgreSQL is the **source of truth**.
 
 Warehouse staff work at `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/approval-limits/` (admins), and `/manage/goods-receipts/` via groups `warehouse_admins`, `warehouse_managers`, and `warehouse_data_operators`. Django admin is reserved for superusers.
 
@@ -71,7 +71,7 @@ No React, Vue, or similar frontend framework.
 - Django admin (superuser only) for users and groups
 - Consoles and APIs require login; APIs return 401 when unauthenticated
 
-> **Branches + requisição are built (Slices 1–3).** `Branch` + `BranchMembership` (`operator` / `manager` / `admin`), `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (cost hidden, stock hint), and `/branch/requests/` (requisição interna through `approved`, manager caps). Goods issue (Slice 4) is **not** built yet. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md).
+> **Branches + requisição + goods issue are built (Slices 1–4).** `Branch` + `BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (cost hidden, stock hint), `/branch/requests/` (requisição through `approved`, manager caps), and warehouse goods issue (`/manage/internal-requests/`, `/manage/branch-approval-limits/`). Branch receipt + branch stock (Slice 5) is **not** built yet. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md).
 
 Production will use Google OAuth (not implemented in dev).
 
@@ -92,6 +92,8 @@ Production will use Google OAuth (not implemented in dev).
 - `/manage/purchase-orders/` — POs, lines, discounts, submit/approve (grades + EUR gross caps); a line is **rejected** if the supplier has no price for the item
 - `/manage/approval-limits/` — PO approval caps (warehouse admins may edit)
 - `/manage/goods-receipts/` — receipts (partial OK), stock movements, admin stock adjust
+- `/manage/internal-requests/` — branch request queue + goods issue (partial OK, short-close)
+- `/manage/branch-approval-limits/` — branch manager caps (warehouse admins may edit)
 - Supplier email on PO approval is a **stub** (Phase 6)
 
 ### URL layout
@@ -104,6 +106,8 @@ Production will use Google OAuth (not implemented in dev).
 | `/manage/purchase-orders/` | Purchase-order console |
 | `/manage/approval-limits/` | PO approval caps (EUR gross; warehouse admins may edit) |
 | `/manage/goods-receipts/` | Goods receipt + stock console |
+| `/manage/internal-requests/` | Request queue + goods issue console |
+| `/manage/branch-approval-limits/` | Branch manager caps (warehouse admins may edit) |
 | `/api/manage/items/` | Item JSON API |
 | `/api/manage/catalog/` | Manager catalog JSON API (joined stock + prices) |
 | `/api/manage/families/` | Family JSON API |
@@ -112,6 +116,8 @@ Production will use Google OAuth (not implemented in dev).
 | `/api/manage/purchase-orders/` | Purchase-order JSON API (approve needs capability + grade) |
 | `/api/manage/approval-limits/` | Approval-limit JSON API (PATCH is warehouse-admin only) |
 | `/api/manage/goods-receipts/` | Goods receipt JSON API |
+| `/api/manage/internal-requests/` | Request queue + goods issue JSON API |
+| `/api/manage/branch-approval-limits/` | Branch caps JSON API (PATCH is warehouse-admin only) |
 | `/api/manage/purchase-orders/<id>/receipt-summary/` | Per-line ordered/received/remaining |
 | `/api/manage/stock-movements/` | Stock movement ledger (`?item_id=` filter) |
 | `/api/manage/stock-adjustments/` | Manual stock adjustment (POST; `can_adjust_stock`) |
@@ -310,7 +316,7 @@ views (login required) → API + HTML
 
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
-- **Goods issue and branch stock** (Phase 5, Slices 4–6 — tenancy + catalog + requisição / Slices 1–3 are done)
+- **Branch stock and branch receipt** (Phase 5, Slices 5–6 — tenancy + catalog + requisição + goods issue / Slices 1–4 are done)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
 - Integration tests (unit suites are green, **294 tests**)

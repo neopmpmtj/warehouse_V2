@@ -15,7 +15,8 @@ from procurement.models import (
     PurchaseOrderLine,
 )
 
-from .models import GoodsReceipt, GoodsReceiptLine, StockMovement
+from .models import GoodsIssue, GoodsIssueLine, GoodsReceipt, GoodsReceiptLine, StockMovement
+from orders.models import InternalRequest, InternalRequestLine
 
 logger = get_logger("centcompras.inventory")
 
@@ -358,6 +359,228 @@ def get_receipt_summary(po):
             "quantity": str(line.quantity),
             "received": str(received_map.get(line.id, Decimal("0"))),
             "remaining": str(line.quantity - received_map.get(line.id, Decimal("0"))),
+        }
+        for line in lines
+    ]
+
+
+class RequestNotIssuableError(ValidationError):
+    def __init__(self, status):
+        super().__init__(
+            f"Cannot issue goods against a request with status '{status}'.",
+            code="request_not_issuable",
+        )
+
+
+class RequestLineNotFoundError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Request line not found on this request.",
+            code="request_line_not_found",
+        )
+
+
+class InvalidIssuedQuantityError(ValidationError):
+    def __init__(self, message="Issued quantity must be a positive number."):
+        super().__init__(message, code="invalid_issued_quantity")
+
+
+class NoLinesToIssueError(ValidationError):
+    def __init__(self):
+        super().__init__("No lines to issue.", code="no_lines_to_issue")
+
+
+class InvalidIssueLineError(ValidationError):
+    def __init__(self, message="Each issue line must be a valid object with line_id and quantity_issued."):
+        super().__init__(message, code="invalid_issue_line")
+
+
+class DuplicateIssueLineError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A request line was provided more than once in this issue.",
+            code="duplicate_issue_line",
+        )
+
+
+class InsufficientStockError(ValidationError):
+    def __init__(self, item, on_hand, requested):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or item.pk
+        super().__init__(
+            f"Insufficient stock for '{label}': {requested} requested, {on_hand} on hand.",
+            code="insufficient_stock",
+        )
+
+
+def _resolve_request(request):
+    if isinstance(request, InternalRequest):
+        return request
+    return InternalRequest.objects.get(pk=request)
+
+
+def _issued_qty_map(request):
+    """Map request line id -> total quantity already issued, in one grouped query."""
+    totals = (
+        GoodsIssueLine.objects.filter(internal_request_line__internal_request=request)
+        .values("internal_request_line_id")
+        .annotate(total=Sum("quantity_issued"))
+    )
+    return {
+        row["internal_request_line_id"]: (row["total"] or Decimal("0"))
+        for row in totals
+    }
+
+
+def _is_fully_issued(request):
+    issued_map = _issued_qty_map(request)
+    return all(
+        (line.quantity - issued_map.get(line.id, Decimal("0"))) <= 0
+        for line in request.lines.all()
+    )
+
+
+def _validate_issued_qty(value):
+    qty = _parse_decimal_quantity(value)
+    if qty <= 0:
+        raise InvalidIssuedQuantityError()
+    return qty
+
+
+@transaction.atomic
+def issue_goods(request, lines, user, reference="", notes=""):
+    """Issue goods to a branch against an approved/fulfilling request (partial OK)."""
+    from orders.services import mark_fulfilling, mark_shipped
+
+    request = InternalRequest.objects.select_for_update().get(pk=_resolve_request(request).pk)
+
+    if request.status not in (
+        InternalRequest.Status.APPROVED,
+        InternalRequest.Status.FULFILLING,
+    ):
+        raise RequestNotIssuableError(request.status)
+
+    normalized = []
+    seen_line_ids = set()
+    issued_map = _issued_qty_map(request)
+    for entry in lines:
+        if not isinstance(entry, dict):
+            raise InvalidIssueLineError()
+        line_id = entry.get("line_id", entry.get("internal_request_line_id"))
+        if line_id is None:
+            raise InvalidIssueLineError("Each issue line requires a line_id.")
+        if "quantity_issued" not in entry:
+            raise InvalidIssueLineError("Each issue line requires quantity_issued.")
+        qty = _validate_issued_qty(entry["quantity_issued"])
+        try:
+            request_line = request.lines.get(pk=line_id)
+        except InternalRequestLine.DoesNotExist:
+            raise RequestLineNotFoundError()
+        if request_line.id in seen_line_ids:
+            raise DuplicateIssueLineError()
+        seen_line_ids.add(request_line.id)
+        remaining = request_line.quantity - issued_map.get(request_line.id, Decimal("0"))
+        if qty > remaining:
+            raise InvalidIssuedQuantityError(
+                f"Issued quantity {qty} exceeds remaining {remaining} "
+                f"for request line {request_line.id}."
+            )
+        normalized.append((request_line, qty))
+
+    if not normalized:
+        raise NoLinesToIssueError()
+
+    # Lock items in pk order (M6) so concurrent issues cannot deadlock.
+    item_ids = sorted({request_line.item_id for request_line, _qty in normalized})
+    items = {
+        item.id: item
+        for item in Item.objects.filter(pk__in=item_ids).order_by("pk").select_for_update()
+    }
+
+    for request_line, qty in normalized:
+        on_hand = items[request_line.item_id].quantity
+        if qty > on_hand:
+            raise InsufficientStockError(request_line.item, on_hand, qty)
+
+    goods_issue = GoodsIssue.objects.create(
+        internal_request=request,
+        issued_by=user,
+        reference=(reference or "").strip(),
+        notes=(notes or "").strip(),
+    )
+
+    for request_line, qty in normalized:
+        GoodsIssueLine.objects.create(
+            goods_issue=goods_issue,
+            internal_request_line=request_line,
+            quantity_issued=qty,
+        )
+        _write_movement(
+            request_line.item,
+            -qty,
+            StockMovement.Type.GOODS_ISSUE,
+            user,
+            content_object=goods_issue,
+        )
+
+    if _is_fully_issued(request):
+        mark_shipped(request, user)
+    else:
+        mark_fulfilling(request, user)
+
+    logger.info(
+        "Issued goods gi=%s request=%s lines=%s user=%s",
+        goods_issue.id,
+        request.id,
+        len(normalized),
+        getattr(user, "email", None),
+    )
+    return goods_issue
+
+
+@transaction.atomic
+def short_close_issue(request, user, reason=""):
+    """Warehouse short-close: write off the unshipped remainder and mark shipped."""
+    from orders.services import mark_shipped
+
+    request = InternalRequest.objects.select_for_update().get(pk=_resolve_request(request).pk)
+    if request.status not in (
+        InternalRequest.Status.APPROVED,
+        InternalRequest.Status.FULFILLING,
+    ):
+        raise RequestNotIssuableError(request.status)
+
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError(
+            "A reason is required to short-close a request.",
+            code="short_close_reason_required",
+        )
+
+    request = mark_shipped(request, user, reason=reason)
+    logger.info(
+        "Short-closed request id=%s user=%s",
+        request.id,
+        getattr(user, "email", None),
+    )
+    return request
+
+
+def get_issue_summary(request):
+    """Per-line ordered / issued / remaining / on-hand for a request (warehouse queue)."""
+    request = _resolve_request(request)
+    lines = list(request.lines.select_related("item").all())
+    issued_map = _issued_qty_map(request)
+    return [
+        {
+            "line_id": line.id,
+            "item_id": line.item_id,
+            "internal_code": line.internal_code,
+            "description": line.description,
+            "unit_of_measure": line.unit_of_measure,
+            "quantity": str(line.quantity),
+            "issued": str(issued_map.get(line.id, Decimal("0"))),
+            "remaining": str(line.quantity - issued_map.get(line.id, Decimal("0"))),
+            "on_hand": str(line.item.quantity),
         }
         for line in lines
     ]

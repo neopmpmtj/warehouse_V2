@@ -1,6 +1,42 @@
 from django.contrib import admin
 
-from .models import GoodsReceipt, GoodsReceiptLine, StockMovement
+from .models import GoodsIssue, GoodsIssueLine, GoodsReceipt, GoodsReceiptLine, StockMovement
+
+
+class GoodsIssueLineInline(admin.TabularInline):
+    model = GoodsIssueLine
+    extra = 0
+    can_delete = False
+    readonly_fields = ("internal_request_line", "quantity_issued")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(GoodsIssue)
+class GoodsIssueAdmin(admin.ModelAdmin):
+    list_display = ("id", "internal_request", "issued_by", "issued_at", "reference")
+    search_fields = ("reference", "internal_request__id", "internal_request__branch__name")
+    inlines = (GoodsIssueLineInline,)
+    readonly_fields = ("internal_request", "issued_by", "issued_at", "reference", "notes")
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class GoodsReceiptLineInline(admin.TabularInline):

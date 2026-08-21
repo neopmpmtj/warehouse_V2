@@ -21,6 +21,7 @@ ADD_PO = "procurement.add_purchaseorder"
 CHANGE_PO = "procurement.change_purchaseorder"
 ADD_GOODS_RECEIPT = "inventory.add_goodsreceipt"
 ADJUST_STOCK = "inventory.can_adjust_stock"
+ISSUE_GOODS = "inventory.can_issue_goods"
 
 MUTATE_PERMISSIONS = frozenset(
     {
@@ -66,6 +67,16 @@ def can_receive_goods(user):
     return can_mutate_catalog(user)
 
 
+def can_issue_goods(user):
+    """Same people as can_receive_goods (mutate closed circuit), own perm code."""
+    return can_mutate_catalog(user)
+
+
+def can_short_close_issue(user):
+    """Warehouse short-close: manager grade 2+ or admin (not operators)."""
+    return can_approve_purchase_order(user)
+
+
 def can_approve_purchase_order(user):
     if not user_is_active(user):
         return False
@@ -96,6 +107,8 @@ def has_effective_perm(user, perm):
         return can_approve_purchase_order(user)
     if perm == ADJUST_STOCK:
         return can_adjust_stock(user)
+    if perm == ISSUE_GOODS:
+        return can_issue_goods(user)
     if perm in MUTATE_PERMISSIONS:
         return can_mutate_catalog(user)
     return True
@@ -126,4 +139,6 @@ def inventory_permission_flags(user):
     return {
         "add_goodsreceipt": has_effective_perm(user, ADD_GOODS_RECEIPT),
         "can_adjust_stock": has_effective_perm(user, ADJUST_STOCK),
+        "can_issue_goods": has_effective_perm(user, ISSUE_GOODS),
+        "can_short_close": can_short_close_issue(user),
     }

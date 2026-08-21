@@ -27,9 +27,13 @@ from products.services import (
 )
 from procurement import services as po_services
 from procurement.models import PurchaseOrder, PurchaseOrderChangeLog
+from branches.capabilities import ROLE_MANAGER, ROLE_OPERATOR
+from branches.services import assign_membership, create_branch
+from orders import services as order_services
+from orders.models import InternalRequest
 
 from . import services
-from .models import GoodsReceipt, GoodsReceiptLine, StockMovement
+from .models import GoodsIssue, GoodsIssueLine, GoodsReceipt, GoodsReceiptLine, StockMovement
 
 
 def make_warehouse_user(email, password="test-pass-123", group_name=GROUP_ADMINS):
@@ -42,7 +46,10 @@ class InventoryTestCaseMixin:
     def setUp(self):
         self.user = make_warehouse_user("inv-admin@example.com")
         self.family = create_family("Test Family")
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate, _ = VatRate.objects.get_or_create(
+            code="VAT16",
+            defaults={"label": "VAT 16%", "rate": Decimal("0.16")},
+        )
         self.supplier = create_supplier(name="BuildSupply Ltd")
 
         item = create_item(
@@ -593,5 +600,131 @@ class ConcurrentReceiptTests(InventoryTestCaseMixin, TransactionTestCase):
 
         self.item.refresh_from_db()
         self.assertEqual(self.item.quantity, Decimal("6.000"))
+        self.assertEqual(outcomes.count("ok"), 1)
+        self.assertEqual(outcomes.count("rejected"), 1)
+
+
+def _make_issue_item(description, wholesale="5.00", quantity="0"):
+    family = create_family(description + " Fam")
+    vat, _ = VatRate.objects.get_or_create(
+        code="VAT16",
+        defaults={"label": "VAT 16%", "rate": Decimal("0.16")},
+    )
+    return Item.objects.create(
+        family=family,
+        vat_rate=vat,
+        description=description,
+        internal_code="",
+        unit_of_measure=Item.UnitOfMeasure.PIECE,
+        is_active=True,
+        retail_price=Decimal("10.00"),
+        wholesale_price=Decimal(wholesale),
+        special_price=Decimal("8.00"),
+        quantity=Decimal(quantity),
+        reorder_level=Decimal("0"),
+    )
+
+
+def _make_branch_user(email, branch, role):
+    user = get_user_model().objects.create_user(email=email, password="test-pass-123")
+    assign_membership(user, branch, role)
+    return user
+
+
+class GoodsIssueTests(TestCase):
+    def setUp(self):
+        self.branch = create_branch("North")
+        self.operator = _make_branch_user("gi-op@example.com", self.branch, ROLE_OPERATOR)
+        self.manager = _make_branch_user("gi-mgr@example.com", self.branch, ROLE_MANAGER)
+        self.admin = make_warehouse_user("gi-admin@example.com")
+        self.item = _make_issue_item("Widget", wholesale="5.00", quantity="10")
+
+    def _approved_request(self, qty="10"):
+        req = order_services.create_internal_request(self.branch, self.operator)
+        line = order_services.add_line(req, self.item, qty, self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        return req, line
+
+    def test_issue_decrements_stock_and_marks_shipped(self):
+        req, line = self._approved_request("4")
+        services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
+
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("6.000"))
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.SHIPPED)
+        self.assertTrue(
+            StockMovement.objects.filter(
+                item=self.item,
+                movement_type=StockMovement.Type.GOODS_ISSUE,
+                quantity=Decimal("-4.000"),
+            ).exists()
+        )
+
+    def test_partial_issue_marks_fulfilling(self):
+        req, line = self._approved_request("10")
+        services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
+
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("6.000"))
+
+    def test_cannot_issue_more_than_remaining(self):
+        req, line = self._approved_request("4")
+        with self.assertRaises(services.InvalidIssuedQuantityError):
+            services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "5"}], self.admin)
+
+    def test_cannot_issue_more_than_on_hand(self):
+        req, line = self._approved_request("10")
+        self.item.quantity = Decimal("3")
+        self.item.save(update_fields=["quantity"])
+        with self.assertRaises(services.InsufficientStockError):
+            services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
+
+    def test_short_close_requires_reason_and_marks_shipped(self):
+        req, line = self._approved_request("10")
+        with self.assertRaises(ValidationError):
+            services.short_close_issue(req, self.admin, reason="")
+        req = services.short_close_issue(req, self.admin, reason="short shipment")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.SHIPPED)
+
+
+class ConcurrentIssueTests(TransactionTestCase):
+    def test_concurrent_issue_cannot_oversell_last_unit(self):
+        branch = create_branch("North")
+        operator = _make_branch_user("conc-op@example.com", branch, ROLE_OPERATOR)
+        manager = _make_branch_user("conc-mgr@example.com", branch, ROLE_MANAGER)
+        admin = make_warehouse_user("conc-admin@example.com")
+        item = _make_issue_item("Widget", wholesale="5.00", quantity="1")
+
+        req = order_services.create_internal_request(branch, operator)
+        line = order_services.add_line(req, item, "1", operator)
+        req = order_services.submit(req, operator)
+        req = order_services.approve(req, manager)
+        req.refresh_from_db()
+
+        outcomes = []
+
+        def worker():
+            try:
+                services.issue_goods(req.id, [{"line_id": line.id, "quantity_issued": "1"}], admin)
+                outcomes.append("ok")
+            except ValidationError:
+                outcomes.append("rejected")
+            finally:
+                connection.close()
+
+        threads = [threading.Thread(target=worker) for _ in range(2)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, Decimal("0.000"))
         self.assertEqual(outcomes.count("ok"), 1)
         self.assertEqual(outcomes.count("rejected"), 1)

@@ -125,3 +125,59 @@ class StockMovement(models.Model):
 
     def __str__(self):
         return f"{self.movement_type} {self.item_id} {self.quantity:+}"
+
+
+class GoodsIssue(models.Model):
+    """A dispatch of goods from the central warehouse to a branch (guia)."""
+
+    internal_request = models.ForeignKey(
+        "orders.InternalRequest",
+        on_delete=models.PROTECT,
+        related_name="goods_issues",
+    )
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="goods_issues",
+    )
+    issued_at = models.DateTimeField(auto_now_add=True)
+    reference = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-issued_at"]
+        permissions = [
+            ("can_issue_goods", "Can issue goods to branches"),
+        ]
+
+    def __str__(self):
+        return f"GI #{self.pk} — REQ #{self.internal_request_id}"
+
+
+class GoodsIssueLine(models.Model):
+    goods_issue = models.ForeignKey(
+        GoodsIssue,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    internal_request_line = models.ForeignKey(
+        "orders.InternalRequestLine",
+        on_delete=models.PROTECT,
+        related_name="goods_issue_lines",
+    )
+    quantity_issued = models.DecimalField(max_digits=12, decimal_places=3)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["goods_issue", "internal_request_line"],
+                name="unique_goods_issue_line",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"GI #{self.goods_issue_id}: REQ line {self.internal_request_line_id} "
+            f"x {self.quantity_issued}"
+        )

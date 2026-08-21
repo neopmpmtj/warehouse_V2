@@ -1,16 +1,16 @@
 # CentCompras — Agent instructions
 
-Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done, plus **branches tenancy + catalog + requisição (Phase 5 Slices 1–3)**. Goods issue, offline, and email are deferred.
+Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done, plus **branches tenancy + catalog + requisição + goods issue (Phase 5 Slices 1–4)**. Branch receipt/stock, offline, and email are deferred.
 
 **▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup and [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) for sequencing. Reviews are concluded and archived: [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md) (N1–N12) and [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) (P0–P4).
 
 ## Session handoff (August 2026)
 
-**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), **goods receipt + stock ledger** (`inventory` app: `GoodsReceipt`/`GoodsReceiptLine`, `StockMovement` signed ledger, cached `Item.quantity`, `receive_goods()` + admin-only `adjust_stock()`), **manager catalog** (read-only `/manage/catalog/`), **branches tenancy + catalog + requisição — Slices 1–3** (`branches` app: `Branch`/`BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, `/branch/catalog/` + API with cost hidden + stock hint, admin, seed, role-based post-login redirect; `orders` app: `InternalRequest` + lines, manager caps, branch workflow through `approved`), dev seed script.
+**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), **goods receipt + stock ledger** (`inventory` app: `GoodsReceipt`/`GoodsReceiptLine`, `StockMovement` signed ledger, cached `Item.quantity`, `receive_goods()` + admin-only `adjust_stock()`), **manager catalog** (read-only `/manage/catalog/`), **branches tenancy + catalog + requisição + goods issue — Slices 1–4** (`branches` app: `Branch`/`BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, `/branch/catalog/` + API with cost hidden + stock hint, admin, seed, role-based post-login redirect; `orders` app: `InternalRequest` + lines, manager caps, branch workflow through `approved`; `inventory` `GoodsIssue` + `issue_goods`, `/manage/internal-requests/`, short-close, `/manage/branch-approval-limits/`), dev seed script.
 
-**Not done:** goods issue, branch receipt/stock, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment.
+**Not done:** branch receipt/stock, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment.
 
-**Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 5 — **Slice 4: goods issue**. Build spec: [`docs/phase5-plan-260821-1756.md`](docs/phase5-plan-260821-1756.md). Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md). Do **not** use tenancy-doc §6–7 Order stub.
+**Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 6 — **Slice 5: branch receipt + branch stock**. Build spec: [`docs/phase5-plan-260821-1756.md`](docs/phase5-plan-260821-1756.md). Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md). Do **not** use tenancy-doc §6–7 Order stub.
 
 **Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive and resets grade to 1. Approval uses grades + `ApprovalLimit` (EUR gross); reject/manual close/`adjust_stock` require a reason. Selling prices & `reorder_level` must be finite and ≥ 0 (DB `CheckConstraint`s); PO line quantity capped at 1e9; login rate limiting is a documented pre-production blocker (deferred).
 
@@ -21,7 +21,7 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 | Warehouse admin | group `warehouse_admins` | Full catalogue (view/add/change/delete) via the website; approve any PO; edit `/manage/approval-limits/` | N/A (central) |
 | Warehouse manager | group `warehouse_managers` | Grade 1: mutate closed circuit, no approve. Grade 2+: approve within `ApprovalLimit` caps (no delete) | N/A (central) |
 | Warehouse operator | group `warehouse_data_operators` | Grade 1 view-only; grade 2 mutate closed circuit. Never approve | N/A (central) |
-| Branch admin / manager / operator | `BranchMembership.role` (Slices 1–3 done) | Read-only catalog + requisição interna (done); goods issue (Slice 4) per branch |
+| Branch admin / manager / operator | `BranchMembership.role` (Slices 1–4 done) | Read-only catalog + requisição interna (done); branch receipt (Slice 5) per branch |
 | Django superuser | `is_superuser` | May use the website console; **only** role that can log into `/admin/` | Site config in `/admin/` |
 
 Dev seed: `./scripts/seed_dev_data.sh` → warehouse users `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2`; branch users `branch.operator|manager|admin.north@…`, `branch.operator|manager.south@…`, `branch.dual@…` (both branches). Password `devpass123`.
@@ -35,7 +35,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → warehouse users `warehouse.admin@cent
 | `accounts` | Custom `User` (email login, timezone, `warehouse_grade`), login/logout, warehouse groups, timezone middleware, `authz.py`, `capabilities.py` |
 | `products` | Catalogue + pricing: model, service layer, API, staff admin, staff console, tests |
 | `procurement` | Purchase orders: models, service layer, console API, admin, tests |
-| `inventory` | Goods receipt + stock ledger: `GoodsReceipt`/`StockMovement`, services, console API, admin, tests |
+| `inventory` | Goods receipt + stock ledger + goods issue: `GoodsReceipt`/`GoodsIssue`/`StockMovement`, services, console API, admin, tests |
 | `branches` | Tenancy + catalog (Slices 1–2): `Branch`/`BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, `/branch/catalog/` + API, admin, services, tests |
 | `orders` | Internal request (requisição interna): models, services, console API, web UI, admin, tests |
 | `logging_utils` | `get_logger("centcompras.<app>")`, rotating logs in `logs/` |
@@ -46,7 +46,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → warehouse users `warehouse.admin@cent
 - Warehouse roles via Django groups: `warehouse_admins` / `warehouse_managers` / `warehouse_data_operators`
 - Catalogue and API require login; API returns 401 when unauthenticated
 - Google OAuth planned for production — not implemented in dev
-- **Branches + requisição built (Slices 1–3)** — `Branch`/`BranchMembership` (`operator`/`manager`/`admin`), `ActiveBranchMiddleware`, `/branch/select/` picker, `/branch/catalog/` (cost hidden, stock hint), `/branch/requests/` (requisição through `approved`, manager caps); warehouse groups never imply branch access and vice versa
+- **Branches + requisição + goods issue built (Slices 1–4)** — `Branch`/`BranchMembership` (`operator`/`manager`/`admin`), `ActiveBranchMiddleware`, `/branch/select/` picker, `/branch/catalog/` (cost hidden, stock hint), `/branch/requests/` (requisição through `approved`, manager caps), `/manage/internal-requests/` (goods issue, short-close); warehouse groups never imply branch access and vice versa
 
 ### Catalogue
 
@@ -70,7 +70,7 @@ PostgreSQL is the source of truth.
 
 ## Not implemented yet
 
-- **Goods issue + branch stock** (Phase 5, Slices 4–6 — tenancy + catalog + requisição / Slices 1–3 are done)
+- **Branch receipt + branch stock** (Phase 5, Slices 5–6 — tenancy + catalog + requisição + goods issue / Slices 1–4 are done)
 - Order business rules not locked (stock timing, cart shape, cancel policy)
 - Shared page chrome; branch phone-catalogue UX; staff console polish (dedicated sessions)
 - Integration tests
@@ -89,7 +89,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 
 - Business logic in `services.py`, not views or management commands
 - Catalog/PO/inventory management via Django groups + model permissions (`products`, `procurement`, `inventory` apps)
-- Branch tenancy (`branches`, `request.active_branch`) is built (Slices 1–3); goods issue/branch stock still future
+- Branch tenancy (`branches`, `request.active_branch`) is built (Slices 1–4); branch receipt/stock still future
 - Plain Django + plain JavaScript — no React, Vue
 - One concept per phase; no large application dumps
 

@@ -6,10 +6,17 @@ from django.core.exceptions import ValidationError
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from accounts.groups import GROUP_ADMINS, assign_warehouse_group
+from accounts.groups import (
+    GROUP_ADMINS,
+    GROUP_MANAGERS,
+    GROUP_OPERATORS,
+    assign_warehouse_group,
+    set_warehouse_grade,
+)
 from branches.capabilities import ROLE_ADMIN, ROLE_MANAGER, ROLE_OPERATOR
 from branches.models import Branch
 from branches.services import SESSION_KEY, assign_membership, create_branch
+from inventory import services as inventory_services
 from products.models import FamilyProduct, Item, VatRate
 
 from .models import InternalRequest
@@ -18,6 +25,8 @@ from .services import (
     DuplicateRequestLineError,
     InactiveBranchError,
     InactiveItemError,
+    InvalidStatusTransitionError,
+    RequestHasGoodsIssueError,
     SelfApprovalLimitError,
     WholesalePriceMissingError,
     add_line,
@@ -250,3 +259,78 @@ class InternalRequestApiTests(TestCase):
         self._post_json(reverse("request_add_line", args=[req_id]), {"item_id": self.item.id, "quantity": "1"})
         r = self._post_json(reverse("request_add_line", args=[req_id]), {"item_id": self.item.id, "quantity": "1"})
         self.assertEqual(r.status_code, 400)
+
+
+class WarehouseConsoleTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.branch = create_branch("North")
+        self.operator = _make_branch_user("wh-op@example.com", self.branch, ROLE_OPERATOR)
+        self.manager = _make_branch_user("wh-mgr@example.com", self.branch, ROLE_MANAGER)
+        self.item = _make_item("Widget", wholesale="5.00", code="W1")
+        self.item.quantity = Decimal("10")
+        self.item.save(update_fields=["quantity"])
+
+    def _approved_request(self, qty="2"):
+        req = create_internal_request(self.branch, self.operator)
+        line = add_line(req, self.item, qty, self.operator)
+        req = submit(req, self.operator)
+        req = approve(req, self.manager)
+        return req, line
+
+    def _warehouse_user(self, email, group_name, grade=None):
+        user = _make_user(email)
+        assign_warehouse_group(user, group_name)
+        if grade is not None:
+            set_warehouse_grade(user, grade)
+        return user
+
+    def test_queue_shows_approved_not_submitted(self):
+        submitted_req, _line = create_internal_request(self.branch, self.operator), None
+        add_line(submitted_req, self.item, "1", self.operator)
+        submitted_req = submit(submitted_req, self.operator)
+        approved_req, _ = self._approved_request("2")
+
+        admin = self._warehouse_user("wh-admin@example.com", GROUP_ADMINS)
+        self.client.force_login(admin)
+        r = self.client.get(reverse("warehouse_request_list"))
+        self.assertEqual(r.status_code, 200)
+        ids = {row["id"] for row in r.json()["requests"]}
+        self.assertIn(approved_req.id, ids)
+        self.assertNotIn(submitted_req.id, ids)
+
+    def test_operator_grade1_cannot_issue(self):
+        req, line = self._approved_request("2")
+        op = self._warehouse_user("wh-op1@example.com", GROUP_OPERATORS)  # grade 1
+        self.client.force_login(op)
+        r = self._post_json(
+            reverse("warehouse_request_issue", args=[req.id]),
+            {"lines": [{"line_id": line.id, "quantity_issued": "1"}]},
+        )
+        self.assertEqual(r.status_code, 403)
+
+    def test_manager_grade2_can_issue(self):
+        req, line = self._approved_request("2")
+        mgr = self._warehouse_user("wh-mgr2@example.com", GROUP_MANAGERS, grade=2)
+        self.client.force_login(mgr)
+        r = self._post_json(
+            reverse("warehouse_request_issue", args=[req.id]),
+            {"lines": [{"line_id": line.id, "quantity_issued": "1"}]},
+        )
+        self.assertEqual(r.status_code, 201)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("9.000"))
+
+    def test_cancel_after_issue_is_blocked(self):
+        req, line = self._approved_request("2")
+        admin = self._warehouse_user("wh-admin2@example.com", GROUP_ADMINS)
+        inventory_services.issue_goods(
+            req, [{"line_id": line.id, "quantity_issued": "1"}], admin
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+        with self.assertRaises(InvalidStatusTransitionError):
+            cancel(req, self.manager, reason="changed mind")
+
+    def _post_json(self, url, payload):
+        return self.client.post(url, data=json.dumps(payload), content_type="application/json")

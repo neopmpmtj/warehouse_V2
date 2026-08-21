@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Branch approval limits — CentCompras</title>
+    <style>
+        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+        header h1 { font-size: 1.2rem; margin: 0; }
+        header .user { color: var(--muted); font-size: .9rem; }
+        header a, header button { margin-left: 12px; color: var(--brand); text-decoration: none; }
+        header form { display: inline; }
+        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
+        main { padding: 20px; }
+        .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; max-width: 480px; }
+        .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+        input { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
+        .btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
+        .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: #b00020; margin-top: 10px; }
+        .ok { padding: 8px 12px; border-radius: 4px; background: #e6f4ea; color: #1e7d32; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Branch approval limits</h1>
+        <div class="user">
+            <span>{{ user.email }}</span>
+            <a href="{% url 'internal_request_queue_console' %}">Requests</a>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2>Manager caps (EUR gross)</h2>
+            <div class="row"><span style="width:140px;">Others:</span><input id="approval-limit" type="number" step="0.01" min="0"></div>
+            <div class="row"><span style="width:140px;">Self:</span><input id="self-approval-limit" type="number" step="0.01" min="0"></div>
+            <div class="row"><button id="save" class="btn btn-primary">Save</button></div>
+            <p id="banner" class="banner" hidden></p>
+            <p id="ok" class="ok" hidden>Saved.</p>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            var CSRF = document.querySelector('meta[name="csrf-token"]').content;
+            var CAN_EDIT = {{ can_edit_approval_policy|yesno:"true,false" }};
+            var state = { id: null };
+
+            var approvalInput = document.getElementById("approval-limit");
+            var selfInput = document.getElementById("self-approval-limit");
+            var banner = document.getElementById("banner");
+            var ok = document.getElementById("ok");
+
+            function api(path, method, body) {
+                var opts = { method: method || "GET", headers: { "Accept": "application/json", "X-CSRFToken": CSRF } };
+                if (body !== undefined) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+                return fetch(path, opts).then(function (r) {
+                    return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || ("HTTP " + r.status)); return d; });
+                });
+            }
+
+            api("/api/manage/branch-approval-limits/").then(function (d) {
+                var limits = d.branch_approval_limits || [];
+                if (limits.length) {
+                    state.id = limits[0].id;
+                    approvalInput.value = limits[0].approval_limit;
+                    selfInput.value = limits[0].self_approval_limit;
+                }
+                approvalInput.disabled = !CAN_EDIT;
+                selfInput.disabled = !CAN_EDIT;
+                document.getElementById("save").disabled = !CAN_EDIT;
+            }).catch(function (e) { banner.textContent = e.message; banner.hidden = false; });
+
+            document.getElementById("save").addEventListener("click", function () {
+                banner.hidden = true; ok.hidden = true;
+                api("/api/manage/branch-approval-limits/", "PATCH", {
+                    id: state.id,
+                    approval_limit: approvalInput.value,
+                    self_approval_limit: selfInput.value
+                }).then(function (d) {
+                    approvalInput.value = d.branch_approval_limit.approval_limit;
+                    selfInput.value = d.branch_approval_limit.self_approval_limit;
+                    ok.hidden = false;
+                }).catch(function (e) { banner.textContent = e.message; banner.hidden = false; });
+            });
+        })();
+    </script>
+</body>
+</html>

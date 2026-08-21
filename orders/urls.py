@@ -15,4 +15,9 @@ urlpatterns = [
     path("branch/requests/<int:request_id>/reject/", console_views.request_reject, name="request_reject"),
     path("branch/requests/<int:request_id>/cancel/", console_views.request_cancel, name="request_cancel"),
     path("branch/requests/<int:request_id>/history/", console_views.request_history, name="request_history"),
+    path("manage/internal-requests/", console_views.warehouse_request_list, name="warehouse_request_list"),
+    path("manage/internal-requests/<int:request_id>/", console_views.warehouse_request_detail, name="warehouse_request_detail"),
+    path("manage/internal-requests/<int:request_id>/issue/", console_views.warehouse_request_issue, name="warehouse_request_issue"),
+    path("manage/internal-requests/<int:request_id>/short-close/", console_views.warehouse_request_short_close, name="warehouse_request_short_close"),
+    path("manage/branch-approval-limits/", console_views.branch_approval_limit_list, name="branch_approval_limit_list"),
 ]

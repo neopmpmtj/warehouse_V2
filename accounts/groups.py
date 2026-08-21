@@ -18,6 +18,8 @@ CATALOG_VIEW_ONLY_MODELS = (
     "purchaseorderchangelog",
     "goodsreceiptline",
     "stockmovement",
+    "internalrequest",
+    "internalrequestline",
 )
 
 VIEW_ITEM = "products.view_item"
@@ -57,13 +59,13 @@ def _codenames_for_group(group_name):
     change = [f"change_{model}" for model in CATALOG_MODELS]
     delete = [f"delete_{model}" for model in CATALOG_MODELS if model not in CATALOG_NO_DELETE_MODELS]
     if group_name == GROUP_ADMINS:
-        return view + add + change + delete + ["can_approve", "can_adjust_stock"]
+        return view + add + change + delete + ["can_approve", "can_adjust_stock", "can_issue_goods"]
     if group_name == GROUP_MANAGERS:
-        return view + add + change + ["can_approve"]
-    return view + add + change
+        return view + add + change + ["can_approve", "can_issue_goods"]
+    return view + add + change + ["can_issue_goods"]
 
 
-CATALOG_APP_LABELS = ("products", "procurement", "inventory")
+CATALOG_APP_LABELS = ("products", "procurement", "inventory", "orders")
 
 
 def _catalog_permissions(codenames):
@@ -87,7 +89,7 @@ def sync_warehouse_groups():
 
 
 def ensure_warehouse_groups(sender, **kwargs):
-    if getattr(sender, "name", None) not in ("products", "procurement", "inventory"):
+    if getattr(sender, "name", None) not in ("products", "procurement", "inventory", "orders"):
         return
     sync_warehouse_groups()
 
