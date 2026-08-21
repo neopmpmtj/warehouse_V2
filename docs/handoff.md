@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026, 14:11 WEST.
+> **Read this first when resuming work.** Last updated: 21 August 2026, 14:38 WEST.
 
 ---
 
@@ -19,18 +19,18 @@
 
 **Phases 0–4 are complete.** Product phases 5–7 stay deferred/pending/future.
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. M7 (pagination) and L13 (login rate limiting) stay deferred from 2208.
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 — auth, catalogue + pricing, purchase orders, goods receipt + stock, manager catalog — are complete and stable (288 tests green).**
 
-**Next task:** **L13** — add login rate limiting (a documented pre-production blocker; see `config/settings.example.py`). Then **M7** (pagination). Deferred product phases (5–7) need a written plan first.
+**Next task:** **M7** — pagination on the item / purchase-order / goods-receipt consoles (deferred from 2208, scale-only). Then write a plan for **Phase 5 — branches** (a new app; design in `docs/warehouse-tenancy-setup.md`). L13 (login rate limiting) stays deferred — production-only.
 
 ---
 
 ## Next session — do this
 
-1. **Next task: L13** — add login rate limiting (pre-production blocker; see `config/settings.example.py`). Then **M7** (pagination).
+1. **Next task: M7** — pagination on the consoles (item / purchase-order / goods-receipt lists). Then **write a plan for Phase 5 — branches** (a new app; design in `docs/warehouse-tenancy-setup.md`).
 2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
-3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; M7 and L13 are the only two still open.
-4. **Do not start** branches, orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
+3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; M7 and L13 are the only two still open (L13 is production-only, deferred).
+4. **Do not start** orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
 
 ---
 
@@ -164,7 +164,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ## Git (as of 21 Aug 2026, 14:11 WEST)
 
-- Branch: **`main`**. The 1303 review fixes (N1–N12) are **committed** (see `git log` for the latest commit). The review is archived under `docs/archive/`.
+- Branch: **`main`**. The 1303 review fixes (N1–N12) are **committed and pushed to `origin/main`** (`b32c108`). The review is archived under `docs/archive/`.
 - No `p4-m1-l-fixes` branch exists locally or on origin.
 - Working tree has local `.venv` noise — do **not** commit `.venv` deletions.
 

@@ -10,7 +10,7 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 
 **Not done:** `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
 
-**Next:** **L13** — add login rate limiting (pre-production blocker; see `config/settings.example.py`), then **M7** (pagination). The 1303 review is **done and archived** (all N1–N12 applied). Product phases 5–7 remain deferred/pending/future; do **not** implement `orders/` or the tenancy-doc Order stub without a plan.
+**Next:** **M7** — pagination on the consoles, then a written plan for **Phase 5 — branches** (new app). The 1303 review is **done and archived** (all N1–N12 applied). L13 (login rate limiting) is production-only, deferred. Do **not** implement `orders/` or the tenancy-doc Order stub without a plan.
 
 **Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive and resets grade to 1. Approval uses grades + `ApprovalLimit` (EUR gross); reject/manual close/`adjust_stock` require a reason. Selling prices & `reorder_level` must be finite and ≥ 0 (DB `CheckConstraint`s); PO line quantity capped at 1e9; login rate limiting is a documented pre-production blocker (deferred).
 

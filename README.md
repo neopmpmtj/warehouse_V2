@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next task: L13** — add login rate limiting (pre-production blocker), then **M7** (pagination). The 1303 review is done and archived; deferred phases (branches, orders, offline, email, chrome) need a plan first.
+4. **Next task: M7** — pagination on the consoles, then a written plan for **Phase 5 (branches)**. The 1303 review is done and archived; L13 (login rate limiting) stays deferred (production-only).
 5. Do **not** in passing: branches, orders, offline, email, shared page chrome.
 
 ---
