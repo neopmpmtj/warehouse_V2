@@ -46,6 +46,9 @@ LOGGING_CONFIG = {
         "centcompras.inventory": {
             "log_filename": "inventory.log",
         },
+        "centcompras.branches": {
+            "log_filename": "branches.log",
+        },
         "centcompras.django": {
             "log_filename": "django.log",
             "console_level": "INFO",

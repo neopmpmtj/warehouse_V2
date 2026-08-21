@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 21 August 2026, 16:18 WEST.*
+*Last updated: 21 August 2026, 19:23 WEST.*
 
-Phases 0–4 are done. **Phase 5 is in planning** — decisions locked, no code yet. See [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) and [`docs/handoff.md`](docs/handoff.md).
+Phases 0–4 are done. **Phase 5 is in progress** — decisions locked; **Slice 1 (tenancy — `branches` app) is done**, Slice 2 (branch catalog) is next. See [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) and [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -21,10 +21,10 @@ Phases 0–4 are done. **Phase 5 is in planning** — decisions locked, no code 
 | **Warehouse admin** | `warehouse.admin@centcompras.dev` | Full catalogue, POs (including approve any amount), goods receipts, stock adjust, `/manage/approval-limits/` (`warehouse_admins`). Cannot log into `/admin/`. |
 | **Warehouse manager** | `warehouse.manager@centcompras.dev` (grade 1); also `manager2` / `manager3` | Grade 1: add/edit catalogue and POs (submit, no approve). Grade 2+: approve within caps. No delete / no stock adjust. |
 | **Warehouse operator** | `warehouse.operator@centcompras.dev` (grade 1); also `operator2` | Grade 1: read-only. Grade 2: mutate closed circuit. Never approve. |
-| **Branch users** | *(not seeded — Phase 5)* | Future: read-only catalogue and branch orders. |
+| **Branch users** | `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…`, `branch.operator.south@…` / `branch.manager.south@…`, `branch.dual@…` | Branch picker; read-only catalogue (Slice 2) and requisição interna (Slice 3) — coming. |
 | **Django superuser** | from `createsuperuser` | Site admin at `/admin/` only. The only users who may use Django admin. |
 
-After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed does **not** create a superuser or any branch.
+After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed creates **branches** (North, South) and **branch users**, but does **not** create a superuser.
 
 **Procurement:** admins approve any PO; managers grade 2+ approve within EUR gross caps (self vs others); operators never approve. Reject / short-shipment close / stock adjust require a reason. **Stock:** admins may `adjust_stock`; operator 2 and managers/admins record goods receipts.
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 1 — write `phase5-plan-*.md`. Do **not** code before the plan.
+4. **Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 3 — Slice 2: branch catalog (cost hidden, stock hint).
 
 ---
 
@@ -71,7 +71,7 @@ No React, Vue, or similar frontend framework.
 - Django admin (superuser only) for users and groups
 - Consoles and APIs require login; APIs return 401 when unauthenticated
 
-> **Branches (tenancy) are not built.** Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md). There is no `branches/` directory.
+> **Branches (tenancy) are built (Slice 1).** `Branch` + `BranchMembership` (`operator` / `manager` / `admin`), `ActiveBranchMiddleware`, `/branch/select/` picker, and Django-admin CRUD. The branch catalog (Slice 2) and requisição interna (Slice 3) are **not** built yet. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md).
 
 Production will use Google OAuth (not implemented in dev).
 
@@ -117,6 +117,8 @@ Production will use Google OAuth (not implemented in dev).
 | `/api/manage/stock-adjustments/` | Manual stock adjustment (POST; `can_adjust_stock`) |
 | `/accounts/login/` | Email + password login |
 | `/accounts/logout/` | Log out |
+| `/branch/select/` | Branch picker (0 / 1 / N memberships) |
+| `/branch/catalog/` | Branch catalog (placeholder until Slice 2) |
 | `/admin/` | Django admin (**superuser only**) |
 
 There is no `GET /api/products/` and no `/service-worker.js`.
@@ -131,6 +133,7 @@ warehouse/
 ├── requirements.txt
 ├── config/                   # settings.example.py (copy to settings.py), urls.py
 ├── accounts/                 # custom User (email, timezone, warehouse_grade), login, groups, authz
+├── branches/                 # tenancy: Branch + BranchMembership, picker, middleware
 ├── products/                 # catalogue + pricing
 ├── procurement/              # purchase orders
 ├── inventory/                # goods receipt + stock ledger
@@ -206,7 +209,7 @@ This creates (idempotent):
 | **Families, suppliers, items, supplier prices** | sample catalogue via `products/services.py` |
 | **Password** | `devpass123` (override with `--password`) |
 
-It does **not** create branches, branch users, or a Django superuser. Options: `--skip-items`, `--skip-warehouse`.
+It also creates **branches** (North, South) and **branch users**. It does **not** create a Django superuser. Options: `--skip-items`, `--skip-warehouse`, `--skip-branches`.
 
 Items can also be added in `/manage/items/` or:
 
@@ -233,6 +236,7 @@ Logs go to `logs/` (gitignored):
 | `logs/products.log` | `centcompras.products` |
 | `logs/procurement.log` | `centcompras.procurement` |
 | `logs/inventory.log` | `centcompras.inventory` |
+| `logs/branches.log` | `centcompras.branches` |
 | `logs/django.log` | `centcompras.django` (HTTP requests) |
 
 ```python
@@ -303,7 +307,7 @@ views (login required) → API + HTML
 
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
-- **Branches + internal request** (Phase 5)
+- **Internal request (Requisição interna), goods issue, and branch stock** (Phase 5, Slices 2–6 — tenancy/Slice 1 is done)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
 - Integration tests (unit suites are green, **294 tests**)

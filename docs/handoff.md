@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026, 18:33 WEST.
+> **Read this first when resuming work.** Last updated: 21 August 2026, 19:23 WEST.
 
 ---
 
@@ -13,21 +13,21 @@
 | 2 — Procurement (purchase orders) | ✅ Done |
 | **3 — Goods receipt + stock ledger** | ✅ **Done** |
 | **4 — Manager catalog (stock + price view)** | ✅ **Done** |
-| 5 — Branches + internal request | 🔜 **Planning** (plan authored; Slice 1 next) |
+| 5 — Branches + internal request | 🔜 **In progress** — Slice 1 (tenancy) ✅; Slice 2 (catalog) next |
 | 6 — Email automation | ⏸ Pending (stub exists) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–4 are complete.** Phase 5 decisions are **locked**; implementation has **not** started. Phases 6–7 stay pending/future.
+**Phases 0–4 are complete.** Phase 5 decisions are **locked**; **Slice 1 (tenancy — `branches` app) is done**, Slice 2 (branch catalog) is next. Phases 6–7 stay pending/future.
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable (294 tests green).**
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable; the full suite is green (328 tests, incl. 34 new `branches` tests).**
 
-**Next task:** start **Slice 1 — tenancy** (`branches` app only). Build spec: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md). Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions. L13 (login rate limiting) stays deferred — production-only.
+**Next task:** **Slice 2 — branch catalog** (cost hidden, stock hint). Build spec: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8; roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 3. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions. L13 (login rate limiting) stays deferred — production-only.
 
 ---
 
 ## Next session — do this
 
-1. **Next task:** **Slice 1 — tenancy** (`branches` app only) — see [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) and [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 2. The plan is authored; do not start requests or stock. M7 (console pagination) is done.
+1. **Next task:** **Slice 2 — branch catalog** — see [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) §8 and [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md) Step 3. **Slice 1 (tenancy) is done**: `branches` app (Branch + BranchMembership), `ActiveBranchMiddleware`, `/branch/select/` picker, Django admin, seed (North/South + branch users), and role-based post-login redirect (lock 5). Do **not** start the requisição (Slice 3) or goods issue (Slice 4) yet. M7 (console pagination) is done.
 2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
 3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; L13 (login rate limiting) is the only one still open (production-only, deferred).
 4. **Do not start** orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
@@ -162,10 +162,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 21 Aug 2026, 15:19 WEST)
+## Git (as of 21 Aug 2026, 19:23 WEST)
 
-- Branch: **`main`**. The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are **committed** (see `git log`). The 1303 review is archived under `docs/archive/`.
-- No `p4-m1-l-fixes` branch exists locally or on origin.
+- Branch: **`phase5-branches`** (local). `main` tracks `origin/main`. The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are **committed** on `main`. The 1303 review is archived under `docs/archive/`.
+- **Slice 1 (tenancy) is uncommitted** — new `branches/` app plus edits to `accounts/`, `config/`, `logging_utils/`, and the seed command. Review before committing.
 - Working tree has local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -173,10 +173,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 ## Tests
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
+.venv/bin/python manage.py test products accounts procurement inventory branches --noinput
 ```
 
-- Last full suite: **294 OK** without `--keepdb`.
+- Last full suite: **328 OK** without `--keepdb` (294 prior + 34 new `branches` tests).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -189,6 +189,7 @@ products/       catalogue + pricing (models, services, console_views, admin, tes
 procurement/    purchase orders (models, services, console_views, admin, permissions, tests)
 inventory/      goods receipt + stock ledger (models, services, console_views, admin, permissions, tests)
 accounts/       custom User, warehouse groups, grades, login, timezone middleware, authz.py, capabilities.py
+branches/       tenancy: Branch + BranchMembership, ActiveBranchMiddleware, picker, capabilities, admin, tests
 config/         settings, urls
 logging_utils/  rotating per-app logs
 docs/           plan, handoff, archived reviews (incl. 1303), user-manuals/, tenancy design
@@ -205,11 +206,11 @@ source .venv/bin/activate
 python manage.py migrate
 ./scripts/seed_dev_data.sh          # idempotent; VAT rates come from migration 0002
 python manage.py runserver
-.venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
+.venv/bin/python manage.py test products accounts procurement inventory branches --noinput
 ```
 
-- **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/admin/` superuser only.
+- **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded). **Branch:** `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…` (North), `branch.operator.south@…` / `branch.manager.south@…` (South), and `branch.dual@…` (both branches).
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (placeholder until Slice 2) · `/admin/` superuser only.
 
 ---
 

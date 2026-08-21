@@ -191,6 +191,8 @@ class LoginViewTests(TestCase):
             email="login@example.com",
             password="test-pass-123",
         )
+        # Warehouse users land on the dashboard after login (lock 5).
+        assign_warehouse_group(self.user, GROUP_ADMINS)
         self.client = Client()
 
     def test_login_with_valid_credentials(self):

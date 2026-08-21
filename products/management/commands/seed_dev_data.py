@@ -10,6 +10,8 @@ from accounts.groups import (
     set_warehouse_grade,
 )
 from accounts.models import DEFAULT_USER_TIMEZONE
+from branches.models import Branch, BranchMembership
+from branches.services import assign_membership, create_branch
 from products.models import (
     FamilyProduct,
     Item,
@@ -38,6 +40,29 @@ from procurement.services import ensure_default_approval_limits
 
 
 DEFAULT_PASSWORD = "devpass123"
+
+BRANCH_SEED = [
+    (
+        "North",
+        [
+            ("branch.operator.north@centcompras.dev", BranchMembership.Role.OPERATOR),
+            ("branch.manager.north@centcompras.dev", BranchMembership.Role.MANAGER),
+            ("branch.admin.north@centcompras.dev", BranchMembership.Role.ADMIN),
+        ],
+    ),
+    (
+        "South",
+        [
+            ("branch.operator.south@centcompras.dev", BranchMembership.Role.OPERATOR),
+            ("branch.manager.south@centcompras.dev", BranchMembership.Role.MANAGER),
+        ],
+    ),
+]
+
+DUAL_BRANCH_MEMBERSHIPS = [
+    ("North", "branch.dual@centcompras.dev", BranchMembership.Role.OPERATOR),
+    ("South", "branch.dual@centcompras.dev", BranchMembership.Role.OPERATOR),
+]
 
 
 def _demo_selling_prices(internal_code):
@@ -76,6 +101,41 @@ class Command(BaseCommand):
             action="store_true",
             help="Do not create warehouse users.",
         )
+        parser.add_argument(
+            "--skip-branches",
+            action="store_true",
+            help="Do not create branches or branch users.",
+        )
+
+    def _seed_branch_user(self, user_model, branch, email, role, password):
+        user, created = user_model.objects.get_or_create(
+            email=email,
+            defaults={
+                "is_staff": False,
+                "is_superuser": False,
+                "timezone": DEFAULT_USER_TIMEZONE,
+            },
+        )
+        changed_fields = []
+        if user.is_staff or user.is_superuser:
+            user.is_staff = False
+            user.is_superuser = False
+            changed_fields.extend(["is_staff", "is_superuser"])
+        if not user.timezone:
+            user.timezone = DEFAULT_USER_TIMEZONE
+            changed_fields.append("timezone")
+        if created or not user.check_password(password):
+            user.set_password(password)
+            changed_fields.append("password")
+        if changed_fields:
+            user.save(update_fields=changed_fields)
+        assign_membership(user, branch, role)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Branch user: {user.email} ({branch.name}, {role})"
+            )
+        )
+        return user
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -115,6 +175,28 @@ class Command(BaseCommand):
                         f"Warehouse user: {user.email} (group {group_name}, grade {grade})"
                     )
                 )
+
+        if not options["skip_branches"]:
+            branches_by_name = {}
+            for branch_name, _members in BRANCH_SEED:
+                branch = Branch.objects.filter(name__iexact=branch_name).first()
+                if branch is None:
+                    branch = create_branch(branch_name, is_active=True)
+                    self.stdout.write(
+                        self.style.SUCCESS(f"Created branch: {branch.name}")
+                    )
+                else:
+                    self.stdout.write(f"Exists branch: {branch.name}")
+                branches_by_name[branch_name.casefold()] = branch
+
+            for branch_name, members in BRANCH_SEED:
+                branch = branches_by_name[branch_name.casefold()]
+                for email, role in members:
+                    self._seed_branch_user(user_model, branch, email, role, password)
+
+            for branch_name, email, role in DUAL_BRANCH_MEMBERSHIPS:
+                branch = branches_by_name[branch_name.casefold()]
+                self._seed_branch_user(user_model, branch, email, role, password)
 
         if not options["skip_items"]:
             families_by_name = {}
@@ -280,6 +362,13 @@ class Command(BaseCommand):
         self.stdout.write("Warehouse website (/ and /manage/items/) — not /admin/:")
         for email, group_name, grade in WAREHOUSE_USERS:
             self.stdout.write(f"  {email}  ({group_name}, grade {grade})")
+        self.stdout.write("")
+        self.stdout.write("Branch website (/branch/):")
+        for branch_name, members in BRANCH_SEED:
+            for email, role in members:
+                self.stdout.write(f"  {email}  ({branch_name}, {role})")
+        for branch_name, email, role in DUAL_BRANCH_MEMBERSHIPS:
+            self.stdout.write(f"  {email}  ({branch_name}, {role})")
         self.stdout.write("")
         self.stdout.write(
             "Operators grade 1 are view-only; operator 2 and managers mutate the "

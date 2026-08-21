@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select branch — CentCompras</title>
+</head>
+<body>
+    <h1>Select branch</h1>
+
+    {% if memberships %}
+        <form method="post" action="{% url 'branch_select' %}">
+            {% csrf_token %}
+            <ul>
+                {% for membership in memberships %}
+                    <li>
+                        <label>
+                            <input type="radio" name="branch_id" value="{{ membership.branch_id }}">
+                            {{ membership.branch.name }} — {{ membership.get_role_display }}
+                        </label>
+                    </li>
+                {% endfor %}
+            </ul>
+            <button type="submit">Continue</button>
+        </form>
+    {% else %}
+        <p>You have no active branch access. Please contact your administrator.</p>
+    {% endif %}
+</body>
+</html>

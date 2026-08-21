@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 21 August 2026, 18:33 WEST
-- **Current phase:** Phase 5 **planning** — phases 0–4 done (**294 tests green**). Plan authored: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md). Decisions locked in [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md); roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Next:** Slice 1 — tenancy (`branches` app). See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 21 August 2026, 19:23 WEST
+- **Current phase:** Phase 5 **in progress** — phases 0–4 done, **Slice 1 (tenancy) done**, full suite **328 tests green**. Plan authored: [`docs/phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md). Decisions locked in [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md); roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Next:** Slice 2 — branch catalog. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is **next** — see Phase 5 below.
 
 ## Status vocabulary
@@ -140,7 +140,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (Aug 2026):** phases 0–4 complete; both review backlogs cleared (2208 P0–P4, 1303 N1–N12) and archived; M7 console pagination done; **294 tests green**. Remaining: Phase 5 (branches — **next**), Phase 6 (email), Phase 7 (mobile/offline/OAuth), and L13 (login rate limiting, production-only).
+**Current (Aug 2026):** phases 0–4 complete; both review backlogs cleared (2208 P0–P4, 1303 N1–N12) and archived; M7 console pagination done; **Phase 5 Slice 1 (tenancy) done**; **328 tests green**. Remaining: Phase 5 slices 2–6 (branch catalog → polish), Phase 6 (email), Phase 7 (mobile/offline/OAuth), and L13 (login rate limiting, production-only).
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -159,7 +159,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 2 | Procurement — purchase orders, discounts, approval | ✅ Done | Phase 1 |
 | 3 | Goods receipt + stock ledger | ✅ Done | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ✅ Done | Phase 3 |
-| 5 | Branches + internal request + branch catalog | 🔜 **Planning** (plan authored; Slice 1 next) | Phase 4 |
+| 5 | Branches + internal request + branch catalog | 🔜 **In progress** — Slice 1 (tenancy) ✅; Slice 2 next | Phase 4 |
 | 6 | Email automation (supplier notifications) | ⏸ Pending | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
@@ -354,11 +354,11 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 
 ---
 
-## 12. Phase 5 — Branches + internal request (planning) 🔜
+## 12. Phase 5 — Branches + internal request 🔜
 
-**Status:** decisions locked 21 Aug 2026 — see [`phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions and [`phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Build spec authored:** [`phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) (+ proposed additions A–D, §13). **Next:** Slice 1 — tenancy (`branches` app only).
+**Status:** decisions locked 21 Aug 2026 — see [`phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions and [`phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Build spec authored:** [`phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) (+ proposed additions A–D, §13). **Slice 1 (tenancy) ✅ done** — `branches` app, membership, middleware, picker, admin, seed, post-login redirect. **Next:** Slice 2 — branch catalog.
 
-- `branches` app: `Branch`, `BranchMembership` (`operator` / `manager` / `admin`), middleware, branch picker.
+- ✅ `branches` app: `Branch`, `BranchMembership` (`operator` / `manager` / `admin`), middleware, branch picker.
 - `orders` app: internal request ("Requisição interna") — priced (wholesale snapshot at approve); branch approve caps mirror PO.
 - Warehouse: `GoodsIssue` + queue (approved requests only); manual PO when out of stock (nullable PO FK on lines for later automation).
 - Branch: read-only catalog (cost hidden, stock **hint** only); branch receipt + branch stock ledger.
@@ -418,6 +418,12 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 ### Phase 5 / 6 / 7
 - [x] Phase 5 plan authored (`phase5-plan-260821-1756.md`)
 - [ ] Phase 5 — branches + internal request (implementation; see roadmap slices)
+  - [x] Slice 1 — tenancy (`branches` app, middleware, picker, admin, seed)
+  - [ ] Slice 2 — branch catalog (cost hidden, stock hint)
+  - [ ] Slice 3 — requisição (internal request)
+  - [ ] Slice 4 — goods issue
+  - [ ] Slice 5 — branch receipt + branch stock
+  - [ ] Slice 6 — polish + docs
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---

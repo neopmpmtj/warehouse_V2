@@ -1,16 +1,16 @@
 # CentCompras — Agent instructions
 
-Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done. Branches, orders, offline, and email are deferred.
+Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branches**. Catalogue + pricing + purchase orders + goods receipt & stock + manager catalog (Phases 0–4) are done, plus **branches tenancy (Phase 5 Slice 1)**. Orders (requisição interna), offline, and email are deferred.
 
 **▶ Read [`docs/handoff.md`](docs/handoff.md) first** — condensed state, locked decisions, and the exact next task. Then [`README.md`](README.md) for setup and [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) for sequencing. Reviews are concluded and archived: [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md) (N1–N12) and [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) (P0–P4).
 
 ## Session handoff (August 2026)
 
-**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), **goods receipt + stock ledger** (`inventory` app: `GoodsReceipt`/`GoodsReceiptLine`, `StockMovement` signed ledger, cached `Item.quantity`, `receive_goods()` + admin-only `adjust_stock()`), **manager catalog** (read-only `/manage/catalog/`: stock + reorder level + selling/buying prices + suppliers, cost visible to warehouse groups only), dev seed script.
+**Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), **goods receipt + stock ledger** (`inventory` app: `GoodsReceipt`/`GoodsReceiptLine`, `StockMovement` signed ledger, cached `Item.quantity`, `receive_goods()` + admin-only `adjust_stock()`), **manager catalog** (read-only `/manage/catalog/`), **branches tenancy — Slice 1** (`branches` app: `Branch`/`BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, admin, seed, role-based post-login redirect), dev seed script.
 
-**Not done:** `orders` app, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, branches.
+**Not done:** `orders` app (requisição interna), branch catalog (Slice 2), goods issue, branch receipt/stock, offline, shared chrome, branch phone UX, console polish, production OAuth/deployment.
 
-**Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 1 — formal `phase5-plan-*.md`. Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md). Do **not** implement `orders/` without the plan. Do **not** use tenancy-doc §6–7 Order stub.
+**Next:** [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) Step 3 — **Slice 2: branch catalog** (cost hidden, stock hint). Build spec: [`docs/phase5-plan-260821-1756.md`](docs/phase5-plan-260821-1756.md). Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md). Do **not** implement `orders/` without the plan. Do **not** use tenancy-doc §6–7 Order stub.
 
 **Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive and resets grade to 1. Approval uses grades + `ApprovalLimit` (EUR gross); reject/manual close/`adjust_stock` require a reason. Selling prices & `reorder_level` must be finite and ≥ 0 (DB `CheckConstraint`s); PO line quantity capped at 1e9; login rate limiting is a documented pre-production blocker (deferred).
 
@@ -21,10 +21,10 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 | Warehouse admin | group `warehouse_admins` | Full catalogue (view/add/change/delete) via the website; approve any PO; edit `/manage/approval-limits/` | N/A (central) |
 | Warehouse manager | group `warehouse_managers` | Grade 1: mutate closed circuit, no approve. Grade 2+: approve within `ApprovalLimit` caps (no delete) | N/A (central) |
 | Warehouse operator | group `warehouse_data_operators` | Grade 1 view-only; grade 2 mutate closed circuit. Never approve | N/A (central) |
-| Branch admin / manager / operator | *(Phase 5 — not built)* `BranchMembership.role` | Read-only catalog; internal request (Requisição interna) per branch |
+| Branch admin / manager / operator | `BranchMembership.role` (Slice 1 done) | Read-only catalog (Slice 2) + internal request (Requisição interna, Slice 3) per branch |
 | Django superuser | `is_superuser` | May use the website console; **only** role that can log into `/admin/` | Site config in `/admin/` |
 
-Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev` / `manager2` / `manager3`, `warehouse.operator@centcompras.dev` / `operator2`, password `devpass123`.
+Dev seed: `./scripts/seed_dev_data.sh` → warehouse users `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2`; branch users `branch.operator|manager|admin.north@…`, `branch.operator|manager.south@…`, `branch.dual@…` (both branches). Password `devpass123`.
 
 ## Current state (what exists)
 
@@ -36,7 +36,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 | `products` | Catalogue + pricing: model, service layer, API, staff admin, staff console, tests |
 | `procurement` | Purchase orders: models, service layer, console API, admin, tests |
 | `inventory` | Goods receipt + stock ledger: `GoodsReceipt`/`StockMovement`, services, console API, admin, tests |
-| `branches` | ⚠️ **Not built yet** — see [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md) |
+| `branches` | Tenancy (Slice 1): `Branch`/`BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, admin, services, tests |
 | `logging_utils` | `get_logger("centcompras.<app>")`, rotating logs in `logs/` |
 
 ### Auth
@@ -45,7 +45,7 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 - Warehouse roles via Django groups: `warehouse_admins` / `warehouse_managers` / `warehouse_data_operators`
 - Catalogue and API require login; API returns 401 when unauthenticated
 - Google OAuth planned for production — not implemented in dev
-- **Branches (tenancy) deferred** — `Branch`/`BranchMembership`/middleware/picker are designed but **not built** (no `branches/` app yet)
+- **Branches (tenancy) built (Slice 1)** — `Branch`/`BranchMembership` (`operator`/`manager`/`admin`), `ActiveBranchMiddleware`, `/branch/select/` picker; warehouse groups never imply branch access and vice versa
 
 ### Catalogue
 
@@ -62,16 +62,15 @@ Dev seed: `./scripts/seed_dev_data.sh` → `warehouse.admin@centcompras.dev`, `w
 ### Logging
 
 - `logging_utils` — console + `logs/*.log` (gitignored)
-- Loggers: `centcompras.products`, `centcompras.procurement`, `centcompras.inventory`, `centcompras.accounts`, `centcompras.django`, etc.
+- Loggers: `centcompras.products`, `centcompras.procurement`, `centcompras.inventory`, `centcompras.branches`, `centcompras.accounts`, `centcompras.django`, etc.
 - Config: `logging_utils/logging_config.py`
 
 PostgreSQL is the source of truth.
 
 ## Not implemented yet
 
-- **Branches + internal request** (Phase 5, deferred)
+- **Internal request (Requisição interna) + branch catalog + goods issue + branch stock** (Phase 5, Slices 2–6 — tenancy/Slice 1 is done)
 - `orders` app and order workflow (**after** stock)
-- Branches app (`Branch`, `BranchMembership`, middleware, picker)
 - Order business rules not locked (stock timing, cart shape, cancel policy)
 - Shared page chrome; branch phone-catalogue UX; staff console polish (dedicated sessions)
 - Integration tests
@@ -90,7 +89,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 
 - Business logic in `services.py`, not views or management commands
 - Catalog/PO/inventory management via Django groups + model permissions (`products`, `procurement`, `inventory` apps)
-- Branch tenancy (`branches`, `request.active_branch`) is **future** — not built yet
+- Branch tenancy (`branches`, `request.active_branch`) is built (Slice 1); requests/stock still future
 - Plain Django + plain JavaScript — no React, Vue
 - One concept per phase; no large application dumps
 
@@ -107,15 +106,15 @@ source .venv/bin/activate
 cp config/settings.example.py config/settings.py   # first time only
 python manage.py migrate
 python manage.py createsuperuser                 # optional site admin
-./scripts/seed_dev_data.sh                         # warehouse users, families, suppliers, items, supplier prices
+./scripts/seed_dev_data.sh                         # warehouse + branch users, families, suppliers, items, prices
 python manage.py runserver
-python manage.py test products accounts procurement inventory --keepdb --noinput
+python manage.py test products accounts procurement inventory branches --noinput
 ```
 
 **Tests:** always use the project virtualenv — do not use system `python`/`python3`. Either activate first (`source .venv/bin/activate`) or invoke the venv interpreter directly. Recreate without `--keepdb` if the test DB is stale after `TransactionTestCase`.
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement inventory --keepdb --noinput
+.venv/bin/python manage.py test products accounts procurement inventory branches --noinput
 ```
 
 Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, not both).
