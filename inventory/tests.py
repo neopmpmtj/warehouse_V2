@@ -365,6 +365,23 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         self.client.post(reverse("manage_purchase_order_approve", args=[po["id"]]), **self.host)
         return po
 
+    def test_console_header_uses_settings_popover(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("goods_receipt_console"), **self.host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="settings-toggle"')
+        self.assertContains(response, 'id="settings-popover"')
+        self.assertContains(response, 'id="language-select"')
+        self.assertContains(response, 'id="theme-toggle"')
+        self.assertContains(response, self.user.email)
+        self.assertContains(response, reverse("logout"))
+        self.assertRegex(
+            response.content.decode(),
+            r'id="settings-popover"[^>]*\bhidden\b',
+        )
+
     def test_admin_receives_goods_via_api(self):
         self.client.force_login(self.user)
         po = self._create_approved_po_via_api()

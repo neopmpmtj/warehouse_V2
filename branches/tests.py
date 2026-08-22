@@ -322,6 +322,7 @@ class BranchViewTests(TestCase):
         response = self.client.get(reverse("branch_catalog"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.north.name)
+        self.assertNotContains(response, 'id="settings-toggle"')
 
     def test_catalog_page_lists_price_columns(self):
         user = _make_user("catalog-page@example.com")
