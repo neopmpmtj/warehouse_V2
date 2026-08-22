@@ -10,7 +10,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 *Last updated: 21 August 2026, 22:01 WEST.*
 
-**Phases 0–5 are done.** Phase 5 (branches + requisição + goods issue + branch receipt) is **complete**. Phase 6 (email automation) is next. See [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) and [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–5 are done.** Phase 5 (branches + requisição + goods issue + branch receipt) is **complete**. Phase 6 (email automation) is next. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -71,7 +71,7 @@ No React, Vue, or similar frontend framework.
 - Django admin (superuser only) for users and groups
 - Consoles and APIs require login; APIs return 401 when unauthenticated
 
-> **Branches + requisição + goods issue + branch receipt are built (Phase 5 complete).** `Branch` + `BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (cost hidden, stock hint), `/branch/requests/` (requisição through `approved`, manager caps), warehouse goods issue (`/manage/internal-requests/`, `/manage/branch-approval-limits/`), and branch receipt + branch stock (`/branch/receipts/`). Locked decisions: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md).
+> **Branches + requisição + goods issue + branch receipt are built (Phase 5 complete).** `Branch` + `BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (cost hidden, stock hint), `/branch/requests/` (requisição through `approved`, manager caps), warehouse goods issue (`/manage/internal-requests/`, `/manage/branch-approval-limits/`), and branch receipt + branch stock (`/branch/receipts/`). Locked decisions (archived): [`docs/archive/phase5-brainstorm-260821-1530.md`](docs/archive/phase5-brainstorm-260821-1530.md).
 
 Production will use Google OAuth (not implemented in dev).
 
@@ -299,8 +299,8 @@ views (login required) → API + HTML
 ## Further reading
 
 - **Start here:** [`docs/handoff.md`](docs/handoff.md)
-- [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) — Phase 5 step-by-step roadmap
-- [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md) — locked decisions (A1–B8)
+- [`docs/archive/phase5-roadmap-260821-1618.md`](docs/archive/phase5-roadmap-260821-1618.md) — Phase 5 roadmap (archived)
+- [`docs/archive/phase5-brainstorm-260821-1530.md`](docs/archive/phase5-brainstorm-260821-1530.md) — locked decisions A1–B8 (archived)
 - [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) — **living plan**: sequencing + status tracker + locked decisions (update every session)
 - [`docs/archive/code-review-full-2026-08-21-1303.md`](docs/archive/code-review-full-2026-08-21-1303.md) — follow-up review (concluded, N1–N12 applied)
 - [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) — prior full review (concluded)

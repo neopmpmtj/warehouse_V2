@@ -1,3 +1,6 @@
+> **✅ COMPLETE — Phase 5 shipped 21 Aug 2026 (Slices 1–6). This document is ARCHIVED.**
+> See `docs/handoff.md` for current state and next steps. (Archived to `docs/archive/` 21 Aug 2026.)
+
 # Phase 5 — Full roadmap (step by step)
 
 > **For tired-you and the next developer.** Created 21 Aug 2026, 16:18 WEST.  
@@ -24,7 +27,7 @@ Living docs updated so nothing contradicts locked Phase 5 decisions:
 
 - [`handoff.md`](handoff.md) — Phase 5 = planning; links below
 - [`PROJECT-PLAN.md`](PROJECT-PLAN.md) — §12 fixed (offline → Phase 7)
-- [`archive/warehouse-tenancy-setup.md`](archive/warehouse-tenancy-setup.md) — archived; superseded by brainstorm locked §
+- [`warehouse-tenancy-setup.md`](warehouse-tenancy-setup.md) — archived; superseded by brainstorm locked §
 - [`README.md`](../README.md) + [`AGENTS.md`](../AGENTS.md) — pointers + branch role names
 - [`user-manuals/02-purchase-orders.md`](user-manuals/02-purchase-orders.md) — approve = manager g2+ (matches code)
 
@@ -203,7 +206,7 @@ Living docs updated so nothing contradicts locked Phase 5 decisions:
 | 4 | `phase5-plan-*.md` (when written) |
 | 5 | [`PROJECT-PLAN.md`](PROJECT-PLAN.md) §12 |
 
-[`docs/archive/warehouse-tenancy-setup.md`](archive/warehouse-tenancy-setup.md) — archived sketch only.
+[`warehouse-tenancy-setup.md`](warehouse-tenancy-setup.md) — archived sketch only.
 
 ---
 

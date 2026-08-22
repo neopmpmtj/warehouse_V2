@@ -1,26 +1,40 @@
-# CentCompras — User Manual: Requisição interna & branch receipts
+# CentCompras — User Manual: Branches & Requisição interna
 
-**Branches → warehouse → branches** · Version 1.0 · For branch staff (operator / manager / admin) and warehouse staff
+**Branch ordering** · Version 1.0 · For branch staff (operator / manager / admin) **and** warehouse staff
+
+> **Also available:** the [Item Console manual](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Edge cases & limits](05-edge-cases-and-limits.md) · [Admin & Superuser Reference](06-admin-reference.md).
+>
+> This manual covers everything a **satellite branch** does, plus the **warehouse** side of the same loop. Read it end-to-end once — the loop only makes sense as a whole.
 
 ---
 
-## What is this?
+## The big picture
 
-A **Requisição interna** is how a satellite branch asks the central warehouse for stock. The loop is:
+A branch orders from the central warehouse through a **Requisição interna** (internal request). The loop:
 
-1. **Branch** browses the catalogue (cost hidden; stock shown as a hint) and raises a priced requisição.
-2. A **branch manager** (or admin) approves it.
-3. The **warehouse** sees approved requests, ships them (goods issue), and central stock goes down.
-4. The **branch** confirms arrival against the dispatch (guia), and its own stock goes up.
+```text
+Branch browses catalogue   (cost hidden, stock as a hint)
+        ↓
+Branch raises a requisição (draft)
+        ↓
+Branch manager approves    (freezes totals; gross shown before confirm)
+        ↓
+Warehouse ships            (goods issue — central stock goes DOWN)
+        ↓
+Branch confirms arrival    (branch receipt — branch stock goes UP)
+```
+
+Out of stock? The warehouse raises a **purchase order** to a supplier first — see the [Purchase Orders](02-purchase-orders.md) and [Goods receipt](03-goods-receipts.md) manuals. That part is unchanged.
 
 ---
 
 ## Where do I go?
 
-| Who | Page | Purpose |
-|-----|------|---------|
+| Who | Page | What for |
+|-----|------|----------|
+| Branch (any role) | `/branch/select/` | Choose your branch |
 | Branch (any role) | `/branch/catalog/` | Read-only catalogue (cost hidden, stock hint) |
-| Branch (any role) | `/branch/requests/` | Raise + edit a requisição |
+| Branch (any role) | `/branch/requests/` | Raise & edit a requisição |
 | Branch (manager / admin) | `/branch/requests/` | Approve / reject |
 | Branch (any role) | `/branch/receipts/` | Confirm arrival against a dispatch |
 | Warehouse | `/manage/internal-requests/` | Queue of approved requests + goods issue |
@@ -28,52 +42,317 @@ A **Requisição interna** is how a satellite branch asks the central warehouse 
 
 *(During development on your own machine: `http://127.0.0.1:8000/…`.)*
 
----
-
-## 1. Branch — raise a requisição
-
-1. Open **`/branch/requests/`** (pick your branch first if prompted).
-2. Click **New request**. It starts as a **draft**.
-3. **Add line**: choose an item from the catalogue picker and enter a quantity. A line is rejected if the item has **no wholesale price** or is already on the request.
-4. **Submit** when ready (≥1 line, all items active).
-
-- A draft can be **cancelled** by any branch role.
-- You cannot edit lines after submitting.
-
-## 2. Branch — approve / reject (manager or admin)
-
-1. Open the **submitted** request.
-2. **Approve** freezes the totals (wholesale × quantity + VAT). The approve button shows the **gross** before you confirm.
-3. **Reject** requires a reason.
-
-- **Operator** can raise and submit but **never approves**.
-- **Manager** approves within **EUR gross caps** (self vs others — set by the warehouse admin at `/manage/branch-approval-limits/`). **Branch admin** approves any amount.
-
-## 3. Warehouse — ship (goods issue)
-
-1. Open **`/manage/internal-requests/`** — shows **approved** and **fulfilling** requests only (never drafts or submitted).
-2. Select a request and enter **issue quantities** per line (cannot exceed on-hand or the request's remaining).
-3. **Issue** decrements central stock; a partial issue marks the request **fulfilling**, a complete one **shipped**.
-4. **Short close** (manager grade 2+ or admin) writes off the unshipped remainder and marks it **shipped** — reason required.
-
-## 4. Branch — confirm arrival (receipt)
-
-1. Open **`/branch/receipts/`** — lists dispatches for your branch (requests that are shipped or received).
-2. Select a dispatch and enter **received quantities** per line (cannot exceed what was shipped).
-3. **Receive** writes branch stock up. Full receipt → request **closed**; partial → **received**.
-4. **Short close** (manager / admin) writes off the unreceived remainder → **closed** — reason required.
-5. **Branch admin** may **adjust branch stock** directly (reason required).
+> 📷 **[SCREENSHOT — branch home (catalogue) with top bar]**
 
 ---
 
-## Quick reference
+## 1. Your role — what you can do
 
-| Action | Who |
-|--------|-----|
-| Browse catalogue / draft / lines / submit / cancel draft | Any branch role |
-| Approve / reject | Branch manager (caps) / admin (unlimited) |
-| Warehouse goods issue | Warehouse operator 2+ / manager / admin |
-| Warehouse short-close | Warehouse manager grade 2+ / admin |
-| Branch receipt | Any branch role |
-| Branch short-close | Branch manager / admin |
-| Branch stock adjust | Branch admin only |
+There are **three branch roles** (set for you by the head office) and the usual **warehouse roles**. A button missing from your screen is **not a bug** — it is not part of your role.
+
+### 1.1 Branch roles
+
+| Capability | Operator | Manager | Admin |
+|-----------|:---:|:---:|:---:|
+| Browse catalogue | ✅ | ✅ | ✅ |
+| Raise & edit a draft, submit, cancel a draft | ✅ | ✅ | ✅ |
+| Approve / reject | ❌ | ✅ (within caps) | ✅ (unlimited) |
+| Cancel an **approved** request | ❌ | ✅ | ✅ |
+| Confirm arrival (branch receipt) | ✅ | ✅ | ✅ |
+| Branch short-close | ❌ | ✅ | ✅ |
+| Adjust branch stock | ❌ | ❌ | ✅ |
+
+- **Operator** can do the day-to-day (catalogue, request, receipt) but never approves and never short-closes.
+- **Manager** adds approval/rejection/short-close, within **EUR gross caps** (self vs others — see §8).
+- **Admin** is the branch power user: unlimited approval, plus **branch stock adjustments**.
+- The Django **`/admin/`** screen is for the **site superuser only**. Branch staff never log into `/admin/`. Head office creates your login and your branch role there.
+
+### 1.2 Warehouse roles (the other half of the loop)
+
+| Capability | Who |
+|-----------|-----|
+| See the request queue + issue goods | Operator grade 2+, manager, admin |
+| Warehouse short-close | Manager grade 2+ or admin |
+| Edit branch approval caps | Warehouse admin (`/manage/branch-approval-limits/`) |
+
+---
+
+## 2. Choosing your branch (the picker)
+
+You may belong to **one branch, several branches, or none**. After signing in:
+
+| Your situation | What happens |
+|----------------|--------------|
+| **One branch** | You go straight to that branch (no picker). |
+| **Several branches** | You land on `/branch/select/` — pick one. |
+| **No branch** | The picker says *"You have no active branch access."* Ask your administrator. |
+
+To switch later, click **Switch branch** on any branch page.
+
+> 📷 **[SCREENSHOT — branch picker with two branches listed]**
+
+---
+
+## 3. The branch catalogue (read-only)
+
+Open **`/branch/catalog/`**. This is the same product catalogue the warehouse manages, but with two deliberate differences:
+
+1. **Cost is hidden.** You see the **selling prices** (Retail / Wholesale / Special), never the supplier cost.
+2. **Stock is only a hint** — never an exact number.
+
+### 3.1 The availability hint
+
+| Hint | Meaning |
+|------|---------|
+| **In stock** | Available — there is stock above the reorder level. |
+| **Low** | At or below the reorder level — order soon. |
+| **None** | No warehouse stock right now (the warehouse must procure first). |
+
+You will **not** see the exact on-hand quantity — that is a warehouse figure. The hint is enough to decide what to request.
+
+---
+
+## 4. Raising a requisição
+
+Open **`/branch/requests/`**.
+
+### 4.1 Create a draft
+
+1. Click **New request** (*Nova requisição*).
+2. The request starts as a **draft**.
+
+### 4.2 Add lines
+
+1. In the line form, pick an **item** from the catalogue picker.
+2. Enter the **quantity** (greater than zero).
+3. Click **Add**.
+
+A line is **rejected** if:
+
+- the item has **no wholesale price**, or
+- the item is **already** on this request (edit the existing line instead), or
+- the item (or its family) is **inactive**.
+
+You can **remove** a line while the request is still a draft.
+
+### 4.3 Submit
+
+When the request has at least one line and everything is active, click **Submit** (*Submeter*). The request becomes **submitted** and waits for a manager.
+
+- You can no longer edit lines after submitting.
+- A **draft** can be **cancelled** by any branch role (no reason needed).
+
+---
+
+## 5. Approve / reject (manager or admin)
+
+Open a **submitted** request.
+
+### 5.1 Approve
+
+1. Click **Approve** (*Aprovar*).
+2. The confirmation shows the **gross** (wholesale × quantity + VAT) — review it.
+3. Confirm.
+
+Approving **freezes the totals** — the prices and VAT are snapshotted at this moment, so later price changes don't rewrite history.
+
+| Approver | Limit |
+|----------|-------|
+| **Admin** | Unlimited |
+| **Manager** | EUR gross caps: one for **your own** requests, one for **other people's** (set by the warehouse admin, §8) |
+
+### 5.2 Reject
+
+Click **Reject** (*Rejeitar*) and give a **reason**. The request ends as **rejected** — raise a new one if you still need the goods.
+
+> 📷 **[SCREENSHOT — approve confirmation showing gross]**
+
+---
+
+## 6. Cancelling a request
+
+| From | Who | Reason required? |
+|------|-----|:---:|
+| **Draft** | Any branch role | No |
+| **Approved** | Manager / admin | Yes |
+
+Once the warehouse has **shipped** (issued goods), a request can no longer be cancelled — only **short-closed** (§7 / §8). That rule stops stock from being dispatched and then "un-dispatched".
+
+---
+
+## 7. Warehouse — ship (goods issue)
+
+Open **`/manage/internal-requests/`**. This queue shows **approved** and **fulfilling** requests only — never drafts, submitted, rejected, or cancelled.
+
+### 7.1 Issue goods
+
+1. Select a request.
+2. For each line you are shipping now, type the **issue quantity**.
+3. (Optional) **Reference** (your *guia* / dispatch number) and **Notes**.
+4. Click **Issue** (*Emitir*).
+
+Rules:
+
+- You cannot issue **more than the warehouse has on hand**.
+- You cannot issue **more than the request's remaining** quantity.
+- **Partial issue** is fine — the request becomes **fulfilling** and the rest ships later.
+- A **complete** issue marks the request **shipped**.
+
+Issuing **decrements central stock** immediately.
+
+### 7.2 Warehouse short-close
+
+If you can't (or won't) ship the rest, click **Short close** and give a **reason**. The unshipped remainder is written off and the request becomes **shipped**. Only a **manager grade 2+ or admin** can do this.
+
+> 📷 **[SCREENSHOT — warehouse queue with issue quantities]**
+
+---
+
+## 8. Branch — confirm arrival (receipt)
+
+Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your branch — requests that are **shipped** or **received** (i.e. on their way or partly arrived).
+
+### 8.1 Receive against a dispatch
+
+1. Select a dispatch.
+2. For each line, type the **received quantity** (what actually arrived — damage or shortage means you type less).
+3. Click **Receive** (*Receber*).
+
+Rules:
+
+- You cannot receive **more than was shipped** on that line.
+- **Partial** receipt → request stays **received** (more still expected).
+- **Full** receipt → request becomes **closed**.
+
+Receiving **increments branch stock** immediately.
+
+### 8.2 Branch short-close
+
+If the rest won't arrive, click **Short close** and give a **reason**. The unreceived remainder is written off and the request becomes **closed**. Only a **manager or admin** can do this.
+
+> 📷 **[SCREENSHOT — branch receipt with received quantities]**
+
+---
+
+## 9. Branch stock adjustment (admin only)
+
+Branch **admin** may correct branch stock directly — for counts, damage, or mistakes.
+
+1. On `/branch/receipts/`, use the **Adjust stock** area.
+2. Enter **Item**, **Quantity** (positive to add, negative to remove — `0` is rejected), and a **Reason**.
+3. Click **Adjust stock**.
+
+Managers and operators do not see this option. Branch stock is a ledger like warehouse stock — every receipt and adjustment is recorded and the balance is computed, never typed onto the item.
+
+---
+
+## 10. Branch approval caps (warehouse admin)
+
+Open **`/manage/branch-approval-limits/`** (warehouse **admin** only). This sets how much a branch **manager** may approve, in **EUR gross**:
+
+- **Others** — the cap when the manager approves someone else's request.
+- **Self** — the (lower) cap when the manager approves their **own** request.
+
+Branch **admins** have no cap (unlimited). Operators never approve. These caps are global across all branches in this phase.
+
+> 📷 **[SCREENSHOT — branch approval limits editor]**
+
+---
+
+## 11. The request life (status cheat-sheet)
+
+```text
+draft ──submit──▶ submitted ──approve──▶ approved ──issue──▶ fulfilling ──issue──▶ shipped
+   │                  │                     │                                     │
+   │ cancel (no       │ reject (reason)      │ cancel (reason, no shipments yet)  │
+   │  reason)         ▼                     ▼                                     ▼
+   └──────────────▶ cancelled            rejected                    shipped ──receive──▶ received ──receive──▶ closed
+                                                                                       │                     ▲
+                                                                                       └── short-close ──────┘
+```
+
+| Status | Meaning |
+|--------|---------|
+| **draft** | Branch is building it |
+| **submitted** | Waiting for a branch manager |
+| **approved** | Visible to the warehouse; not yet shipped |
+| **rejected** | Manager rejected it (terminal) |
+| **fulfilling** | Partly shipped; warehouse remainder still open |
+| **shipped** | Warehouse done (fully issued or short-closed) |
+| **received** | Partly arrived; branch remainder still open |
+| **closed** | Branch done (fully received or short-closed) |
+| **cancelled** | Voided before any goods issue |
+
+---
+
+## 12. What you cannot do here
+
+- See the supplier **cost** from a branch account (selling prices only).
+- See the **exact** warehouse stock from a branch account (hint only).
+- Approve as an **operator**, or approve over your **manager cap**.
+- Request an **inactive** item, or a line with **no wholesale price**, or the **same item twice** on one request.
+- Edit a request after **submit**.
+- **Issue** more than on-hand or more than the request's remaining.
+- **Receive** more than was shipped.
+- **Cancel** a request after goods have been issued (short-close instead).
+- Short-close as an **operator** (either side).
+- Adjust branch stock unless you are the branch **admin**.
+
+---
+
+## 13. Dates, timezone, language & theme
+
+Same as the other consoles:
+
+- **Dates:** DD/MM/YYYY, 24-hour time (e.g. `20/08/2026 14:05`).
+- **Timezone:** your local time (new users default to **Europe/Lisbon**).
+- **Language:** English / Português (top-right; remembered).
+- **Theme:** light / dark (top-right; remembered).
+
+---
+
+## 14. Related consoles
+
+- [Item Console](01-items.md) — where the warehouse manages the catalogue (items, families, suppliers, prices).
+- [Purchase Orders](02-purchase-orders.md) — how the warehouse restocks from suppliers.
+- [Goods receipt & stock](03-goods-receipts.md) — booking supplier deliveries into central stock.
+
+---
+
+## 15. FAQ
+
+**Q1. Why can't I see the cost price in the branch catalogue?**
+Deliberate. Branches see selling prices only; supplier cost is warehouse-confidential. If you need a price you can't see, ask the warehouse.
+
+**Q2. The catalogue says "None" for an item — can I still request it?**
+Yes, but the warehouse will have to **procure it first** (a purchase order to a supplier). Your request waits until stock exists, then it ships.
+
+**Q3. Why was my line rejected?**
+The three rules: the item must have a **wholesale price**, it must be **active**, and it must not already be on the request. Check which one applies.
+
+**Q4. I approved a request and the prices changed later — did my request change?**
+No. Approving **freezes** the totals (wholesale + VAT snapshot). Later price changes don't touch an approved request.
+
+**Q5. The warehouse shipped less than I asked — what do I do?**
+Confirm the **received quantity** that actually arrived at `/branch/receipts/`. If the rest won't come, a **manager/admin** short-closes it. The request then closes.
+
+**Q6. I can't see "Approve" — why?**
+You're an **operator** (operators never approve), or the request isn't **submitted**. Ask a manager, or submit first.
+
+**Q7. I can't see "Short close" — why?**
+Short-close is manager/admin only, on both the warehouse and branch side.
+
+**Q8. Can I request the same item twice?**
+No — one line per item per request. **Edit** the line's quantity instead of adding a second line.
+
+**Q9. My branch login says "no active branch access" — what's wrong?**
+Head office hasn't assigned you to a branch (or your branch is inactive). Contact your administrator — branch access is set up in Django `/admin/`, not by you.
+
+**Q10. What does "gross" mean on the approve button?**
+The request's total **including VAT** (wholesale × quantity, plus VAT). That's the figure your approval cap is measured against.
+
+**Q11. Why can't I cancel an approved request after the warehouse shipped?**
+Stock is already in motion. After the first goods issue the only way to finish early is **short-close** (warehouse side) or **branch short-close** (branch side).
+
+**Q12. How is branch stock different from warehouse stock?**
+Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it.

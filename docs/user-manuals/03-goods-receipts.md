@@ -2,7 +2,7 @@
 
 **The Goods receipt console** · Version 1.0 · For warehouse staff (admin / manager / operator)
 
-> **Also available:** the [Item Console manual](01-items.md) and the [Purchase Orders manual](02-purchase-orders.md).
+> **Also available:** the [Item Console manual](01-items.md), the [Purchase Orders manual](02-purchase-orders.md), the [Branches & Requisição interna manual](04-internal-requests.md), the [Edge cases & limits](05-edge-cases-and-limits.md) reference, and the [Admin & Superuser Reference](06-admin-reference.md).
 
 ---
 
@@ -93,7 +93,7 @@ The receipts list is a log. There is no “open / edit” drawer on a receipt ro
 | Column | Meaning |
 |--------|---------|
 | **Item** | Internal code — description |
-| **Type** | Receipt / Adjustment (and later: goods issue, initial) |
+| **Type** | Receipt / Adjustment / Goods issue |
 | **Quantity** | Signed amount (`+10` in, `−2` out) |
 | **Reference** | For a receipt: `GR #12` and the delivery-note text if you entered one |
 | **Reason** | Filled on adjustments |
@@ -164,8 +164,7 @@ This table is the audit trail for quantity.
 |------|-----------------|----------|
 | **Receipt** (*Receção*) | You booked in a goods receipt | Positive (`+`) |
 | **Adjustment** (*Ajuste*) | An admin used **Adjust stock** | Positive or negative |
-| **Goods issue** (*Saída de mercadoria*) | Not used yet (future: shipping to a branch) | — |
-| **Initial** (*Inicial*) | Not used yet | — |
+| **Goods issue** (*Saída de mercadoria*) | A branch request was shipped (see the [branches manual](04-internal-requests.md)) | Negative (`−`) |
 
 Filter by item when you are investigating one product. A receipt movement’s **Reference** column points back to the GR (`GR #4 — DN-001`).
 
@@ -196,7 +195,7 @@ Managers and operators do not see this button. If a count is wrong, ask an admin
 - Receive more than the remaining ordered quantity.
 - Type stock on the item form in the item console — that field is not editable there.
 - Edit or delete a goods receipt after it is saved.
-- Issue stock to a branch (not built yet).
+- Issue stock to a branch from here — that is done in the [Branches & Requisição interna manual](04-internal-requests.md).
 - Change selling prices or supplier costs — that stays in the [item console](01-items.md).
 
 ---

@@ -129,4 +129,4 @@ Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, n
 1. [`docs/handoff.md`](docs/handoff.md) — state + decisions + next task
 2. [`README.md`](README.md) — setup, URLs, seed
 3. [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) — phased plan
-4. [`docs/phase5-roadmap-260821-1618.md`](docs/phase5-roadmap-260821-1618.md) — Phase 5 roadmap; [`docs/archive/warehouse-tenancy-setup.md`](docs/archive/warehouse-tenancy-setup.md) is archived sketch only
+4. [`docs/archive/phase5-roadmap-260821-1618.md`](docs/archive/phase5-roadmap-260821-1618.md) — Phase 5 roadmap (archived); [`docs/archive/warehouse-tenancy-setup.md`](docs/archive/warehouse-tenancy-setup.md) is archived sketch only

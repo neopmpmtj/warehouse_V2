@@ -1,3 +1,6 @@
+> **✅ COMPLETE — Phase 5 shipped 21 Aug 2026 (Slices 1–6). This document is ARCHIVED.**
+> See `docs/handoff.md` for current state and next steps. (Archived to `docs/archive/` 21 Aug 2026.)
+
 # Phase 5 — Branches + Internal Request — Brainstorm
 
 > **Draft for discussion.** Created 21 Aug 2026, 15:30 WEST.  

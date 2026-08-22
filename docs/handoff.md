@@ -228,9 +228,9 @@ python manage.py runserver
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |
 | `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — concluded |
 | `docs/user-manuals/` | staff user manuals |
-| `docs/phase5-plan-260821-1756.md` | **Build spec** (locks 1–10) + proposed additions (A–D, §13) — read before Slice 1 |
-| `docs/phase5-roadmap-260821-1618.md` | **Step-by-step Phase 5 roadmap** — read when resuming |
-| `docs/phase5-brainstorm-260821-1530.md` | Brainstorm + **locked decisions** (A1–B8) |
+| `docs/archive/phase5-plan-260821-1756.md` | Phase 5 build spec (locks 1–10) — **archived** ✅ |
+| `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |
+| `docs/archive/phase5-brainstorm-260821-1530.md` | Phase 5 brainstorm + locked decisions (A1–B8) — **archived** ✅ |
 | `docs/future-enhancements-260821-1833.md` | Future nice-to-haves (E items + later ideas) — parking lot, not Phase 5 |
 | `docs/archive/warehouse-tenancy-setup.md` | **Archived** Branch/Membership sketch — superseded by brainstorm |
 | `products/products_docs/aux_instructions.md` | learning pace for agents (not live status) |

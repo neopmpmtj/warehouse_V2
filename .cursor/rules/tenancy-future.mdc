@@ -1,32 +1,10 @@
 ---
-description: Planned orders workflow — apply when designing order models, APIs, or offline sync
+description: Superseded — the orders workflow is built (Phase 5 complete). Historical only.
 alwaysApply: false
 ---
 
-# Orders (planned — not built)
+# Orders — superseded (Phase 5 complete) ⚠️ OBSOLETE
 
-**Do not start this work yet.** Phases 0–4 (through manager catalog) are done. Branch orders wait for Phase 5 (`branches` app + internal request). Stock already exists (goods receipt ledger); that is not a reason to start orders now.
+> **OBSOLETE.** This rule was the *planning* guidance for the branch/orders workflow. That work is now **done**: `branches` (`Branch` / `BranchMembership` / middleware / picker), `orders` (`InternalRequest`), warehouse goods issue, and branch receipt/stock are all built. Keep this file only as a historical reference; see `docs/handoff.md` for current state.
 
-The `branches` app is **not built**. Locked decisions: @docs/phase5-brainstorm-260821-1530.md (archived sketch: @docs/archive/warehouse-tenancy-setup.md)
-
-## Already in place (warehouse, not tenancy)
-
-- `accounts.User` — email login
-- Global `Item` catalogue (no `branch_id`)
-- Stock ledger: `StockMovement` + cached `Item.quantity`
-
-## Not in place (do not assume these exist)
-
-- `Branch`, `BranchMembership`
-- `branches/permissions.py`
-- `request.active_branch`
-
-## Order phase rules (when the phase actually starts)
-
-- Do **not** implement the historical `item_name` / `quantity` / `notes` stub in the tenancy doc
-- Every `Order` has required `branch` FK and `created_by` FK
-- Order lines should reference `Item` (snapshot description/price later)
-- Always query orders via branch-scoped manager (e.g. `.for_user_branches(user)`)
-- Role checks at view entry using future `branches/permissions.py`
-- Client-side order IDs for idempotent sync (offline retries)
-- Catalogue stays global (no `branch_id` on `Item`)
+Locked decisions (archived): `docs/archive/phase5-brainstorm-260821-1530.md` · archived sketch: `docs/archive/warehouse-tenancy-setup.md`.

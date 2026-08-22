@@ -7,17 +7,17 @@ alwaysApply: true
 
 ## Project
 
-Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. Phases 0–4 are done: catalogue + pricing + purchase orders + goods receipt + manager catalog. Branches, orders, offline, and email are later (deferred/pending).
+Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. Phases 0–5 are done: catalogue + pricing + purchase orders + goods receipt + manager catalog + branches/requisição/goods issue/branch receipt. Offline and email are later (deferred/pending).
 
 ## What exists today
 
 - `accounts` — custom User (email, timezone), warehouse groups, login
 - `products` — catalogue + selling prices + `SupplierItemPrice`, staff console `/manage/items/`, manager catalog `/manage/catalog/` (read-only stock + prices)
 - `procurement` — purchase orders at `/manage/purchase-orders/`
-- `inventory` — goods receipt + `StockMovement` ledger + cached `Item.quantity` at `/manage/goods-receipts/`
+- `inventory` — goods receipt + `StockMovement` ledger + cached `Item.quantity` at `/manage/goods-receipts/`; goods issue at `/manage/internal-requests/`; branch receipt + branch stock ledger (`BranchStockMovement` + `BranchItemStock`)
 - `logging_utils` — rotating logs in `logs/`
-- `branches` — **not built** (Phase 5 plan: [`docs/phase5-brainstorm-260821-1530.md`](docs/phase5-brainstorm-260821-1530.md))
-- `orders` — not built; wait until Phase 5
+- `branches` — tenancy (`Branch`, `BranchMembership`, picker, `/branch/catalog/`) — **built** (Phase 5 ✅)
+- `orders` — internal request (requisição interna) — **built** (Phase 5 ✅)
 - Offline catalogue — **removed** (Phase 7 may re-add it)
 
 ## Non-negotiables
@@ -28,7 +28,7 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - Plain Django + plain JavaScript — no React/Vue
 - Incremental phases — no large application dumps
 - Do not implement the tenancy-doc `Order` stub (`item_name`)
-- Do not start branches, orders, offline, email, or shared chrome in passing
+- Do not start offline, email, or shared chrome in passing (Phase 5 is done)
 - Do not restyle `/` or polish the staff console unless that session is requested
 
 ## References
@@ -38,4 +38,4 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - @docs/PROJECT-PLAN.md — living plan: sequencing + status tracker + locked decisions (update every session)
 - @docs/archive/code-review-full-2026-08-21-1303.md — concluded 1303 review (N1–N12 applied; archived)
 - @docs/archive/code-review-full-2026-08-20-2208.md — concluded 2208 review (do not re-open)
-- @docs/phase5-brainstorm-260821-1530.md — Phase 5 locked decisions; @docs/archive/warehouse-tenancy-setup.md — archived sketch only
+- @docs/archive/phase5-brainstorm-260821-1530.md — Phase 5 locked decisions (archived); @docs/archive/warehouse-tenancy-setup.md — archived sketch only

@@ -1,6 +1,6 @@
 # Warehouse App — Multi-Tenancy & Role Setup Instructions
 
-> **Archived** 21 Aug 2026 — superseded by [`../phase5-brainstorm-260821-1530.md`](../phase5-brainstorm-260821-1530.md) §Locked decisions and [`../phase5-roadmap-260821-1618.md`](../phase5-roadmap-260821-1618.md). Kept for historical Branch/Membership sketch only. Live state: [`../handoff.md`](../handoff.md).
+> **Archived** 21 Aug 2026 — superseded by [`phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions and [`phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). Kept for historical Branch/Membership sketch only. Live state: [`../handoff.md`](../handoff.md).
 
 > **Phase 5 design — not built.** There is no `branches/` app in the repository. `accounts` (email login) **is** built. The catalogue lives at `/manage/items/`.
 

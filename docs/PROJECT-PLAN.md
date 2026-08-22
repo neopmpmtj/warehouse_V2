@@ -3,7 +3,7 @@
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
 - **Last updated:** 21 August 2026, 22:01 WEST
-- **Current phase:** Phase 5 **complete** ✅ — phases 0–5 done (**Slices 1–6**: tenancy + catalog + requisição + goods issue + branch receipt/stock + polish), full suite **378 tests green**. Decisions locked in [`docs/phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md); roadmap [`docs/phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Next:** Phase 6 — email automation. See [`docs/handoff.md`](handoff.md).
+- **Current phase:** Phase 5 **complete** ✅ — phases 0–5 done (**Slices 1–6**: tenancy + catalog + requisição + goods issue + branch receipt/stock + polish), full suite **378 tests green**. Decisions locked in [`docs/archive/phase5-brainstorm-260821-1530.md`](archive/phase5-brainstorm-260821-1530.md); roadmap [`docs/archive/phase5-roadmap-260821-1618.md`](archive/phase5-roadmap-260821-1618.md). **Next:** Phase 6 — email automation. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is **next** — see Phase 5 below.
 
 ## Status vocabulary
@@ -356,7 +356,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 
 ## 12. Phase 5 — Branches + internal request ✅
 
-**Status:** decisions locked 21 Aug 2026 — see [`phase5-brainstorm-260821-1530.md`](phase5-brainstorm-260821-1530.md) §Locked decisions and [`phase5-roadmap-260821-1618.md`](phase5-roadmap-260821-1618.md). **Build spec authored:** [`phase5-plan-260821-1756.md`](phase5-plan-260821-1756.md) (+ proposed additions A–D, §13). **Slices 1–6 ✅ done** — tenancy, branch catalog, requisição, warehouse goods issue, branch receipt + branch stock, and polish.
+**Status:** decisions locked 21 Aug 2026 — see [`archive/phase5-brainstorm-260821-1530.md`](archive/phase5-brainstorm-260821-1530.md) §Locked decisions and [`archive/phase5-roadmap-260821-1618.md`](archive/phase5-roadmap-260821-1618.md). **Build spec authored:** [`archive/phase5-plan-260821-1756.md`](archive/phase5-plan-260821-1756.md) (+ proposed additions A–D, §13). **Slices 1–6 ✅ done** — tenancy, branch catalog, requisição, warehouse goods issue, branch receipt + branch stock, and polish.
 
 - ✅ `branches` app: `Branch`, `BranchMembership` (`operator` / `manager` / `admin`), middleware, branch picker.
 - ✅ Branch catalog: read-only (cost hidden, stock **hint** only).
@@ -417,7 +417,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - [x] Tests
 
 ### Phase 5 / 6 / 7
-- [x] Phase 5 plan authored (`phase5-plan-260821-1756.md`)
+- [x] Phase 5 plan authored (`archive/phase5-plan-260821-1756.md` — archived)
 - [x] Phase 5 — branches + internal request (implementation; see roadmap slices)
   - [x] Slice 1 — tenancy (`branches` app, middleware, picker, admin, seed)
   - [x] Slice 2 — branch catalog (cost hidden, stock hint)
