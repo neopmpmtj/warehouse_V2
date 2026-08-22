@@ -39,6 +39,13 @@ def _json_error(message, status=400, code=None):
     return JsonResponse(payload, status=status)
 
 
+def _validation_error_response(exc, status=400):
+    if isinstance(exc, ValidationError):
+        message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+        return _json_error(message, status=status, code=getattr(exc, "code", None))
+    return _json_error(str(exc), status=status, code=getattr(exc, "code", None))
+
+
 def _decimal_string(value):
     return str(value)
 
@@ -131,7 +138,7 @@ def request_create(request):
     try:
         req = create_internal_request(branch, request.user, notes=data.get("notes", ""))
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"request": _serialize_request(req)}, status=201)
 
 
@@ -150,7 +157,7 @@ def request_update(request, request_id):
     try:
         req = update_internal_request(req, request.user, notes=data.get("notes"))
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"request": _serialize_request(req)})
 
 
@@ -167,7 +174,7 @@ def request_add_line(request, request_id):
             user=request.user,
         )
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"line": _serialize_line(line)}, status=201)
 
 
@@ -180,7 +187,7 @@ def request_update_line(request, request_id, line_id):
     try:
         line = update_line(line, request.user, quantity=data.get("quantity"))
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"line": _serialize_line(line)})
 
 
@@ -192,7 +199,7 @@ def request_remove_line(request, request_id, line_id):
     try:
         remove_line(line, request.user)
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"ok": True})
 
 
@@ -203,7 +210,7 @@ def request_submit(request, request_id):
     try:
         req = submit(req, request.user)
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"request": _serialize_request(req)})
 
 
@@ -217,7 +224,7 @@ def request_approve(request, request_id):
     try:
         req = approve(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"request": _serialize_request(req)})
 
 
@@ -231,7 +238,7 @@ def request_reject(request, request_id):
     try:
         req = reject(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"request": _serialize_request(req)})
 
 
@@ -243,7 +250,7 @@ def request_cancel(request, request_id):
     try:
         req = cancel(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"request": _serialize_request(req)})
 
 
@@ -356,7 +363,7 @@ def warehouse_request_issue(request, request_id):
             notes=str(data.get("notes", "")),
         )
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"goods_issue_id": goods_issue.id}, status=201)
 
 
@@ -373,7 +380,7 @@ def warehouse_request_short_close(request, request_id):
         data = _parse_body(request)
         req = short_close_issue(request_id, request.user, reason=str(data.get("reason", "")))
     except ValidationError as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"request": _serialize_warehouse_request(req)})
 
 
@@ -406,5 +413,5 @@ def branch_approval_limit_list(request):
             self_approval_limit=data.get("self_approval_limit"),
         )
     except (ValidationError, BranchApprovalLimit.DoesNotExist) as exc:
-        return _json_error(str(exc), status=400, code=getattr(exc, "code", None))
+        return _validation_error_response(exc)
     return JsonResponse({"branch_approval_limit": _serialize_branch_approval_limit(limit)})

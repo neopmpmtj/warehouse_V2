@@ -38,6 +38,7 @@ from products.services import (
     InactiveItemError,
     InactiveSupplierError,
     InvalidCostPriceError,
+    InvalidInternalCodeError,
     InvalidReorderLevelError,
     InvalidSellingPriceError,
     InvalidSupplierEmailError,
@@ -247,6 +248,45 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
                 description="Second",
                 internal_code="case-1",
             )
+
+    def test_internal_code_format_rejects_spaces_and_symbols(self):
+        for internal_code in ("ABC DEF", "CEM@50", "code#1"):
+            with self.subTest(internal_code=internal_code):
+                with self.assertRaises(InvalidInternalCodeError):
+                    validate_internal_code_available(internal_code)
+
+                with self.assertRaises(InvalidInternalCodeError):
+                    create_item(
+                        self.user,
+                        family=self.family,
+                        description="Invalid code item",
+                        internal_code=internal_code,
+                        unit_of_measure=Item.UnitOfMeasure.PIECE,
+                        vat_rate=self.vat_rate,
+                    )
+
+    def test_internal_code_format_accepts_valid_codes(self):
+        for internal_code in ("", "CEM-50", "CEM_50", "abc123", "CABLE-2.5", "PIPE.20"):
+            with self.subTest(internal_code=internal_code):
+                item = create_item(
+                    self.user,
+                    family=self.family,
+                    description=f"Item {internal_code or 'no-code'}",
+                    internal_code=internal_code,
+                    unit_of_measure=Item.UnitOfMeasure.PIECE,
+                    vat_rate=self.vat_rate,
+                )
+                self.assertEqual(item.internal_code, internal_code)
+
+    def test_update_item_rejects_invalid_internal_code_format(self):
+        item = self.create_test_item(
+            self.user,
+            description="Existing",
+            internal_code="VALID-1",
+        )
+
+        with self.assertRaises(InvalidInternalCodeError):
+            update_item(self.user, item, internal_code="BAD CODE")
 
     def test_update_item_rejects_duplicate_internal_code(self):
         self.create_test_item(
@@ -1073,6 +1113,26 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
             item.change_logs.latest("created_at").reason,
             "Corrected label",
         )
+
+    def test_console_api_rejects_invalid_internal_code_format(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps({
+                "family_id": self.family.id,
+                "description": "Bad code item",
+                "unit_of_measure": Item.UnitOfMeasure.KG,
+                "internal_code": "BAD CODE",
+                "vat_rate_id": self.vat_rate.id,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertEqual(payload["code"], "invalid_internal_code")
+        self.assertFalse(Item.objects.filter(description="Bad code item").exists())
 
     def test_staff_can_deactivate_through_console_api(self):
         item = self.create_test_item(self.staff_user, description="To hide")

@@ -145,6 +145,24 @@
                 }).catch(showError);
             }
 
+            function afterAction(message) {
+                return load().then(function () {
+                    var stillOpen = state.issues.some(function (issue) {
+                        return issue.id === state.selectedId;
+                    });
+                    if (!stillOpen) {
+                        state.selectedId = null;
+                        lineBody.textContent = "";
+                        detailTitle.textContent = "Dispatch";
+                        renderList();
+                        banner.textContent = message;
+                        banner.hidden = false;
+                        return;
+                    }
+                    select(state.selectedId);
+                });
+            }
+
             function receive() {
                 clearError();
                 var lines = [];
@@ -153,7 +171,8 @@
                 });
                 if (!lines.length) { showError("Enter at least one received quantity."); return; }
                 api("/api/branch/receipts/issues/" + state.selectedId + "/receive/", "POST", { lines: lines })
-                    .then(function () { return load().then(function () { select(state.selectedId); }); }).catch(showError);
+                    .then(function () { return afterAction("Receipt recorded."); })
+                    .catch(showError);
             }
 
             function shortClose() {
@@ -161,7 +180,8 @@
                 var reason = prompt("Reason for short-close:");
                 if (reason === null) return;
                 api("/api/branch/receipts/issues/" + state.selectedId + "/short-close/", "POST", { reason: reason })
-                    .then(function () { return load().then(function () { select(state.selectedId); }); }).catch(showError);
+                    .then(function () { return afterAction("Request closed."); })
+                    .catch(showError);
             }
 
             function adjust() {

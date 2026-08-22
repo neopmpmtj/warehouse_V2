@@ -692,10 +692,20 @@ class GoodsIssueTests(TestCase):
         with self.assertRaises(services.InsufficientStockError):
             services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
 
-    def test_short_close_requires_reason_and_marks_shipped(self):
+    def test_short_close_from_approved_without_dispatch_closes(self):
         req, line = self._approved_request("10")
         with self.assertRaises(ValidationError):
             services.short_close_issue(req, self.admin, reason="")
+        req = services.short_close_issue(req, self.admin, reason="cannot supply")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+        self.assertFalse(GoodsIssue.objects.filter(internal_request=req).exists())
+
+    def test_short_close_from_fulfilling_marks_shipped(self):
+        req, line = self._approved_request("10")
+        services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
         req = services.short_close_issue(req, self.admin, reason="short shipment")
         req.refresh_from_db()
         self.assertEqual(req.status, InternalRequest.Status.SHIPPED)

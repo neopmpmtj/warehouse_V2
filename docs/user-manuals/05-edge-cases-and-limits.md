@@ -28,6 +28,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | Message (exact) | Why it appears | What to do |
 |-----------------|----------------|------------|
 | `Internal code "X" is already used by another item.` | Internal codes are unique, **case-insensitive** (empty is allowed, but non-empty can't repeat) | Use a different code (or leave it blank) |
+| `Internal code may only contain letters, digits, dots, hyphens, and underscores.` | The code contains a **space** or a **disallowed character** (only `A–Z`, `a–z`, `0–9`, `.`, `-`, `_` are allowed) | Fix the code (e.g. `CEM-50`, `CABLE-2.5`) or leave it blank |
 | `Family name "X" is already used.` | Family names are unique, case-insensitive | Use another name |
 | `Supplier name "X" is already used.` | Supplier names are unique, case-insensitive | Use another name |
 | `Family name is required.` / `Supplier name is required.` / `Description is required.` | Required field empty | Fill it in |
@@ -152,6 +153,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | **Discounts** (commercial / financial / rappel) | `Decimal(5,2)` | each `0–100`; **combined ≤ 100** | percentages |
 | **VAT rate** | `Decimal(5,4)` | fraction `0 … 1` | e.g. `0.16` = 16% |
 | **Reorder level** | `Decimal(12,3)` | `≥ 0` | 0 = "no reorder trigger" |
+| **Internal code** | `CharField` max **64** | empty allowed; if set: letters, digits, `.`, `-`, `_` only | unique, case-insensitive |
 | **Reason / notes (reason fields)** | `CharField` / `TextField` | reason ≤ **255 chars** | over-long reason rejected |
 | **Email** | `EmailField` | valid email | supplier & user |
 | **Stock balances** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | can't go negative |
@@ -179,11 +181,11 @@ draft ──submit──▶ submitted ──approve──▶ approved ──rece
 
 ```text
 draft ──submit──▶ submitted ──approve──▶ approved ──issue──▶ fulfilling ──issue──▶ shipped
-  │                  │                     │                                     │
-  │ cancel           └─reject (reason)     └─cancel (reason, no issue yet)        │
-  ▼                                       │                                     ▼
-cancelled                                cancelled                    shipped ──receive──▶ received ──receive──▶ closed
-                                                                                      │                     ▲
+  │                  │                     │              │                         │
+  │ cancel           └─reject (reason)     └─cancel       └─wh short-close          │
+  ▼                                       │   (no dispatch)│                         ▼
+cancelled                                cancelled         ▼               shipped ──receive──▶ received ──receive──▶ closed
+                                                          closed                      │                     ▲
                                                                                       └── short-close ──────┘
 ```
 
@@ -196,7 +198,7 @@ cancelled                                cancelled                    shipped �
 
 | Side | Who | Effect |
 |------|-----|--------|
-| Warehouse (`/manage/internal-requests/`) | Manager grade 2+ / admin, reason | unshipped remainder written off → **shipped** |
+| Warehouse (`/manage/internal-requests/`) | Manager grade 2+ / admin, reason | **No dispatch yet** (`approved`, zero issued) → **closed**. **Partial issue** (`fulfilling`) → unshipped remainder written off → **shipped** |
 | Branch (`/branch/receipts/`) | Manager / admin, reason | unreceived remainder written off → **closed** |
 
 **No cancel after the first goods issue** — short-close only.
@@ -279,6 +281,10 @@ These are deliberate deferrals — ask before assuming they exist:
 - Item inactive / family inactive / supplier inactive → reactivate.
 - Wholesale = 0 (requisição) / no supplier price (PO) → fix pricing.
 - Duplicate item on the document → edit the existing line.
+
+**"My internal code was rejected."**
+- Spaces or symbols (e.g. `@`, `#`) → use only letters, digits, `.`, `-`, `_`.
+- Code already used (case-insensitive) → pick another or leave blank.
 
 **"I got 'insufficient stock'."**
 - Issue: on-hand is less than requested → procure (PO → goods receipt) first.

@@ -140,7 +140,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 
 | Field | Required | Notes |
 |-------|:---:|-------|
-| **Internal code** | No | Your own reference, e.g. `CEM-50`. Must be unique (case-insensitive). |
+| **Internal code** | No | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). If set, only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. |
 | **Description** | Yes | What the item is. |
 | **Family** | Yes | The group it belongs to (see §7). |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
@@ -306,6 +306,9 @@ It's removed from the active list but **not deleted** — its history is preserv
 
 **Q9. Can two items have the same internal code?**
 No — internal codes are unique (case-insensitive). You'll get an error if you try to reuse one.
+
+**Q10. What characters can I use in an internal code?**
+Letters (`A–Z`, `a–z`), digits (`0–9`), dots (`.`), hyphens (`-`), and underscores (`_`) only — for example `CEM-50`, `CABLE-2.5`, or `TIMBER_2X4`. Spaces and symbols such as `@` or `#` are rejected. The code can be left blank when creating an item; if you enter one, it must follow this rule.
 
 ---
 

@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
@@ -33,11 +34,22 @@ ITEM_UPDATABLE_FIELDS = (
 )
 
 
+INTERNAL_CODE_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+
+
 class DuplicateInternalCodeError(ValidationError):
     def __init__(self, internal_code):
         super().__init__(
             f'Internal code "{internal_code}" is already used by another item.',
             code="duplicate_internal_code",
+        )
+
+
+class InvalidInternalCodeError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Internal code may only contain letters, digits, dots, hyphens, and underscores.",
+            code="invalid_internal_code",
         )
 
 
@@ -176,11 +188,20 @@ def _serialize_value(value):
 
 
 def _normalize_internal_code(internal_code):
-    return internal_code.strip()
+    return (internal_code or "").strip()
+
+
+def validate_internal_code_format(internal_code):
+    internal_code = _normalize_internal_code(internal_code)
+    if not internal_code:
+        return internal_code
+    if INTERNAL_CODE_PATTERN.fullmatch(internal_code) is None:
+        raise InvalidInternalCodeError()
+    return internal_code
 
 
 def validate_internal_code_available(internal_code, exclude_item_id=None):
-    internal_code = _normalize_internal_code(internal_code)
+    internal_code = validate_internal_code_format(internal_code)
     if not internal_code:
         return
 

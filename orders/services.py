@@ -38,6 +38,7 @@ STATUS_TRANSITIONS = {
         InternalRequest.Status.CANCELLED,
         InternalRequest.Status.FULFILLING,
         InternalRequest.Status.SHIPPED,
+        InternalRequest.Status.CLOSED,
     },
     InternalRequest.Status.FULFILLING: {
         InternalRequest.Status.SHIPPED,

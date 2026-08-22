@@ -1,0 +1,33 @@
+---
+description: Update user manuals when behaviour, constraints, or validation rules change
+alwaysApply: true
+---
+
+# User manual updates
+
+When you change **application behaviour**, **validation constraints**, **error messages**, **state-machine rules**, or **management-command semantics**, update the matching docs in the same session — do not defer.
+
+## Where to document
+
+| Change type | Primary manual | Also check |
+|-------------|----------------|------------|
+| Item console, catalogue, families, suppliers, prices | [`docs/user-manuals/01-items.md`](docs/user-manuals/01-items.md) | [`05-edge-cases-and-limits.md`](docs/user-manuals/05-edge-cases-and-limits.md) §2.1, §3 |
+| Purchase orders | [`02-purchase-orders.md`](docs/user-manuals/02-purchase-orders.md) | §2.2, §4.1 |
+| Goods receipt, issue, stock | [`03-goods-receipts.md`](docs/user-manuals/03-goods-receipts.md) | §2.3 |
+| Branches, requisição | [`04-internal-requests.md`](docs/user-manuals/04-internal-requests.md) | §2.4 |
+| New/changed error messages or numeric limits | [`05-edge-cases-and-limits.md`](docs/user-manuals/05-edge-cases-and-limits.md) | domain manual above |
+| Roles, admin, seed users | [`06-admin-reference.md`](docs/user-manuals/06-admin-reference.md) | — |
+
+## What to include
+
+- **Field rules:** allowed charset, required/optional, min/max, uniqueness.
+- **Error messages:** exact server text (or console i18n EN string) in the §2 tables.
+- **Workflow changes:** steps users take in the console (not just code paths).
+- **FAQ:** add or extend a question when staff are likely to hit the constraint.
+
+Keep prose aligned with existing manual tone (warehouse staff, EN; mirror key constraints in pt-PT console strings where relevant).
+
+## Out of scope
+
+- Internal dev docs (`docs/handoff.md`, `PROJECT-PLAN.md`) — update separately per session handoff rules.
+- Changes with **no user-visible effect** (refactors, logging only).

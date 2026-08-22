@@ -259,6 +259,8 @@ class InternalRequestApiTests(TestCase):
         self._post_json(reverse("request_add_line", args=[req_id]), {"item_id": self.item.id, "quantity": "1"})
         r = self._post_json(reverse("request_add_line", args=[req_id]), {"item_id": self.item.id, "quantity": "1"})
         self.assertEqual(r.status_code, 400)
+        self.assertIn("already has a line", r.json()["error"])
+        self.assertNotIn("[", r.json()["error"])
 
 
 class WarehouseConsoleTests(TestCase):

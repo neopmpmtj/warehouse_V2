@@ -18,6 +18,7 @@ from .models import (
 from .services import (
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    InvalidInternalCodeError,
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
@@ -263,7 +264,7 @@ class ItemAdmin(admin.ModelAdmin):
                     reason=reason,
                 )
                 obj.pk = created.pk
-        except DuplicateInternalCodeError as exc:
+        except (DuplicateInternalCodeError, InvalidInternalCodeError) as exc:
             raise ValidationError({"internal_code": exc.messages[0]}) from exc
 
         obj.refresh_from_db()

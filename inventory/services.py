@@ -549,8 +549,14 @@ def issue_goods(request, lines, user, reference="", notes=""):
 
 @transaction.atomic
 def short_close_issue(request, user, reason=""):
-    """Warehouse short-close: write off the unshipped remainder and mark shipped."""
-    from orders.services import mark_shipped
+    """Warehouse short-close: write off the unshipped remainder.
+
+    When nothing was dispatched yet (still ``approved``), close the request
+    directly — there is no branch receipt path without a ``GoodsIssue``.
+    After a partial issue (``fulfilling``), mark ``shipped`` so the branch can
+    receive what was sent and short-close the remainder.
+    """
+    from orders.services import mark_closed, mark_shipped
 
     request = InternalRequest.objects.select_for_update().get(pk=_resolve_request(request).pk)
     if request.status not in (
@@ -566,7 +572,10 @@ def short_close_issue(request, user, reason=""):
             code="short_close_reason_required",
         )
 
-    request = mark_shipped(request, user, reason=reason)
+    if request.status == InternalRequest.Status.APPROVED:
+        request = mark_closed(request, user, reason=reason)
+    else:
+        request = mark_shipped(request, user, reason=reason)
     logger.info(
         "Short-closed request id=%s user=%s",
         request.id,

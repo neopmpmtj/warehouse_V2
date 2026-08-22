@@ -202,7 +202,12 @@ Issuing **decrements central stock** immediately.
 
 ### 7.2 Warehouse short-close
 
-If you can't (or won't) ship the rest, click **Short close** and give a **reason**. The unshipped remainder is written off and the request becomes **shipped**. Only a **manager grade 2+ or admin** can do this.
+If you can't (or won't) ship the rest, click **Short close** and give a **reason**. The unshipped remainder is written off.
+
+- If **nothing was dispatched yet** (request still **approved**), the request becomes **closed** — there is nothing for the branch to receive.
+- If you already **partially issued** goods (request **fulfilling**), the request becomes **shipped** so the branch can receive what was sent and short-close any remainder.
+
+Only a **manager grade 2+ or admin** can do this.
 
 > 📷 **[SCREENSHOT — warehouse queue with issue quantities]**
 

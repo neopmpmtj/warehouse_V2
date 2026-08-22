@@ -25,6 +25,7 @@ from .services import (
     DeactivateReasonRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    InvalidInternalCodeError,
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
@@ -368,8 +369,8 @@ def manage_item_list(request):
             else "0",
             reason=str(payload.get("reason", "")),
         )
-    except DuplicateInternalCodeError as exc:
-        return _json_error(exc.messages[0])
+    except (DuplicateInternalCodeError, InvalidInternalCodeError) as exc:
+        return _json_error(exc.messages[0], code=exc.code)
     except (ValidationError, ObjectDoesNotExist, ValueError, TypeError) as exc:
         message = exc.messages[0] if isinstance(exc, ValidationError) and getattr(exc, "messages", None) else str(exc)
         return _json_error(message)
@@ -424,8 +425,8 @@ def manage_item_detail(request, item_id):
             reason=str(payload.get("reason", "")),
             **fields,
         )
-    except DuplicateInternalCodeError as exc:
-        return _json_error(exc.messages[0])
+    except (DuplicateInternalCodeError, InvalidInternalCodeError) as exc:
+        return _json_error(exc.messages[0], code=exc.code)
     except (ValidationError, ObjectDoesNotExist, ValueError, TypeError) as exc:
         message = exc.messages[0] if isinstance(exc, ValidationError) and getattr(exc, "messages", None) else str(exc)
         return _json_error(message)
