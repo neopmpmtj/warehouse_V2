@@ -1,0 +1,19 @@
+{
+  "name": "CentCompras (Django 6.1 + PostgreSQL)",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "django-runserver",
+      "command": "cd /workspace && .venv/bin/python manage.py runserver 0.0.0.0:8000",
+      "description": "Django development server for the CentCompras warehouse app on port 8000."
+    }
+  ],
+  "ports": [
+    {
+      "name": "django",
+      "port": 8000
+    }
+  ]
+}
