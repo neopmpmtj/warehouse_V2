@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 21 August 2026, 22:01 WEST.
+> **Read this first when resuming work.** Last updated: 22 August 2026, 11:30 WEST.
 
 ---
 
@@ -14,23 +14,48 @@
 | **3 — Goods receipt + stock ledger** | ✅ **Done** |
 | **4 — Manager catalog (stock + price view)** | ✅ **Done** |
 | 5 — Branches + internal request | ✅ **Done** |
-| 6 — Email automation | 🔜 Next (stub exists) |
+| 5+ — Item `internal_code` constraints (plan) | 🔵 **Phase 1 done** · **Phase 2 next** |
+| 6 — Email automation | ⏸ After internal_code Phase 2 |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5 are complete.** Phase 5 decisions are **locked**; **Slices 1–6 are done** (tenancy, branch catalog, requisição interna, warehouse goods issue, branch receipt + branch stock, and polish). Phase 6 (email automation) is next. Phase 7 stays future.
+**Phases 0–5 are complete.** This session added **item `internal_code` format validation (Phase 1)** and fixed three requisição/receipt bugs. **Next session: Phase 2 of [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md)** — immutability after first save, mandatory Genesis, qualification gates. Phase 6 (email) stays queued after that.
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Phases 0–4 are stable; the full suite is green (378 tests).**
-
-**Next task:** **Phase 6 — email automation** — wire the notify stubs to real email (SMTP/provider), templates EN + pt-PT. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13. L13 (login rate limiting) stays deferred — production-only.
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Full suite green (383 tests).**
 
 ---
 
 ## Next session — do this
 
-1. **Next task:** **Phase 6 — email automation** — wire the notify stubs (`notify_supplier_on_approval`, and the request/issue/receipt events) to real email. **Phase 5 is complete** (Slices 1–6: tenancy, catalog, requisição, goods issue, branch receipt + stock, polish). M7 (console pagination) is done.
-2. **Review backlog is cleared** — all N1–N12 items in the 1303 review are fixed and the review is archived. Do **not** treat it as a work queue.
-3. **Do not re-implement 2208** — H1–H3, M1–M6, M8–M10, L1–L12, L14 are done; L13 (login rate limiting) is the only one still open (production-only, deferred).
-4. **Do not start** orders, offline, shared chrome, or Phase 6 email without a plan. If the test DB goes stale after a schema change, recreate it **without** `--keepdb`.
+1. **Execute internal_code Phase 2** — see [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md):
+   - `internal_code` **immutable** after first successful Save (allow **set-if-empty once** for legacy inactive rows — recommended).
+   - **Mandatory Genesis** in the same atomic create flow (no orphan inactive items).
+   - Genesis qualification: `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`, `retail_price > 0`.
+   - Console UI: required code on new item; read-only when editing; update user manuals (rule: `.cursor/rules/user-manuals.mdc`).
+2. **Then** Phase 6 — email automation (wire notify stubs; templates EN + pt-PT). See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
+3. **Review backlog is cleared** — do **not** treat 1303 or 2208 archives as work queues.
+4. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred — see plan advisory).
+5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+
+---
+
+## This session (22 Aug 2026) — landed
+
+### Item `internal_code` — Phase 1 ✅
+
+- Service: `InvalidInternalCodeError`; format `^[A-Za-z0-9._-]+$` (letters, digits, **dots**, hyphens, underscores); empty still allowed until Phase 2.
+- Console API returns `code: "invalid_internal_code"`; admin + i18n + HTML `pattern` on the item form.
+- User manuals updated: [`docs/user-manuals/01-items.md`](user-manuals/01-items.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md).
+- New agent rule: [`.cursor/rules/user-manuals.mdc`](../.cursor/rules/user-manuals.mdc) — update manuals when constraints/behaviour change.
+
+### Requisição / receipt bug fixes ✅
+
+| Bug | Fix |
+|-----|-----|
+| `str(ValidationError)` → quoted list in branch/warehouse order APIs | `orders/console_views.py`: `_validation_error_response()` uses `exc.messages[0]` |
+| Branch receipts false “Goods issue not found” after full receive/short-close | `branch_receipts.html`: clear detail panel when dispatch drops off the open list |
+| Warehouse short-close on `approved` with zero dispatch left request stuck in `shipped` | `short_close_issue`: `approved` → **closed**; `fulfilling` → **shipped**; added `approved → closed` transition |
+
+Docs: [`docs/user-manuals/04-internal-requests.md`](user-manuals/04-internal-requests.md) §7.2, [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md) §4.2.
 
 ---
 
@@ -85,7 +110,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D7 | PO status: `draft → submitted → approved/rejected → received → closed` |
 | D8 | Rappel = simple per-line % for now |
 | D9 | Email = stub (`notify_supplier_on_approval`), deferred to Phase 6 |
-| D10 | Branches **not built yet** — keep `Item` global (no `branch_id`); Phase 5 plan in progress |
+| D10 | Branches **built** (Phase 5 ✅) — `Item` stays global (no `branch_id`); `branches` + `orders` + branch receipt/stock live |
 | D11 | `primary` = preferred supplier; auto-suggested later; always overridable |
 | D12 | **B-hard:** a PO line is **rejected** if the PO's supplier has no price for the item (no fallback to another supplier's price) |
 | D13 | **Approved totals snapshot:** `approved_net`/`approved_vat`/`approved_gross` stored once at `approve()` (frozen financial record; lines stay computed) |
@@ -105,6 +130,9 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D27 | **Login rate limiting is a pre-production blocker** — deferred (`django-axes` or proxy); documented in `settings.example.py` |
 | D28 | **Money rounding:** `ROUND_HALF_UP` (half away from zero). Unit costs → 4 dp first, then monetary amounts (net / vat / gross) → 2 dp. Implemented via `procurement.models.round_money`; the future `orders` app must reuse it |
 | — | Dates DD/MM/YYYY (24h); per-user timezone (default `Europe/Lisbon`); EN + pt-PT |
+| D29 | **`internal_code` charset** (Phase 1 ✅): if set, only `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. Phase 2 pending: immutability after first save, mandatory Genesis, `retail_price > 0` on create |
+| D30 | **Server-side item drafts** | **Deferred** — try localStorage autosave first if staff report lost forms; see plan advisory |
+| D31 | **Warehouse short-close** | `approved` + zero dispatch → **closed**; `fulfilling` (partial issue) → **shipped** for branch receipt path |
 
 ---
 
@@ -162,11 +190,11 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 21 Aug 2026, 21:06 WEST)
+## Git (as of 22 Aug 2026, 11:30 WEST)
 
-- Branch: **`phase5-branches`**. Slices 1 (tenancy), 2 (branch catalog), 3 (requisição), 4 (goods issue), and 5 (branch receipt + stock) are committed here; `main` tracks `origin/main`.
-- The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are committed on `main`. The 1303 review is archived under `docs/archive/`.
-- Working tree has local `.venv` noise — do **not** commit `.venv` deletions.
+- Branch: **`phase5-branches`** (or current working branch). Phase 5 Slices 1–6 committed; session work includes internal_code Phase 1 + requisição bug fixes (may be uncommitted).
+- The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are on `main`. The 1303 review is archived under `docs/archive/`.
+- Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
 
@@ -176,7 +204,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput
 ```
 
-- Last full suite: **378 OK** without `--keepdb` (294 prior + 44 `branches` + 20 `orders` + 20 goods-issue/branch-receipt).
+- Last full suite: **383 OK** without `--keepdb` (includes internal_code format tests + short-close fixes).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -227,7 +255,8 @@ python manage.py runserver
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |
 | `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — concluded |
-| `docs/user-manuals/` | staff user manuals |
+| `docs/user-manuals/` | staff user manuals (update when constraints change — see `.cursor/rules/user-manuals.mdc`) |
+| `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | **Active plan** — Phase 1 ✅, Phase 2 🔜 next |
 | `docs/archive/phase5-plan-260821-1756.md` | Phase 5 build spec (locks 1–10) — **archived** ✅ |
 | `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |
 | `docs/archive/phase5-brainstorm-260821-1530.md` | Phase 5 brainstorm + locked decisions (A1–B8) — **archived** ✅ |

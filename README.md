@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 21 August 2026, 22:01 WEST.*
+*Last updated: 22 August 2026, 11:30 WEST.*
 
-**Phases 0–5 are done.** Phase 5 (branches + requisição + goods issue + branch receipt) is **complete**. Phase 6 (email automation) is next. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–5 are done.** **Next:** item `internal_code` **Phase 2** (Genesis lifecycle) — see [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](.cursor/plans/internal_code_format_rules_7862515a.plan.md). Phase 6 (email automation) follows. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — Phase 6: email automation.
+4. **Next:** [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](.cursor/plans/internal_code_format_rules_7862515a.plan.md) — **Phase 2** (internal_code immutability + mandatory Genesis). Then [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — Phase 6: email automation.
 
 ---
 
@@ -318,8 +318,8 @@ views (login required) → API + HTML
 
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
-- **Email automation** (Phase 6 — wire notify stubs to real email; Phase 5 is complete)
+- **Email automation** (Phase 6 — wire notify stubs to real email; after internal_code Phase 2)
 - **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
 - Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
-- Integration tests (unit suites are green, **294 tests**)
+- Integration tests (unit suites are green, **383 tests**)
 - Login rate limiting (pre-production blocker; documented in `settings.example.py`)

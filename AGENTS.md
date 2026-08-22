@@ -8,9 +8,9 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 
 **Done:** Auth (email + warehouse groups + per-user timezone), catalog management + audit, item console, **pricing** (selling prices + `SupplierItemPrice`), **purchase orders** (`procurement` app: lines, discounts, approval workflow, approved-totals snapshot, email stub), **goods receipt + stock ledger** (`inventory` app: `GoodsReceipt`/`GoodsReceiptLine`, `StockMovement` signed ledger, cached `Item.quantity`, `receive_goods()` + admin-only `adjust_stock()`), **manager catalog** (read-only `/manage/catalog/`), **branches tenancy + catalog + requisição + goods issue + branch receipt + polish — Slices 1–6 (Phase 5 complete)** (`branches` app: `Branch`/`BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, `/branch/catalog/` + API with cost hidden + stock hint, admin, seed, role-based post-login redirect; `orders` app: `InternalRequest` + lines, manager caps, branch workflow through `approved`; `inventory` `GoodsIssue` + `issue_goods`, `/manage/internal-requests/`, short-close, `/manage/branch-approval-limits/`, branch receipt + branch stock ledger: `BranchReceipt`/`BranchStockMovement`/`BranchItemStock`, `receive_at_branch`, `/branch/receipts/`, `adjust_branch_stock`; seed sample requisições + `04-internal-requests.md`), dev seed script.
 
-**Not done:** offline, shared chrome, branch phone UX, console polish, production OAuth/deployment.
+**Not done:** offline, shared chrome, branch phone UX, console polish, production OAuth/deployment, **item `internal_code` Phase 2** (Genesis lifecycle).
 
-**Next:** **Phase 6 — email automation** — wire the notify stubs to real email (SMTP/provider), templates EN + pt-PT. See [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13. Do **not** use tenancy-doc §6–7 Order stub.
+**Next:** **Item `internal_code` Phase 2** — immutability after first save, mandatory Genesis, qualification gates. Plan: [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](.cursor/plans/internal_code_format_rules_7862515a.plan.md). **Then Phase 6 — email automation** — wire the notify stubs to real email (SMTP/provider), templates EN + pt-PT. See [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13. Do **not** use tenancy-doc §6–7 Order stub.
 
 **Stock today:** `Item.quantity` is a cached balance written **only** via `StockMovement` (never typed directly); DB `CheckConstraint item_quantity_gte_zero`. Selling prices are **manual**; cost prices are **dynamic** from `SupplierItemPrice` (one `primary` per item, DB-enforced). PO lines are **rejected** if the supplier has no price for the item, or if the same item is added twice; `approved_net/vat/gross` are frozen at approval. Warehouse group assignment is exclusive and resets grade to 1. Approval uses grades + `ApprovalLimit` (EUR gross); reject/manual close/`adjust_stock` require a reason. Selling prices & `reorder_level` must be finite and ≥ 0 (DB `CheckConstraint`s); PO line quantity capped at 1e9; login rate limiting is a documented pre-production blocker (deferred).
 
@@ -98,6 +98,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 - **Always put a full timestamp (date + time) in document filenames** — e.g. `code-review-full-2026-08-20-1928.md` (format `YYYY-MM-DD-HHMM`). The timestamp makes the chronological order self-evident when many similarly-named docs accumulate.
 - Reviews/audits are worked to completion, marked done, then archived under `docs/archive/` — never left as a live backlog. Both the 2208 and 1303 reviews are concluded and archived.
 - [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) is the **living plan** (sequencing + status tracker + locked decisions) — tick its status tracker every session.
+- **End of session:** run slash command `/session-handoff` or skill `session-handoff` (`.cursor/skills/session-handoff/SKILL.md`) to sync handoff, PROJECT-PLAN, README, plans, and manuals.
 
 ## Commands
 

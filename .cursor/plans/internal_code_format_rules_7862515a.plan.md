@@ -35,7 +35,7 @@ isProject: false
 
 | Topic | Choice |
 |-------|--------|
-| Charset | Letters, digits, hyphen, underscore (`^[A-Za-z0-9_-]+$`) |
+| Charset | Letters, digits, dot, hyphen, underscore (`^[A-Za-z0-9._-]+$`) |
 | Draft mutability | Editable only in the **new-item form before first POST** |
 | Lock moment | **On first successful Save** (item row exists in DB) |
 | Genesis | **Mandatory** — cannot leave a new item inactive |

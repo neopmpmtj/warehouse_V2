@@ -2,9 +2,9 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 21 August 2026, 22:01 WEST
-- **Current phase:** Phase 5 **complete** ✅ — phases 0–5 done (**Slices 1–6**: tenancy + catalog + requisição + goods issue + branch receipt/stock + polish), full suite **378 tests green**. Decisions locked in [`docs/archive/phase5-brainstorm-260821-1530.md`](archive/phase5-brainstorm-260821-1530.md); roadmap [`docs/archive/phase5-roadmap-260821-1618.md`](archive/phase5-roadmap-260821-1618.md). **Next:** Phase 6 — email automation. See [`docs/handoff.md`](handoff.md).
-- **Scope of this plan:** the **warehouse products + procurement loop** (central warehouse only). Branch ordering is **next** — see Phase 5 below.
+- **Last updated:** 22 August 2026, 11:30 WEST
+- **Current phase:** Phase 5 **complete** ✅. **Interim next:** item `internal_code` **Phase 2** ([`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md)) — immutability + mandatory Genesis. **Then:** Phase 6 — email automation. Full suite **383 tests green**. See [`docs/handoff.md`](handoff.md).
+- **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Email and offline remain later phases.
 
 ## Status vocabulary
 
@@ -85,10 +85,10 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | Purchase order | `PurchaseOrder` + `PurchaseOrderLine` | exists (Phase 2) |
 | Receiving document | `GoodsReceipt` + `GoodsReceiptLine` | exists (Phase 3); "Receção de Mercadorias" (pt-PT) |
 | Stock movement | `StockMovement` (ledger) + cached quantity on `Item` | exists (Phase 3) |
-| Branch-side order | Internal request / "Requisição Interna" | future (Phase 5) |
+| Branch-side order | Internal request / "Requisição Interna" | ✅ Phase 5 |
 | Discounts | `discount_commercial` / `discount_financial` / `rappel` | on PO lines, simple % |
-| Manager view | Stock & price catalog (cost **visible**) | exists (Phase 4) |
-| Branch view | Branch catalog (cost **hidden**) | future (Phase 5) |
+| Manager view | Stock & price catalog (cost **visible**) | ✅ Phase 4 |
+| Branch view | Branch catalog (cost **hidden**) | ✅ Phase 5 |
 
 ---
 
@@ -107,7 +107,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D7 | Approval workflow | `draft → submitted → approved/rejected → received → closed`, plus **`cancelled`** (approved PO with zero receipts; required reason) |
 | D8 | Rappel | simple per-line % now; shape later |
 | D9 | Email automation | deferred to a **pending phase**; model a stub seam now |
-| D10 | Branches | **not now**; only keep products branch-ready |
+| D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
 | D13 | Approved totals snapshot | `approved_net` / `approved_vat` / `approved_gross` frozen at `approve()` |
@@ -126,6 +126,9 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D26 | Dashboard permission list | Shown only to superusers / `DEBUG` |
 | D27 | Login rate limiting | **Pre-production blocker** — deferred (`django-axes` or proxy) |
 | D28 | Money rounding | `ROUND_HALF_UP` (half away from zero) via `procurement.models.round_money` — unit costs to 4 dp first, then monetary amounts to 2 dp |
+| D29 | `internal_code` format (Phase 1 ✅) | If set: `A–Z` `a–z` `0–9` `.` `-` `_` only; max 64; unique case-insensitive. Phase 2 pending: lock on first save, mandatory Genesis, `retail_price > 0` |
+| D30 | Server-side item drafts | **Deferred** — localStorage autosave first if needed |
+| D31 | Warehouse short-close (zero dispatch) | `approved` with no `GoodsIssue` → **closed** (not `shipped`) |
 | O1 | Item-level buying-price display | **Option A** — `primary` flag (one per item); fall back to cheapest if none marked — **implemented** |
 
 ### Open ⚠️
@@ -140,7 +143,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (Aug 2026):** phases 0–5 complete; both review backlogs cleared (2208 P0–P4, 1303 N1–N12) and archived; M7 console pagination done; **Phase 5 complete (Slices 1–6)**; **378 tests green**. Remaining: Phase 6 (email), Phase 7 (mobile/offline/OAuth), and L13 (login rate limiting, production-only).
+**Current (Aug 2026):** phases 0–5 complete; both review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phase 1** done; **383 tests green**. **Next:** internal_code Phase 2, then Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -160,7 +163,8 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 3 | Goods receipt + stock ledger | ✅ Done | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ✅ Done | Phase 3 |
 | 5 | Branches + internal request + branch catalog | ✅ **Done** | Phase 4 |
-| 6 | Email automation (supplier notifications) | 🔜 Next | Phase 2 (stub) |
+| 5+ | Item `internal_code` constraints (Genesis lifecycle) | 🔵 **Phase 1 done** · Phase 2 next | Phase 5 |
+| 6 | Email automation (supplier notifications) | ⏸ After internal_code Phase 2 | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
 ---
@@ -365,6 +369,17 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - ✅ Branch receipt + branch stock ledger (`BranchReceipt` on `GoodsIssue`, `BranchStockMovement` + cached `BranchItemStock`).
 - **Not in Phase 5:** offline/sync (Phase 7), email notify (Phase 6), stock reservation (deferred), linked/auto PO (later slice).
 
+### 12.1 Item `internal_code` — catalogue constraints (interim) 🔵
+
+**Plan:** [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md)
+
+| Slice | Status | Scope |
+|-------|--------|--------|
+| **Phase 1** | ✅ Done | Format validation (`A–Z` `a–z` `0–9` `.` `-` `_`); API error codes; i18n; user manuals |
+| **Phase 2** | 🔜 **Next** | Lock `internal_code` on first save; mandatory Genesis (atomic create); qualification gates; console UI |
+
+**Phase 2 locked decisions:** draft = new-item form before first POST; Genesis requires `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`, `retail_price > 0`; server-side drafts **deferred**.
+
 ---
 
 ## 13. Phase 6 — Email automation (pending) ⏸
@@ -425,24 +440,26 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
   - [x] Slice 4 — goods issue
   - [x] Slice 5 — branch receipt + branch stock
   - [x] Slice 6 — polish + docs
+- [x] Item `internal_code` Phase 1 — format validation + manuals
+- [ ] Item `internal_code` Phase 2 — immutability + mandatory Genesis + qualification gates
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---
 
 ## 16. Out of scope (explicitly not now)
 
-- Branch app, internal request, branch catalog, branch tiered prices.
 - Offline order queue / sync; PWA; mobile packaging.
 - Google OAuth, public signup, password reset.
 - Categories, LLM/vector search, bulk import.
-- Real email sending.
+- Real email sending (Phase 6 — stub exists).
+- Server-side item draft rows (deferred; see plan § advisory).
 
 ---
 
 ## 17. Risks & notes
 
 1. **Cost-price ambiguity (O1)** — resolved: Option A (`primary` flag).
-2. **Docs drift** — live state is [`handoff.md`](handoff.md). `branches` and the offline catalogue are **not** in code.
+2. **Docs drift** — live state is [`handoff.md`](handoff.md). Update user manuals when changing constraints (`.cursor/rules/user-manuals.mdc`).
 3. **Rappel semantics** — simple % now may need rework if it becomes a true periodic accrual later.
 4. **Stock concurrency** — ledger + `select_for_update()` (existing pattern) avoids lost updates on concurrent receipts; keep this discipline.
 5. **Snapshot-on-line** — PO/GR lines must snapshot description, code, unit cost, VAT so later master-data edits don't rewrite history.
