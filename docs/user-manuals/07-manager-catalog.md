@@ -16,7 +16,7 @@ This is the warehouse **read-only** overview: stock, reorder level, selling pric
 >
 > *(During development on your own machine: `http://127.0.0.1:8000/manage/catalog/`)*
 
-Sign in with your warehouse email + password. The dashboard also lists this page as *manager catalog (stock + prices)*.
+Sign in with your warehouse email + password. The dashboard at `/` lists this page (and the other warehouse / branch consoles) as *manager catalog (stock + prices)*.
 
 Branch staff do **not** use this URL. They browse the [branch catalogue](04-internal-requests.md) at `/branch/catalog/` (cost hidden, stock as a hint only).
 

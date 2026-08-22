@@ -18,7 +18,7 @@
 | 6 — Email automation | 🔵 **Next** |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5 and item `internal_code` Phases 1–2 are complete.** This session shipped a **Settings gear + popover** on the four full-chrome manage pages (items, catalog, POs, goods receipts). **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5 and item `internal_code` Phases 1–2 are complete.** This session shipped a **Settings gear + popover** on the four full-chrome manage pages, and filled in **missing `/` dashboard links** (approval limits, internal requests, branch pages/APIs). **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
 **The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Full suite green (402 tests).**
 
@@ -35,6 +35,10 @@
 ---
 
 ## This session (22 Aug 2026, evening) — landed
+
+### Staff dashboard — missing page & API links ✅
+
+- `/` now lists approval limits, internal requests, branch approval limits, branch pages (`/branch/select|catalog|requests|receipts/`), catalog/approval/internal-request/branch APIs, and PO reopen/cancel.
 
 ### Manage header — Settings gear + popover ✅
 
@@ -227,7 +231,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput
 ```
 
-- Last full suite: **392 OK** without `--keepdb` (includes internal_code Phases 1–2 + short-close fixes).
+- Last full suite: **402 OK** with `--keepdb --noinput` (includes Settings gear header + earlier internal_code / short-close work).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
