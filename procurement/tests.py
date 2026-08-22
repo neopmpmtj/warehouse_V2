@@ -481,6 +481,23 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         return response.json()["purchase_order"]
 
+    def test_console_header_uses_settings_popover(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("purchase_order_console"), **self.host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="settings-toggle"')
+        self.assertContains(response, 'id="settings-popover"')
+        self.assertContains(response, 'id="language-select"')
+        self.assertContains(response, 'id="theme-toggle"')
+        self.assertContains(response, self.user.email)
+        self.assertContains(response, reverse("logout"))
+        self.assertRegex(
+            response.content.decode(),
+            r'id="settings-popover"[^>]*\bhidden\b',
+        )
+
     def test_admin_can_create_and_view_po(self):
         self.client.force_login(self.user)
 

@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 22 August 2026, 12:00 WEST.
+> **Read this first when resuming work.** Last updated: 22 August 2026, 19:15 WEST.
 
 ---
 
@@ -18,9 +18,9 @@
 | 6 — Email automation | 🔵 **Next** |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5 and item `internal_code` Phases 1–2 are complete.** This session shipped **format validation**, **Genesis lifecycle** (immutable code, mandatory atomic create, qualification gates), **three requisição/receipt bug fixes**, and the **`/session-handoff`** skill + slash command. **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5 and item `internal_code` Phases 1–2 are complete.** This session shipped a **Settings gear + popover** on the four full-chrome manage pages (items, catalog, POs, goods receipts). **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Full suite green (392 tests).**
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Full suite green (402 tests).**
 
 ---
 
@@ -34,7 +34,20 @@
 
 ---
 
-## This session (22 Aug 2026) — landed
+## This session (22 Aug 2026, evening) — landed
+
+### Manage header — Settings gear + popover ✅
+
+- Sticky header on `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`: left stays `CentCompras` + title; right is one gear button.
+- Click opens an anchored **popover** (not a drawer): signed-in email, language, theme toggle, Sign out.
+- Shared [`products/static/products/js/console_settings_menu.js`](../products/static/products/js/console_settings_menu.js); `data-i18n-aria` so i18n cannot wipe the SVG.
+- `/` and `/branch/…` unchanged.
+- Plan: [`.cursor/plans/manage_header_settings_popover_a1c3e7f2.plan.md`](../.cursor/plans/manage_header_settings_popover_a1c3e7f2.plan.md).
+- Manuals: [`01-items.md`](user-manuals/01-items.md), [`02-purchase-orders.md`](user-manuals/02-purchase-orders.md), [`03-goods-receipts.md`](user-manuals/03-goods-receipts.md), [`07-manager-catalog.md`](user-manuals/07-manager-catalog.md).
+
+---
+
+## Earlier today (22 Aug 2026) — already on main
 
 ### Item `internal_code` — Phase 1 ✅
 

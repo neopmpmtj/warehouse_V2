@@ -165,8 +165,13 @@ function applyStaticI18n() {
     document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
         node.setAttribute("placeholder", t(node.getAttribute("data-i18n-placeholder")));
     });
+    document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
+        node.setAttribute("aria-label", t(node.getAttribute("data-i18n-aria")));
+    });
     const themeButton = document.getElementById("theme-toggle");
-    themeButton.textContent = currentTheme() === "dark" ? t("themeLight") : t("themeDark");
+    if (themeButton) {
+        themeButton.textContent = currentTheme() === "dark" ? t("themeLight") : t("themeDark");
+    }
 }
 
 function setTheme(theme) {

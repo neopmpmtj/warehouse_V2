@@ -64,8 +64,7 @@ The screen is one page with a top bar, two action buttons, then two tables.
 
 **A. Top bar**
 - Title: **Goods receipt & stock** (*Receção de mercadorias e stock*)
-- Signed in as *you@company*
-- Language (English / Português), theme toggle, **Sign out**
+- **Settings** gear (top-right) — signed in as *you@company*, language (English / Português), theme toggle, **Sign out**
 
 **B. Toolbar**
 
@@ -206,8 +205,8 @@ Same as the other consoles:
 
 - **Dates:** DD/MM/YYYY, 24-hour time (e.g. `20/08/2026 14:05`).
 - **Timezone:** your local time (new users default to **Europe/Lisbon**).
-- **Language:** English / Português (top-right; remembered).
-- **Theme:** light / dark (top-right; remembered).
+- **Language:** English / Português (Settings gear; remembered).
+- **Theme:** light / dark (Settings gear; remembered).
 
 ---
 

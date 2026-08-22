@@ -36,11 +36,11 @@ If you mistype, you'll see *"Invalid email or password."*
 
 ### 1.2 Signing out
 
-Click **Sign out** (top-right of the console). Signing out is always a button, never a link you can trigger by accident.
+Open the **Settings** gear (top-right of the console) and click **Sign out**. Signing out is always a button, never a link you can trigger by accident.
 
 ### 1.3 Language
 
-The whole console works in two languages. Use the **Language** selector (top-right):
+The whole console works in two languages. Open the **Settings** gear and use the **Language** selector:
 
 - **English**
 - **Português**
@@ -49,7 +49,7 @@ The choice is remembered for your next visit.
 
 ### 1.4 Light / dark theme
 
-Click the **theme toggle** (top-right) to switch between **Light theme** and **Dark theme**. Also remembered between visits.
+Open the **Settings** gear and click the **theme toggle** to switch between **Light theme** and **Dark theme**. Also remembered between visits.
 
 ---
 
@@ -76,8 +76,7 @@ The console is one screen, split into three areas.
 
 **A. Top bar**
 - App name (**CentCompras**) and title (**Item console** / *Gestão de artigos*)
-- "Signed in as *you@company*" — confirms who you are
-- Language selector, theme toggle, **Sign out**
+- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", language, theme, and **Sign out**
 
 **B. Toolbar (filters & actions)**
 
@@ -263,8 +262,8 @@ This is your safety net: nothing is ever silently overwritten.
 
 - **Dates** are shown as **DD/MM/YYYY** (day, month, year), with a 24-hour time — e.g. `20/08/2026 10:30`.
 - **Timezone:** times are shown in *your* local time, wherever you are. A colleague in Singapore sees the same event in Singapore time; you see it in Portugal time. (The system stores everything in UTC and converts automatically.) New users default to **Europe/Lisbon**.
-- **Language:** English / Português (top-right).
-- **Theme:** light / dark (top-right).
+- **Language:** English / Português (Settings gear; remembered).
+- **Theme:** light / dark (Settings gear; remembered).
 
 ---
 

@@ -68,8 +68,7 @@ Clicking a row does nothing — there is no detail drawer.
 
 **A. Top bar**
 - Title: **Manager catalog** (*Catálogo do gestor*)
-- Signed in as *you@company*
-- Language (English / Português), theme toggle, **Sign out**
+- **Settings** gear (top-right) — signed in as *you@company*, language (English / Português), theme toggle, **Sign out**
 
 **B. Toolbar (filters)**
 
@@ -160,8 +159,8 @@ The family dropdown can include **inactive** families (it reuses the families li
 
 Same as the other warehouse consoles:
 
-- **Language:** English / Português (top-right; remembered).
-- **Theme:** light / dark (top-right; remembered).
+- **Language:** English / Português (Settings gear; remembered).
+- **Theme:** light / dark (Settings gear; remembered).
 - **Dates** are not shown on this page (no created/updated column). Quantity and money use a plain decimal format.
 
 ---
