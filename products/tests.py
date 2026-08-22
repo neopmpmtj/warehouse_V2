@@ -1,10 +1,14 @@
 import json
+import uuid
 from decimal import Decimal
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
+from django.core.management.base import CommandError
+from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
+from django.contrib.messages import get_messages
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -39,6 +43,8 @@ from products.services import (
     InactiveSupplierError,
     InvalidCostPriceError,
     InvalidInternalCodeError,
+    InternalCodeImmutableError,
+    ItemGenesisNotReadyError,
     InvalidReorderLevelError,
     InvalidSellingPriceError,
     InvalidSupplierEmailError,
@@ -52,6 +58,7 @@ from products.services import (
     catalog_below_reorder,
     catalog_buying_price,
     create_family,
+    create_and_activate_item,
     create_item,
     create_supplier,
     create_supplier_item_price,
@@ -94,6 +101,10 @@ class ItemTestCaseMixin:
             "unit_of_measure": Item.UnitOfMeasure.PIECE,
         }
         defaults.update(kwargs)
+        if not defaults.get("internal_code"):
+            defaults["internal_code"] = f"T-{uuid.uuid4().hex[:8].upper()}"
+        if "retail_price" not in kwargs:
+            defaults["retail_price"] = "1.00"
         item = create_item(user, **defaults)
         if active:
             reactivate_item(user, item, reason="Genesis")
@@ -279,10 +290,13 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
                 self.assertEqual(item.internal_code, internal_code)
 
     def test_update_item_rejects_invalid_internal_code_format(self):
-        item = self.create_test_item(
+        item = create_item(
             self.user,
+            family=self.family,
             description="Existing",
-            internal_code="VALID-1",
+            internal_code="",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
         )
 
         with self.assertRaises(InvalidInternalCodeError):
@@ -294,10 +308,13 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
             description="First",
             internal_code="CODE-A",
         )
-        second = self.create_test_item(
+        second = create_item(
             self.user,
+            family=self.family,
             description="Second",
-            internal_code="CODE-B",
+            internal_code="",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
         )
 
         with self.assertRaises(DuplicateInternalCodeError):
@@ -306,6 +323,93 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
                 second,
                 internal_code="CODE-A",
             )
+
+    def test_update_item_rejects_internal_code_change(self):
+        item = self.create_test_item(
+            self.user,
+            description="Locked code",
+            internal_code="LOCK-1",
+        )
+
+        with self.assertRaises(InternalCodeImmutableError):
+            update_item(self.user, item, internal_code="LOCK-2")
+
+    def test_update_item_allows_set_if_empty_internal_code_once(self):
+        item = create_item(
+            self.user,
+            family=self.family,
+            description="Legacy inactive",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+            internal_code="",
+        )
+
+        update_item(self.user, item, internal_code="LEGACY-1")
+        item.refresh_from_db()
+        self.assertEqual(item.internal_code, "LEGACY-1")
+
+        with self.assertRaises(InternalCodeImmutableError):
+            update_item(self.user, item, internal_code="LEGACY-2")
+
+    def test_reactivate_first_activation_requires_genesis_fields(self):
+        item = create_item(
+            self.user,
+            family=self.family,
+            description="Incomplete",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+            internal_code="",
+            retail_price="0",
+        )
+
+        with self.assertRaises(ItemGenesisNotReadyError):
+            reactivate_item(self.user, item, reason="Genesis")
+
+    def test_reactivate_after_deactivate_skips_genesis_qualification(self):
+        item = self.create_test_item(
+            self.user,
+            description="Was active",
+            internal_code="WAS-1",
+            retail_price=Decimal("1.00"),
+        )
+        deactivate_item(self.user, item, reason="Temporarily unavailable")
+        item.retail_price = Decimal("0")
+        item.save(update_fields=["retail_price"])
+
+        reactivate_item(self.user, item, reason="Back in stock")
+        item.refresh_from_db()
+        self.assertTrue(item.is_active)
+
+    def test_create_and_activate_item_returns_active(self):
+        item = create_and_activate_item(
+            self.user,
+            family=self.family,
+            description="Genesis item",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+            internal_code="GEN-1",
+            retail_price="12.50",
+        )
+
+        self.assertTrue(item.is_active)
+        self.assertEqual(
+            item.change_logs.filter(action=ItemChangeLog.Action.REACTIVATED).count(),
+            1,
+        )
+
+    def test_create_and_activate_item_rolls_back_on_genesis_failure(self):
+        with self.assertRaises(ItemGenesisNotReadyError):
+            create_and_activate_item(
+                self.user,
+                family=self.family,
+                description="No retail",
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+                internal_code="GEN-2",
+                retail_price="0",
+            )
+
+        self.assertFalse(Item.objects.filter(internal_code="GEN-2").exists())
 
     def test_deactivate_and_reactivate_write_audit_logs(self):
         item = self.create_test_item(self.user, description="Lifecycle item")
@@ -588,6 +692,74 @@ class ItemAdminAccessTests(TestCase):
             "family",
             "Cannot assign items to inactive family 'Legacy'.",
         )
+
+    def test_admin_reactivate_genesis_not_ready_shows_error(self):
+        family = create_family("Reactivate family")
+        vat = VatRate.objects.get(code="VAT16")
+        item = create_item(
+            user=self.superuser,
+            family=family,
+            internal_code="ADMIN-INCOMPLETE",
+            description="Needs genesis",
+            unit_of_measure="piece",
+            vat_rate=vat,
+            retail_price="0",
+        )
+        self.assertFalse(item.is_active)
+        self.client.force_login(self.superuser)
+
+        response = self.client.post(
+            self.changelist_url,
+            {
+                "action": "reactivate_items",
+                "confirm_reactivate": "1",
+                "reason": "Back in catalogue",
+                ACTION_CHECKBOX_NAME: [str(item.pk)],
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        message_text = " ".join(str(message) for message in get_messages(response.wsgi_request))
+        self.assertIn("retail price greater than 0", message_text)
+        item.refresh_from_db()
+        self.assertFalse(item.is_active)
+
+
+class AddItemCommandTests(TestCase):
+    def setUp(self):
+        self.family = create_family("CLI family")
+
+    def test_add_item_activate_zero_retail_raises_without_creating_row(self):
+        with self.assertRaises(CommandError) as raised:
+            call_command(
+                "add_item",
+                "Orphan test",
+                family=self.family.name,
+                vat_rate="VAT16",
+                internal_code="CLI-ORPHAN",
+                retail_price="0",
+                activate=True,
+            )
+
+        self.assertIn("retail-price must be greater than 0", str(raised.exception))
+        self.assertFalse(Item.objects.filter(internal_code="CLI-ORPHAN").exists())
+
+    def test_add_item_activate_creates_active_item(self):
+        call_command(
+            "add_item",
+            "Activated item",
+            family=self.family.name,
+            vat_rate="VAT16",
+            internal_code="CLI-ACTIVE",
+            retail_price="12.50",
+            activate=True,
+            verbosity=0,
+        )
+
+        item = Item.objects.get(internal_code="CLI-ACTIVE")
+        self.assertTrue(item.is_active)
+        self.assertEqual(item.retail_price, Decimal("12.50"))
 
 
 class FamilyProductAdminAccessTests(TestCase):
@@ -1070,6 +1242,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 "unit_of_measure": Item.UnitOfMeasure.KG,
                 "internal_code": "CON-1",
                 "reorder_level": "4",
+                "retail_price": "10.00",
                 "vat_rate_id": self.vat_rate.id,
                 "reason": "Added from console",
             }),
@@ -1079,23 +1252,14 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(create_response.status_code, 200)
         created = create_response.json()["item"]
         item = Item.objects.get(pk=created["id"])
-        self.assertFalse(item.is_active)
+        self.assertTrue(item.is_active)
         self.assertEqual(item.description, "Console cement")
         self.assertNotIn("stock", created)
         self.assertNotIn("suppliers", created)
         self.assertEqual(
-            item.change_logs.latest("created_at").reason,
+            item.change_logs.get(action=ItemChangeLog.Action.CREATED).reason,
             "Added from console",
         )
-
-        activate_response = self.client.post(
-            reverse("manage_item_reactivate", args=[item.id]),
-            data=json.dumps({"reason": "Genesis"}),
-            content_type="application/json",
-        )
-        self.assertEqual(activate_response.status_code, 200)
-        item.refresh_from_db()
-        self.assertTrue(item.is_active)
 
         update_response = self.client.patch(
             reverse("manage_item_detail", args=[item.id]),
@@ -1133,6 +1297,102 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         payload = response.json()
         self.assertEqual(payload["code"], "invalid_internal_code")
         self.assertFalse(Item.objects.filter(description="Bad code item").exists())
+
+    def test_console_create_without_internal_code_is_rejected(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps({
+                "family_id": self.family.id,
+                "description": "No code item",
+                "unit_of_measure": Item.UnitOfMeasure.KG,
+                "retail_price": "10.00",
+                "vat_rate_id": self.vat_rate.id,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertEqual(payload["code"], "item_genesis_not_ready")
+        self.assertFalse(Item.objects.filter(description="No code item").exists())
+
+    def test_console_create_with_zero_retail_price_is_rejected(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps({
+                "family_id": self.family.id,
+                "description": "Zero retail item",
+                "unit_of_measure": Item.UnitOfMeasure.KG,
+                "internal_code": "ZERO-1",
+                "retail_price": "0",
+                "vat_rate_id": self.vat_rate.id,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertEqual(payload["code"], "item_genesis_not_ready")
+        self.assertFalse(Item.objects.filter(internal_code="ZERO-1").exists())
+
+    def test_console_update_rejects_internal_code_change(self):
+        item = self.create_test_item(
+            self.staff_user,
+            description="Immutable code",
+            internal_code="IMM-1",
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.patch(
+            reverse("manage_item_detail", args=[item.id]),
+            data=json.dumps({
+                "internal_code": "IMM-2",
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.json()
+        self.assertEqual(payload["code"], "internal_code_immutable")
+        item.refresh_from_db()
+        self.assertEqual(item.internal_code, "IMM-1")
+
+    def test_console_update_allows_set_if_empty_internal_code(self):
+        item = create_item(
+            self.staff_user,
+            family=self.family,
+            description="Legacy empty code",
+            internal_code="",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.patch(
+            reverse("manage_item_detail", args=[item.id]),
+            data=json.dumps({
+                "internal_code": "LEGACY-API",
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual(item.internal_code, "LEGACY-API")
+
+        second = self.client.patch(
+            reverse("manage_item_detail", args=[item.id]),
+            data=json.dumps({
+                "internal_code": "LEGACY-2",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(second.status_code, 400)
+        self.assertEqual(second.json()["code"], "internal_code_immutable")
 
     def test_staff_can_deactivate_through_console_api(self):
         item = self.create_test_item(self.staff_user, description="To hide")
@@ -1384,6 +1644,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 "family_id": family_id,
                 "description": "Family-first item",
                 "unit_of_measure": Item.UnitOfMeasure.PIECE,
+                "internal_code": "FAM-1",
+                "retail_price": "5.00",
                 "vat_rate_id": self.vat_rate.id,
             }),
             content_type="application/json",
@@ -1392,7 +1654,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(item_response.status_code, 200)
         item = Item.objects.get(pk=item_response.json()["item"]["id"])
         self.assertEqual(item.family_id, family_id)
-        self.assertFalse(item.is_active)
+        self.assertTrue(item.is_active)
 
     def test_non_staff_user_cannot_use_family_api(self):
         self.client.force_login(self.non_staff_user)
@@ -2212,6 +2474,7 @@ class SupplierItemPriceConsoleTests(ItemTestCaseMixin, TestCase):
                 "family_id": self.family.id,
                 "description": "Priced item",
                 "unit_of_measure": "piece",
+                "internal_code": "PRICE-1",
                 "vat_rate_id": self.vat_rate.id,
                 "retail_price": "99.99",
                 "wholesale_price": "75.00",

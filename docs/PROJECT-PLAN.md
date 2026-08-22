@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 22 August 2026, 11:30 WEST
-- **Current phase:** Phase 5 **complete** ✅. **Interim next:** item `internal_code` **Phase 2** ([`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md)) — immutability + mandatory Genesis. **Then:** Phase 6 — email automation. Full suite **383 tests green**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 22 August 2026, 12:00 WEST
+- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Next:** Phase 6 — email automation. Full suite **392 tests green**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Email and offline remain later phases.
 
 ## Status vocabulary
@@ -126,7 +126,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D26 | Dashboard permission list | Shown only to superusers / `DEBUG` |
 | D27 | Login rate limiting | **Pre-production blocker** — deferred (`django-axes` or proxy) |
 | D28 | Money rounding | `ROUND_HALF_UP` (half away from zero) via `procurement.models.round_money` — unit costs to 4 dp first, then monetary amounts to 2 dp |
-| D29 | `internal_code` format (Phase 1 ✅) | If set: `A–Z` `a–z` `0–9` `.` `-` `_` only; max 64; unique case-insensitive. Phase 2 pending: lock on first save, mandatory Genesis, `retail_price > 0` |
+| D29 | `internal_code` lifecycle (Phases 1–2 ✅) | Charset `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive; **immutable after first save** (set-if-empty once); console create = mandatory Genesis with `retail_price > 0` |
 | D30 | Server-side item drafts | **Deferred** — localStorage autosave first if needed |
 | D31 | Warehouse short-close (zero dispatch) | `approved` with no `GoodsIssue` → **closed** (not `shipped`) |
 | O1 | Item-level buying-price display | **Option A** — `primary` flag (one per item); fall back to cheapest if none marked — **implemented** |
@@ -143,7 +143,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (Aug 2026):** phases 0–5 complete; both review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phase 1** done; **383 tests green**. **Next:** internal_code Phase 2, then Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
+**Current (Aug 2026):** phases 0–5 complete; both review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **392 tests green**. **Next:** Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -163,8 +163,8 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 3 | Goods receipt + stock ledger | ✅ Done | Phase 2 |
 | 4 | Manager catalog (stock + price view) | ✅ Done | Phase 3 |
 | 5 | Branches + internal request + branch catalog | ✅ **Done** | Phase 4 |
-| 5+ | Item `internal_code` constraints (Genesis lifecycle) | 🔵 **Phase 1 done** · Phase 2 next | Phase 5 |
-| 6 | Email automation (supplier notifications) | ⏸ After internal_code Phase 2 | Phase 2 (stub) |
+| 5+ | Item `internal_code` constraints (Genesis lifecycle) | ✅ **Done** (Phases 1–2) | Phase 5 |
+| 6 | Email automation (supplier notifications) | 🔵 **Next** | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
 ---
@@ -369,16 +369,16 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - ✅ Branch receipt + branch stock ledger (`BranchReceipt` on `GoodsIssue`, `BranchStockMovement` + cached `BranchItemStock`).
 - **Not in Phase 5:** offline/sync (Phase 7), email notify (Phase 6), stock reservation (deferred), linked/auto PO (later slice).
 
-### 12.1 Item `internal_code` — catalogue constraints (interim) 🔵
+### 12.1 Item `internal_code` — catalogue constraints ✅
 
-**Plan:** [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md)
+**Plan:** [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md) — **complete**
 
 | Slice | Status | Scope |
 |-------|--------|--------|
 | **Phase 1** | ✅ Done | Format validation (`A–Z` `a–z` `0–9` `.` `-` `_`); API error codes; i18n; user manuals |
-| **Phase 2** | 🔜 **Next** | Lock `internal_code` on first save; mandatory Genesis (atomic create); qualification gates; console UI |
+| **Phase 2** | ✅ Done | Lock `internal_code` on first save; mandatory Genesis (atomic create); qualification gates; console UI |
 
-**Phase 2 locked decisions:** draft = new-item form before first POST; Genesis requires `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`, `retail_price > 0`; server-side drafts **deferred**.
+**Locked decisions:** draft = new-item form before first POST; Genesis requires `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`, `retail_price > 0`; server-side drafts **deferred** (D30).
 
 ---
 
@@ -441,7 +441,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
   - [x] Slice 5 — branch receipt + branch stock
   - [x] Slice 6 — polish + docs
 - [x] Item `internal_code` Phase 1 — format validation + manuals
-- [ ] Item `internal_code` Phase 2 — immutability + mandatory Genesis + qualification gates
+- [x] Item `internal_code` Phase 2 — immutability + mandatory Genesis + qualification gates
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---

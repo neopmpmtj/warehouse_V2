@@ -53,6 +53,23 @@ class InvalidInternalCodeError(ValidationError):
         )
 
 
+class InternalCodeImmutableError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Internal code cannot be changed after the item is saved.",
+            code="internal_code_immutable",
+        )
+
+
+class ItemGenesisNotReadyError(ValidationError):
+    def __init__(self, missing):
+        labels = ", ".join(missing)
+        super().__init__(
+            f"Item cannot be activated (Genesis): missing {labels}.",
+            code="item_genesis_not_ready",
+        )
+
+
 class DeactivateReasonRequiredError(ValidationError):
     def __init__(self):
         super().__init__(
@@ -213,6 +230,47 @@ def validate_internal_code_available(internal_code, exclude_item_id=None):
         raise DuplicateInternalCodeError(internal_code)
 
 
+def _item_needs_genesis_qualification(item):
+    return not item.change_logs.filter(
+        action=ItemChangeLog.Action.REACTIVATED,
+    ).exists()
+
+
+def validate_item_genesis_ready(item):
+    missing = []
+    internal_code = _normalize_internal_code(item.internal_code)
+    if not internal_code:
+        missing.append("internal code")
+    else:
+        try:
+            validate_internal_code_format(internal_code)
+        except InvalidInternalCodeError:
+            missing.append("valid internal code")
+    if not (item.description or "").strip():
+        missing.append("description")
+    if not item.unit_of_measure:
+        missing.append("unit of measure")
+    if item.vat_rate_id is None and getattr(item, "vat_rate", None) is None:
+        missing.append("VAT rate")
+    family = item.family
+    if family is None:
+        missing.append("family")
+    elif not family.is_active:
+        missing.append("active family")
+    try:
+        retail_price = (
+            item.retail_price
+            if isinstance(item.retail_price, Decimal)
+            else Decimal(str(item.retail_price or 0))
+        )
+    except (InvalidOperation, TypeError):
+        retail_price = Decimal("0")
+    if retail_price <= 0:
+        missing.append("retail price greater than 0")
+    if missing:
+        raise ItemGenesisNotReadyError(missing)
+
+
 def _resolve_family(family):
     if isinstance(family, FamilyProduct):
         return family
@@ -361,6 +419,39 @@ def create_item(
 
 
 @transaction.atomic
+def create_and_activate_item(
+    user,
+    family,
+    description,
+    unit_of_measure,
+    vat_rate,
+    internal_code="",
+    reorder_level="0",
+    retail_price="0",
+    wholesale_price="0",
+    special_price="0",
+    reason="",
+):
+    item = create_item(
+        user,
+        family=family,
+        description=description,
+        unit_of_measure=unit_of_measure,
+        vat_rate=vat_rate,
+        internal_code=internal_code,
+        reorder_level=reorder_level,
+        retail_price=retail_price,
+        wholesale_price=wholesale_price,
+        special_price=special_price,
+        reason=reason,
+    )
+    validate_item_genesis_ready(item)
+    reactivate_item(user, item, reason="Genesis")
+    item.refresh_from_db()
+    return item
+
+
+@transaction.atomic
 def update_item(user, item, reason="", **fields):
     if not fields:
         return item
@@ -385,6 +476,10 @@ def update_item(user, item, reason="", **fields):
             )
         elif field_name == "internal_code":
             new_value = _normalize_internal_code(new_value)
+            old_value = _normalize_internal_code(item.internal_code)
+            if new_value != old_value:
+                if old_value:
+                    raise InternalCodeImmutableError()
             pending_internal_code = new_value
         elif field_name == "description":
             new_value = (new_value or "").strip()
@@ -472,6 +567,9 @@ def reactivate_item(user, item, reason=""):
         raise ReactivateReasonRequiredError()
 
     _ensure_family_active(item.family)
+
+    if _item_needs_genesis_qualification(item):
+        validate_item_genesis_ready(item)
 
     item.is_active = True
     _save_item(item, update_fields=["is_active", "updated_at"])

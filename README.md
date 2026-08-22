@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 22 August 2026, 11:30 WEST.*
+*Last updated: 22 August 2026, 12:00 WEST.*
 
-**Phases 0–5 are done.** **Next:** item `internal_code` **Phase 2** (Genesis lifecycle) — see [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](.cursor/plans/internal_code_format_rules_7862515a.plan.md). Phase 6 (email automation) follows. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Next:** Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](.cursor/plans/internal_code_format_rules_7862515a.plan.md) — **Phase 2** (internal_code immutability + mandatory Genesis). Then [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — Phase 6: email automation.
+4. **Next:** [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — **Phase 6: email automation** (wire notify stubs; templates EN + pt-PT).
 
 ---
 
@@ -82,7 +82,7 @@ Production will use Google OAuth (not implemented in dev).
 - Family and supplier names are case-insensitive unique. The console UI does not rename them.
 - Audit: `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`, `SupplierItemPriceChangeLog`.
 - All mutations through [`products/services.py`](products/services.py).
-- CLI (dev/bootstrap): `python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16`
+- CLI (dev/bootstrap): `python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16 --internal-code CEM-50 --internal-code CEM-50`
 
 ### Consoles
 
@@ -225,7 +225,7 @@ It also creates **branches** (North, South) and **branch users**. It does **not*
 Items can also be added in `/manage/items/` or:
 
 ```bash
-python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16
+python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16 --internal-code CEM-50
 ```
 
 ### 6. Test the application

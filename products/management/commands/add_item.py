@@ -1,7 +1,14 @@
+from decimal import Decimal, InvalidOperation
+
 from django.core.management.base import BaseCommand, CommandError
 
 from products.models import FamilyProduct, Item, VatRate
-from products.services import create_item, get_families, reactivate_item
+from products.services import (
+    ItemGenesisNotReadyError,
+    create_and_activate_item,
+    create_item,
+    get_families,
+)
 
 
 class Command(BaseCommand):
@@ -29,8 +36,14 @@ class Command(BaseCommand):
         parser.add_argument(
             "--internal-code",
             dest="internal_code",
-            default="",
-            help="Optional warehouse internal code",
+            required=True,
+            help="Warehouse internal code (required)",
+        )
+        parser.add_argument(
+            "--retail-price",
+            dest="retail_price",
+            default="0",
+            help="Retail price (required > 0 when --activate)",
         )
         parser.add_argument(
             "--reorder-level",
@@ -63,19 +76,39 @@ class Command(BaseCommand):
                 f"VAT rate '{vat_rate_code}' not found. Available: {available}"
             )
 
-        item = create_item(
-            user=None,
-            family=family,
-            description=options["description"],
-            unit_of_measure=options["unit"],
-            vat_rate=vat_rate,
-            internal_code=options["internal_code"],
-            reorder_level=options["reorder_level"],
-        )
-
         if options["activate"]:
-            reactivate_item(user=None, item=item, reason="Genesis")
-            item.refresh_from_db()
+            try:
+                retail_price = Decimal(str(options["retail_price"]))
+            except (InvalidOperation, TypeError):
+                retail_price = Decimal("0")
+            if retail_price <= 0:
+                raise CommandError(
+                    "--retail-price must be greater than 0 when using --activate."
+                )
+            try:
+                item = create_and_activate_item(
+                    user=None,
+                    family=family,
+                    description=options["description"],
+                    unit_of_measure=options["unit"],
+                    vat_rate=vat_rate,
+                    internal_code=options["internal_code"],
+                    reorder_level=options["reorder_level"],
+                    retail_price=options["retail_price"],
+                )
+            except ItemGenesisNotReadyError as exc:
+                raise CommandError(exc.messages[0]) from exc
+        else:
+            item = create_item(
+                user=None,
+                family=family,
+                description=options["description"],
+                unit_of_measure=options["unit"],
+                vat_rate=vat_rate,
+                internal_code=options["internal_code"],
+                reorder_level=options["reorder_level"],
+                retail_price=options["retail_price"],
+            )
 
         status = "active" if item.is_active else "inactive"
         self.stdout.write(

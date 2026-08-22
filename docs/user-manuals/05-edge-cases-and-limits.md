@@ -27,8 +27,10 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 | Message (exact) | Why it appears | What to do |
 |-----------------|----------------|------------|
-| `Internal code "X" is already used by another item.` | Internal codes are unique, **case-insensitive** (empty is allowed, but non-empty can't repeat) | Use a different code (or leave it blank) |
-| `Internal code may only contain letters, digits, dots, hyphens, and underscores.` | The code contains a **space** or a **disallowed character** (only `A–Z`, `a–z`, `0–9`, `.`, `-`, `_` are allowed) | Fix the code (e.g. `CEM-50`, `CABLE-2.5`) or leave it blank |
+| `Internal code "X" is already used by another item.` | Internal codes are unique, **case-insensitive** | Use a different code |
+| `Internal code may only contain letters, digits, dots, hyphens, and underscores.` | The code contains a **space** or a **disallowed character** (only `A–Z`, `a–z`, `0–9`, `.`, `-`, `_` are allowed) | Fix the code (e.g. `CEM-50`, `CABLE-2.5`) |
+| `Internal code cannot be changed after the item is saved.` | You tried to rename a code on an existing item | Codes are locked after first save (legacy empty codes may be set once) |
+| `Item cannot be activated (Genesis): missing …` | First activation (Genesis) needs internal code, description, unit, VAT, active family, and **retail price > 0** (console save, Django admin **Reactivate** bulk action, or `add_item --activate`) | Complete the fields before activating |
 | `Family name "X" is already used.` | Family names are unique, case-insensitive | Use another name |
 | `Supplier name "X" is already used.` | Supplier names are unique, case-insensitive | Use another name |
 | `Family name is required.` / `Supplier name is required.` / `Description is required.` | Required field empty | Fill it in |
@@ -38,11 +40,11 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Enter a valid email address.` | Supplier email is malformed | Fix the email (or clear it) |
 | `…selling price must be zero or greater.` | Prices can't be negative | Enter 0 (means "not priced") or a positive number |
 | `…reorder level must be zero or greater.` | Reorder level can't be negative | Enter 0 or a positive number |
-| `Cannot use inactive supplier 'X'.` / `Cannot use inactive item 'X'.` | You referenced something deactivated | Reactivate it first |
+| `--retail-price must be greater than 0 when using --activate.` | `add_item` CLI was run with `--activate` but retail price is missing or zero | Pass `--retail-price` with a value greater than 0 |
 
 **Family names are immutable** — the console has no "rename". If a name is wrong, deactivate it and create a new family (items keep the old family; you can't add new items to an inactive family).
 
-**A new item starts inactive.** It only appears in the catalogue after activation.
+**New items:** confirm **Genesis** on save — create and activation are atomic (no inactive orphan if you cancel). **Internal code** is required and locked after save.
 
 ### 2.2 Purchase orders (`/manage/purchase-orders/`)
 
@@ -153,7 +155,8 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | **Discounts** (commercial / financial / rappel) | `Decimal(5,2)` | each `0–100`; **combined ≤ 100** | percentages |
 | **VAT rate** | `Decimal(5,4)` | fraction `0 … 1` | e.g. `0.16` = 16% |
 | **Reorder level** | `Decimal(12,3)` | `≥ 0` | 0 = "no reorder trigger" |
-| **Internal code** | `CharField` max **64** | empty allowed; if set: letters, digits, `.`, `-`, `_` only | unique, case-insensitive |
+| **Internal code** | `CharField` max **64** | required on console create; letters, digits, `.`, `-`, `_` only; **immutable after save** (set-if-empty once for legacy) | unique, case-insensitive |
+| **Retail price (Genesis)** | `Decimal(12,2)` | **> 0** required on console create / first activation | wholesale/special may stay 0 |
 | **Reason / notes (reason fields)** | `CharField` / `TextField` | reason ≤ **255 chars** | over-long reason rejected |
 | **Email** | `EmailField` | valid email | supplier & user |
 | **Stock balances** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | can't go negative |

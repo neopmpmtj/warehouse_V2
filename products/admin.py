@@ -19,6 +19,8 @@ from .services import (
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
     InvalidInternalCodeError,
+    InternalCodeImmutableError,
+    ItemGenesisNotReadyError,
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
@@ -264,7 +266,12 @@ class ItemAdmin(admin.ModelAdmin):
                     reason=reason,
                 )
                 obj.pk = created.pk
-        except (DuplicateInternalCodeError, InvalidInternalCodeError) as exc:
+        except (
+            DuplicateInternalCodeError,
+            InvalidInternalCodeError,
+            InternalCodeImmutableError,
+            ItemGenesisNotReadyError,
+        ) as exc:
             raise ValidationError({"internal_code": exc.messages[0]}) from exc
 
         obj.refresh_from_db()
@@ -327,7 +334,7 @@ class ItemAdmin(admin.ModelAdmin):
                 return None
             try:
                 bulk_reactivate_items(request.user, queryset, reason=reason)
-            except InactiveFamilyError as exc:
+            except (InactiveFamilyError, ItemGenesisNotReadyError) as exc:
                 self.message_user(request, exc.messages[0], messages.ERROR)
                 return None
             self.message_user(

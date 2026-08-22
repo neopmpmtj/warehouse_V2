@@ -128,31 +128,31 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 ### 5.1 Creating a new item
 
 1. Click **New item** (*Novo artigo*).
-2. Fill the form (fields below).
+2. Fill the form (fields below). **Internal code** and **retail price greater than zero** are required before Genesis.
 3. Click **Save** (*Guardar*).
-4. The item is created **inactive**, and you're asked to confirm **Genesis** to activate it.
+4. Confirm **Genesis** in the dialog — the item is created and activated in one step.
 
-> ⚠️ **Important:** a new item is *not* available in the catalogue until you activate it. This is deliberate — it stops half-finished items appearing before they're ready.
+> **Important:** you cannot skip Genesis. If you cancel the dialog, nothing is saved. There is no inactive orphan row.
 
-> 📷 **[SCREENSHOT — "Confirm Genesis" dialog]**
+> 📷 **[SCREENSHOT — "Confirm Genesis" dialog (before save)]**
 
 **The item form fields:**
 
 | Field | Required | Notes |
 |-------|:---:|-------|
-| **Internal code** | No | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). If set, only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. |
+| **Internal code** | Yes (new items) | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). Only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. **Cannot be changed after the first save** (legacy items with an empty code may set it once). |
 | **Description** | Yes | What the item is. |
 | **Family** | Yes | The group it belongs to (see §7). |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
 | **VAT rate** | Yes | 1%, 3%, 7%, 16%, Exempt |
 | **Reorder level** | Yes | The level that later triggers reordering. |
-| **Retail price** | No | Selling price (see §6). |
+| **Retail price** | Yes (> 0) | Selling price for Genesis (see §6). Must be **greater than zero** on create. |
 | **Wholesale price** | No | Selling price (see §6). |
 | **Special price** | No | Selling price (see §6). |
 | **Reason** | No | A note explaining why you're changing this (stored in history). |
 
 ### 5.2 Editing an item
-Click the item's row (or its **Edit** button), change any field, and **Save**. The reason field is optional but recommended.
+Click the item's row (or its **Edit** button), change any field except **internal code** (read-only after save), and **Save**. The reason field is optional but recommended.
 
 ### 5.3 Deactivating an item
 Deactivation **removes the item from the active catalogue** (it isn't deleted — its history is kept).
@@ -293,7 +293,7 @@ That's the European convention used across the app. `05/08/2026` means **5 Augus
 No. Times adapt to each viewer's local timezone automatically. The system stores UTC and converts on display.
 
 **Q5. I created an item but it says "Inactive" — why?**
-New items start **inactive** on purpose. Activate it with **Genesis** (the confirmation dialog right after saving) to make it available.
+New items are created **active** when you confirm **Genesis** on save. If you cancel the Genesis dialog, nothing is saved. To add an inactive row for testing, use Django admin (superuser) or the `add_item` CLI without `--activate` (with `--activate`, pass `--retail-price` greater than 0).
 
 **Q6. I can't see the edit button / checkboxes — why?**
 Your role is **operator** (read-only), or you don't have edit permission. Check §2. Ask your administrator if you think your role is wrong.
@@ -308,7 +308,10 @@ It's removed from the active list but **not deleted** — its history is preserv
 No — internal codes are unique (case-insensitive). You'll get an error if you try to reuse one.
 
 **Q10. What characters can I use in an internal code?**
-Letters (`A–Z`, `a–z`), digits (`0–9`), dots (`.`), hyphens (`-`), and underscores (`_`) only — for example `CEM-50`, `CABLE-2.5`, or `TIMBER_2X4`. Spaces and symbols such as `@` or `#` are rejected. The code can be left blank when creating an item; if you enter one, it must follow this rule.
+Letters (`A–Z`, `a–z`), digits (`0–9`), dots (`.`), hyphens (`-`), and underscores (`_`) only — for example `CEM-50`, `CABLE-2.5`, or `TIMBER_2X4`. Spaces and symbols such as `@` or `#` are rejected. **Internal code is required on new items** and **cannot be changed after the first save** (legacy rows with an empty code may set it once).
+
+**Q11. Can I change an internal code later?**
+No — after the item is saved, the code is locked. Plan the code before Genesis. Exception: an older item that still has an **empty** code may set it **once**.
 
 ---
 

@@ -127,9 +127,18 @@ function applyCatalogPermissions(permissions) {
     body.dataset.canChangeSupplierItemPrice = permissions.change_supplier_item_price ? "true" : "false";
 }
 
-function setItemFormEditable(editable) {
+function canEditInternalCode(isNew, item) {
+    if (isNew) {
+        return true;
+    }
+    if (!item) {
+        return false;
+    }
+    return !(item.internal_code || "").trim();
+}
+
+function setItemFormEditable(editable, isNew, item) {
     [
-        "field-internal-code",
         "field-description",
         "field-family",
         "field-unit",
@@ -145,6 +154,23 @@ function setItemFormEditable(editable) {
             field.disabled = !editable;
         }
     });
+    const internalCodeField = document.getElementById("field-internal-code");
+    if (internalCodeField) {
+        const allowInternalCodeEdit = editable && canEditInternalCode(isNew, item);
+        if (!allowInternalCodeEdit) {
+            internalCodeField.disabled = true;
+            internalCodeField.readOnly = Boolean(!isNew && item);
+            internalCodeField.required = false;
+        } else if (isNew) {
+            internalCodeField.disabled = false;
+            internalCodeField.readOnly = false;
+            internalCodeField.required = true;
+        } else {
+            internalCodeField.disabled = false;
+            internalCodeField.readOnly = false;
+            internalCodeField.required = false;
+        }
+    }
 }
 
 function applyStaticI18n() {
@@ -581,19 +607,21 @@ function refreshDrawerLabels() {
     const perms = catalogPermissions();
     const isNew = !document.getElementById("field-id").value;
     const canSave = isNew ? perms.addItem : perms.changeItem;
+    const item = isNew
+        ? null
+        : state.items.find((entry) => String(entry.id) === document.getElementById("field-id").value);
     document.getElementById("drawer-title").textContent = isNew
         ? t("drawerNew")
         : (perms.changeItem ? t("drawerEdit") : t("drawerView"));
     document.getElementById("item-save").hidden = !canSave;
     document.getElementById("reason-field").hidden = !canSave;
     document.getElementById("new-family-inline").hidden = !perms.addFamily;
-    setItemFormEditable(canSave);
+    setItemFormEditable(canSave, isNew, item);
     const lifeButton = document.getElementById("drawer-lifecycle");
     if (isNew || !perms.changeItem) {
         lifeButton.hidden = true;
         return;
     }
-    const item = state.items.find((item) => String(item.id) === document.getElementById("field-id").value);
     if (!item) {
         return;
     }
@@ -1140,10 +1168,9 @@ async function createFamilyFromItemForm() {
     document.getElementById("field-family").value = String(family.id);
 }
 
-function formPayload() {
-    return {
+function formPayload(isPatch) {
+    const payload = {
         family_id: Number(document.getElementById("field-family").value),
-        internal_code: document.getElementById("field-internal-code").value,
         description: document.getElementById("field-description").value,
         unit_of_measure: document.getElementById("field-unit").value,
         reorder_level: document.getElementById("field-reorder").value,
@@ -1153,6 +1180,19 @@ function formPayload() {
         special_price: document.getElementById("field-special-price").value || "0",
         reason: document.getElementById("field-reason").value,
     };
+    if (!isPatch) {
+        payload.internal_code = document.getElementById("field-internal-code").value;
+    } else {
+        const itemId = document.getElementById("field-id").value;
+        const item = state.items.find((entry) => String(entry.id) === itemId);
+        if (canEditInternalCode(false, item)) {
+            const internalCode = document.getElementById("field-internal-code").value.trim();
+            if (internalCode) {
+                payload.internal_code = internalCode;
+            }
+        }
+    }
+    return payload;
 }
 
 function formatCost(value) {
@@ -1650,7 +1690,7 @@ async function saveItem(event) {
     const saveButton = document.getElementById("item-save");
     saveButton.disabled = true;
     state.busy = true;
-    const payload = formPayload();
+    const payload = formPayload(Boolean(itemId));
     try {
         let data;
         if (itemId) {
@@ -1662,6 +1702,22 @@ async function saveItem(event) {
             showBanner(t("saved"));
             await loadHistory(data.item.id);
         } else {
+            const internalCode = document.getElementById("field-internal-code").value.trim();
+            if (!internalCode) {
+                showBanner(t("internal_code_required"), true);
+                return;
+            }
+            const retailPrice = Number.parseFloat(
+                document.getElementById("field-retail-price").value || "0",
+            );
+            if (!(retailPrice > 0)) {
+                showBanner(t("retail_price_genesis_required"), true);
+                return;
+            }
+            const reason = await askLifecycleReason("genesis");
+            if (reason === null) {
+                return;
+            }
             data = await api(API_ROOT, {
                 method: "POST",
                 body: JSON.stringify(payload),
@@ -1669,16 +1725,6 @@ async function saveItem(event) {
             replaceItem(data.item);
             closeDrawer();
             renderTable();
-            const reason = await askLifecycleReason("genesis");
-            if (reason === null) {
-                showBanner(t("createdInactive"));
-                return;
-            }
-            const activated = await api(`${API_ROOT}${data.item.id}/reactivate/`, {
-                method: "POST",
-                body: JSON.stringify({ reason }),
-            });
-            replaceItem(activated.item);
             showBanner(t("activated"));
         }
         renderTable();

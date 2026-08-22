@@ -52,6 +52,7 @@ class PurchaseOrderTestCaseMixin:
             internal_code="CEM-50",
             unit_of_measure=Item.UnitOfMeasure.KG,
             vat_rate=self.vat_rate,
+            retail_price="1.00",
         )
         self.item = reactivate_item(self.user, item, reason="Genesis")
         self.item.refresh_from_db()

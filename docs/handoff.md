@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 22 August 2026, 11:30 WEST.
+> **Read this first when resuming work.** Last updated: 22 August 2026, 12:00 WEST.
 
 ---
 
@@ -14,27 +14,23 @@
 | **3 — Goods receipt + stock ledger** | ✅ **Done** |
 | **4 — Manager catalog (stock + price view)** | ✅ **Done** |
 | 5 — Branches + internal request | ✅ **Done** |
-| 5+ — Item `internal_code` constraints (plan) | 🔵 **Phase 1 done** · **Phase 2 next** |
-| 6 — Email automation | ⏸ After internal_code Phase 2 |
+| 5+ — Item `internal_code` constraints | ✅ **Phase 1 + 2 done** |
+| 6 — Email automation | 🔵 **Next** |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5 are complete.** This session added **item `internal_code` format validation (Phase 1)** and fixed three requisição/receipt bugs. **Next session: Phase 2 of [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md)** — immutability after first save, mandatory Genesis, qualification gates. Phase 6 (email) stays queued after that.
+**Phases 0–5 and item `internal_code` Phases 1–2 are complete.** This session shipped **format validation**, **Genesis lifecycle** (immutable code, mandatory atomic create, qualification gates), **three requisição/receipt bug fixes**, and the **`/session-handoff`** skill + slash command. **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Full suite green (383 tests).**
+**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Full suite green (392 tests).**
 
 ---
 
 ## Next session — do this
 
-1. **Execute internal_code Phase 2** — see [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md):
-   - `internal_code` **immutable** after first successful Save (allow **set-if-empty once** for legacy inactive rows — recommended).
-   - **Mandatory Genesis** in the same atomic create flow (no orphan inactive items).
-   - Genesis qualification: `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`, `retail_price > 0`.
-   - Console UI: required code on new item; read-only when editing; update user manuals (rule: `.cursor/rules/user-manuals.mdc`).
-2. **Then** Phase 6 — email automation (wire notify stubs; templates EN + pt-PT). See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
+1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
+2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
 3. **Review backlog is cleared** — do **not** treat 1303 or 2208 archives as work queues.
-4. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred — see plan advisory).
-5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+5. Optional follow-up: localStorage autosave on new-item form (plan advisory) — only if staff report lost forms.
 
 ---
 
@@ -42,10 +38,18 @@
 
 ### Item `internal_code` — Phase 1 ✅
 
-- Service: `InvalidInternalCodeError`; format `^[A-Za-z0-9._-]+$` (letters, digits, **dots**, hyphens, underscores); empty still allowed until Phase 2.
+- Service: `InvalidInternalCodeError`; format `^[A-Za-z0-9._-]+$` (letters, digits, dots, hyphens, underscores).
 - Console API returns `code: "invalid_internal_code"`; admin + i18n + HTML `pattern` on the item form.
-- User manuals updated: [`docs/user-manuals/01-items.md`](user-manuals/01-items.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md).
-- New agent rule: [`.cursor/rules/user-manuals.mdc`](../.cursor/rules/user-manuals.mdc) — update manuals when constraints/behaviour change.
+
+### Item `internal_code` — Phase 2 ✅
+
+- **`validate_item_genesis_ready`** + `ItemGenesisNotReadyError` — first activation requires internal code, description, unit, VAT, active family, **retail_price > 0**.
+- **`InternalCodeImmutableError`** — code locked after first save; **set-if-empty once** for legacy rows.
+- **`create_and_activate_item`** — atomic console POST (create + Genesis); no orphan inactive rows on cancel.
+- Console UI: Genesis **pre-submit** confirmation; internal code required on new item, read-only on edit; i18n for new error codes.
+- **`add_item` CLI**: `--internal-code` required; `--retail-price`; genesis validation on `--activate`.
+- User manuals: [`01-items.md`](user-manuals/01-items.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md).
+- Plan complete: [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md).
 
 ### Requisição / receipt bug fixes ✅
 
@@ -55,7 +59,13 @@
 | Branch receipts false “Goods issue not found” after full receive/short-close | `branch_receipts.html`: clear detail panel when dispatch drops off the open list |
 | Warehouse short-close on `approved` with zero dispatch left request stuck in `shipped` | `short_close_issue`: `approved` → **closed**; `fulfilling` → **shipped**; added `approved → closed` transition |
 
-Docs: [`docs/user-manuals/04-internal-requests.md`](user-manuals/04-internal-requests.md) §7.2, [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md) §4.2.
+Docs: [`04-internal-requests.md`](user-manuals/04-internal-requests.md) §7.2, [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md) §4.2.
+
+### Developer tooling ✅
+
+- **Session handoff skill** — [`.cursor/skills/session-handoff/SKILL.md`](../.cursor/skills/session-handoff/SKILL.md)
+- **Slash command** — `/session-handoff` ([`.cursor/commands/session-handoff.md`](../.cursor/commands/session-handoff.md))
+- Agent rule: [`.cursor/rules/user-manuals.mdc`](../.cursor/rules/user-manuals.mdc) — update manuals when behaviour changes
 
 ---
 
@@ -130,7 +140,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D27 | **Login rate limiting is a pre-production blocker** — deferred (`django-axes` or proxy); documented in `settings.example.py` |
 | D28 | **Money rounding:** `ROUND_HALF_UP` (half away from zero). Unit costs → 4 dp first, then monetary amounts (net / vat / gross) → 2 dp. Implemented via `procurement.models.round_money`; the future `orders` app must reuse it |
 | — | Dates DD/MM/YYYY (24h); per-user timezone (default `Europe/Lisbon`); EN + pt-PT |
-| D29 | **`internal_code` charset** (Phase 1 ✅): if set, only `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. Phase 2 pending: immutability after first save, mandatory Genesis, `retail_price > 0` on create |
+| D29 | **`internal_code` lifecycle (Phases 1–2 ✅)** | Charset: `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. **Locked after first save** (set-if-empty once for legacy). Console create = **mandatory Genesis** (atomic); requires internal code + description + unit + VAT + active family + **retail_price > 0** |
 | D30 | **Server-side item drafts** | **Deferred** — try localStorage autosave first if staff report lost forms; see plan advisory |
 | D31 | **Warehouse short-close** | `approved` + zero dispatch → **closed**; `fulfilling` (partial issue) → **shipped** for branch receipt path |
 
@@ -192,7 +202,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ## Git (as of 22 Aug 2026, 11:30 WEST)
 
-- Branch: **`phase5-branches`** (or current working branch). Phase 5 Slices 1–6 committed; session work includes internal_code Phase 1 + requisição bug fixes (may be uncommitted).
+- Branch: **`phase5-branches`** (or current working branch). Phase 5 Slices 1–6 committed; session work includes internal_code Phases 1–2, requisição bug fixes, session-handoff tooling (may be uncommitted).
 - The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are on `main`. The 1303 review is archived under `docs/archive/`.
 - Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
@@ -204,7 +214,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput
 ```
 
-- Last full suite: **383 OK** without `--keepdb` (includes internal_code format tests + short-close fixes).
+- Last full suite: **392 OK** without `--keepdb` (includes internal_code Phases 1–2 + short-close fixes).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 

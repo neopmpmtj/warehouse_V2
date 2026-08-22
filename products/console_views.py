@@ -26,6 +26,8 @@ from .services import (
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
     InvalidInternalCodeError,
+    InternalCodeImmutableError,
+    ItemGenesisNotReadyError,
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
@@ -38,7 +40,7 @@ from .services import (
     catalog_below_reorder,
     catalog_buying_price,
     create_family,
-    create_item,
+    create_and_activate_item,
     create_supplier,
     create_supplier_item_price,
     deactivate_item,
@@ -348,7 +350,7 @@ def manage_item_list(request):
         vat_rate_id = payload.get("vat_rate_id")
         if vat_rate_id is None:
             raise ValidationError("vat_rate_id is required.")
-        item = create_item(
+        item = create_and_activate_item(
             request.user,
             family=_parse_int_id(family_id, "family_id"),
             description=description,
@@ -369,7 +371,11 @@ def manage_item_list(request):
             else "0",
             reason=str(payload.get("reason", "")),
         )
-    except (DuplicateInternalCodeError, InvalidInternalCodeError) as exc:
+    except (
+        DuplicateInternalCodeError,
+        InvalidInternalCodeError,
+        ItemGenesisNotReadyError,
+    ) as exc:
         return _json_error(exc.messages[0], code=exc.code)
     except (ValidationError, ObjectDoesNotExist, ValueError, TypeError) as exc:
         message = exc.messages[0] if isinstance(exc, ValidationError) and getattr(exc, "messages", None) else str(exc)
@@ -425,7 +431,11 @@ def manage_item_detail(request, item_id):
             reason=str(payload.get("reason", "")),
             **fields,
         )
-    except (DuplicateInternalCodeError, InvalidInternalCodeError) as exc:
+    except (
+        DuplicateInternalCodeError,
+        InvalidInternalCodeError,
+        InternalCodeImmutableError,
+    ) as exc:
         return _json_error(exc.messages[0], code=exc.code)
     except (ValidationError, ObjectDoesNotExist, ValueError, TypeError) as exc:
         message = exc.messages[0] if isinstance(exc, ValidationError) and getattr(exc, "messages", None) else str(exc)
@@ -466,8 +476,12 @@ def _lifecycle(request, item_id, action):
         return _json_error("Item not found.", status=404)
     except (DeactivateReasonRequiredError, ReactivateReasonRequiredError) as exc:
         return _json_error(exc.messages[0], code=exc.code)
+    except ItemGenesisNotReadyError as exc:
+        return _json_error(exc.messages[0], code=exc.code)
     except ValidationError as exc:
-        return _json_error(exc.messages[0] if exc.messages else str(exc))
+        message = exc.messages[0] if exc.messages else str(exc)
+        code = getattr(exc, "code", None)
+        return _json_error(message, code=code) if code else _json_error(message)
 
     return _item_response(item)
 
@@ -504,6 +518,8 @@ def manage_item_bulk(request):
     try:
         action(request.user, items, reason=reason)
     except (DeactivateReasonRequiredError, ReactivateReasonRequiredError) as exc:
+        return _json_error(exc.messages[0], code=exc.code)
+    except ItemGenesisNotReadyError as exc:
         return _json_error(exc.messages[0], code=exc.code)
     except ValidationError as exc:
         return _json_error(exc.messages[0] if exc.messages else str(exc))

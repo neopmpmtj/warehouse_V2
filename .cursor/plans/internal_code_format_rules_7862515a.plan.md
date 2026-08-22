@@ -13,19 +13,19 @@ todos:
     status: completed
   - id: phase2-genesis-gates
     content: "Phase 2: Genesis qualification validator (internal_code, description, unit, vat, family, retail_price > 0)"
-    status: pending
+    status: completed
   - id: phase2-immutability
     content: "Phase 2: Block internal_code changes in update_item for any saved item (pk exists)"
-    status: pending
+    status: completed
   - id: phase2-mandatory-genesis
     content: "Phase 2: Atomic create+Genesis in console API; remove skip-inactive path in console.js"
-    status: pending
+    status: completed
   - id: phase2-ui
     content: "Phase 2: Disable internal_code input when editing existing items; mark required on new item form"
-    status: pending
+    status: completed
   - id: phase2-tests
     content: "Phase 2: immutability, genesis gates, mandatory activation tests"
-    status: pending
+    status: completed
 isProject: false
 ---
 
