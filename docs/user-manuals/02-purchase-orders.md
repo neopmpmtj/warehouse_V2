@@ -2,7 +2,7 @@
 
 **The Purchase Orders console** · Version 1.0 · For warehouse staff (admin / manager / operator)
 
-> **Companion:** [Edge cases, limits & troubleshooting](05-edge-cases-and-limits.md) — the reference for error messages, numeric bounds, and known gaps. [Admin & Superuser Reference](06-admin-reference.md) — users, roles, permissions, branches.
+> **Companion:** [Edge cases, limits & troubleshooting](05-edge-cases-and-limits.md) — the reference for error messages, numeric bounds, and known gaps. [Manager catalog](07-manager-catalog.md) — read-only stock + prices. [Admin & Superuser Reference](06-admin-reference.md) — users, roles, permissions, branches.
 
 ---
 

@@ -2,9 +2,9 @@
 
 **Reference** · Version 1.0 · For warehouse staff, branch staff, and administrators
 
-> **Companion to:** [Item Console](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Admin & Superuser Reference](06-admin-reference.md).
+> **Companion to:** [Item Console](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Admin & Superuser Reference](06-admin-reference.md) · [Manager catalog](07-manager-catalog.md).
 >
-> Those four teach the normal path. **This one is the lookup reference** for the boundaries: the exact errors you can hit, the hard numeric limits, the state-machine rules, and the things that are *deliberately not built yet*. When something "won't let you", look here.
+> Those manuals teach the normal path. **This one is the lookup reference** for the boundaries: the exact errors you can hit, the hard numeric limits, the state-machine rules, and the things that are *deliberately not built yet*. When something "won't let you", look here.
 
 ---
 
@@ -45,6 +45,18 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 **Family names are immutable** — the console has no "rename". If a name is wrong, deactivate it and create a new family (items keep the old family; you can't add new items to an inactive family).
 
 **New items:** confirm **Genesis** on save — create and activation are atomic (no inactive orphan if you cancel). **Internal code** is required and locked after save.
+
+**Manager catalog (`/manage/catalog/`)** — read-only stock + prices for warehouse staff. See [Manager catalog](07-manager-catalog.md).
+
+| Message (exact) | Why it appears | What to do |
+|-----------------|----------------|------------|
+| `No items to show.` | No active items in active families | Create or reactivate items in the item console |
+| `No items match these filters.` | Search, family, or “below reorder only” hid every row | Clear filters (*All families*, untick the checkbox) |
+| `Could not load the catalog.` | Catalog API failed | Refresh; if it persists, ask an administrator |
+| `The request could not be completed.` | Request failed without a specific message | Refresh; try again |
+| `Catalogue view permission required` | Not a warehouse user (typical for branch-only logins) | Use `/branch/catalog/`, or ask head office for a warehouse group |
+
+**Below reorder** is `reorder_level > 0` **and** stock ≤ reorder. Reorder **0** never flags. Buying price = primary supplier’s cost, else cheapest among **active** suppliers (else —).
 
 ### 2.2 Purchase orders (`/manage/purchase-orders/`)
 
@@ -301,3 +313,4 @@ These are deliberate deferrals — ask before assuming they exist:
 - [Purchase Orders](02-purchase-orders.md) — PO workflow, discounts, approval.
 - [Goods receipt & stock](03-goods-receipts.md) — receiving, stock ledger, adjustments.
 - [Branches & Requisição interna](04-internal-requests.md) — the branch → warehouse → branch loop.
+- [Manager catalog](07-manager-catalog.md) — warehouse read-only stock + prices (`/manage/catalog/`).

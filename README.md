@@ -306,7 +306,7 @@ views (login required) → API + HTML
 - [`docs/archive/code-review-full-2026-08-20-2208.md`](docs/archive/code-review-full-2026-08-20-2208.md) — prior full review (concluded)
 - [`docs/archive/code-review-inventory-2026-08-20.md`](docs/archive/code-review-inventory-2026-08-20.md) — Phase 3 review (concluded)
 - [`docs/archive/code-review-2026-08-20.md`](docs/archive/code-review-2026-08-20.md) · [`docs/archive/code-review-audit.md`](docs/archive/code-review-audit.md) — archived reviews
-- [`docs/user-manuals/01-items.md`](docs/user-manuals/01-items.md) · [`docs/user-manuals/02-purchase-orders.md`](docs/user-manuals/02-purchase-orders.md) · [`docs/user-manuals/03-goods-receipts.md`](docs/user-manuals/03-goods-receipts.md)
+- [`docs/user-manuals/01-items.md`](docs/user-manuals/01-items.md) · [`docs/user-manuals/02-purchase-orders.md`](docs/user-manuals/02-purchase-orders.md) · [`docs/user-manuals/03-goods-receipts.md`](docs/user-manuals/03-goods-receipts.md) · [`docs/user-manuals/04-internal-requests.md`](docs/user-manuals/04-internal-requests.md) · [`docs/user-manuals/05-edge-cases-and-limits.md`](docs/user-manuals/05-edge-cases-and-limits.md) · [`docs/user-manuals/06-admin-reference.md`](docs/user-manuals/06-admin-reference.md) · [`docs/user-manuals/07-manager-catalog.md`](docs/user-manuals/07-manager-catalog.md)
 - [`docs/archive/warehouse-tenancy-setup.md`](docs/archive/warehouse-tenancy-setup.md) — archived Branch/Membership sketch (superseded)
 - [`AGENTS.md`](AGENTS.md)
 - [`products/products_docs/aux_instructions.md`](products/products_docs/aux_instructions.md) — development pace

@@ -12,6 +12,7 @@ When you change **application behaviour**, **validation constraints**, **error m
 | Change type | Primary manual | Also check |
 |-------------|----------------|------------|
 | Item console, catalogue, families, suppliers, prices | [`docs/user-manuals/01-items.md`](docs/user-manuals/01-items.md) | [`05-edge-cases-and-limits.md`](docs/user-manuals/05-edge-cases-and-limits.md) §2.1, §3 |
+| Manager catalog (read-only stock + prices) | [`07-manager-catalog.md`](docs/user-manuals/07-manager-catalog.md) | [`01-items.md`](docs/user-manuals/01-items.md), [`03-goods-receipts.md`](docs/user-manuals/03-goods-receipts.md) |
 | Purchase orders | [`02-purchase-orders.md`](docs/user-manuals/02-purchase-orders.md) | §2.2, §4.1 |
 | Goods receipt, issue, stock | [`03-goods-receipts.md`](docs/user-manuals/03-goods-receipts.md) | §2.3 |
 | Branches, requisição | [`04-internal-requests.md`](docs/user-manuals/04-internal-requests.md) | §2.4 |

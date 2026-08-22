@@ -2,7 +2,7 @@
 
 **The Goods receipt console** · Version 1.0 · For warehouse staff (admin / manager / operator)
 
-> **Also available:** the [Item Console manual](01-items.md), the [Purchase Orders manual](02-purchase-orders.md), the [Branches & Requisição interna manual](04-internal-requests.md), the [Edge cases & limits](05-edge-cases-and-limits.md) reference, and the [Admin & Superuser Reference](06-admin-reference.md).
+> **Also available:** the [Item Console manual](01-items.md), the [Purchase Orders manual](02-purchase-orders.md), the [Manager catalog](07-manager-catalog.md) at `/manage/catalog/`, the [Branches & Requisição interna manual](04-internal-requests.md), the [Edge cases & limits](05-edge-cases-and-limits.md) reference, and the [Admin & Superuser Reference](06-admin-reference.md).
 
 ---
 
@@ -226,7 +226,7 @@ No. Receipts are permanent. If the PO still has remaining quantity, do not “fi
 It is the **sum of quantities** on that receipt (pieces, kg, …), not the PO’s gross value. Money lives on the purchase order.
 
 **Q5. Where do I see the item’s current stock?**
-The cached balance is on the **manager catalog** at `/manage/catalog/` (stock + reorder level + buying/selling prices). You can also add the **+** and **−** rows for that item in **Stock movements**, or ask an admin to confirm in Django admin (superuser). Do not type a number onto the item.
+The cached balance is on the **[manager catalog](07-manager-catalog.md)** at `/manage/catalog/` (stock + reorder level + buying/selling prices). You can also add the **+** and **−** rows for that item in **Stock movements**, or ask an admin to confirm in Django admin (superuser). Do not type a number onto the item.
 
 **Q6. I can’t see “Adjust stock” — why?**
 Only **admins** can adjust. Managers record receipts; operators are read-only. See §1.

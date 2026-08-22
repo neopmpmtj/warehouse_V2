@@ -2,7 +2,7 @@
 
 **Branch ordering** · Version 1.0 · For branch staff (operator / manager / admin) **and** warehouse staff
 
-> **Also available:** the [Item Console manual](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Edge cases & limits](05-edge-cases-and-limits.md) · [Admin & Superuser Reference](06-admin-reference.md).
+> **Also available:** the [Item Console manual](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Manager catalog](07-manager-catalog.md) · [Edge cases & limits](05-edge-cases-and-limits.md) · [Admin & Superuser Reference](06-admin-reference.md).
 >
 > This manual covers everything a **satellite branch** does, plus the **warehouse** side of the same loop. Read it end-to-end once — the loop only makes sense as a whole.
 
@@ -99,6 +99,8 @@ Open **`/branch/catalog/`**. This is the same product catalogue the warehouse ma
 
 1. **Cost is hidden.** You see the **selling prices** (Retail / Wholesale / Special), never the supplier cost.
 2. **Stock is only a hint** — never an exact number.
+
+Warehouse staff see exact stock **and** cost on the [manager catalog](07-manager-catalog.md) at `/manage/catalog/`.
 
 ### 3.1 The availability hint
 
@@ -319,6 +321,7 @@ Same as the other consoles:
 ## 14. Related consoles
 
 - [Item Console](01-items.md) — where the warehouse manages the catalogue (items, families, suppliers, prices).
+- [Manager catalog](07-manager-catalog.md) — warehouse read-only stock + prices (`/manage/catalog/`; cost visible).
 - [Purchase Orders](02-purchase-orders.md) — how the warehouse restocks from suppliers.
 - [Goods receipt & stock](03-goods-receipts.md) — booking supplier deliveries into central stock.
 
@@ -327,7 +330,7 @@ Same as the other consoles:
 ## 15. FAQ
 
 **Q1. Why can't I see the cost price in the branch catalogue?**
-Deliberate. Branches see selling prices only; supplier cost is warehouse-confidential. If you need a price you can't see, ask the warehouse.
+Deliberate. Branches see selling prices only; supplier cost is warehouse-confidential. Warehouse staff see cost on the [manager catalog](07-manager-catalog.md) at `/manage/catalog/`. If you need a price you can't see, ask the warehouse.
 
 **Q2. The catalogue says "None" for an item — can I still request it?**
 Yes, but the warehouse will have to **procure it first** (a purchase order to a supplier). Your request waits until stock exists, then it ships.

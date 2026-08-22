@@ -2,7 +2,7 @@
 
 **The Item Console** · Version 1.0 · For warehouse staff (admin / manager / operator)
 
-> **Also available:** [Purchase orders](02-purchase-orders.md) at `/manage/purchase-orders/` · [Goods receipt & stock](03-goods-receipts.md) at `/manage/goods-receipts/` · [Branches & Requisição interna](04-internal-requests.md) at `/branch/…` · [Edge cases & limits](05-edge-cases-and-limits.md) · [Admin & Superuser Reference](06-admin-reference.md).
+> **Also available:** [Purchase orders](02-purchase-orders.md) at `/manage/purchase-orders/` · [Goods receipt & stock](03-goods-receipts.md) at `/manage/goods-receipts/` · [Manager catalog](07-manager-catalog.md) at `/manage/catalog/` · [Branches & Requisição interna](04-internal-requests.md) at `/branch/…` · [Edge cases & limits](05-edge-cases-and-limits.md) · [Admin & Superuser Reference](06-admin-reference.md).
 
 ---
 
@@ -272,6 +272,7 @@ This is your safety net: nothing is ever silently overwritten.
 
 - [Purchase orders](02-purchase-orders.md) — raise and approve supplier orders.
 - [Goods receipt & stock](03-goods-receipts.md) — book in deliveries; stock is a ledger, never typed on the item.
+- [Manager catalog](07-manager-catalog.md) — read-only stock + prices overview (`/manage/catalog/`).
 - [Branches & Requisição interna](04-internal-requests.md) — how satellite branches browse the catalogue, raise requests, and confirm arrivals.
 - [Edge cases, limits & troubleshooting](05-edge-cases-and-limits.md) — the reference for error messages, numeric bounds, state-machine rules, and known gaps.
 - [Admin & Superuser Reference](06-admin-reference.md) — creating users, roles, permissions, branches, and branch memberships.
