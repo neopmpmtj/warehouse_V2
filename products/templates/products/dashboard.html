@@ -31,16 +31,28 @@
         {% endfor %}
     </ul>
     {% endif %}
-    <h2>Pages</h2>
+    <h2>Warehouse pages</h2>
     <ul>
         <li><a href="/">/</a> — this dashboard</li>
         <li><a href="/manage/items/">/manage/items/</a> — item console (staff catalogue)</li>
         <li><a href="/manage/catalog/">/manage/catalog/</a> — manager catalog (stock + prices)</li>
         <li><a href="/manage/purchase-orders/">/manage/purchase-orders/</a> — purchase orders</li>
+        <li><a href="/manage/approval-limits/">/manage/approval-limits/</a> — PO approval caps (admins may edit)</li>
         <li><a href="/manage/goods-receipts/">/manage/goods-receipts/</a> — goods receipt &amp; stock</li>
+        <li><a href="/manage/internal-requests/">/manage/internal-requests/</a> — request queue + goods issue</li>
+        <li><a href="/manage/branch-approval-limits/">/manage/branch-approval-limits/</a> — branch manager caps (admins may edit)</li>
         {% if user.is_superuser %}
         <li><a href="/admin/">/admin/</a> — Django admin (superuser only)</li>
         {% endif %}
+    </ul>
+
+    <h2>Branch pages</h2>
+    <p>These need a branch membership. Warehouse-only logins are sent to the picker or refused.</p>
+    <ul>
+        <li><a href="/branch/select/">/branch/select/</a> — branch picker</li>
+        <li><a href="/branch/catalog/">/branch/catalog/</a> — branch catalog (cost hidden)</li>
+        <li><a href="/branch/requests/">/branch/requests/</a> — requisição interna</li>
+        <li><a href="/branch/receipts/">/branch/receipts/</a> — branch receipt + branch stock</li>
     </ul>
 
     <h2>Auth</h2>
@@ -80,6 +92,11 @@
         <li>/api/manage/supplier-prices/&lt;id&gt;/history/</li>
     </ul>
 
+    <h2>Manager catalog API</h2>
+    <ul>
+        <li><a href="/api/manage/catalog/" target="_blank" rel="noopener noreferrer">/api/manage/catalog/</a> — joined stock + prices</li>
+    </ul>
+
     <h2>Purchase orders API</h2>
     <ul>
         <li><a href="/api/manage/purchase-orders/" target="_blank" rel="noopener noreferrer">/api/manage/purchase-orders/</a> — list / create</li>
@@ -89,8 +106,16 @@
         <li>/api/manage/purchase-orders/&lt;id&gt;/submit/</li>
         <li>/api/manage/purchase-orders/&lt;id&gt;/approve/</li>
         <li>/api/manage/purchase-orders/&lt;id&gt;/reject/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/reopen/</li>
         <li>/api/manage/purchase-orders/&lt;id&gt;/close/</li>
+        <li>/api/manage/purchase-orders/&lt;id&gt;/cancel/</li>
         <li>/api/manage/purchase-orders/&lt;id&gt;/history/</li>
+    </ul>
+
+    <h2>Approval limits API</h2>
+    <ul>
+        <li><a href="/api/manage/approval-limits/" target="_blank" rel="noopener noreferrer">/api/manage/approval-limits/</a> — list</li>
+        <li>/api/manage/approval-limits/&lt;id&gt;/ — PATCH (warehouse admin)</li>
     </ul>
 
     <h2>Goods receipt &amp; stock API</h2>
@@ -100,6 +125,45 @@
         <li>/api/manage/purchase-orders/&lt;id&gt;/receipt-summary/ — per-line ordered/received/remaining</li>
         <li><a href="/api/manage/stock-movements/" target="_blank" rel="noopener noreferrer">/api/manage/stock-movements/</a> — stock ledger (with ?item_id=)</li>
         <li>/api/manage/stock-adjustments/ — manual adjustment (POST)</li>
+    </ul>
+
+    <h2>Internal requests &amp; goods issue API</h2>
+    <ul>
+        <li><a href="/api/manage/internal-requests/" target="_blank" rel="noopener noreferrer">/api/manage/internal-requests/</a> — warehouse queue</li>
+        <li>/api/manage/internal-requests/&lt;id&gt;/</li>
+        <li>/api/manage/internal-requests/&lt;id&gt;/issue/</li>
+        <li>/api/manage/internal-requests/&lt;id&gt;/short-close/</li>
+        <li><a href="/api/manage/branch-approval-limits/" target="_blank" rel="noopener noreferrer">/api/manage/branch-approval-limits/</a> — branch manager caps</li>
+    </ul>
+
+    <h2>Branch catalog API</h2>
+    <ul>
+        <li><a href="/api/branch/catalog/" target="_blank" rel="noopener noreferrer">/api/branch/catalog/</a> — cost hidden, stock hint</li>
+    </ul>
+
+    <h2>Requisição interna API</h2>
+    <ul>
+        <li><a href="/api/branch/requests/" target="_blank" rel="noopener noreferrer">/api/branch/requests/</a> — list / create</li>
+        <li>/api/branch/requests/create/</li>
+        <li>/api/branch/requests/&lt;id&gt;/</li>
+        <li>/api/branch/requests/&lt;id&gt;/update/</li>
+        <li>/api/branch/requests/&lt;id&gt;/lines/</li>
+        <li>/api/branch/requests/&lt;id&gt;/lines/&lt;line_id&gt;/</li>
+        <li>/api/branch/requests/&lt;id&gt;/lines/&lt;line_id&gt;/remove/</li>
+        <li>/api/branch/requests/&lt;id&gt;/submit/</li>
+        <li>/api/branch/requests/&lt;id&gt;/approve/</li>
+        <li>/api/branch/requests/&lt;id&gt;/reject/</li>
+        <li>/api/branch/requests/&lt;id&gt;/cancel/</li>
+        <li>/api/branch/requests/&lt;id&gt;/history/</li>
+    </ul>
+
+    <h2>Branch receipt &amp; stock API</h2>
+    <ul>
+        <li><a href="/api/branch/receipts/issues/" target="_blank" rel="noopener noreferrer">/api/branch/receipts/issues/</a> — open dispatches</li>
+        <li>/api/branch/receipts/issues/&lt;id&gt;/</li>
+        <li>/api/branch/receipts/issues/&lt;id&gt;/receive/</li>
+        <li>/api/branch/receipts/issues/&lt;id&gt;/short-close/</li>
+        <li>/api/branch/stock/adjust/ — branch stock adjustment (POST)</li>
     </ul>
 </body>
 </html>

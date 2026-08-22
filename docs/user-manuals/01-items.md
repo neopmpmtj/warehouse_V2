@@ -14,7 +14,7 @@
 >
 > *(During development on your own machine, use: `http://127.0.0.1:8000/`)*
 
-You'll be taken to the **login page**. After signing in you land on the dashboard; the main working screen is the **Item console** at:
+You'll be taken to the **login page**. After signing in you land on the dashboard (`/`). That page lists every warehouse console (items, catalog, purchase orders, **approval limits**, goods receipts, **internal requests**, **branch approval limits**) plus branch pages (`/branch/select/`, catalog, requisição, receipts) and the JSON APIs. The main catalogue working screen is the **Item console** at:
 
 > **`https://<your-domain>/manage/items/`**
 
