@@ -167,7 +167,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | **Discounts** (commercial / financial / rappel) | `Decimal(5,2)` | each `0–100`; **combined ≤ 100** | percentages |
 | **VAT rate** | `Decimal(5,4)` | fraction `0 … 1` | e.g. `0.16` = 16% |
 | **Reorder level** | `Decimal(12,3)` | `≥ 0` | 0 = "no reorder trigger" |
-| **Internal code** | `CharField` max **64** | required on console create; letters, digits, `.`, `-`, `_` only; **immutable after save** (set-if-empty once for legacy) | unique, case-insensitive |
+| **Internal code** | `CharField` max **64** | required on console create; letters, digits, `.`, `-`, `_` only; **stored uppercase**; **immutable after save** (set-if-empty once for legacy) | unique, case-insensitive |
 | **Retail price (Genesis)** | `Decimal(12,2)` | **> 0** required on console create / first activation | wholesale/special may stay 0 |
 | **Reason / notes (reason fields)** | `CharField` / `TextField` | reason ≤ **255 chars** | over-long reason rejected |
 | **Email** | `EmailField` | valid email | supplier & user |
@@ -299,7 +299,8 @@ These are deliberate deferrals — ask before assuming they exist:
 
 **"My internal code was rejected."**
 - Spaces or symbols (e.g. `@`, `#`) → use only letters, digits, `.`, `-`, `_`.
-- Code already used (case-insensitive) → pick another or leave blank.
+- Code already used (case-insensitive — `cem-50` collides with `CEM-50`) → pick another.
+- Lowercase is fine — it is **saved as uppercase**.
 
 **"I got 'insufficient stock'."**
 - Issue: on-hand is less than requested → procure (PO → goods receipt) first.

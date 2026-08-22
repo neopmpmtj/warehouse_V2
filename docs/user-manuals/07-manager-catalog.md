@@ -190,4 +190,4 @@ Not if **Reorder** is 0. A zero reorder level means “do not flag”. Set a reo
 Yes. Every warehouse group that can open this page sees buying price. Cost is hidden only on the **branch** catalogue.
 
 **Q8. Can two items have the same internal code?**
-No — codes are unique (case-insensitive). That rule is enforced in the item console, not here. See [Item Console](01-items.md) FAQ.
+No — codes are unique (case-insensitive) and stored **uppercase**. That rule is enforced in the item console, not here. See [Item Console](01-items.md) FAQ.

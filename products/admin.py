@@ -40,6 +40,7 @@ from .services import (
     update_supplier_item_price,
     validate_family_name_available,
     validate_internal_code_available,
+    validate_internal_code_format,
     validate_supplier_name_available,
 )
 
@@ -67,7 +68,9 @@ class ItemAdminForm(forms.ModelForm):
         )
 
     def clean_internal_code(self):
-        internal_code = self.cleaned_data.get("internal_code", "")
+        internal_code = validate_internal_code_format(
+            self.cleaned_data.get("internal_code", "")
+        )
         exclude_item_id = self.instance.pk if self.instance.pk else None
         validate_internal_code_available(
             internal_code,

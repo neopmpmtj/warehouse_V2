@@ -140,7 +140,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 
 | Field | Required | Notes |
 |-------|:---:|-------|
-| **Internal code** | Yes (new items) | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). Only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. **Cannot be changed after the first save** (legacy items with an empty code may set it once). |
+| **Internal code** | Yes (new items) | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). Only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. **Saved as uppercase** (`cem-50` becomes `CEM-50`). **Cannot be changed after the first save** (legacy items with an empty code may set it once). |
 | **Description** | Yes | What the item is. |
 | **Family** | Yes | The group it belongs to (see §7). |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
@@ -309,7 +309,7 @@ It's removed from the active list but **not deleted** — its history is preserv
 No — internal codes are unique (case-insensitive). You'll get an error if you try to reuse one.
 
 **Q10. What characters can I use in an internal code?**
-Letters (`A–Z`, `a–z`), digits (`0–9`), dots (`.`), hyphens (`-`), and underscores (`_`) only — for example `CEM-50`, `CABLE-2.5`, or `TIMBER_2X4`. Spaces and symbols such as `@` or `#` are rejected. **Internal code is required on new items** and **cannot be changed after the first save** (legacy rows with an empty code may set it once).
+Letters (`A–Z`, `a–z`), digits (`0–9`), dots (`.`), hyphens (`-`), and underscores (`_`) only — for example `CEM-50`, `CABLE-2.5`, or `TIMBER_2X4`. Spaces and symbols such as `@` or `#` are rejected. **The code is stored in uppercase** — typing `cem-50` saves as `CEM-50`. **Internal code is required on new items** and **cannot be changed after the first save** (legacy rows with an empty code may set it once).
 
 **Q11. Can I change an internal code later?**
 No — after the item is saved, the code is locked. Plan the code before Genesis. Exception: an older item that still has an **empty** code may set it **once**.

@@ -205,7 +205,7 @@ def _serialize_value(value):
 
 
 def _normalize_internal_code(internal_code):
-    return (internal_code or "").strip()
+    return (internal_code or "").strip().upper()
 
 
 def validate_internal_code_format(internal_code):

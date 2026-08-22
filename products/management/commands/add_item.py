@@ -37,7 +37,7 @@ class Command(BaseCommand):
             "--internal-code",
             dest="internal_code",
             required=True,
-            help="Warehouse internal code (required)",
+            help="Warehouse internal code (required; stored as uppercase)",
         )
         parser.add_argument(
             "--retail-price",

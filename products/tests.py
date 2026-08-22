@@ -287,7 +287,25 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
                     unit_of_measure=Item.UnitOfMeasure.PIECE,
                     vat_rate=self.vat_rate,
                 )
-                self.assertEqual(item.internal_code, internal_code)
+                self.assertEqual(
+                    item.internal_code,
+                    internal_code.upper() if internal_code else "",
+                )
+
+    def test_internal_code_is_stored_uppercase(self):
+        item = create_item(
+            self.user,
+            family=self.family,
+            description="Lowercase typed code",
+            internal_code="cem-50",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+        )
+        self.assertEqual(item.internal_code, "CEM-50")
+
+        update_item(self.user, item, internal_code="cem-50")
+        item.refresh_from_db()
+        self.assertEqual(item.internal_code, "CEM-50")
 
     def test_update_item_rejects_invalid_internal_code_format(self):
         item = create_item(
@@ -344,7 +362,7 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
             internal_code="",
         )
 
-        update_item(self.user, item, internal_code="LEGACY-1")
+        update_item(self.user, item, internal_code="legacy-1")
         item.refresh_from_db()
         self.assertEqual(item.internal_code, "LEGACY-1")
 
@@ -1297,6 +1315,28 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         payload = response.json()
         self.assertEqual(payload["code"], "invalid_internal_code")
         self.assertFalse(Item.objects.filter(description="Bad code item").exists())
+
+    def test_console_create_stores_internal_code_uppercase(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps({
+                "family_id": self.family.id,
+                "description": "Lowercase code item",
+                "unit_of_measure": Item.UnitOfMeasure.KG,
+                "internal_code": "con-lc",
+                "retail_price": "10.00",
+                "vat_rate_id": self.vat_rate.id,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        created = response.json()["item"]
+        self.assertEqual(created["internal_code"], "CON-LC")
+        item = Item.objects.get(pk=created["id"])
+        self.assertEqual(item.internal_code, "CON-LC")
 
     def test_console_create_without_internal_code_is_rejected(self):
         self.client.force_login(self.staff_user)
