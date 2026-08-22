@@ -1,31 +1,31 @@
 ---
 name: Manage header settings popover
-overview: "Lighten the sticky header on the four full-chrome warehouse manage pages by moving signed-in status, language, theme, and sign out into a cog icon popover. No drawers, no dashboard/branch chrome, no coding until this plan is approved."
+overview: "Lighten the sticky header on the four full-chrome warehouse manage pages by moving signed-in status, language, theme, and sign out into a cog icon popover. Approved and implemented."
 todos:
   - id: markup-css
     content: "Shared settings markup + console.css popover styles on the four manage pages"
-    status: pending
+    status: completed
   - id: popover-js
     content: "Shared console_settings_menu.js (open/close, Escape, outside click, aria-expanded)"
-    status: pending
+    status: completed
   - id: wire-pages
     content: "Keep per-page language/theme listeners; protect applyStaticI18n from wiping the cog SVG"
-    status: pending
+    status: completed
   - id: i18n
     content: "Add EN + pt-PT strings (settings, settingsMenu) in all four i18n files"
-    status: pending
+    status: completed
   - id: tests
     content: "Assert cog + hidden popover on the four pages; assert / and /branch/catalog/ unchanged"
-    status: pending
+    status: completed
   - id: manuals
     content: "Update 01-items, 03-goods-receipts, 07-manager-catalog (and PO language notes)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Manage header — settings cog + popover
 
-**Status:** plan only — do not implement until Pedro approves this file.
+**Status:** approved and implemented (22 August 2026).
 
 **Goal:** make the sticky header less busy. Left stays `CentCompras` + page title. Right becomes one icon button (gear). Click opens a small popover with the existing account controls.
 

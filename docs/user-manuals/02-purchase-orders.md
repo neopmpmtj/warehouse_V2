@@ -157,4 +157,4 @@ Only **managers grade 2+** and **admins** can approve (within caps for managers)
 Net is before VAT; Gross is net + VAT — the amount you actually pay.
 
 **Q6. Dates and timezone?**
-Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). Language is EN / pt-PT.
+Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). Language (EN / pt-PT), theme, and **Sign out** live in the **Settings** gear (top-right).
