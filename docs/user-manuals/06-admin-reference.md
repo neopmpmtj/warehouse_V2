@@ -19,6 +19,8 @@ The Django admin at **`/admin/`** is **superuser-only**.
 | **Warehouse staff** (warehouse group) | ❌ | ✅ |
 | **Branch staff** (branch membership) | ❌ | ✅ (`/branch/…`) |
 
+Warehouse staff land on **`/`** after login. That dashboard lists every website console (items, catalog, purchase orders, approval limits, goods receipts, internal requests, branch approval limits) plus branch pages and the JSON APIs.
+
 Two rules to remember:
 
 - The `/admin/` login check is **`is_active` *and* `is_superuser`** — a "staff" flag alone is *not* enough.
