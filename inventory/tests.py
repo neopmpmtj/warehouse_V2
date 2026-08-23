@@ -862,6 +862,7 @@ class StockReservationTests(TestCase):
             north, [{"line_id": north_line.id, "quantity_issued": "4"}], self.admin
         )
         services.short_close_issue(north, self.admin, reason="short shipment")
+        self.item.refresh_from_db()
         north_line.refresh_from_db()
         south_line.refresh_from_db()
         self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))

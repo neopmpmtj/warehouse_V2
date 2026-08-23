@@ -1418,9 +1418,13 @@ def catalog_buying_price(item):
 
 def catalog_below_reorder(item):
     """True when the item has a reorder level and *available* stock is at/below it."""
-    available = getattr(item, "available", None)
-    if available is None:
-        from inventory.services import available_quantity
+    reserved = getattr(item, "reserved", None)
+    if reserved is not None:
+        available = item.quantity - reserved
+    else:
+        available = getattr(item, "available", None)
+        if available is None:
+            from inventory.services import available_quantity
 
-        available = available_quantity(item)
+            available = available_quantity(item)
     return item.reorder_level > 0 and available <= item.reorder_level

@@ -2952,9 +2952,9 @@ class CatalogServiceTests(ItemTestCaseMixin, TestCase):
         item = get_catalog().get(pk=self.item.pk)
         item.quantity = Decimal("20")
         item.reorder_level = Decimal("10")
-        item.available = Decimal("5")
+        item.reserved = Decimal("15")
         self.assertTrue(catalog_below_reorder(item))
-        item.available = Decimal("11")
+        item.reserved = Decimal("5")
         self.assertFalse(catalog_below_reorder(item))
 
     def test_catalog_buying_price_ignores_deactivated_supplier(self):

@@ -328,7 +328,7 @@ def adjust_stock(item, quantity, reason, user):
     if quantity < 0:
         reserved = reserved_quantity(item)
         projected = _qty3(item.quantity) + quantity
-        if projected < reserved:
+        if reserved > 0 and projected < reserved:
             raise AdjustBelowReservedError(item, reserved)
 
     movement = _write_movement(
@@ -478,7 +478,7 @@ def reserved_quantity(item):
 
 def available_quantity(item):
     """On-hand minus active reservations. Never reports negative."""
-    item = _resolve_item(item)
+    item = Item.objects.get(pk=_resolve_item(item).pk)
     available = _qty3(item.quantity) - reserved_quantity(item)
     if available < 0:
         return Decimal("0.000")
