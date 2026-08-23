@@ -90,7 +90,7 @@
             <div class="row">
                 <button id="reply-btn" class="btn btn-primary" data-i18n="reply">Reply</button>
                 <button id="link-items-btn" class="btn" data-i18n="linkItems">Link created item</button>
-                <button id="close-thread-btn" class="btn hidden" data-i18n="closeThread">Close thread</button>
+                <button id="close-thread-btn" class="btn" data-i18n="closeThread">Close thread</button>
             </div>
             <div id="link-dialog" class="dialog hidden">
                 <p data-i18n="linkHelp">Link the Item(s) created from this thread (traceability).</p>
@@ -167,7 +167,12 @@
 
             function lang() { try { return localStorage.getItem(LANG_KEY) || "en"; } catch (e) { return "en"; } }
             function t(key) { var d = I18N[lang()] || I18N.en; return d[key] !== undefined ? d[key] : (I18N.en[key] || key); }
-            function statusLabel(s) { return t("status" + s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, "")) || s; }
+            function statusLabel(s) {
+                var key = s.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); });
+                key = key.charAt(0).toUpperCase() + key.slice(1);
+                var label = t("status" + key);
+                return label === ("status" + key) ? s : label;
+            }
 
             function applyI18n() {
                 document.querySelectorAll("[data-i18n]").forEach(function (el) {
@@ -219,8 +224,13 @@
                 return node;
             }
 
-            function showError(msg) { banner.textContent = msg || "Request failed."; banner.hidden = false; }
-            function clearError() { banner.hidden = true; }
+            function showError(msg) { banner.textContent = msg || "Request failed."; banner.classList.remove("hidden"); }
+            function clearError() { banner.classList.add("hidden"); }
+
+            function setVisible(el, visible) {
+                if (!el) return;
+                el.classList.toggle("hidden", !visible);
+            }
 
             function api(path, method, body) {
                 var opts = { method: method || "GET", headers: { "Accept": "application/json", "X-CSRFToken": CSRF } };
@@ -270,13 +280,13 @@
                         if (!still) { state.selectedId = null; renderDetail(null); }
                     }
                     if (!state.selectedId && state.threads.length) { selectThread(state.threads[0].id); }
-                    if (!state.threads.length) { renderDetail(null); emptyList.hidden = false; }
+                    if (!state.threads.length) { renderDetail(null); setVisible(emptyList, true); }
                 });
             }
 
             function renderList() {
                 threadBody.textContent = "";
-                emptyList.hidden = state.threads.length > 0;
+                setVisible(emptyList, state.threads.length === 0);
                 state.threads.forEach(function (th) {
                     var tr = document.createElement("tr");
                     if (th.id === state.selectedId) tr.className = "selected";
@@ -361,9 +371,9 @@
                     .catch(showError);
             });
 
-            linkItemsBtn.addEventListener("click", function () { linkDialog.hidden = false; linkSearch.focus(); });
+            linkItemsBtn.addEventListener("click", function () { setVisible(linkDialog, true); linkSearch.focus(); });
             document.getElementById("cancel-link").addEventListener("click", function () {
-                linkDialog.hidden = true; linkResults.textContent = "";
+                setVisible(linkDialog, false); linkResults.textContent = "";
             });
             linkSearch.addEventListener("input", function () {
                 var q = linkSearch.value.trim();
@@ -378,7 +388,7 @@
                         btn.addEventListener("click", function () {
                             clearError();
                             api("/api/manage/threads/" + state.selectedId + "/link-items/", "POST", { item_ids: [it.id] })
-                                .then(function () { linkDialog.hidden = true; linkResults.textContent = ""; return loadThreads(); })
+                                .then(function () { setVisible(linkDialog, false); linkResults.textContent = ""; return loadThreads(); })
                                 .catch(showError);
                         });
                         row.appendChild(btn);
@@ -388,16 +398,16 @@
             });
 
             closeThreadBtn.addEventListener("click", function () {
-                closeDialog.hidden = false;
+                setVisible(closeDialog, true);
                 satisfactionValue = 1;
                 renderStars();
             });
             closeReason.addEventListener("change", function () {
-                closeOtherRow.hidden = closeReason.value !== "other";
+                setVisible(closeOtherRow, closeReason.value === "other");
                 if (closeReason.value !== "other") closeReasonText.value = "";
             });
             document.getElementById("cancel-close").addEventListener("click", function () {
-                closeDialog.hidden = true; closeReasonText.value = "";
+                setVisible(closeDialog, false); closeReasonText.value = "";
             });
             document.getElementById("confirm-close").addEventListener("click", function () {
                 clearError();
@@ -406,7 +416,7 @@
                     close_reason_text: closeReasonText.value,
                     satisfaction: satisfactionValue,
                 }).then(function () {
-                    closeDialog.hidden = true; closeReasonText.value = "";
+                    setVisible(closeDialog, false); closeReasonText.value = "";
                     return loadThreads();
                 }).catch(showError);
             });

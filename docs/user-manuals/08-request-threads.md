@@ -1,10 +1,26 @@
-# CentCompras — User Manual: Request Threads (catalogue-gap requests)
+# CentCompras — User Manual: Request Threads
 
 **Written requests for items not in the catalogue** · Version 1.0 · For branch staff **and** warehouse staff
 
 > **Also available:** the [Item Console manual](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Edge cases & limits](05-edge-cases-and-limits.md) · [Admin & Superuser Reference](06-admin-reference.md) · [Manager catalog](07-manager-catalog.md).
 >
 > This manual covers the **Request thread** console — the written channel a branch uses when the item it needs **does not exist in the catalogue yet**.
+
+---
+
+## Where do I go?
+
+> **Open your browser and go to:**
+>
+> **`/branch/threads/`** (branch side) or **`/manage/threads/`** (warehouse side)
+>
+> *(During development on your own machine: `http://127.0.0.1:8015/branch/threads/` and `http://127.0.0.1:8015/manage/threads/`.)*
+
+| Who | Page | What for |
+|-----|------|----------|
+| Branch (any role) | `/branch/threads/` | Open a thread, read replies, reply, close your own thread |
+| Warehouse (any group) | `/manage/threads/` | See **all** branches' threads, reply, link created items |
+| Warehouse admin | `/manage/threads/` | Force-close an abandoned / duplicate thread (override) |
 
 ---
 
@@ -21,26 +37,36 @@ Both sides understand     (the warehouse will create / procure the item)
         ↓
 Warehouse creates the item   (via the normal item console)
         ↓
-Branch closes the thread      (reason required — "Request Satisfied" or "Other")
+Branch closes the thread      (reason + satisfaction rating)
 ```
 
 The thread is a **conversation**, not a purchase order and not a requisição. The item is created by the warehouse in the normal catalogue workflow — never inside the thread.
 
----
-
-## Where do I go?
-
-| Who | Page | What for |
-|-----|------|----------|
-| Branch (any role) | `/branch/threads/` | Open a thread, read replies, reply, close your own thread |
-| Warehouse (any group) | `/manage/threads/` | See **all** branches' threads, reply, link created items |
-| Warehouse admin | `/manage/threads/` | Force-close an abandoned / duplicate thread (override) |
-
-*(During development on your own machine: `http://127.0.0.1:8015/branch/threads/` and `http://127.0.0.1:8015/manage/threads/`.)*
+![Branch threads console](screenshots/09-branch-threads.png)
 
 ---
 
-## 1. Opening a thread (branch)
+## 1. Your role — what you can do
+
+### 1.1 Branch roles
+
+| Capability | Operator | Manager | Admin |
+|-----------|:---:|:---:|:---:|
+| Open a thread, reply, read the conversation | ✅ | ✅ | ✅ |
+| Close a thread **you opened** | ✅ | ✅ | ✅ |
+| Force-close any thread (override, with reason) | ❌ | ✅ | ✅ |
+
+### 1.2 Warehouse roles
+
+| Capability | Operator | Manager | Admin |
+|-----------|:---:|:---:|:---:|
+| See all branches' threads, reply | ✅ | ✅ | ✅ |
+| Link created item(s) to a thread | ✅ | ✅ | ✅ |
+| Force-close any thread (override, with reason) | ❌ | ❌ | ✅ |
+
+---
+
+## 2. Opening a thread (branch)
 
 1. Go to **`/branch/threads/`**.
 2. Click **New thread** (*Novo fio*).
@@ -54,7 +80,7 @@ The thread opens in state **Awaiting warehouse** — the ball is in the head off
 
 ---
 
-## 2. The conversation
+## 3. The conversation
 
 **Anyone with access can post**: every user of the originating branch, and every warehouse user.
 
@@ -74,7 +100,7 @@ A post flips the turn to the other side. Two posts in a row by the same side kee
 
 ---
 
-## 3. Closing a thread
+## 4. Closing a thread
 
 Only the person who **opened** the thread can close it — with a **reason** and a **satisfaction rating**:
 
@@ -84,6 +110,8 @@ Only the person who **opened** the thread can close it — with a **reason** and
 | **Other** + textbox | Any other reason (duplicate, no longer needed, …) |
 
 **Satisfaction (1–5 stars):** the close dialog always includes a star rating. It **defaults to 1 star** and is editable — so even when the request wasn't properly attended, the branch can signal it through the rating. Pick the number of stars that matches how well the request was handled, then confirm.
+
+![Close dialog with satisfaction stars](screenshots/11-thread-close-dialog.png)
 
 Closing ends the thread — **no further messages can be posted**. If the need comes back later, open a new thread.
 
@@ -102,13 +130,15 @@ The override still requires a reason, and the thread history records **who** for
 
 ---
 
-## 4. Warehouse side (`/manage/threads/`)
+## 5. Warehouse side (`/manage/threads/`)
 
 Warehouse staff see **all** branches' threads in one queue:
 
 - **Open (awaiting)** is the default view — threads awaiting the warehouse are listed **oldest first** so nothing rots. Closed threads are filtered out.
 - Filters: **status** (open / awaiting warehouse / awaiting branch / closed) and **branch**.
-- Threads from an **inactive branch** still appear, flagged as *inactive branch* — stock-in-transit style rules apply: the conversation can still be finished, just no new work.
+- Threads from an **inactive branch** still appear, flagged as *inactive branch* — the conversation can still be finished, just no new work.
+
+![Warehouse threads console](screenshots/12-warehouse-threads.png)
 
 ### Linking created items (traceability)
 
@@ -122,13 +152,13 @@ The link shows on both sides ("Created items: …"). You can link **after** the 
 
 ---
 
-## 5. Thread → requisição: no auto-convert
+## 6. Thread → requisição: no auto-convert
 
 A thread does **not** turn into a Requisição interna automatically. Once the item exists in the catalogue, the branch places a **normal requisição** against it (see [04-internal-requests.md](04-internal-requests.md)) — that's the flow that ships stock. The thread's job is only to agree **what** to create.
 
 ---
 
-## 6. What you cannot do here
+## 7. What you cannot do here
 
 - **Post to a closed thread** — closed is terminal. Open a new thread instead.
 - **Close a thread you didn't open** — unless you're the branch manager/admin or warehouse admin (override, with reason).
@@ -139,7 +169,7 @@ A thread does **not** turn into a Requisição interna automatically. Once the i
 
 ---
 
-## 7. FAQ
+## 8. FAQ
 
 **Q1. The item doesn't exist — how do I request it?**
 Open a **thread** at `/branch/threads/` and describe it in writing. The warehouse will reply and, once understood, create the item.
@@ -167,3 +197,23 @@ No — closed is terminal. Open a new thread.
 
 **Q9. What are the stars in the close dialog?**
 Your **satisfaction rating** (1–5 stars) for how the request was handled. It defaults to **1 star** — raise it if you were properly attended, or leave it low to signal that the request wasn't handled well. The rating is stored with the close and visible in the thread history.
+
+---
+
+## 9. Dates, timezone, language & theme
+
+Same as the other consoles:
+
+- **Dates:** DD/MM/YYYY, 24-hour time (e.g. `20/08/2026 14:05`).
+- **Timezone:** your local time (new users default to **Europe/Lisbon**).
+- **Language:** English / Português (remembered per browser).
+- **Theme:** light / dark (remembered per browser).
+
+---
+
+## 10. Related consoles
+
+- [Item Console](01-items.md) — where the warehouse manages the catalogue.
+- [Branches & Requisição interna](04-internal-requests.md) — the normal branch ordering loop against existing items.
+- [Manager catalog](07-manager-catalog.md) — warehouse read-only stock + prices.
+- [Purchase Orders](02-purchase-orders.md) — how the warehouse restocks from suppliers.
