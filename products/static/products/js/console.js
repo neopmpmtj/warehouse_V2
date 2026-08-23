@@ -2162,6 +2162,7 @@ async function openDrawer(item, selectFamilyId) {
         document.getElementById("field-retail-price").value = "0";
         document.getElementById("field-wholesale-price").value = "0";
         document.getElementById("field-special-price").value = "0";
+        document.getElementById("stock-figure").hidden = true;
         itemSupplierPriceRequestId += 1;
         renderItemSupplierPrices([]);
         const familyId = selectFamilyId || firstActiveFamilyId();
@@ -2189,6 +2190,10 @@ async function openDrawer(item, selectFamilyId) {
         ? String(item.sub_family.id)
         : "";
     document.getElementById("field-reorder").value = item.reorder_level;
+    const stockFigure = document.getElementById("stock-figure");
+    stockFigure.hidden = false;
+    document.getElementById("field-on-hand").textContent = item.quantity ?? "0";
+    document.getElementById("field-available").textContent = item.available ?? item.quantity ?? "0";
     document.getElementById("field-retail-price").value = item.retail_price ?? "0";
     document.getElementById("field-wholesale-price").value = item.wholesale_price ?? "0";
     document.getElementById("field-special-price").value = item.special_price ?? "0";

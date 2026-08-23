@@ -30,7 +30,7 @@ from procurement.models import PurchaseOrder, PurchaseOrderChangeLog
 from branches.capabilities import ROLE_ADMIN, ROLE_MANAGER, ROLE_OPERATOR
 from branches.services import SESSION_KEY, assign_membership, create_branch
 from orders import services as order_services
-from orders.models import InternalRequest
+from orders.models import InternalRequest, InternalRequestLine
 
 from . import services
 from .models import (
@@ -704,12 +704,15 @@ class GoodsIssueTests(TestCase):
         with self.assertRaises(services.InvalidIssuedQuantityError):
             services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "5"}], self.admin)
 
-    def test_cannot_issue_more_than_on_hand(self):
-        req, line = self._approved_request("10")
+    def test_cannot_issue_more_than_reserved(self):
         self.item.quantity = Decimal("3")
         self.item.save(update_fields=["quantity"])
-        with self.assertRaises(services.InsufficientStockError):
+        req, line = self._approved_request("10")
+        line.refresh_from_db()
+        self.assertEqual(line.quantity_reserved, Decimal("3.000"))
+        with self.assertRaises(services.InsufficientReservationError) as ctx:
             services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
+        self.assertEqual(ctx.exception.code, "insufficient_reservation")
 
     def test_short_close_from_approved_without_dispatch_closes(self):
         req, line = self._approved_request("10")
@@ -765,6 +768,186 @@ class ConcurrentIssueTests(TransactionTestCase):
         self.assertEqual(item.quantity, Decimal("0.000"))
         self.assertEqual(outcomes.count("ok"), 1)
         self.assertEqual(outcomes.count("rejected"), 1)
+
+
+class StockReservationTests(TestCase):
+    def setUp(self):
+        self.north = create_branch("North")
+        self.south = create_branch("South")
+        self.north_op = _make_branch_user("res-n-op@example.com", self.north, ROLE_OPERATOR)
+        self.north_mgr = _make_branch_user("res-n-mgr@example.com", self.north, ROLE_MANAGER)
+        self.south_op = _make_branch_user("res-s-op@example.com", self.south, ROLE_OPERATOR)
+        self.south_mgr = _make_branch_user("res-s-mgr@example.com", self.south, ROLE_MANAGER)
+        self.admin = make_warehouse_user("res-admin@example.com")
+        self.item = _make_issue_item("Widget", wholesale="5.00", quantity="10")
+
+    def _approve(self, branch, operator, manager, qty):
+        req = order_services.create_internal_request(branch, operator)
+        line = order_services.add_line(req, self.item, qty, operator)
+        req = order_services.submit(req, operator)
+        req = order_services.approve(req, manager)
+        line.refresh_from_db()
+        return req, line
+
+    def test_partial_reserve_at_approve(self):
+        req, line = self._approve(self.north, self.north_op, self.north_mgr, "30")
+        self.assertEqual(req.status, InternalRequest.Status.APPROVED)
+        self.assertEqual(line.quantity_reserved, Decimal("10.000"))
+        self.assertEqual(services.available_quantity(self.item), Decimal("0.000"))
+
+    def test_later_branch_cannot_take_reserved_stock(self):
+        north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
+        south, south_line = self._approve(self.south, self.south_op, self.south_mgr, "10")
+        self.assertEqual(north_line.quantity_reserved, Decimal("10.000"))
+        self.assertEqual(south_line.quantity_reserved, Decimal("0.000"))
+        with self.assertRaises(services.InsufficientReservationError):
+            services.issue_goods(
+                south, [{"line_id": south_line.id, "quantity_issued": "10"}], self.admin
+            )
+        services.issue_goods(
+            north, [{"line_id": north_line.id, "quantity_issued": "10"}], self.admin
+        )
+        self.item.refresh_from_db()
+        north_line.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("0.000"))
+        self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))
+        self.assertEqual(services.available_quantity(self.item), Decimal("0.000"))
+
+    def test_issue_leaves_available_unchanged(self):
+        req, line = self._approve(self.north, self.north_op, self.north_mgr, "10")
+        self.assertEqual(services.available_quantity(self.item), Decimal("0.000"))
+        services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
+        self.item.refresh_from_db()
+        line.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("6.000"))
+        self.assertEqual(line.quantity_reserved, Decimal("6.000"))
+        self.assertEqual(services.available_quantity(self.item), Decimal("0.000"))
+
+    def test_adjust_up_allocates_fifo_to_older_backorder(self):
+        north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
+        south, south_line = self._approve(self.south, self.south_op, self.south_mgr, "10")
+        services.issue_goods(
+            north, [{"line_id": north_line.id, "quantity_issued": "10"}], self.admin
+        )
+        services.adjust_stock(self.item, "15", "PO receipt", self.admin)
+        north_line.refresh_from_db()
+        south_line.refresh_from_db()
+        self.assertEqual(north_line.quantity_reserved, Decimal("15.000"))
+        self.assertEqual(south_line.quantity_reserved, Decimal("0.000"))
+
+    def test_cancel_approved_reallocates_to_waiting_request(self):
+        north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
+        south, south_line = self._approve(self.south, self.south_op, self.south_mgr, "5")
+        order_services.cancel(north, self.north_mgr, reason="branch no longer needs it")
+        north_line.refresh_from_db()
+        south_line.refresh_from_db()
+        self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))
+        self.assertEqual(south_line.quantity_reserved, Decimal("5.000"))
+        self.assertEqual(services.available_quantity(self.item), Decimal("5.000"))
+
+    def test_short_close_approved_reallocates(self):
+        north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
+        south, south_line = self._approve(self.south, self.south_op, self.south_mgr, "5")
+        north = services.short_close_issue(north, self.admin, reason="cannot supply")
+        north_line.refresh_from_db()
+        south_line.refresh_from_db()
+        self.assertEqual(north.status, InternalRequest.Status.CLOSED)
+        self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))
+        self.assertEqual(south_line.quantity_reserved, Decimal("5.000"))
+
+    def test_short_close_fulfilling_releases_unissued_reserved(self):
+        north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "10")
+        south, south_line = self._approve(self.south, self.south_op, self.south_mgr, "5")
+        services.issue_goods(
+            north, [{"line_id": north_line.id, "quantity_issued": "4"}], self.admin
+        )
+        services.short_close_issue(north, self.admin, reason="short shipment")
+        north_line.refresh_from_db()
+        south_line.refresh_from_db()
+        self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))
+        self.assertEqual(south_line.quantity_reserved, Decimal("5.000"))
+        self.assertEqual(services.available_quantity(self.item), Decimal("1.000"))
+
+    def test_adjust_below_reserved_is_rejected(self):
+        self._approve(self.north, self.north_op, self.north_mgr, "10")
+        with self.assertRaises(services.AdjustBelowReservedError) as ctx:
+            services.adjust_stock(self.item, "-1", "count", self.admin)
+        self.assertEqual(ctx.exception.code, "adjust_below_reserved")
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, Decimal("10.000"))
+
+    def test_approve_with_zero_stock_still_succeeds(self):
+        self.item.quantity = Decimal("0")
+        self.item.save(update_fields=["quantity"])
+        req, line = self._approve(self.north, self.north_op, self.north_mgr, "8")
+        self.assertEqual(req.status, InternalRequest.Status.APPROVED)
+        self.assertEqual(line.quantity_reserved, Decimal("0.000"))
+
+    def test_backfill_gives_older_request_the_units(self):
+        north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
+        south, south_line = self._approve(self.south, self.south_op, self.south_mgr, "10")
+        InternalRequestLine.objects.filter(pk__in=[north_line.pk, south_line.pk]).update(
+            quantity_reserved=Decimal("0")
+        )
+        services.backfill_reservations()
+        north_line.refresh_from_db()
+        south_line.refresh_from_db()
+        self.assertEqual(north_line.quantity_reserved, Decimal("10.000"))
+        self.assertEqual(south_line.quantity_reserved, Decimal("0.000"))
+
+    def test_issue_summary_includes_reservation_fields(self):
+        req, line = self._approve(self.north, self.north_op, self.north_mgr, "30")
+        summary = services.get_issue_summary(req)
+        self.assertEqual(len(summary), 1)
+        self.assertEqual(summary[0]["reserved"], "10.000")
+        self.assertEqual(summary[0]["backorder"], "20.000")
+        self.assertEqual(summary[0]["available"], "0.000")
+
+
+class ConcurrentApproveTests(TransactionTestCase):
+    def test_concurrent_approve_does_not_over_reserve(self):
+        north = create_branch("North Conc")
+        south = create_branch("South Conc")
+        north_op = _make_branch_user("cap-n-op@example.com", north, ROLE_OPERATOR)
+        north_mgr = _make_branch_user("cap-n-mgr@example.com", north, ROLE_MANAGER)
+        south_op = _make_branch_user("cap-s-op@example.com", south, ROLE_OPERATOR)
+        south_mgr = _make_branch_user("cap-s-mgr@example.com", south, ROLE_MANAGER)
+        item = _make_issue_item("Conc Widget", wholesale="5.00", quantity="10")
+
+        def submitted(branch, operator, qty):
+            req = order_services.create_internal_request(branch, operator)
+            order_services.add_line(req, item, qty, operator)
+            return order_services.submit(req, operator)
+
+        north_req = submitted(north, north_op, "10")
+        south_req = submitted(south, south_op, "10")
+        outcomes = []
+
+        def worker(req, manager):
+            try:
+                order_services.approve(req, manager)
+                outcomes.append("ok")
+            except ValidationError:
+                outcomes.append("rejected")
+            finally:
+                connection.close()
+
+        threads = [
+            threading.Thread(target=worker, args=(north_req, north_mgr)),
+            threading.Thread(target=worker, args=(south_req, south_mgr)),
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        self.assertEqual(outcomes.count("ok"), 2)
+        reserved = sum(
+            (line.quantity_reserved for line in InternalRequestLine.objects.filter(item=item)),
+            Decimal("0"),
+        )
+        self.assertEqual(reserved, Decimal("10.000"))
+        self.assertEqual(services.available_quantity(item), Decimal("0.000"))
 
 
 class BranchReceiptTests(TestCase):

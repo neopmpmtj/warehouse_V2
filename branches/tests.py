@@ -454,6 +454,22 @@ class BranchCatalogApiTests(TestCase):
         response = self.client.get(reverse("branch_catalog_list"))
         self.assertEqual(response.status_code, 401)
 
+    def test_fully_reserved_stock_shows_none(self):
+        from orders import services as order_services
+
+        ok_item = Item.objects.get(internal_code="OK")
+        manager = _make_user("hint-mgr@example.com")
+        assign_membership(manager, self.branch, ROLE_MANAGER)
+        req = order_services.create_internal_request(self.branch, self.user)
+        order_services.add_line(req, ok_item, "10", self.user)
+        req = order_services.submit(req, self.user)
+        order_services.approve(req, manager)
+
+        self._login_and_select()
+        rows = {r["internal_code"]: r for r in self.client.get(reverse("branch_catalog_list")).json()["catalog"]}
+        self.assertEqual(rows["OK"]["availability"], "none")
+        self.assertNotIn("quantity", rows["OK"])
+
 
 class LoginRedirectTests(TestCase):
     def setUp(self):

@@ -1,16 +1,16 @@
 ---
 name: Warehouse stock reservation (FIFO)
-overview: "When a branch requisição is approved, reserve min(requested, unreserved on-hand) for that request so a later branch cannot take those units. Incoming stock auto-allocates FIFO to remaining backorders. Do not implement until this plan is accepted."
+overview: "When a branch requisição is approved, reserve min(requested, unreserved on-hand) for that request so a later branch cannot take those units. Incoming stock auto-allocates FIFO to remaining backorders. R1–R12 accepted 23 Aug 2026."
 todos:
   - id: model-migration
     content: Add InternalRequestLine.quantity_reserved + CheckConstraint; data backfill allocate on existing approved/fulfilling lines
-    status: pending
+    status: in_progress
   - id: allocation-service
     content: "inventory.services allocate/release helpers; available_quantity(); lock items then lines; wire approve/cancel/issue/short-close/receive/adjust"
-    status: pending
+    status: in_progress
   - id: issue-guard
     content: issue_goods ships only from this line's reservation (run FIFO allocate first); new error strings
-    status: pending
+    status: in_progress
   - id: surfaces
     content: Manager catalog + item console + warehouse queue show on-hand / reserved / available; branch hint uses available
     status: pending
@@ -25,7 +25,7 @@ isProject: false
 
 # Warehouse stock reservation (FIFO partial claim)
 
-**Status:** plan only — **do not code until this document is accepted.**
+**Status:** **R1–R12 accepted** 23 Aug 2026 — implementing.
 
 **Origin:** Phase 5 locked **A4 = no reservation** (check at goods issue). This plan **promotes A4** from deferred to a dedicated slice. It supersedes parking-lot A1 (“committed vs on-hand” visibility-only).
 
