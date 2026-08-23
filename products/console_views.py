@@ -10,30 +10,37 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from accounts.groups import (
     ADD_FAMILY,
     ADD_ITEM,
+    ADD_SUBFAMILY,
     ADD_SUPPLIER,
     ADD_SUPPLIER_ITEM_PRICE,
     CHANGE_FAMILY,
     CHANGE_ITEM,
+    CHANGE_SUBFAMILY,
     CHANGE_SUPPLIER,
     CHANGE_SUPPLIER_ITEM_PRICE,
 )
 from logging_utils import get_logger
 
-from .models import FamilyProduct, Item, Supplier, SupplierItemPrice
+from .models import FamilyProduct, Item, SubFamily, Supplier, SupplierItemPrice
 from .permissions import catalog_permissions, catalog_required, deny_unless
 from .services import (
     DeactivateReasonRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    DuplicateSubFamilyNameError,
     InvalidInternalCodeError,
     InternalCodeImmutableError,
     ItemGenesisNotReadyError,
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
+    InactiveFamilyError,
+    InactiveSubFamilyError,
     InvalidCostPriceError,
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
+    SubFamilyFamilyMismatchError,
+    SubFamilyNameRequiredError,
     SupplierNameRequiredError,
     bulk_deactivate_items,
     bulk_reactivate_items,
@@ -41,6 +48,7 @@ from .services import (
     catalog_buying_price,
     create_family,
     create_and_activate_item,
+    create_sub_family,
     create_supplier,
     create_supplier_item_price,
     deactivate_item,
@@ -49,6 +57,8 @@ from .services import (
     get_item_history,
     get_items,
     get_catalog,
+    get_sub_families,
+    get_sub_family_history,
     get_supplier_history,
     get_supplier_item_price_history,
     get_supplier_item_prices,
@@ -57,6 +67,7 @@ from .services import (
     reactivate_item,
     update_family,
     update_item,
+    update_sub_family,
     update_supplier,
     update_supplier_item_price,
 )
@@ -108,6 +119,19 @@ def _serialize_family(family):
     return payload
 
 
+def _serialize_sub_family(sub_family):
+    payload = {
+        "id": sub_family.id,
+        "name": sub_family.name,
+        "is_active": sub_family.is_active,
+        "family": _serialize_family(sub_family.family),
+    }
+    item_count = getattr(sub_family, "item_count", None)
+    if item_count is not None:
+        payload["item_count"] = item_count
+    return payload
+
+
 def _serialize_item(item):
     return {
         "id": item.id,
@@ -121,6 +145,9 @@ def _serialize_item(item):
         "special_price": _decimal_string(item.special_price),
         "is_active": item.is_active,
         "family": _serialize_family(item.family),
+        "sub_family": (
+            _serialize_sub_family(item.sub_family) if item.sub_family_id else None
+        ),
         "vat_rate": _serialize_vat_rate(item.vat_rate),
         "created_at": item.created_at.isoformat(),
         "updated_at": item.updated_at.isoformat(),
@@ -152,6 +179,7 @@ ITEM_SORT_FIELDS = {
     "internal_code": "internal_code",
     "description": "description",
     "family": "family__name",
+    "sub_family": "sub_family__name",
     "unit_of_measure": "unit_of_measure",
     "reorder_level": "reorder_level",
     "vat_rate": "vat_rate__rate",
@@ -190,11 +218,18 @@ def _apply_item_filters(queryset, request):
             Q(internal_code__icontains=query)
             | Q(description__icontains=query)
             | Q(family__name__icontains=query)
+            | Q(sub_family__name__icontains=query)
         )
     family_id = request.GET.get("family_id")
     if family_id:
         try:
             queryset = queryset.filter(family_id=int(family_id))
+        except (TypeError, ValueError):
+            pass
+    sub_family_id = request.GET.get("sub_family_id")
+    if sub_family_id:
+        try:
+            queryset = queryset.filter(sub_family_id=int(sub_family_id))
         except (TypeError, ValueError):
             pass
     status = request.GET.get("status")
@@ -231,6 +266,10 @@ def _console_payload(request):
         "families": [
             _serialize_family(family)
             for family in _families_with_counts()
+        ],
+        "sub_families": [
+            _serialize_sub_family(sub_family)
+            for sub_family in _sub_families_with_counts()
         ],
         "units": _unit_choices(),
         "vat_rates": [_serialize_vat_rate(vr) for vr in get_vat_rates()],
@@ -301,6 +340,27 @@ def _families_with_counts():
     )
 
 
+def _sub_families_with_counts():
+    return get_sub_families(active_only=False).annotate(
+        item_count=Count("items"),
+    )
+
+
+def _get_sub_family(sub_family_id):
+    return _sub_families_with_counts().get(pk=sub_family_id)
+
+
+def _sub_family_response(sub_family):
+    sub_family = _get_sub_family(sub_family.pk)
+    return JsonResponse({"sub_family": _serialize_sub_family(sub_family)})
+
+
+def _parse_optional_id(value, field_name):
+    if value is None:
+        return None
+    return _parse_int_id(value, field_name)
+
+
 def _get_family(family_id):
     return _families_with_counts().get(pk=family_id)
 
@@ -311,7 +371,7 @@ def _family_response(family):
 
 
 def _get_item(item_id):
-    return Item.objects.select_related("family", "vat_rate").get(pk=item_id)
+    return Item.objects.select_related("family", "sub_family", "vat_rate").get(pk=item_id)
 
 
 def _item_response(item):
@@ -370,11 +430,19 @@ def manage_item_list(request):
             if "special_price" in payload
             else "0",
             reason=str(payload.get("reason", "")),
+            sub_family=_parse_optional_id(
+                payload.get("sub_family_id"), "sub_family_id"
+            )
+            if "sub_family_id" in payload
+            else None,
         )
     except (
         DuplicateInternalCodeError,
         InvalidInternalCodeError,
         ItemGenesisNotReadyError,
+        InactiveFamilyError,
+        InactiveSubFamilyError,
+        SubFamilyFamilyMismatchError,
     ) as exc:
         return _json_error(exc.messages[0], code=exc.code)
     except (ValidationError, ObjectDoesNotExist, ValueError, TypeError) as exc:
@@ -412,6 +480,10 @@ def manage_item_detail(request, item_id):
             fields["internal_code"] = str(payload["internal_code"])
         if "family_id" in payload:
             fields["family"] = _parse_int_id(payload["family_id"], "family_id")
+        if "sub_family_id" in payload:
+            fields["sub_family"] = _parse_optional_id(
+                payload["sub_family_id"], "sub_family_id"
+            )
         if "unit_of_measure" in payload:
             fields["unit_of_measure"] = _parse_unit(payload)
         if "reorder_level" in payload:
@@ -435,6 +507,9 @@ def manage_item_detail(request, item_id):
         DuplicateInternalCodeError,
         InvalidInternalCodeError,
         InternalCodeImmutableError,
+        InactiveFamilyError,
+        InactiveSubFamilyError,
+        SubFamilyFamilyMismatchError,
     ) as exc:
         return _json_error(exc.messages[0], code=exc.code)
     except (ValidationError, ObjectDoesNotExist, ValueError, TypeError) as exc:
@@ -525,7 +600,7 @@ def manage_item_bulk(request):
         return _json_error(exc.messages[0] if exc.messages else str(exc))
 
     refreshed = (
-        Item.objects.select_related("family", "vat_rate")
+        Item.objects.select_related("family", "sub_family", "vat_rate")
         .filter(pk__in=found_ids)
     )
     logger.info(
@@ -636,6 +711,129 @@ def manage_family_history(request, family_id):
         return _json_error("Family not found.", status=404)
 
     entries = get_family_history(family)
+    return JsonResponse(
+        {"history": [_serialize_history_entry(entry) for entry in entries]}
+    )
+
+
+def _sub_family_error(exc):
+    if isinstance(
+        exc,
+        (
+            SubFamilyNameRequiredError,
+            DuplicateSubFamilyNameError,
+            InactiveFamilyError,
+        ),
+    ):
+        return _json_error(exc.messages[0], code=exc.code)
+    if isinstance(exc, ValidationError):
+        message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+        return _json_error(message)
+    if isinstance(exc, (ObjectDoesNotExist, ValueError, TypeError)):
+        return _json_error(str(exc))
+    raise exc
+
+
+@catalog_required
+@require_http_methods(["GET", "POST"])
+def manage_sub_family_list(request):
+    if request.method == "GET":
+        queryset = _sub_families_with_counts()
+        family_id = request.GET.get("family_id")
+        if family_id:
+            try:
+                queryset = queryset.filter(family_id=int(family_id))
+            except (TypeError, ValueError):
+                return _json_error("Invalid family_id.", status=400)
+        return JsonResponse(
+            {
+                "sub_families": [
+                    _serialize_sub_family(sub_family) for sub_family in queryset
+                ]
+            }
+        )
+
+    denied = deny_unless(request, ADD_SUBFAMILY)
+    if denied:
+        return denied
+
+    try:
+        payload = _parse_json(request)
+        is_active = payload.get("is_active", True)
+        if not isinstance(is_active, bool):
+            raise ValidationError("is_active must be a boolean.")
+        family_id = payload.get("family_id")
+        if family_id is None:
+            raise ValidationError("family_id is required.")
+        sub_family = create_sub_family(
+            name=str(payload.get("name", "")),
+            family=_parse_int_id(family_id, "family_id"),
+            is_active=is_active,
+            user=request.user,
+        )
+    except (
+        SubFamilyNameRequiredError,
+        DuplicateSubFamilyNameError,
+        InactiveFamilyError,
+        ValidationError,
+    ) as exc:
+        return _sub_family_error(exc)
+
+    logger.info(
+        "Console created sub-family id=%s user=%s",
+        sub_family.id,
+        request.user.email,
+    )
+    return _sub_family_response(sub_family)
+
+
+@catalog_required
+@require_http_methods(["GET", "PATCH"])
+def manage_sub_family_detail(request, sub_family_id):
+    try:
+        sub_family = _get_sub_family(sub_family_id)
+    except SubFamily.DoesNotExist:
+        return _json_error("Sub-family not found.", status=404)
+
+    if request.method == "GET":
+        return JsonResponse({"sub_family": _serialize_sub_family(sub_family)})
+
+    denied = deny_unless(request, CHANGE_SUBFAMILY)
+    if denied:
+        return denied
+
+    try:
+        payload = _parse_json(request)
+        fields = {}
+        if "is_active" in payload:
+            if not isinstance(payload["is_active"], bool):
+                raise ValidationError("is_active must be a boolean.")
+            fields["is_active"] = payload["is_active"]
+        sub_family = update_sub_family(sub_family, user=request.user, **fields)
+    except (
+        SubFamilyNameRequiredError,
+        DuplicateSubFamilyNameError,
+        ValidationError,
+    ) as exc:
+        return _sub_family_error(exc)
+
+    logger.info(
+        "Console updated sub-family id=%s user=%s",
+        sub_family.id,
+        request.user.email,
+    )
+    return _sub_family_response(sub_family)
+
+
+@catalog_required
+@require_GET
+def manage_sub_family_history(request, sub_family_id):
+    try:
+        sub_family = SubFamily.objects.get(pk=sub_family_id)
+    except SubFamily.DoesNotExist:
+        return _json_error("Sub-family not found.", status=404)
+
+    entries = get_sub_family_history(sub_family)
     return JsonResponse(
         {"history": [_serialize_history_entry(entry) for entry in entries]}
     )
@@ -941,6 +1139,9 @@ def _serialize_catalog_item(item):
         "unit_of_measure": item.unit_of_measure,
         "is_active": item.is_active,
         "family": _serialize_family(item.family),
+        "sub_family": (
+            _serialize_sub_family(item.sub_family) if item.sub_family_id else None
+        ),
         "vat_rate": _serialize_vat_rate(item.vat_rate),
         "quantity": _decimal_string(item.quantity),
         "reorder_level": _decimal_string(item.reorder_level),
@@ -972,10 +1173,15 @@ def catalog_console(request):
 @require_GET
 def manage_catalog_list(request):
     family_id = request.GET.get("family_id")
+    sub_family_id = request.GET.get("sub_family_id")
     try:
-        queryset = get_catalog(active_only=True, family=family_id)
+        queryset = get_catalog(
+            active_only=True,
+            family=family_id or None,
+            sub_family=sub_family_id or None,
+        )
     except (ValueError, ObjectDoesNotExist):
-        return _json_error("Invalid family_id.", status=400)
+        return _json_error("Invalid family_id or sub_family_id.", status=400)
     return JsonResponse(
         {"catalog": [_serialize_catalog_item(item) for item in queryset]}
     )

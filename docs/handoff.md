@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 22 August 2026, 19:15 WEST.
+> **Read this first when resuming work.** Last updated: 23 August 2026, 13:50 WEST.
 
 ---
 
@@ -15,12 +15,13 @@
 | **4 — Manager catalog (stock + price view)** | ✅ **Done** |
 | 5 — Branches + internal request | ✅ **Done** |
 | 5+ — Item `internal_code` constraints | ✅ **Phase 1 + 2 done** |
+| 5+ — Sub-families (`FamilyProduct` → `SubFamily`) | ✅ **Done** |
 | 6 — Email automation | 🔵 **Next** |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5 and item `internal_code` Phases 1–2 are complete.** This session shipped a **Settings gear + popover** on the four full-chrome manage pages, and filled in **missing `/` dashboard links** (approval limits, internal requests, branch pages/APIs). **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5, item `internal_code` Phases 1–2, and the sub-families catalogue slice are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**The 1303 review is complete and archived** ([`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-review-full-2026-08-21-1303.md)). All N1–N12 findings are fixed. **Full suite green (402 tests).**
+**Full suite green (424 tests).**
 
 ---
 
@@ -28,13 +29,35 @@
 
 1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
 2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
-3. **Review backlog is cleared** — do **not** treat 1303 or 2208 archives as work queues.
-4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
-5. Optional follow-up: localStorage autosave on new-item form (plan advisory) — only if staff report lost forms.
+3. **Review backlog is cleared** — sub-family stitch-in review is **closed and archived** ([`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md)); do **not** treat it, 1303, or 2208 archives as work queues.
+4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`products/migrations/0009_subfamily.py`).
 
 ---
 
-## This session (22 Aug 2026, evening) — landed
+## This session (23 Aug 2026) — landed
+
+### Sub-family stitch-in review ✅
+
+- **Review (archived):** [`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md) — no high-severity findings; four Low items fixed below.
+- **Console JS:** `setLanguage()` refreshes sub-families drawer; `replaceItem()` keeps family/sub-family drawer item counts in sync after item create/update; `apiErrorMessage()` preserves quoted sub-family names in EN/pt-PT banners.
+- **Tests:** +3 API cases (PATCH mismatch, clear `sub_family_id`, list payload includes `sub_families`) → **424** total.
+- Review plan: [`.cursor/plans/sub-family_review_25223801.plan.md`](../.cursor/plans/sub-family_review_25223801.plan.md) (do not edit).
+
+### Sub-families catalogue slice ✅
+
+- **Model:** `SubFamily` + `SubFamilyChangeLog`; optional `Item.sub_family` FK; migration `0009_subfamily.py`.
+- **Services:** family-mirroring CRUD, D16 activity (no cascade), mismatch checks; optional on create/update/Genesis.
+- **Console:** item form field, toolbar filter, Sub-families drawer, APIs `/api/manage/sub-families/`; EN + pt-PT i18n.
+- **Catalog surfaces:** manager catalog column + filter; branch catalog column (no filter).
+- **Admin:** `SubFamilyAdmin`, changelog read-only, `ItemAdminForm` validation.
+- **Seed / CLI:** sample sub-families in `seed_catalog_data.py`; `seed_dev_data` idempotent create; `add_item --sub-family`.
+- **Tests:** service + API + catalog filter + branch payload (+19 tests → **421** at slice land; **424** after stitch-in review fixes).
+- **Manuals:** [`01-items.md`](user-manuals/01-items.md) §7.1, [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md), [`07-manager-catalog.md`](user-manuals/07-manager-catalog.md).
+- Plan: [`.cursor/plans/sub-family_catalogue_slice_afc2e074.plan.md`](../.cursor/plans/sub-family_catalogue_slice_afc2e074.plan.md) (do not edit the plan file).
+
+---
+
+## Earlier (22 Aug 2026, evening) — already on main
 
 ### Staff dashboard — missing page & API links ✅
 

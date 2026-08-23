@@ -27,6 +27,8 @@
     data-can-change-item="{% if catalog_flags.change_item %}true{% else %}false{% endif %}"
     data-can-add-family="{% if catalog_flags.add_family %}true{% else %}false{% endif %}"
     data-can-change-family="{% if catalog_flags.change_family %}true{% else %}false{% endif %}"
+    data-can-add-sub-family="{% if catalog_flags.add_sub_family %}true{% else %}false{% endif %}"
+    data-can-change-sub-family="{% if catalog_flags.change_sub_family %}true{% else %}false{% endif %}"
     data-can-add-supplier="{% if catalog_flags.add_supplier %}true{% else %}false{% endif %}"
     data-can-change-supplier="{% if catalog_flags.change_supplier %}true{% else %}false{% endif %}"
     data-can-add-supplier-item-price="{% if catalog_flags.add_supplier_item_price %}true{% else %}false{% endif %}"
@@ -85,6 +87,7 @@
                 placeholder="Search code or description"
             >
             <select id="family-filter"></select>
+            <select id="sub-family-filter"></select>
             <select id="status-filter">
                 <option value="all" data-i18n="allStatuses">All statuses</option>
                 <option value="active" data-i18n="active">Active</option>
@@ -99,6 +102,7 @@
             </select>
             <button type="button" id="bulk-apply" class="btn" data-i18n="apply">Apply</button>
             <button type="button" id="manage-families" class="btn" data-i18n="manageFamilies">Families</button>
+            <button type="button" id="manage-sub-families" class="btn" data-i18n="manageSubFamilies">Sub-families</button>
             <button type="button" id="manage-suppliers" class="btn" data-i18n="manageSuppliers">Suppliers</button>
             <button type="button" id="new-item" class="btn btn-primary" data-i18n="newItem">New item</button>
         </section>
@@ -128,6 +132,12 @@
                         <th class="th-sortable" data-sort="family" data-i18n-col="colFamily" aria-sort="none">
                             <button type="button" class="sort-btn">
                                 <span data-i18n="colFamily">Family</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="sub_family" data-i18n-col="colSubFamily" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colSubFamily">Sub-family</span>
                                 <span class="sort-indicator" aria-hidden="true"></span>
                             </button>
                         </th>
@@ -191,6 +201,10 @@
                 </label>
                 <button type="button" id="new-family-inline" class="btn" data-i18n="newFamily">New family</button>
             </div>
+            <label>
+                <span data-i18n="subFamily">Sub-family</span>
+                <select id="field-sub-family"></select>
+            </label>
             <label>
                 <span data-i18n="unit">Unit</span>
                 <select id="field-unit" required></select>
@@ -266,6 +280,39 @@
         </div>
     </aside>
 
+    <div id="sub-family-drawer-backdrop" class="backdrop" hidden></div>
+    <aside id="sub-family-drawer" class="drawer" hidden>
+        <div class="drawer-head">
+            <h2 id="sub-family-drawer-title" data-i18n="subFamilyDrawerTitle">Sub-families</h2>
+            <button type="button" id="sub-family-drawer-close" class="btn btn-ghost" data-i18n="close">Close</button>
+        </div>
+        <div class="drawer-body">
+            <p id="sub-family-drawer-help" class="drawer-help" data-i18n="subFamilyDrawerHelp">A sub-family is optional. Create it under a family first.</p>
+            <div class="drawer-actions">
+                <button type="button" id="new-sub-family" class="btn btn-primary" data-i18n="newSubFamily">New sub-family</button>
+            </div>
+            <div class="table-wrap">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th data-i18n="subFamilyName">Sub-family name</th>
+                            <th data-i18n="colFamily">Family</th>
+                            <th data-i18n="colItems">Items</th>
+                            <th data-i18n="colStatus">Status</th>
+                            <th data-i18n="colActions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sub-family-table-body"></tbody>
+                </table>
+            </div>
+            <section class="history">
+                <h3 id="sub-family-history-title">History</h3>
+                <p id="sub-family-history-hint" class="drawer-help" data-i18n="selectHistory">Choose History on a row to see who created or changed it.</p>
+                <ol id="sub-family-history-list"></ol>
+            </section>
+        </div>
+    </aside>
+
     <div id="supplier-drawer-backdrop" class="backdrop" hidden></div>
     <aside id="supplier-drawer" class="drawer" hidden>
         <div class="drawer-head">
@@ -310,6 +357,25 @@
         <div class="drawer-actions">
             <button type="button" id="family-name-confirm" class="btn btn-primary"></button>
             <button type="button" id="family-name-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <div id="sub-family-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
+    <div id="sub-family-dialog" class="dialog" hidden>
+        <h2 id="sub-family-dialog-title" data-i18n="subFamilyCreateTitle">New sub-family</h2>
+        <p id="sub-family-dialog-help" class="drawer-help" data-i18n="subFamilyCreateHelp">Choose the parent family, then type the sub-family name.</p>
+        <label>
+            <span data-i18n="family">Family</span>
+            <select id="sub-family-family-input" required></select>
+        </label>
+        <label>
+            <span data-i18n="subFamilyName">Sub-family name</span>
+            <input type="text" id="sub-family-name-input" maxlength="255" required>
+        </label>
+        <p id="sub-family-dialog-error" class="field-error" hidden></p>
+        <div class="drawer-actions">
+            <button type="button" id="sub-family-dialog-confirm" class="btn btn-primary" data-i18n="save">Save</button>
+            <button type="button" id="sub-family-dialog-cancel" class="btn" data-i18n="cancel">Cancel</button>
         </div>
     </div>
 
@@ -397,8 +463,8 @@
         </div>
     </div>
 
-    <script src="{% static 'products/js/console_i18n.js' %}?v=13"></script>
+    <script src="{% static 'products/js/console_i18n.js' %}?v=15"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=1"></script>
-    <script src="{% static 'products/js/console.js' %}?v=15"></script>
+    <script src="{% static 'products/js/console.js' %}?v=17"></script>
 </body>
 </html>

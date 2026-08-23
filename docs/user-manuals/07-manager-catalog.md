@@ -76,6 +76,7 @@ Clicking a row does nothing — there is no detail drawer.
 |---------|----|-------|----------------|
 | Search | *Search code or description…* | *Pesquisar código ou descrição…* | Filters as you type (internal code **or** description) |
 | Family | *All families* | *Todas as famílias* | Restrict to one family |
+| Sub-family | *All sub-families* | *Todas as sub-famílias* | Restrict to one sub-family (list scoped to the family filter when set) |
 | Checkbox | **Below reorder only** | **Só abaixo do ponto de encomenda** | Hide items that are OK |
 
 Filters combine. They run in the browser on the loaded list — you do not need to click Search.
@@ -87,6 +88,7 @@ Filters combine. They run in the browser on the loaded list — you do not need 
 | **Code** | Internal code (or — if empty on a legacy row) |
 | **Description** | What the item is |
 | **Family** | Family name |
+| **Sub-family** | Sub-family name, or **—** if none |
 | **Unit** | Unit of measure |
 | **Stock** | Cached on-hand quantity (from the stock ledger) |
 | **Reorder** | Reorder level set on the item |
@@ -135,7 +137,7 @@ Prices here are **not** a frozen PO snapshot; they follow the live supplier list
 | Message (exact, EN) | Why | What to do |
 |---------------------|-----|------------|
 | `No items to show.` | There are no active items in active families | Create/activate items in the [item console](01-items.md) |
-| `No items match these filters.` | Search, family, or “below reorder only” hid every row | Clear search, set family to *All families*, untick the checkbox |
+| `No items match these filters.` | Search, family, sub-family, or “below reorder only” hid every row | Clear search, set family/sub-family to *All*, untick the checkbox |
 | `Could not load the catalog.` | The catalog API failed | Refresh the page; if it persists, ask an administrator |
 | `The request could not be completed.` | A request failed without a specific message | Refresh; try again |
 | `Catalogue view permission required` | You are not a warehouse user (typical for branch-only logins) | Use `/branch/catalog/` instead, or ask head office for a warehouse group |

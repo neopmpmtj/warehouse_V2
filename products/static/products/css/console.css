@@ -535,6 +535,7 @@ input[type="search"] {
 body[data-can-add-item="false"] #new-item,
 body[data-can-add-family="false"] #new-family,
 body[data-can-add-family="false"] #new-family-inline,
+body[data-can-add-sub-family="false"] #new-sub-family,
 body[data-can-change-item="false"] #bulk-action,
 body[data-can-change-item="false"] #bulk-apply,
 body[data-can-change-item="false"] .col-check {

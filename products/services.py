@@ -12,6 +12,8 @@ from .models import (
     FamilyProduct,
     Item,
     ItemChangeLog,
+    SubFamily,
+    SubFamilyChangeLog,
     Supplier,
     SupplierChangeLog,
     SupplierItemPrice,
@@ -23,6 +25,7 @@ logger = get_logger("centcompras.products")
 
 ITEM_UPDATABLE_FIELDS = (
     "family",
+    "sub_family",
     "internal_code",
     "description",
     "unit_of_measure",
@@ -111,6 +114,39 @@ class InactiveFamilyError(ValidationError):
         )
 
 
+class SubFamilyNameRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Sub-family name is required.",
+            code="sub_family_name_required",
+        )
+
+
+class DuplicateSubFamilyNameError(ValidationError):
+    def __init__(self, name):
+        super().__init__(
+            f'Sub-family name "{name}" is already used in this family.',
+            code="duplicate_sub_family_name",
+        )
+
+
+class InactiveSubFamilyError(ValidationError):
+    def __init__(self, sub_family=None):
+        name = getattr(sub_family, "name", None) or "sub-family"
+        super().__init__(
+            f"Cannot assign items to inactive sub-family '{name}'.",
+            code="inactive_sub_family",
+        )
+
+
+class SubFamilyFamilyMismatchError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Sub-family does not belong to the selected family.",
+            code="sub_family_family_mismatch",
+        )
+
+
 class SupplierNameRequiredError(ValidationError):
     def __init__(self):
         super().__init__(
@@ -186,6 +222,12 @@ def _serialize_value(value):
         return str(value)
     if isinstance(value, FamilyProduct):
         return {"id": value.pk, "name": value.name}
+    if isinstance(value, SubFamily):
+        return {
+            "id": value.pk,
+            "name": value.name,
+            "family_id": value.family_id,
+        }
     if isinstance(value, VatRate):
         return {
             "id": value.pk,
@@ -282,6 +324,25 @@ def _ensure_family_active(family):
         raise InactiveFamilyError(family)
 
 
+def _resolve_sub_family(sub_family):
+    if sub_family is None:
+        return None
+    if isinstance(sub_family, SubFamily):
+        return sub_family
+    return SubFamily.objects.select_related("family").get(pk=sub_family)
+
+
+def _ensure_sub_family_usable(sub_family, item_family):
+    if sub_family is None:
+        return
+    if not SubFamily.objects.filter(pk=sub_family.pk, is_active=True).exists():
+        raise InactiveSubFamilyError(sub_family)
+    parent = sub_family.family
+    if parent.pk != item_family.pk:
+        raise SubFamilyFamilyMismatchError()
+    _ensure_family_active(parent)
+
+
 def _ensure_supplier_active(supplier):
     if not Supplier.objects.filter(pk=supplier.pk, is_active=True).exists():
         raise InactiveSupplierError(supplier)
@@ -351,6 +412,7 @@ def create_item(
     wholesale_price="0",
     special_price="0",
     reason="",
+    sub_family=None,
 ):
     internal_code = _normalize_internal_code(internal_code)
     validate_internal_code_available(internal_code)
@@ -359,6 +421,8 @@ def create_item(
         raise DescriptionRequiredError()
     family = _resolve_family(family)
     _ensure_family_active(family)
+    sub_family = _resolve_sub_family(sub_family)
+    _ensure_sub_family_usable(sub_family, family)
     vat_rate = _resolve_vat_rate(vat_rate)
 
     reorder_level = _validate_non_negative(
@@ -376,6 +440,7 @@ def create_item(
 
     item = Item(
         family=family,
+        sub_family=sub_family,
         internal_code=internal_code,
         description=description,
         unit_of_measure=unit_of_measure,
@@ -394,6 +459,7 @@ def create_item(
         ItemChangeLog.Action.CREATED,
         {
             "family": _serialize_value(item.family),
+            "sub_family": _serialize_value(item.sub_family),
             "internal_code": _serialize_value(item.internal_code),
             "description": item.description,
             "unit_of_measure": item.unit_of_measure,
@@ -431,6 +497,7 @@ def create_and_activate_item(
     wholesale_price="0",
     special_price="0",
     reason="",
+    sub_family=None,
 ):
     item = create_item(
         user,
@@ -444,6 +511,7 @@ def create_and_activate_item(
         wholesale_price=wholesale_price,
         special_price=special_price,
         reason=reason,
+        sub_family=sub_family,
     )
     validate_item_genesis_ready(item)
     reactivate_item(user, item, reason="Genesis")
@@ -488,6 +556,8 @@ def update_item(user, item, reason="", **fields):
         elif field_name == "family":
             new_value = _resolve_family(new_value)
             _ensure_family_active(new_value)
+        elif field_name == "sub_family":
+            new_value = _resolve_sub_family(new_value)
         elif field_name == "vat_rate":
             new_value = _resolve_vat_rate(new_value)
 
@@ -498,6 +568,9 @@ def update_item(user, item, reason="", **fields):
                 "new": _serialize_value(new_value),
             }
             setattr(item, field_name, new_value)
+
+    if "family" in fields or "sub_family" in fields:
+        _ensure_sub_family_usable(item.sub_family, item.family)
 
     if not changes:
         return item
@@ -602,15 +675,17 @@ def bulk_reactivate_items(user, items, reason=""):
         reactivate_item(user, item, reason=reason)
 
 
-def get_items(active_only=True, family=None):
+def get_items(active_only=True, family=None, sub_family=None):
     queryset = Item.objects.select_related(
-        "family", "vat_rate",
+        "family", "sub_family", "vat_rate",
     ).order_by("id")
     if active_only:
         queryset = queryset.active()
     if family is not None:
         family = _resolve_family(family)
         queryset = queryset.filter(family=family)
+    if sub_family is not None:
+        queryset = queryset.filter(sub_family=_resolve_sub_family(sub_family))
     return queryset
 
 
@@ -757,6 +832,147 @@ def get_families(active_only=True):
     if active_only:
         queryset = queryset.filter(is_active=True)
     return queryset.order_by("name")
+
+
+SUBFAMILY_UPDATABLE_FIELDS = ("is_active",)
+
+
+def _normalize_sub_family_name(name):
+    return (name or "").strip()
+
+
+def validate_sub_family_name_available(name, family, exclude_sub_family_id=None):
+    name = _normalize_sub_family_name(name)
+    if not name:
+        raise SubFamilyNameRequiredError()
+
+    queryset = SubFamily.objects.filter(family=family, name__iexact=name)
+    if exclude_sub_family_id is not None:
+        queryset = queryset.exclude(pk=exclude_sub_family_id)
+    if queryset.exists():
+        raise DuplicateSubFamilyNameError(name)
+    return name
+
+
+def _save_sub_family(sub_family, update_fields=None):
+    try:
+        with transaction.atomic():
+            sub_family.full_clean(
+                exclude=None, validate_unique=False, validate_constraints=False
+            )
+            if update_fields is None:
+                sub_family.save()
+            else:
+                sub_family.save(update_fields=update_fields)
+    except IntegrityError:
+        validate_sub_family_name_available(
+            sub_family.name,
+            sub_family.family,
+            exclude_sub_family_id=sub_family.pk,
+        )
+        raise
+    except DataError as exc:
+        raise ValidationError(f"Invalid value: {exc}") from exc
+
+
+def _log_sub_family_change(sub_family, user, action, changes, reason=""):
+    SubFamilyChangeLog.objects.create(
+        sub_family=sub_family,
+        user=user,
+        action=action,
+        changes=changes,
+        reason=(reason or "").strip(),
+    )
+
+
+@transaction.atomic
+def create_sub_family(name, family, is_active=True, user=None):
+    family = _resolve_family(family)
+    _ensure_family_active(family)
+    name = validate_sub_family_name_available(name, family)
+    sub_family = SubFamily(
+        family=family,
+        name=name,
+        is_active=is_active,
+    )
+    _save_sub_family(sub_family, update_fields=None)
+    _log_sub_family_change(
+        sub_family,
+        user,
+        SubFamilyChangeLog.Action.CREATED,
+        {
+            "name": sub_family.name,
+            "family": _serialize_value(sub_family.family),
+            "is_active": sub_family.is_active,
+        },
+    )
+
+    logger.info(
+        "Created sub-family id=%s name=%r family=%s user=%s",
+        sub_family.id,
+        sub_family.name,
+        family.name,
+        getattr(user, "email", None),
+    )
+
+    return sub_family
+
+
+@transaction.atomic
+def update_sub_family(sub_family, user=None, **fields):
+    if not fields:
+        return sub_family
+
+    unknown = set(fields) - set(SUBFAMILY_UPDATABLE_FIELDS)
+    if unknown:
+        raise ValueError(f"Cannot update fields: {', '.join(sorted(unknown))}")
+
+    sub_family = SubFamily.objects.select_for_update().select_related("family").get(
+        pk=sub_family.pk
+    )
+
+    changes = {}
+    for field_name, new_value in fields.items():
+        old_value = getattr(sub_family, field_name)
+        if old_value != new_value:
+            changes[field_name] = {
+                "old": _serialize_value(old_value),
+                "new": _serialize_value(new_value),
+            }
+            setattr(sub_family, field_name, new_value)
+
+    if not changes:
+        return sub_family
+
+    _save_sub_family(sub_family, update_fields=[*changes.keys(), "updated_at"])
+    action, logged_changes = _action_for_field_changes(
+        changes,
+        SubFamilyChangeLog.Action,
+    )
+    _log_sub_family_change(sub_family, user, action, logged_changes)
+
+    logger.info(
+        "Updated sub-family id=%s action=%s fields=%s user=%s",
+        sub_family.id,
+        action,
+        list(changes.keys()),
+        getattr(user, "email", None),
+    )
+
+    return sub_family
+
+
+def get_sub_family_history(sub_family):
+    return sub_family.change_logs.select_related("user").order_by("-created_at")
+
+
+def get_sub_families(active_only=True, family=None):
+    queryset = SubFamily.objects.select_related("family")
+    if active_only:
+        queryset = queryset.filter(is_active=True)
+    if family is not None:
+        queryset = queryset.filter(family=_resolve_family(family))
+    return queryset.order_by("family__name", "name")
 
 
 SUPPLIER_UPDATABLE_FIELDS = (
@@ -1175,10 +1391,10 @@ def get_item_buying_price(item):
     return _buying_price_from_prices(prices)
 
 
-def get_catalog(active_only=True, family=None):
+def get_catalog(active_only=True, family=None, sub_family=None):
     """Read-only manager-catalog join: item + family + prices + cached stock."""
     queryset = (
-        Item.objects.select_related("family", "vat_rate")
+        Item.objects.select_related("family", "sub_family", "vat_rate")
         .prefetch_related("supplier_prices__supplier")
         .order_by("id")
     )
@@ -1186,6 +1402,8 @@ def get_catalog(active_only=True, family=None):
         queryset = queryset.active().filter(family__is_active=True)
     if family is not None:
         queryset = queryset.filter(family=_resolve_family(family))
+    if sub_family is not None:
+        queryset = queryset.filter(sub_family=_resolve_sub_family(sub_family))
     return queryset
 
 

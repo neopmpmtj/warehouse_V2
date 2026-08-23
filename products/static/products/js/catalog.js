@@ -1,5 +1,6 @@
 const CATALOG_API = "/api/manage/catalog/";
 const FAMILY_API = "/api/manage/families/";
+const SUBFAMILY_API = "/api/manage/sub-families/";
 const THEME_KEY = "cc-theme";
 const LANG_KEY = "cc-lang";
 
@@ -22,8 +23,10 @@ function safeSetStorage(key, value) {
 const state = {
     items: [],
     families: [],
+    subFamilies: [],
     search: "",
     familyId: "",
+    subFamilyId: "",
     belowReorderOnly: false,
 };
 
@@ -147,6 +150,7 @@ function setLanguage(lang) {
     safeSetStorage(LANG_KEY, lang);
     applyStaticI18n();
     fillFamilyFilter();
+    fillSubFamilyFilter();
     renderCatalog();
 }
 
@@ -170,10 +174,22 @@ function textTd(value) {
     return td;
 }
 
+function subFamilyFamilyId(subFamily) {
+    if (subFamily.family && subFamily.family.id != null) {
+        return subFamily.family.id;
+    }
+    return subFamily.family_id;
+}
+
 function filteredItems() {
     let rows = state.items;
     if (state.familyId) {
         rows = rows.filter((item) => String(item.family.id) === state.familyId);
+    }
+    if (state.subFamilyId) {
+        rows = rows.filter(
+            (item) => item.sub_family && String(item.sub_family.id) === state.subFamilyId
+        );
     }
     if (state.belowReorderOnly) {
         rows = rows.filter((item) => item.below_reorder);
@@ -216,6 +232,7 @@ function renderCatalog() {
         row.appendChild(textTd(item.internal_code || "—"));
         row.appendChild(textTd(item.description));
         row.appendChild(textTd(item.family.name));
+        row.appendChild(textTd(item.sub_family ? item.sub_family.name : "—"));
         row.appendChild(textTd(item.unit_of_measure || "—"));
         row.appendChild(textTd(formatQty(item.quantity)));
         row.appendChild(textTd(formatQty(item.reorder_level)));
@@ -248,6 +265,12 @@ async function loadFamilies() {
     fillFamilyFilter();
 }
 
+async function loadSubFamilies() {
+    const data = await api(SUBFAMILY_API);
+    state.subFamilies = data.sub_families || [];
+    fillSubFamilyFilter();
+}
+
 function fillFamilyFilter() {
     const select = document.getElementById("catalog-family");
     fillSelect(select, [
@@ -258,6 +281,38 @@ function fillFamilyFilter() {
         })),
     ]);
     select.value = state.familyId || "";
+}
+
+function fillSubFamilyFilter() {
+    const select = document.getElementById("catalog-sub-family");
+    const familyId = state.familyId;
+    const rows = state.subFamilies.filter((subFamily) => {
+        if (!familyId) {
+            return true;
+        }
+        return String(subFamilyFamilyId(subFamily)) === familyId;
+    });
+    fillSelect(
+        select,
+        [
+            { value: "", label: t("allSubFamilies") },
+            ...rows.map((subFamily) => ({
+                value: String(subFamily.id),
+                label: familyId
+                    ? subFamily.name
+                    : `${subFamily.family ? subFamily.family.name : ""} / ${subFamily.name}`,
+            })),
+        ]
+    );
+    if (
+        state.subFamilyId &&
+        rows.some((subFamily) => String(subFamily.id) === state.subFamilyId)
+    ) {
+        select.value = state.subFamilyId;
+    } else {
+        select.value = "";
+        state.subFamilyId = "";
+    }
 }
 
 function bindEvents() {
@@ -275,6 +330,11 @@ function bindEvents() {
     });
     document.getElementById("catalog-family").addEventListener("change", (event) => {
         state.familyId = event.target.value;
+        fillSubFamilyFilter();
+        renderCatalog();
+    });
+    document.getElementById("catalog-sub-family").addEventListener("change", (event) => {
+        state.subFamilyId = event.target.value;
         renderCatalog();
     });
     document.getElementById("catalog-below-reorder").addEventListener("change", (event) => {
@@ -287,7 +347,7 @@ async function init() {
     applyStaticI18n();
     bindEvents();
     try {
-        await Promise.all([loadCatalog(), loadFamilies()]);
+        await Promise.all([loadCatalog(), loadFamilies(), loadSubFamilies()]);
     } catch (error) {
         showBanner(error.message || t("loadFailed"), true);
     }

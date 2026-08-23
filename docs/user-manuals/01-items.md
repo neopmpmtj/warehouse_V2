@@ -84,15 +84,17 @@ The console is one screen, split into three areas.
 |---------|--------------|
 | **Search** box | Find by code or description |
 | **Family** dropdown | Filter by family |
+| **Sub-family** dropdown | Filter by sub-family (scoped to the selected family when one is set) |
 | **Status** dropdown | All / Active / Inactive |
 | **Unit** dropdown | Filter by unit of measure |
 | **Bulk action** + **Apply** | Deactivate/reactivate several items at once |
 | **Families** | Open the family management drawer |
+| **Sub-families** | Open the sub-family management drawer |
 | **Suppliers** | Open the supplier management drawer |
 | **New item** | Create a new item |
 
 **C. Items table**
-- One row per item, with columns: **Code, Description, Family, Unit, Reorder, VAT, Status, Actions**
+- One row per item, with columns: **Code, Description, Family, Sub-family, Unit, Reorder, VAT, Status, Actions**
 - A checkbox column (if your role can edit) for bulk actions
 - Click any row to open it
 
@@ -106,18 +108,21 @@ Type in the **Search** box to filter by **internal code** or **description**. It
 ### 4.2 Filter by family
 Choose a family from the **Family** dropdown (*Todas as famílias* = all families). Only items in that family are shown.
 
-### 4.3 Filter by status
+### 4.3 Filter by sub-family
+Choose a sub-family from the **Sub-family** dropdown (*Todas as sub-famílias* = all sub-families). If a family is already selected, only sub-families under that family appear. Leave empty to show all sub-families (or all in the chosen family).
+
+### 4.4 Filter by status
 - **All statuses** — every item
 - **Active** (*Ativo*) — items currently available
 - **Inactive** (*Inativo*) — items removed from the catalogue
 
-### 4.4 Filter by unit
+### 4.5 Filter by unit
 Choose a unit (*piece, kg, g, m, m², m³, l*) to see only items measured that way.
 
-### 4.5 Sorting
-Click any column header to sort by it — click again to reverse. Sortable columns: **Code, Description, Family, Unit, Reorder, VAT, Status**.
+### 4.6 Sorting
+Click any column header to sort by it — click again to reverse. Sortable columns: **Code, Description, Family, Sub-family, Unit, Reorder, VAT, Status**.
 
-### 4.6 Result count
+### 4.7 Result count
 Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos*) so you always know how many match.
 
 ---
@@ -142,6 +147,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 | **Internal code** | Yes (new items) | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). Only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. **Saved as uppercase** (`cem-50` becomes `CEM-50`). **Cannot be changed after the first save** (legacy items with an empty code may set it once). |
 | **Description** | Yes | What the item is. |
 | **Family** | Yes | The group it belongs to (see §7). |
+| **Sub-family** | No | Optional finer grouping under the family (see §7). Leave empty for none. |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
 | **VAT rate** | Yes | 1%, 3%, 7%, 16%, Exempt |
 | **Reorder level** | Yes | The level that later triggers reordering. |
@@ -201,6 +207,19 @@ A **family** groups related items (e.g. *Cement*, *Pipes*, *Electrical*). Every 
 **Deactivate a family:** open it and choose to deactivate. Existing items keep the family; you just can't add new items to it.
 
 **View history:** use the **History** action on a family row to see who created or changed it.
+
+### 7.1 Sub-families
+
+A **sub-family** is an optional second level under a family (e.g. *Cement → Bags*, *Pipes → PVC*). Items do **not** require a sub-family — family alone is enough for Genesis and activation.
+
+1. Click **Sub-families** (*Sub-famílias*).
+2. Click **New sub-family** (*Nova sub-família*), choose the **parent family**, type the name, confirm.
+3. Sub-family names are unique **within each family** (case-insensitive) — the same name under two different families is allowed.
+4. On the item form, pick a sub-family only after choosing the family; changing the family clears incompatible sub-family choices.
+
+**Deactivate a sub-family:** open the drawer and deactivate the row. Existing items keep the sub-family; you cannot assign **new** items to an inactive sub-family or to a sub-family whose parent family is inactive.
+
+**View history:** use **History** on a sub-family row (same pattern as families).
 
 ---
 

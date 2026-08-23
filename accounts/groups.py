@@ -7,12 +7,13 @@ GROUP_OPERATORS = "warehouse_data_operators"
 WAREHOUSE_GROUP_NAMES = (GROUP_ADMINS, GROUP_MANAGERS, GROUP_OPERATORS)
 LEGACY_WAREHOUSE_GROUP_NAME = "Warehouse"
 
-CATALOG_MODELS = ("item", "familyproduct", "supplier", "supplieritemprice", "purchaseorder", "goodsreceipt")
+CATALOG_MODELS = ("item", "familyproduct", "subfamily", "supplier", "supplieritemprice", "purchaseorder", "goodsreceipt")
 CATALOG_NO_DELETE_MODELS = ("goodsreceipt",)
 CATALOG_VIEW_ONLY_MODELS = (
     "vatrate",
     "itemchangelog",
     "familychangelog",
+    "subfamilychangelog",
     "supplierchangelog",
     "supplieritempricechangelog",
     "purchaseorderchangelog",
@@ -29,6 +30,9 @@ DELETE_ITEM = "products.delete_item"
 ADD_FAMILY = "products.add_familyproduct"
 CHANGE_FAMILY = "products.change_familyproduct"
 DELETE_FAMILY = "products.delete_familyproduct"
+ADD_SUBFAMILY = "products.add_subfamily"
+CHANGE_SUBFAMILY = "products.change_subfamily"
+DELETE_SUBFAMILY = "products.delete_subfamily"
 ADD_SUPPLIER = "products.add_supplier"
 CHANGE_SUPPLIER = "products.change_supplier"
 DELETE_SUPPLIER = "products.delete_supplier"
