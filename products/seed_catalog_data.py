@@ -16,6 +16,25 @@ FAMILIES = (
     {"name": "Legacy stock", "is_active": False},
 )
 
+# name, parent family (skip inactive families such as Legacy stock)
+SUB_FAMILIES = (
+    {"name": "Bags", "family": "Cement"},
+    {"name": "Bulk", "family": "Cement"},
+    {"name": "Steel", "family": "Pipes"},
+    {"name": "PVC", "family": "Pipes"},
+    {"name": "Cables", "family": "Electrical"},
+    {"name": "PPE", "family": "Safety"},
+)
+
+# internal_code, sub_family name, family name
+ITEM_SUB_FAMILIES = (
+    ("CEM-50", "Bags", "Cement"),
+    ("PIPE-20", "Steel", "Pipes"),
+    ("PIPE-50", "PVC", "Pipes"),
+    ("CABLE-2.5", "Cables", "Electrical"),
+    ("GLOVES-L", "PPE", "Safety"),
+)
+
 SUPPLIERS = (
     {
         "name": "BuildSupply Ltd",

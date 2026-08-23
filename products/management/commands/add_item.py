@@ -2,7 +2,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.management.base import BaseCommand, CommandError
 
-from products.models import FamilyProduct, Item, VatRate
+from products.models import FamilyProduct, Item, SubFamily, VatRate
 from products.services import (
     ItemGenesisNotReadyError,
     create_and_activate_item,
@@ -40,6 +40,12 @@ class Command(BaseCommand):
             help="Warehouse internal code (required; stored as uppercase)",
         )
         parser.add_argument(
+            "--sub-family",
+            dest="sub_family",
+            default="",
+            help="Optional sub-family name (resolved within --family)",
+        )
+        parser.add_argument(
             "--retail-price",
             dest="retail_price",
             default="0",
@@ -68,6 +74,24 @@ class Command(BaseCommand):
                 f"Family '{family_name}' not found. Available: {available}"
             )
 
+        sub_family = None
+        sub_family_name = (options.get("sub_family") or "").strip()
+        if sub_family_name:
+            sub_family = SubFamily.objects.filter(
+                family=family,
+                name__iexact=sub_family_name,
+            ).first()
+            if sub_family is None:
+                available = ", ".join(
+                    SubFamily.objects.filter(family=family)
+                    .order_by("name")
+                    .values_list("name", flat=True)
+                )
+                raise CommandError(
+                    f"Sub-family '{sub_family_name}' not found in family "
+                    f"'{family.name}'. Available: {available or '(none)'}"
+                )
+
         vat_rate_code = options["vat_rate"].strip()
         vat_rate = VatRate.objects.filter(code=vat_rate_code).first()
         if vat_rate is None:
@@ -75,6 +99,18 @@ class Command(BaseCommand):
             raise CommandError(
                 f"VAT rate '{vat_rate_code}' not found. Available: {available}"
             )
+
+        item_kwargs = {
+            "user": None,
+            "family": family,
+            "description": options["description"],
+            "unit_of_measure": options["unit"],
+            "vat_rate": vat_rate,
+            "internal_code": options["internal_code"],
+            "reorder_level": options["reorder_level"],
+            "retail_price": options["retail_price"],
+            "sub_family": sub_family,
+        }
 
         if options["activate"]:
             try:
@@ -86,29 +122,11 @@ class Command(BaseCommand):
                     "--retail-price must be greater than 0 when using --activate."
                 )
             try:
-                item = create_and_activate_item(
-                    user=None,
-                    family=family,
-                    description=options["description"],
-                    unit_of_measure=options["unit"],
-                    vat_rate=vat_rate,
-                    internal_code=options["internal_code"],
-                    reorder_level=options["reorder_level"],
-                    retail_price=options["retail_price"],
-                )
+                item = create_and_activate_item(**item_kwargs)
             except ItemGenesisNotReadyError as exc:
                 raise CommandError(exc.messages[0]) from exc
         else:
-            item = create_item(
-                user=None,
-                family=family,
-                description=options["description"],
-                unit_of_measure=options["unit"],
-                vat_rate=vat_rate,
-                internal_code=options["internal_code"],
-                reorder_level=options["reorder_level"],
-                retail_price=options["retail_price"],
-            )
+            item = create_item(**item_kwargs)
 
         status = "active" if item.is_active else "inactive"
         self.stdout.write(

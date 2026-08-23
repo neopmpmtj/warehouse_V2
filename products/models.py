@@ -47,6 +47,34 @@ class FamilyProduct(models.Model):
         return self.name
 
 
+class SubFamily(models.Model):
+    family = models.ForeignKey(
+        FamilyProduct,
+        on_delete=models.PROTECT,
+        related_name="sub_families",
+        db_index=True,
+    )
+    name = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "sub-family"
+        verbose_name_plural = "sub-families"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("name"),
+                "family",
+                name="unique_subfamily_name_ci_per_family",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.family.name} / {self.name}"
+
+
 class ItemQuerySet(models.QuerySet):
     def active(self):
         return self.filter(is_active=True)
@@ -66,6 +94,13 @@ class Item(models.Model):
         FamilyProduct,
         on_delete=models.PROTECT,
         related_name="items",
+    )
+    sub_family = models.ForeignKey(
+        SubFamily,
+        on_delete=models.PROTECT,
+        related_name="items",
+        null=True,
+        blank=True,
     )
     internal_code = models.CharField(max_length=64, blank=True)
     description = models.CharField(max_length=255)
@@ -218,6 +253,37 @@ class FamilyChangeLog(models.Model):
 
     def __str__(self):
         return f"{self.family_id} {self.action} @ {self.created_at:%Y-%m-%d %H:%M}"
+
+
+class SubFamilyChangeLog(models.Model):
+    class Action(models.TextChoices):
+        CREATED = "created", "Created"
+        UPDATED = "updated", "Updated"
+        DEACTIVATED = "deactivated", "Deactivated"
+        REACTIVATED = "reactivated", "Reactivated"
+
+    sub_family = models.ForeignKey(
+        SubFamily,
+        on_delete=models.PROTECT,
+        related_name="change_logs",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sub_family_change_logs",
+    )
+    action = models.CharField(max_length=20, choices=Action.choices)
+    changes = models.JSONField(default=dict)
+    reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.sub_family_id} {self.action} @ {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class SupplierChangeLog(models.Model):

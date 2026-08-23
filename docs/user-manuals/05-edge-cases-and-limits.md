@@ -35,6 +35,10 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Supplier name "X" is already used.` | Supplier names are unique, case-insensitive | Use another name |
 | `Family name is required.` / `Supplier name is required.` / `Description is required.` | Required field empty | Fill it in |
 | `Cannot assign items to inactive family 'X'.` | You tried to put an item in a deactivated family | Reactivate the family, or pick an active one |
+| `Sub-family name is required.` | Sub-family create with an empty name | Type a name |
+| `Sub-family name "X" is already used in this family.` | Duplicate sub-family name under the same family | Use another name |
+| `Cannot assign items to inactive sub-family 'X'.` | Item form or save used a deactivated sub-family | Reactivate the sub-family, clear the field, or pick an active one |
+| `Sub-family does not belong to the selected family.` | Item family and sub-family parent do not match | Pick a sub-family under the chosen family, or clear sub-family |
 | `A reason is required to deactivate an item.` | Item deactivation always needs a reason | Choose *Temporarily unavailable / No longer commercialized / Other* |
 | `A reason is required to activate an item.` | Reactivation needs a reason | Give one (e.g. *Genesis* on first activation) |
 | `Enter a valid email address.` | Supplier email is malformed | Fix the email (or clear it) |
@@ -43,6 +47,8 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `--retail-price must be greater than 0 when using --activate.` | `add_item` CLI was run with `--activate` but retail price is missing or zero | Pass `--retail-price` with a value greater than 0 |
 
 **Family names are immutable** — the console has no "rename". If a name is wrong, deactivate it and create a new family (items keep the old family; you can't add new items to an inactive family).
+
+**Sub-family names and parent family are immutable** after create — same pattern as families. Deactivate and create a new sub-family if the label was wrong.
 
 **New items:** confirm **Genesis** on save — create and activation are atomic (no inactive orphan if you cancel). **Internal code** is required and locked after save.
 

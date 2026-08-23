@@ -6,7 +6,7 @@ from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 
 from accounts.groups import GROUP_ADMINS, assign_warehouse_group
-from products.models import FamilyProduct, Item, Supplier, SupplierItemPrice, VatRate
+from products.models import FamilyProduct, Item, SubFamily, Supplier, SupplierItemPrice, VatRate
 
 from .capabilities import (
     ROLE_ADMIN,
@@ -334,6 +334,7 @@ class BranchViewTests(TestCase):
         response = self.client.get(reverse("branch_catalog"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Wholesale")
+        self.assertContains(response, "Sub-family")
         self.assertContains(response, "Availability")
 
 
@@ -398,6 +399,27 @@ class BranchCatalogApiTests(TestCase):
         self.assertEqual(rows["NONE"]["availability"], "none")
         self.assertEqual(rows["LOW"]["availability"], "low")
         self.assertEqual(rows["OK"]["availability"], "in stock")
+        self.assertEqual(rows["NONE"]["sub_family"], "")
+        self.assertEqual(rows["OK"]["sub_family"], "")
+
+    def test_includes_sub_family_name_when_set(self):
+        sub_family = SubFamily.objects.create(
+            family=self.family,
+            name="PPE",
+            is_active=True,
+        )
+        ok_item = Item.objects.get(internal_code="OK")
+        ok_item.sub_family = sub_family
+        ok_item.save(update_fields=["sub_family"])
+        self._login_and_select()
+
+        rows = {
+            r["internal_code"]: r
+            for r in self.client.get(reverse("branch_catalog_list")).json()["catalog"]
+        }
+
+        self.assertEqual(rows["OK"]["sub_family"], "PPE")
+        self.assertEqual(rows["NONE"]["sub_family"], "")
 
     def test_omits_cost_and_exact_stock(self):
         self._login_and_select()

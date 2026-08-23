@@ -4,22 +4,22 @@ overview: "Add a two-level catalogue taxonomy: a new SubFamily table under the e
 todos:
   - id: model-migration
     content: Add SubFamily + SubFamilyChangeLog + optional Item.sub_family; migration
-    status: pending
+    status: completed
   - id: services
     content: Family-mirroring CRUD, D16 activity, mismatch check, optional on item create/update/Genesis
-    status: pending
+    status: completed
   - id: perms-api
     content: Warehouse group perms + console APIs (list/detail/history + item/catalog query params)
-    status: pending
+    status: completed
   - id: console-ui
     content: Item form, filter, Sub-families drawer, EN/pt-PT i18n
-    status: pending
+    status: completed
   - id: catalogs-admin
     content: Manager catalog column+filter; branch catalog column; Django admin
-    status: pending
+    status: completed
   - id: seed-tests-docs
     content: Seed subset assignment, add_item --sub-family, tests, user manuals
-    status: pending
+    status: completed
 isProject: false
 ---
 

@@ -9,6 +9,8 @@ from .models import (
     FamilyProduct,
     Item,
     ItemChangeLog,
+    SubFamily,
+    SubFamilyChangeLog,
     Supplier,
     SupplierChangeLog,
     SupplierItemPrice,
@@ -18,6 +20,7 @@ from .models import (
 from .services import (
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    DuplicateSubFamilyNameError,
     InvalidInternalCodeError,
     InternalCodeImmutableError,
     ItemGenesisNotReadyError,
@@ -25,22 +28,28 @@ from .services import (
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
     InactiveFamilyError,
+    InactiveSubFamilyError,
     InvalidCostPriceError,
     InvalidSupplierEmailError,
+    SubFamilyFamilyMismatchError,
+    SubFamilyNameRequiredError,
     SupplierNameRequiredError,
     bulk_deactivate_items,
     bulk_reactivate_items,
     create_family,
     create_item,
+    create_sub_family,
     create_supplier,
     create_supplier_item_price,
     update_family,
     update_item,
+    update_sub_family,
     update_supplier,
     update_supplier_item_price,
     validate_family_name_available,
     validate_internal_code_available,
     validate_internal_code_format,
+    validate_sub_family_name_available,
     validate_supplier_name_available,
 )
 
@@ -57,6 +66,7 @@ class ItemAdminForm(forms.ModelForm):
         model = Item
         fields = (
             "family",
+            "sub_family",
             "internal_code",
             "description",
             "unit_of_measure",
@@ -85,6 +95,26 @@ class ItemAdminForm(forms.ModelForm):
                 f"Cannot assign items to inactive family '{family.name}'."
             )
         return family
+
+    def clean_sub_family(self):
+        sub_family = self.cleaned_data.get("sub_family")
+        if sub_family is not None and not sub_family.is_active:
+            raise ValidationError(
+                f"Cannot assign items to inactive sub-family '{sub_family.name}'."
+            )
+        return sub_family
+
+    def clean(self):
+        cleaned = super().clean()
+        family = cleaned.get("family")
+        sub_family = cleaned.get("sub_family")
+        if sub_family is not None and family is not None:
+            if sub_family.family_id != family.pk:
+                self.add_error(
+                    "sub_family",
+                    "Sub-family does not belong to the selected family.",
+                )
+        return cleaned
 
 
 class ItemChangeLogInline(admin.TabularInline):
@@ -168,6 +198,7 @@ class ItemAdmin(admin.ModelAdmin):
         "internal_code",
         "description",
         "family",
+        "sub_family",
         "unit_of_measure",
         "reorder_level",
         "quantity",
@@ -175,9 +206,9 @@ class ItemAdmin(admin.ModelAdmin):
         "is_active",
         "updated_at",
     )
-    list_filter = ("is_active", "family", "unit_of_measure", "vat_rate")
-    search_fields = ("internal_code", "description", "family__name")
-    autocomplete_fields = ("family", "vat_rate")
+    list_filter = ("is_active", "family", "sub_family", "unit_of_measure", "vat_rate")
+    search_fields = ("internal_code", "description", "family__name", "sub_family__name")
+    autocomplete_fields = ("family", "sub_family", "vat_rate")
     readonly_fields = ("is_active", "quantity", "created_at", "updated_at")
     inlines = (ItemChangeLogInline,)
     actions = ("deactivate_items", "reactivate_items")
@@ -187,6 +218,7 @@ class ItemAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "family",
+                    "sub_family",
                     "internal_code",
                     "description",
                     "unit_of_measure",
@@ -213,7 +245,7 @@ class ItemAdmin(admin.ModelAdmin):
         return (
             super()
             .get_queryset(request)
-            .select_related("family", "vat_rate")
+            .select_related("family", "sub_family", "vat_rate")
         )
 
     def has_module_permission(self, request):
@@ -244,6 +276,7 @@ class ItemAdmin(admin.ModelAdmin):
                     obj,
                     reason=reason,
                     family=form.cleaned_data["family"],
+                    sub_family=form.cleaned_data.get("sub_family"),
                     internal_code=form.cleaned_data["internal_code"],
                     description=form.cleaned_data["description"],
                     unit_of_measure=form.cleaned_data["unit_of_measure"],
@@ -258,6 +291,7 @@ class ItemAdmin(admin.ModelAdmin):
                 created = create_item(
                     request.user,
                     family=form.cleaned_data["family"],
+                    sub_family=form.cleaned_data.get("sub_family"),
                     description=form.cleaned_data["description"],
                     unit_of_measure=form.cleaned_data["unit_of_measure"],
                     vat_rate=form.cleaned_data["vat_rate"],
@@ -276,6 +310,12 @@ class ItemAdmin(admin.ModelAdmin):
             ItemGenesisNotReadyError,
         ) as exc:
             raise ValidationError({"internal_code": exc.messages[0]}) from exc
+        except (
+            InactiveFamilyError,
+            InactiveSubFamilyError,
+            SubFamilyFamilyMismatchError,
+        ) as exc:
+            raise ValidationError({"sub_family": exc.messages[0]}) from exc
 
         obj.refresh_from_db()
 
@@ -659,6 +699,147 @@ class FamilyProductAdmin(admin.ModelAdmin):
         obj.refresh_from_db()
 
 
+class SubFamilyChangeLogInline(admin.TabularInline):
+    model = SubFamilyChangeLog
+    extra = 0
+    can_delete = False
+    readonly_fields = ("user", "action", "reason", "changes", "created_at")
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+class SubFamilyItemInline(admin.TabularInline):
+    model = Item
+    extra = 0
+    fields = ("internal_code", "description", "unit_of_measure", "is_active")
+    readonly_fields = fields
+    show_change_link = True
+    fk_name = "sub_family"
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class SubFamilyAdminForm(forms.ModelForm):
+    class Meta:
+        model = SubFamily
+        fields = ("family", "name", "is_active")
+
+    def clean_family(self):
+        family = self.cleaned_data.get("family")
+        if family is not None and not family.is_active and not self.instance.pk:
+            raise ValidationError(
+                f"Cannot create a sub-family under inactive family '{family.name}'."
+            )
+        return family
+
+    def clean_name(self):
+        family = self.cleaned_data.get("family") or getattr(self.instance, "family", None)
+        if family is None:
+            return self.cleaned_data.get("name", "")
+        return validate_sub_family_name_available(
+            self.cleaned_data.get("name", ""),
+            family,
+            exclude_sub_family_id=self.instance.pk if self.instance.pk else None,
+        )
+
+
+@admin.register(SubFamily)
+class SubFamilyAdmin(admin.ModelAdmin):
+    form = SubFamilyAdminForm
+    list_display = ("name", "family", "item_count", "is_active", "updated_at")
+    list_filter = ("is_active", "family")
+    search_fields = ("name", "family__name")
+    autocomplete_fields = ("family",)
+    readonly_fields = ("created_at", "updated_at")
+    inlines = (SubFamilyItemInline, SubFamilyChangeLogInline)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "family",
+                    "name",
+                    "is_active",
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
+    )
+
+    @admin.display(description="Items")
+    def item_count(self, obj):
+        return obj.items.count()
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(
+            request, queryset, search_term
+        )
+        if "autocomplete" in request.path:
+            queryset = queryset.filter(is_active=True, family__is_active=True)
+        return queryset, use_distinct
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj is not None:
+            return ("family", "name", "created_at", "updated_at")
+        return ("created_at", "updated_at")
+
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+
+        try:
+            if change:
+                update_sub_family(
+                    obj,
+                    user=request.user,
+                    is_active=form.cleaned_data["is_active"],
+                )
+            else:
+                created = create_sub_family(
+                    name=form.cleaned_data["name"],
+                    family=form.cleaned_data["family"],
+                    is_active=form.cleaned_data["is_active"],
+                    user=request.user,
+                )
+                obj.pk = created.pk
+        except DuplicateSubFamilyNameError as exc:
+            raise ValidationError({"name": exc.messages[0]}) from exc
+        except SubFamilyNameRequiredError as exc:
+            raise ValidationError({"name": exc.messages[0]}) from exc
+        except InactiveFamilyError as exc:
+            raise ValidationError({"family": exc.messages[0]}) from exc
+
+        obj.refresh_from_db()
+
+
 class _ReadOnlyChangeLogAdmin(admin.ModelAdmin):
     list_filter = ("action",)
     ordering = ("-created_at",)
@@ -696,6 +877,13 @@ class FamilyChangeLogAdmin(_ReadOnlyChangeLogAdmin):
     list_display = ("id", "family", "user", "action", "reason", "created_at")
     search_fields = ("family__name", "user__email", "reason")
     readonly_fields = ("family", "user", "action", "reason", "changes", "created_at")
+
+
+@admin.register(SubFamilyChangeLog)
+class SubFamilyChangeLogAdmin(_ReadOnlyChangeLogAdmin):
+    list_display = ("id", "sub_family", "user", "action", "reason", "created_at")
+    search_fields = ("sub_family__name", "sub_family__family__name", "user__email", "reason")
+    readonly_fields = ("sub_family", "user", "action", "reason", "changes", "created_at")
 
 
 @admin.register(SupplierChangeLog)

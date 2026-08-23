@@ -15,6 +15,7 @@ from branches.services import assign_membership, create_branch
 from products.models import (
     FamilyProduct,
     Item,
+    SubFamily,
     Supplier,
     SupplierItemPrice,
     VatRate,
@@ -22,12 +23,15 @@ from products.models import (
 from products.seed_catalog_data import (
     FAMILIES,
     ITEMS,
+    ITEM_SUB_FAMILIES,
+    SUB_FAMILIES,
     SUPPLIERS,
     SUPPLIER_ITEM_PRICES,
 )
 from products.services import (
     create_family,
     create_item,
+    create_sub_family,
     create_supplier,
     create_supplier_item_price,
     reactivate_item,
@@ -253,6 +257,50 @@ class Command(BaseCommand):
                 families_by_name[family_data["name"].casefold()] = family
                 self.stdout.write(f"Created family: {family.name}")
 
+            sub_families_by_key = {}
+            for sub_family_data in SUB_FAMILIES:
+                family = families_by_name[sub_family_data["family"].casefold()]
+                existing = SubFamily.objects.filter(
+                    family=family,
+                    name__iexact=sub_family_data["name"],
+                ).first()
+                key = (
+                    sub_family_data["family"].casefold(),
+                    sub_family_data["name"].casefold(),
+                )
+                if existing:
+                    sub_families_by_key[key] = existing
+                    self.stdout.write(
+                        f"Exists sub-family: {family.name} / {existing.name}"
+                    )
+                    continue
+
+                sub_family = create_sub_family(
+                    sub_family_data["name"],
+                    family,
+                    user=warehouse_user,
+                )
+                sub_families_by_key[key] = sub_family
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Created sub-family: {family.name} / {sub_family.name}"
+                    )
+                )
+
+            item_sub_family_by_code = {}
+            for internal_code, sub_name, family_name in ITEM_SUB_FAMILIES:
+                key = (family_name.casefold(), sub_name.casefold())
+                sub_family = sub_families_by_key.get(key)
+                if sub_family is None:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Skipping sub-family assignment for {internal_code}: "
+                            f"{family_name} / {sub_name} not found"
+                        )
+                    )
+                    continue
+                item_sub_family_by_code[internal_code.casefold()] = sub_family
+
             for supplier_data in SUPPLIERS:
                 existing = Supplier.objects.filter(
                     name__iexact=supplier_data["name"]
@@ -300,15 +348,21 @@ class Command(BaseCommand):
                     continue
 
                 retail, wholesale, special = _demo_selling_prices(internal_code)
+                sub_family = item_sub_family_by_code.get(internal_code.casefold())
                 existing = Item.objects.filter(internal_code__iexact=internal_code).first()
                 if existing:
+                    update_fields = {
+                        "retail_price": retail,
+                        "wholesale_price": wholesale,
+                        "special_price": special,
+                        "reason": "seed_dev_data",
+                    }
+                    if sub_family is not None:
+                        update_fields["sub_family"] = sub_family
                     update_item(
                         warehouse_user,
                         existing,
-                        retail_price=retail,
-                        wholesale_price=wholesale,
-                        special_price=special,
-                        reason="seed_dev_data",
+                        **update_fields,
                     )
                     self.stdout.write(
                         f"Exists item: {existing.internal_code} — {existing.description}"
@@ -326,6 +380,7 @@ class Command(BaseCommand):
                     retail_price=retail,
                     wholesale_price=wholesale,
                     special_price=special,
+                    sub_family=sub_family,
                     reason="seed_dev_data",
                 )
                 if is_active:
