@@ -53,6 +53,14 @@ class CloseReasonTextRequiredError(ValidationError):
         )
 
 
+class InvalidSatisfactionError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Satisfaction must be between 1 and 5 stars.",
+            code="invalid_satisfaction",
+        )
+
+
 class InactiveBranchError(ValidationError):
     def __init__(self, branch=None):
         name = getattr(branch, "name", None) or "branch"
@@ -134,6 +142,19 @@ def _require_close_reason(reason, reason_text):
     else:
         reason_text = ""
     return reason, reason_text
+
+
+def _require_satisfaction(satisfaction):
+    """Validate 1–5 stars; default 1 so an unattended request can signal low satisfaction."""
+    try:
+        value = int(satisfaction) if satisfaction is not None else None
+    except (TypeError, ValueError):
+        raise InvalidSatisfactionError()
+    if value is None:
+        value = ItemRequestThread.Satisfaction.ONE
+    if value not in ItemRequestThread.Satisfaction.values:
+        raise InvalidSatisfactionError()
+    return value
 
 
 def _log(thread, user, action, changes, reason=""):
@@ -255,12 +276,14 @@ def post_message(thread, user, body, side):
 
 
 @transaction.atomic
-def close_thread(thread, user, reason, reason_text=""):
+def close_thread(thread, user, reason, reason_text="", satisfaction=None):
     """Close a thread. Opener only, or an override (closer's role, never the opener's).
 
     Override: branch manager/admin of that branch, or warehouse admin. The
     check uses the *closer's* role so a deactivated opener never blocks a
-    legitimate close. Reason required; ``other`` requires text.
+    legitimate close. Reason required; ``other`` requires text. Satisfaction
+    (1–5 stars) defaults to 1 so an unattended request can signal low
+    satisfaction; the opener can edit it in the close dialog.
     """
     thread = _lock_thread(thread)
     if thread.status == ItemRequestThread.Status.CLOSED:
@@ -271,12 +294,14 @@ def close_thread(thread, user, reason, reason_text=""):
         raise ClosePermissionDeniedError()
 
     reason, reason_text = _require_close_reason(reason, reason_text)
+    satisfaction = _require_satisfaction(satisfaction)
 
     thread.status = ItemRequestThread.Status.CLOSED
     thread.closed_by = user
     thread.closed_at = timezone.now()
     thread.close_reason = reason
     thread.close_reason_text = reason_text
+    thread.satisfaction = satisfaction
     thread.last_activity_at = thread.closed_at
     thread.save(
         update_fields=[
@@ -285,6 +310,7 @@ def close_thread(thread, user, reason, reason_text=""):
             "closed_at",
             "close_reason",
             "close_reason_text",
+            "satisfaction",
             "last_activity_at",
             "updated_at",
         ]
@@ -296,17 +322,19 @@ def close_thread(thread, user, reason, reason_text=""):
         {
             "reason": reason,
             "reason_text": reason_text,
+            "satisfaction": satisfaction,
             "override": not is_opener,
             "closed_by": getattr(user, "email", None),
         },
         reason=reason_text or reason,
     )
     logger.info(
-        "Closed request thread id=%s user=%s override=%s reason=%s",
+        "Closed request thread id=%s user=%s override=%s reason=%s satisfaction=%s",
         thread.id,
         getattr(user, "email", None),
         not is_opener,
         reason,
+        satisfaction,
     )
     return thread
 

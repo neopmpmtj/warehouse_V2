@@ -32,6 +32,13 @@ class ItemRequestThread(models.Model):
         REQUEST_SATISFIED = "request_satisfied", "Request Satisfied"
         OTHER = "other", "Other"
 
+    class Satisfaction(models.IntegerChoices):
+        ONE = 1, "1 star"
+        TWO = 2, "2 stars"
+        THREE = 3, "3 stars"
+        FOUR = 4, "4 stars"
+        FIVE = 5, "5 stars"
+
     branch = models.ForeignKey(
         "branches.Branch",
         on_delete=models.PROTECT,
@@ -66,6 +73,11 @@ class ItemRequestThread(models.Model):
         blank=True,
     )
     close_reason_text = models.CharField(max_length=255, blank=True)
+    satisfaction = models.PositiveSmallIntegerField(
+        choices=Satisfaction.choices,
+        default=Satisfaction.ONE,
+        help_text="Opener's satisfaction (1–5 stars), set at close. Default 1 star so an unattended request can signal dissatisfaction.",
+    )
     items = models.ManyToManyField(
         "products.Item",
         blank=True,

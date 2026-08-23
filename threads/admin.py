@@ -52,6 +52,7 @@ class ItemRequestThreadAdmin(admin.ModelAdmin):
         "closed_at",
         "close_reason",
         "close_reason_text",
+        "satisfaction",
         "items",
         "created_at",
         "updated_at",
@@ -78,6 +79,7 @@ class ItemRequestThreadAdmin(admin.ModelAdmin):
                     "closed_at",
                     "close_reason",
                     "close_reason_text",
+                    "satisfaction",
                 )
             },
         ),

@@ -173,6 +173,24 @@ class ThreadServiceTests(TestCase):
         closed = close_thread(thread, self.opener, "other", "Wrote a proper reason")
         self.assertEqual(closed.close_reason_text, "Wrote a proper reason")
 
+    def test_satisfaction_defaults_to_one_star(self):
+        thread = self._thread()
+        closed = close_thread(thread, self.opener, "request_satisfied")
+        self.assertEqual(closed.satisfaction, 1)
+        log = closed.change_logs.get(action="closed")
+        self.assertEqual(log.changes.get("satisfaction"), 1)
+
+    def test_satisfaction_editable_1_to_5(self):
+        thread = self._thread()
+        closed = close_thread(thread, self.opener, "request_satisfied", satisfaction=5)
+        self.assertEqual(closed.satisfaction, 5)
+        with self.assertRaises(ValidationError):
+            close_thread(self._thread(subject="bad low"), self.opener, "request_satisfied", satisfaction=0)
+        with self.assertRaises(ValidationError):
+            close_thread(self._thread(subject="bad high"), self.opener, "request_satisfied", satisfaction=6)
+        with self.assertRaises(ValidationError):
+            close_thread(self._thread(subject="bad str"), self.opener, "request_satisfied", satisfaction="abc")
+
     def test_link_items_warehouse_only_and_after_close(self):
         thread = self._thread()
         item = _make_item("Brass valve 25mm")

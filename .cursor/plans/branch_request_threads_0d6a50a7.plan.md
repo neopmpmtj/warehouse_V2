@@ -51,6 +51,8 @@ A branch user opens a **thread**, describes the needed item in free text (no ite
 | Who posts | **Anyone with access** — that branch's users + warehouse staff (all warehouse groups) |
 | Who closes | **Only the opener** (normal path). **Override:** branch manager/admin may force-close in exceptional circumstances; warehouse **admin** may also force-close (abandoned/duplicate threads) — reason required on every close. Override checks the **closer's** role, never the opener's (a deactivated opener must not block a legitimate close) |
 | Close reason | **Required**. Default choice **"Request Satisfied"**; alternative **"Other"** with a textbox (≤ 255 chars) |
+| Satisfaction | **1–5 stars at close**, editable in the close dialog, **default 1 star** (added 23 Aug 2026 after implementation) so an unattended request can signal dissatisfaction; stored on the thread + in the close changelog |
+| Satisfaction | **1–5 stars at close**, editable in the close dialog, **default 1 star** (added 23 Aug 2026 after implementation) so an unattended request can signal dissatisfaction; stored on the thread + in the close changelog |
 | States | Open with **awaiting** sub-states: **Awaiting warehouse** / **Awaiting branch** (a post flips to the other side's turn; same-side posts keep state). **Closed** = terminal |
 | Initial state | **Awaiting warehouse** (the thread is addressed to them) |
 | Visibility | Originating branch + main office only. Other branches get **nothing** — invisible (404 pattern, same as existing branch isolation). Warehouse sees **all** threads **including inactive-branch threads, flagged** (they are not zombies) |

@@ -41,6 +41,9 @@
         .hidden { display: none; }
         .muted { color: var(--muted); font-size: .8rem; }
         .item-link { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: 999px; background: #e6f4ea; color: #137333; font-size: .8rem; }
+        .stars { font-size: 1.4rem; cursor: pointer; user-select: none; }
+        .stars .star { color: #ddd; }
+        .stars .star.on { color: #f5a623; }
     </style>
 </head>
 <body>
@@ -89,6 +92,10 @@
                     <input id="close-reason-text" placeholder="Reason…" maxlength="255">
                 </div>
                 <div class="row">
+                    <span data-i18n="satisfactionLabel">Satisfaction</span>
+                    <span id="satisfaction-stars" class="stars"></span>
+                </div>
+                <div class="row">
                     <button id="confirm-close" class="btn btn-primary" data-i18n="confirmClose">Confirm close</button>
                     <button id="cancel-close" class="btn" data-i18n="cancel">Cancel</button>
                 </div>
@@ -127,7 +134,7 @@
                     statusAwaitingWarehouse: "Awaiting warehouse", statusAwaitingBranch: "Awaiting branch",
                     statusClosed: "Closed", unread: "new", sideBranch: "branch", sideWarehouse: "warehouse",
                     openedBy: "Opened by", lastActivity: "Last activity", items: "Created items:",
-                    none: "none", closedBy: "Closed by", postedBy: "posted by",
+                    none: "none", closedBy: "Closed by", postedBy: "posted by", satisfactionLabel: "Satisfaction",
                 },
                 pt: {
                     title: "Fios de pedido", threadsTitle: "Fios", newThread: "Novo fio",
@@ -141,7 +148,7 @@
                     statusAwaitingWarehouse: "A aguardar armazém", statusAwaitingBranch: "A aguardar filial",
                     statusClosed: "Fechado", unread: "novo", sideBranch: "filial", sideWarehouse: "armazém",
                     openedBy: "Aberto por", lastActivity: "Última atividade", items: "Artigos criados:",
-                    none: "nenhum", closedBy: "Fechado por", postedBy: "enviada por",
+                    none: "nenhum", closedBy: "Fechado por", postedBy: "enviada por", satisfactionLabel: "Satisfação",
                 },
             };
 
@@ -167,6 +174,22 @@
             var closeReason = document.getElementById("close-reason");
             var closeReasonText = document.getElementById("close-reason-text");
             var closeOtherRow = document.getElementById("close-other-row");
+            var satisfactionStars = document.getElementById("satisfaction-stars");
+            var satisfactionValue = 1;
+            (function renderStars() {
+                satisfactionStars.textContent = "";
+                for (var i = 1; i <= 5; i++) {
+                    var star = document.createElement("span");
+                    star.className = "star" + (i <= satisfactionValue ? " on" : "");
+                    star.textContent = "★";
+                    star.dataset.value = i;
+                    star.addEventListener("click", function () {
+                        satisfactionValue = parseInt(this.dataset.value, 10);
+                        renderStars();
+                    });
+                    satisfactionStars.appendChild(star);
+                }
+            })();
             var newDialog = document.getElementById("new-dialog");
             var banner = document.getElementById("banner");
             var emptyList = document.getElementById("empty-list");
@@ -293,7 +316,11 @@
                     .catch(showError);
             });
 
-            closeThreadBtn.addEventListener("click", function () { closeDialog.hidden = false; });
+            closeThreadBtn.addEventListener("click", function () {
+                closeDialog.hidden = false;
+                satisfactionValue = 1;
+                renderStars();
+            });
             closeReason.addEventListener("change", function () {
                 closeOtherRow.hidden = closeReason.value !== "other";
                 if (closeReason.value !== "other") closeReasonText.value = "";
@@ -306,6 +333,7 @@
                 api("/api/branch/threads/" + state.selectedId + "/close/", "POST", {
                     close_reason: closeReason.value,
                     close_reason_text: closeReasonText.value,
+                    satisfaction: satisfactionValue,
                 }).then(function () {
                     closeDialog.hidden = true; closeReasonText.value = "";
                     return loadThreads();

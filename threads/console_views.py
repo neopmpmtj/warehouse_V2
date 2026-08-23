@@ -86,6 +86,7 @@ def _serialize_thread(thread, user):
         "closed_at": thread.closed_at.isoformat() if thread.closed_at else None,
         "close_reason": thread.close_reason,
         "close_reason_text": thread.close_reason_text,
+        "satisfaction": thread.satisfaction,
         "items": [_serialize_item(i) for i in thread.items.all()],
         "can_close": (
             user.pk == thread.opened_by_id
@@ -197,6 +198,7 @@ def branch_thread_close(request, thread_id):
             request.user,
             payload.get("close_reason"),
             payload.get("close_reason_text", ""),
+            payload.get("satisfaction"),
         )
     except ValidationError as exc:
         return _validation_error_response(exc)
@@ -299,6 +301,7 @@ def warehouse_thread_close(request, thread_id):
             request.user,
             payload.get("close_reason"),
             payload.get("close_reason_text", ""),
+            payload.get("satisfaction"),
         )
     except ValidationError as exc:
         return _validation_error_response(exc)

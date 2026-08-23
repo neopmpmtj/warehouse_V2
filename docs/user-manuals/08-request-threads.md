@@ -76,14 +76,18 @@ A post flips the turn to the other side. Two posts in a row by the same side kee
 
 ## 3. Closing a thread
 
-Only the person who **opened** the thread can close it — with a **reason**:
+Only the person who **opened** the thread can close it — with a **reason** and a **satisfaction rating**:
 
 | Reason | When |
 |--------|------|
 | **Request Satisfied** | The item was created / procured and the need is met (default) |
 | **Other** + textbox | Any other reason (duplicate, no longer needed, …) |
 
+**Satisfaction (1–5 stars):** the close dialog always includes a star rating. It **defaults to 1 star** and is editable — so even when the request wasn't properly attended, the branch can signal it through the rating. Pick the number of stars that matches how well the request was handled, then confirm.
+
 Closing ends the thread — **no further messages can be posted**. If the need comes back later, open a new thread.
+
+> **Why default 1 star?** An unanswered / poorly handled request should be able to *signal* dissatisfaction without extra steps. The opener can always raise the rating before confirming.
 
 ### Override close (exceptional)
 
@@ -160,3 +164,6 @@ Unread activity — a reply arrived since you last opened the thread. Opening it
 
 **Q8. We need it again later — can we reopen?**
 No — closed is terminal. Open a new thread.
+
+**Q9. What are the stars in the close dialog?**
+Your **satisfaction rating** (1–5 stars) for how the request was handled. It defaults to **1 star** — raise it if you were properly attended, or leave it low to signal that the request wasn't handled well. The rating is stored with the close and visible in the thread history.
