@@ -497,6 +497,7 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
             response.content.decode(),
             r'id="settings-popover"[^>]*\bhidden\b',
         )
+        self.assertContains(response, "console_escape_close.js")
 
     def test_admin_can_create_and_view_po(self):
         self.client.force_login(self.user)

@@ -1248,6 +1248,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
             response.content.decode(),
             r'id="settings-popover"[^>]*\bhidden\b',
         )
+        self.assertContains(response, "console_escape_close.js")
 
     def test_staff_can_open_dashboard(self):
         self.client.force_login(self.staff_user)
@@ -3029,6 +3030,7 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
             response.content.decode(),
             r'id="settings-popover"[^>]*\bhidden\b',
         )
+        self.assertContains(response, "console_escape_close.js")
 
     def test_catalog_api_returns_joined_data(self):
         self.client.force_login(self.staff_user)

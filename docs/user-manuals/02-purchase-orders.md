@@ -48,7 +48,7 @@ Sign in with your email + password (the one your administrator gave you). This m
 | **Created** | Date/time (DD/MM/YYYY) |
 | **Actions** | **Open** |
 
-Click a row (or **Open**) to see the full order in a drawer.
+Click a row (or **Open**) to see the full order in a drawer. Press **Escape** to close it (same as **Close**). If a dialog is open on top (**New purchase order**, **Add line**), Escape closes that dialog first.
 
 ---
 
@@ -157,4 +157,4 @@ Only **managers grade 2+** and **admins** can approve (within caps for managers)
 Net is before VAT; Gross is net + VAT — the amount you actually pay.
 
 **Q6. Dates and timezone?**
-Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). Language (EN / pt-PT), theme, and **Sign out** live in the **Settings** gear (top-right).
+Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). Language (EN / pt-PT), theme, and **Sign out** live in the **Settings** gear (top-right). Press **Escape** to close Settings.
