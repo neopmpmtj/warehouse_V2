@@ -60,22 +60,50 @@ Physical bins do not move until goods issue. `Item.quantity` stays “what is in
 
 ## 3. Locked decisions (this slice)
 
-| ID | Topic | Choice |
-|----|--------|--------|
-| R1 | **When to reserve** | At **branch approve** (`submitted → approved`). Not at draft, not at submit, not at add-line. |
-| R2 | **How much** | `min(line remaining unissued, currently unreserved on-hand)` per item. Request is still approved if that is 0 (wait for procurement). |
-| R3 | **Who wins** | **FIFO** on `(InternalRequest.approved_at, request.id, line.id)`. Same item, two branches: earlier approve gets free stock first. Same branch, two requests: same rule. |
-| R4 | **Incoming stock** | After `receive_goods` / positive `adjust_stock`, **auto-allocate** free units to backorders in FIFO order (raise `quantity_reserved` up to remaining unissued). |
-| R5 | **Release** | Cancel approved (0 issues), warehouse short-close remainder, and goods issue all **reduce reservation**. After a release that frees on-hand, immediately **re-allocate FIFO** so an older backorder beats a new approve. |
-| R6 | **Issue** | May ship **only** from that line’s `quantity_reserved`. Before the check, run FIFO allocate for the items so leftover free stock is not sitting unclaimed. Warehouse cannot “pick South” while North still has a backorder and free stock exists — they must short-close/cancel North’s remainder first. |
-| R7 | **Not a ledger type** | **No** `StockMovement.Type.RESERVE`. D5 unchanged: movements remain receipt / goods_issue / adjustment. |
-| R8 | **Storage** | `InternalRequestLine.quantity_reserved` (`Decimal(12,3)`, default 0). Keep lock 3: **no line status enum**. Remaining issued/received stay derived. |
-| R9 | **Available** | `available(item) = Item.quantity − sum(quantity_reserved)` over lines whose header is `approved` or `fulfilling`. Never negative (service invariant). |
-| R10 | **Branch catalog hint** | Recompute lock 7 from **available**, not raw `Item.quantity`. Still **no exact qty** in branch UI. |
-| R11 | **Negative adjust** | `adjust_stock` **must not** take `Item.quantity` below total reserved. Shrink/damage: short-close or cancel claims first, then adjust. No silent haircut. |
-| R12 | **Approve never fails on stock** | Lack of stock is not an approval error (caps, inactive item/branch, empty request, wholesale still apply). |
+**Recommendation (23 Aug 2026):** take **all twelve as written**. They are the unique set that fits today’s architecture (warehouse queue = `approved`/`fulfilling` only; D5 physical ledger; lock 3 no line status; lock 7 hint not exact qty; request-even-if-out-of-stock; short-close as the reasoned override). None is optional if the original “North keeps the 10” story must hold.
+
+| ID | Topic | Choice | Rec |
+|----|--------|--------|-----|
+| R1 | **When to reserve** | At **branch approve** (`submitted → approved`). Not at draft, not at submit, not at add-line. | **Yes** |
+| R2 | **How much** | `min(line remaining unissued, currently unreserved on-hand)` per item. Request is still approved if that is 0 (wait for procurement). | **Yes** |
+| R3 | **Who wins** | **FIFO** on `(InternalRequest.approved_at, request.id, line.id)`. Same item, two branches: earlier approve gets free stock first. Same branch, two requests: same rule. | **Yes** |
+| R4 | **Incoming stock** | After `receive_goods` / positive `adjust_stock`, **auto-allocate** free units to backorders in FIFO order (raise `quantity_reserved` up to remaining unissued). | **Yes** |
+| R5 | **Release** | Cancel approved (0 issues), warehouse short-close remainder, and goods issue all **reduce reservation**. After a release that frees on-hand, immediately **re-allocate FIFO** so an older backorder beats a new approve. | **Yes** |
+| R6 | **Issue** | May ship **only** from that line’s `quantity_reserved`. Before the check, run FIFO allocate for the items so leftover free stock is not sitting unclaimed. Warehouse cannot “pick South” while North still has a backorder and free stock exists — they must short-close/cancel North’s remainder first. | **Yes** |
+| R7 | **Not a ledger type** | **No** `StockMovement.Type.RESERVE`. D5 unchanged: movements remain receipt / goods_issue / adjustment. | **Yes** |
+| R8 | **Storage** | `InternalRequestLine.quantity_reserved` (`Decimal(12,3)`, default 0). Keep lock 3: **no line status enum**. Remaining issued/received stay derived. | **Yes** |
+| R9 | **Available** | `available(item) = Item.quantity − sum(quantity_reserved)` over lines whose header is `approved` or `fulfilling`. Never negative (service invariant). | **Yes** |
+| R10 | **Branch catalog hint** | Recompute lock 7 from **available**, not raw `Item.quantity`. Still **no exact qty** in branch UI. **None does not block raising a requisição** (already true today). | **Yes** |
+| R11 | **Negative adjust** | `adjust_stock` **must not** take `Item.quantity` below total reserved. Shrink/damage: short-close or cancel claims first, then adjust. No silent haircut. | **Yes** |
+| R12 | **Approve never fails on stock** | Lack of stock is not an approval error (caps, inactive item/branch, empty request, wholesale still apply). | **Yes** |
 
 Proposed PROJECT-PLAN row when this ships: **D32 — Warehouse stock reservation** (R1–R12).
+
+### 3.1 Why each lock (architecture)
+
+**R1 — approve, not draft/submit.** The warehouse queue already ignores `draft`/`submitted`. Obligation starts when the branch manager approves (caps, wholesale snapshot, `approved_at`). Drafts can sit forever; reserving there would freeze bins for abandoned carts. Submit is still an internal branch step.
+
+**R2 — only the free portion.** Phase 5 already allows a requisição when the hub is short (manual PO path). Holding the *full* 30 when 10 exist would starve every other branch of *future* receipts until North is fully shipped. Holding the 10 plus FIFO on new stock (R4) matches the user’s “available portion” wording without that starvation.
+
+**R3 — FIFO by `approved_at`.** Same instant as R1. `created_at` / `submitted_at` would let a slow manager jump a branch that already approved. Tie-break `request.id`, then `line.id` is deterministic under row locks (M6).
+
+**R4 — auto-allocate on receipt/adjust-up.** Without this, South can take units that arrive after North’s approve — the same race, one document later. `receive_goods` is the only stock-in path besides admin adjust; both must call the same allocate helper.
+
+**R5 — release then re-allocate.** Cancel-approved and warehouse short-close already exist (reason required). If North drops the claim and we do *not* immediately offer those units to South, a brand-new East approve in the same second can steal them. Issue reduces reserved in lockstep with `Item.quantity` (available unchanged). Re-allocate only when a release **frees** on-hand (cancel / short-close remainder), not on a normal issue.
+
+**R6 — issue only from that line’s reserved qty.** This is the enforcement of R2–R4. Letting pickers choose who gets free stock would make FIFO advisory. The existing override is **short-close / cancel with a reason** (D19/D31) — do not add a second “steal” button.
+
+**R7 — no `RESERVE` movement.** D5: `Item.quantity` is the cached sum of `StockMovement`. A reserve movement would fake a stock-out, trip `item_quantity_gte_zero`, and confuse goods-receipt. Reservation is a claim beside the ledger.
+
+**R8 — field on the line.** Lock 3: no line status; issued/received stay derived. Reserved **cannot** be derived (two requests both want 30, only 10 free — someone must be stored as holding it). `InternalRequestLine.quantity_reserved` is the smallest change. A separate reservation table is unnecessary at this scale.
+
+**R9 — available = on-hand − reserved on `approved`+`fulfilling`.** Those are exactly the warehouse-queue statuses. Once `shipped`/`closed`/`cancelled`, reserved must be 0 (goods left, or claim released). Formula is the definition of “free to promise”, not a second cache on `Item`.
+
+**R10 — hint from available.** Lock 7 already hides the exact number. Hinting from raw on-hand would show **In stock** while South cannot be shipped — the same lie that caused the bug. **None still does not block a requisição** (Phase 5: request *before* procurement). South should still approve and join the FIFO backorder. Manuals must say: None = nothing free to ship *today*, not “do not request”.
+
+**R11 — adjust cannot go below reserved.** `adjust_stock` is already admin-only and reason-required. Silently cutting reserved would steal North’s claim with no requisição audit. Damage path: short-close/cancel the claim (reason), then adjust. Matches `item_quantity_gte_zero`: do not invent negative available.
+
+**R12 — approve succeeds with zero stock.** If approve failed when available is 0, North could not even enter the queue, and the manual-PO loop would have no document to wait on. Stock shortage is a **fulfilment** problem (R2/R4), not an approval-cap problem (those stay).
 
 ---
 
@@ -347,8 +375,17 @@ Do not mix Phase 6 email into this branch.
 
 ## 15. How to object (before coding)
 
-Reply with the lock id (R1–R12). The only likely forks:
+**Default:** accept R1–R12 as written (§3.1). Reply with a lock id only to override.
 
-- **R1:** reserve at submit instead of approve (not recommended).
-- **R3/R6:** allow warehouse to issue free stock to anyone (weaker guarantee).
-- **R4:** do not auto-allocate on receipt (then a later approve can snatch new stock — fails the original story).
+Forks that **break** the original North-keeps-the-10 story (do not take these):
+
+- **R4 off:** later approve/issue can snatch PO receipts.
+- **R6 off:** pickers can ignore FIFO.
+- **R5 off:** cancel/short-close leaves a gap a newer branch can steal.
+- **R12 off:** empty hub cannot raise a waiting requisição (contradicts Phase 5).
+
+Milder forks (not recommended):
+
+- **R1:** reserve at submit — freezes stock before the warehouse is obligated.
+- **R2:** hard-reserve the full requested qty including future receipts — starves other branches.
+- **R10:** keep hinting from raw on-hand — branch UI would show In stock when nothing is free.
