@@ -40,7 +40,7 @@ Out of stock? The warehouse raises a **purchase order** to a supplier first — 
 | Warehouse | `/manage/internal-requests/` | Queue of approved requests + goods issue |
 | Warehouse admin | `/manage/branch-approval-limits/` | Branch manager approval caps |
 
-*(During development on your own machine: `http://127.0.0.1:8000/…`.)*
+*(During development on your own machine: `http://127.0.0.1:8015/…`.)*
 
 > 📷 **[SCREENSHOT — branch home (catalogue) with top bar]**
 
@@ -211,7 +211,7 @@ If you can't (or won't) ship the rest, click **Short close** and give a **reason
 
 Only a **manager grade 2+ or admin** can do this.
 
-> 📷 **[SCREENSHOT — warehouse queue with issue quantities]**
+![Warehouse internal-requests queue](screenshots/07-internal-requests.png)
 
 ---
 

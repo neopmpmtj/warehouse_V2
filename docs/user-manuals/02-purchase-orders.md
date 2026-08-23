@@ -12,7 +12,7 @@
 >
 > **`https://<your-domain>/manage/purchase-orders/`**
 >
-> *(During development on your own machine: `http://127.0.0.1:8000/manage/purchase-orders/`)*
+> *(During development on your own machine: `http://127.0.0.1:8015/manage/purchase-orders/`)*
 
 Sign in with your email + password (the one your administrator gave you). This manual assumes you already know the item catalogue; see the [Item Console manual](01-items.md) for items, families, suppliers, and supplier prices. After a PO is **approved**, book the delivery in with the [Goods receipt & stock manual](03-goods-receipts.md).
 
@@ -33,7 +33,7 @@ Sign in with your email + password (the one your administrator gave you). This m
 
 ## 2. The console at a glance
 
-> 📷 **[SCREENSHOT — purchase orders list]**
+![Purchase orders console](screenshots/04-purchase-orders.png)
 
 **Toolbar:** a **status filter** (All / Draft / Submitted / Approved / Received / Closed / Rejected) and a **New purchase order** button.
 

@@ -12,7 +12,7 @@
 >
 > **`https://<your-domain>/manage/goods-receipts/`**
 >
-> *(During development on your own machine: `http://127.0.0.1:8000/manage/goods-receipts/`)*
+> *(During development on your own machine: `http://127.0.0.1:8015/manage/goods-receipts/`)*
 
 Sign in with your email + password. This manual assumes you already raise purchase orders; see the [Purchase Orders manual](02-purchase-orders.md) for draft → submit → approve.
 
@@ -58,7 +58,7 @@ Approved purchase order
 
 ## 3. The console at a glance
 
-> 📷 **[SCREENSHOT — goods receipt console, labelled]**
+![Goods receipt & stock console](screenshots/05-goods-receipts.png)
 
 The screen is one page with a top bar, two action buttons, then two tables.
 

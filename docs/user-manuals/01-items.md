@@ -12,9 +12,11 @@
 >
 > **`https://<your-domain>/`**
 >
-> *(During development on your own machine, use: `http://127.0.0.1:8000/`)*
+> *(During development on your own machine, use: `http://127.0.0.1:8015/`)*
 
-You'll be taken to the **login page**. After signing in you land on the dashboard (`/`). That page lists every warehouse console (items, catalog, purchase orders, **approval limits**, goods receipts, **internal requests**, **branch approval limits**) plus branch pages (`/branch/select/`, catalog, requisição, receipts) and the JSON APIs. The main catalogue working screen is the **Item console** at:
+You'll be taken to the **login page**. After signing in you land on the dashboard (`/`). That page lists every warehouse console (items, catalog, purchase orders, **approval limits**, goods receipts, **internal requests**, **branch approval limits**) plus branch pages (`/branch/select/`, catalog, requisição, receipts) and the JSON APIs.
+
+![Staff dashboard](screenshots/01-dashboard.png) The main catalogue working screen is the **Item console** at:
 
 > **`https://<your-domain>/manage/items/`**
 
@@ -32,7 +34,7 @@ Bookmark the console URL — it's where the day-to-day catalogue work happens.
 
 If you mistype, you'll see *"Invalid email or password."*
 
-> 📷 **[SCREENSHOT — login page]**
+![Login page](screenshots/00-login.png)
 
 ### 1.2 Signing out
 
@@ -72,11 +74,13 @@ There are three warehouse roles. The buttons you see depend on your role — a f
 
 The console is one screen, split into three areas.
 
-> 📷 **[SCREENSHOT — full console, labelled]**
+![Item console](screenshots/02-items.png)
 
 **A. Top bar**
 - App name (**CentCompras**) and title (**Item console** / *Gestão de artigos*)
 - **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", language, theme, and **Sign out**
+
+![Settings popover](screenshots/08-settings-popover.png)
 
 **B. Toolbar (filters & actions)**
 

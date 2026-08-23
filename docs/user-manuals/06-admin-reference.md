@@ -34,7 +34,7 @@ Two rules to remember:
 
 ### 2.1 Logging in
 
-1. Go to **`https://<your-domain>/admin/`** (dev: `http://127.0.0.1:8000/admin/`).
+1. Go to **`https://<your-domain>/admin/`** (dev: `http://127.0.0.1:8015/admin/`).
 2. Enter your **email** + **password**.
 3. You land on the Django admin index.
 
@@ -187,6 +187,8 @@ Approval caps are **not** set in `/admin/` — they have their own website conso
 |------|---------|-------|
 | Warehouse PO caps (per grade) | `/manage/approval-limits/` | `ApprovalLimit` (group + grade → self/others) |
 | Branch manager caps (global) | `/manage/branch-approval-limits/` | `BranchApprovalLimit` (role `manager` → self/others) |
+
+![Approval limits console](screenshots/06-approval-limits.png)
 
 In `/admin/` these tables are **read-only**. Defaults are auto-created on migrate and never overwrite your edits.
 

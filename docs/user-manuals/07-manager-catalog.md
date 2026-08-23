@@ -14,7 +14,7 @@ This is the warehouse **read-only** overview: stock, reorder level, selling pric
 >
 > **`https://<your-domain>/manage/catalog/`**
 >
-> *(During development on your own machine: `http://127.0.0.1:8000/manage/catalog/`)*
+> *(During development on your own machine: `http://127.0.0.1:8015/manage/catalog/`)*
 
 Sign in with your warehouse email + password. The dashboard at `/` lists this page (and the other warehouse / branch consoles) as *manager catalog (stock + prices)*.
 
@@ -64,7 +64,7 @@ Clicking a row does nothing — there is no detail drawer.
 
 ## 3. The console at a glance
 
-> 📷 **[SCREENSHOT — manager catalog table, labelled]**
+![Manager catalog console](screenshots/03-catalog.png)
 
 **A. Top bar**
 - Title: **Manager catalog** (*Catálogo do gestor*)
