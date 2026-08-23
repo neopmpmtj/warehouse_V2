@@ -102,6 +102,8 @@ The console is one screen, split into three areas.
 - A checkbox column (if your role can edit) for bulk actions
 - Click any row to open it
 
+**Close a panel:** press **Escape** to dismiss the front-most overlay — the Settings gear, a dialog (**Cancel**), or a drawer (**Close**). If a dialog is open on top of a drawer, the first Escape closes the dialog; a second Escape closes the drawer.
+
 ---
 
 ## 4. Browsing and filtering items

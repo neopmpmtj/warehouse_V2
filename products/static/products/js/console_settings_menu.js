@@ -26,6 +26,8 @@
         });
         document.addEventListener("keydown", (event) => {
             if (event.key === "Escape" && !popover.hidden) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
                 setOpen(false);
                 toggle.focus();
             }

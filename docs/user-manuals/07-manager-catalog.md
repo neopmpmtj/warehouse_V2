@@ -68,7 +68,7 @@ Clicking a row does nothing — there is no detail drawer.
 
 **A. Top bar**
 - Title: **Manager catalog** (*Catálogo do gestor*)
-- **Settings** gear (top-right) — signed in as *you@company*, language (English / Português), theme toggle, **Sign out**
+- **Settings** gear (top-right) — signed in as *you@company*, language (English / Português), theme toggle, **Sign out**. Press **Escape** to close the Settings panel.
 
 **B. Toolbar (filters)**
 
