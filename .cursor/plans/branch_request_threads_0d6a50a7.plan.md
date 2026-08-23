@@ -4,31 +4,31 @@ overview: "Branch opens a written thread to the warehouse when the needed item d
 todos:
   - id: models-migrations
     content: "threads app: ItemRequestThread + ThreadMessage + ThreadReadState + change logs + last_activity_at/message_count + migrations + INSTALLED_APPS/urls wiring"
-    status: pending
+    status: completed
   - id: services
     content: "threads/services.py: create/post/close/link_items with state machine, row locks, ThreadClosedError, explicit side, close rules"
-    status: pending
+    status: completed
   - id: branch-ui
     content: "/branch/threads/ list + create + thread view + reply + unread badge (EN + pt-PT, item-console i18n pattern)"
-    status: pending
+    status: completed
   - id: warehouse-ui
     content: "/manage/threads/ all-branches list (incl. inactive-branch, flagged) + filters + pagination + thread view + reply + link-item + admin force-close"
-    status: pending
+    status: completed
   - id: close-flow
     content: "Close dialog: reason default Request Satisfied or Other + textbox; override rules; stale-awaiting cue (age, oldest first)"
-    status: pending
+    status: completed
   - id: isolation-tests
     content: "Other-branch 404; opener-only close; override matrix (incl. deactivated opener); reason required; state flips; post-vs-close race; capability gating"
-    status: pending
+    status: completed
   - id: docs
     content: "Manual 08-request-threads.md; handoff/PROJECT-PLAN/README/AGENTS sync (test command, dashboard links)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Branch request threads (catalogue-gap requests)
 
-**Status:** **Spec approved by Pedro (23 Aug 2026) — not yet implemented.** New feature; no code exists for this yet.
+**Status:** **Implemented on `feature/branch-request-threads` (23 Aug 2026).** Spec approved by Pedro; third-opinion review folded in; **459 tests green** (full suite incl. `threads`).
 
 **Origin:** Gap in the existing loops. Today a branch can only requisição items that **already exist** in the `Item` table. When the branch needs something the warehouse has never catalogued, there is no written channel to get it created. This plan adds a **thread** (conversation) between the originating branch and main office to agree the request in writing; the warehouse then creates the item.
 

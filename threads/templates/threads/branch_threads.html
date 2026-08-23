@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Request threads — CentCompras</title>
+    <style>
+        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; --warn: #b00020; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+        header h1 { font-size: 1.2rem; margin: 0; }
+        header .user { color: var(--muted); font-size: .9rem; }
+        header a, header button { margin-left: 12px; color: var(--brand); text-decoration: none; }
+        header form { display: inline; }
+        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
+        main { display: grid; grid-template-columns: 360px 1fr; gap: 20px; padding: 20px; }
+        @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+        .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+        h2 { margin: 0 0 10px; font-size: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+        th { color: var(--muted); font-weight: 600; font-size: .8rem; }
+        .btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
+        .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+        input, select, textarea { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
+        textarea { width: 100%; min-height: 72px; box-sizing: border-box; }
+        .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: var(--warn); margin-top: 10px; }
+        .selected { background: #eef4fe; }
+        .unread { font-weight: 700; }
+        .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .75rem; background: #e8f0fe; color: var(--brand); margin-left: 6px; }
+        .badge-branch { background: #e6f4ea; color: #137333; }
+        .badge-warehouse { background: #e8f0fe; color: var(--brand); }
+        .badge-closed { background: #f1f3f4; color: var(--muted); }
+        .msg { border-bottom: 1px solid var(--border); padding: 8px 0; }
+        .msg .meta { color: var(--muted); font-size: .8rem; margin-bottom: 4px; }
+        .msg .body { white-space: pre-wrap; }
+        .status { text-transform: capitalize; font-weight: 600; }
+        .dialog { border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-top: 10px; background: #fff; }
+        .hidden { display: none; }
+        .muted { color: var(--muted); font-size: .8rem; }
+        .item-link { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: 999px; background: #e6f4ea; color: #137333; font-size: .8rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ branch.name }} — <span data-i18n="title">Request threads</span></h1>
+        <div class="user">
+            <span>{{ user.email }}</span>
+            <a href="{% url 'branch_catalog' %}">Catalog</a>
+            <a href="{% url 'branch_select' %}">Switch branch</a>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2 data-i18n="threadsTitle">Threads</h2>
+            <div class="row">
+                <button id="new-thread" class="btn btn-primary" data-i18n="newThread">New thread</button>
+            </div>
+            <table>
+                <thead><tr><th data-i18n="subject">Subject</th><th data-i18n="statusCol">Status</th><th data-i18n="activityCol">Activity</th></tr></thead>
+                <tbody id="thread-body"></tbody>
+            </table>
+            <p id="empty-list" class="muted hidden" data-i18n="emptyList">No request threads yet.</p>
+        </section>
+
+        <section class="panel">
+            <h2 id="detail-title" data-i18n="detailTitle">Thread</h2>
+            <p id="detail-meta" class="muted" style="margin:0 0 10px;"></p>
+            <div id="item-links"></div>
+            <div id="message-body"></div>
+            <div class="row">
+                <textarea id="reply-body" placeholder="Write a message…"></textarea>
+            </div>
+            <div class="row">
+                <button id="reply-btn" class="btn btn-primary" data-i18n="reply">Reply</button>
+                <button id="close-thread-btn" class="btn hidden" data-i18n="closeThread">Close thread</button>
+            </div>
+            <div id="close-dialog" class="dialog hidden">
+                <p data-i18n="closeHelp">Closing ends this thread. Choose a reason.</p>
+                <select id="close-reason">
+                    <option value="request_satisfied" data-i18n="reasonSatisfied">Request Satisfied</option>
+                    <option value="other" data-i18n="reasonOther">Other</option>
+                </select>
+                <div id="close-other-row" class="row hidden">
+                    <input id="close-reason-text" placeholder="Reason…" maxlength="255">
+                </div>
+                <div class="row">
+                    <button id="confirm-close" class="btn btn-primary" data-i18n="confirmClose">Confirm close</button>
+                    <button id="cancel-close" class="btn" data-i18n="cancel">Cancel</button>
+                </div>
+            </div>
+            <p id="banner" class="banner hidden"></p>
+        </section>
+    </main>
+
+    <div id="new-dialog" class="dialog hidden" style="margin:20px;">
+        <h3 data-i18n="newThreadTitle">New request thread</h3>
+        <p class="muted" data-i18n="newThreadHelp">Describe the item you need — it does not exist in the catalogue yet. The warehouse will read your request and reply.</p>
+        <input id="new-subject" placeholder="Subject — e.g. Need a 25mm brass valve" maxlength="255" style="width:100%;box-sizing:border-box;margin-bottom:8px;">
+        <textarea id="new-first-message" placeholder="Describe the item…"></textarea>
+        <div class="row">
+            <button id="confirm-create" class="btn btn-primary" data-i18n="create">Create</button>
+            <button id="cancel-create" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var CSRF = document.querySelector('meta[name="csrf-token"]').content;
+            var LANG_KEY = "cc-lang";
+            var state = { selectedId: null, threads: [] };
+
+            var I18N = {
+                en: {
+                    title: "Request threads", threadsTitle: "Threads", newThread: "New thread",
+                    subject: "Subject", statusCol: "Status", activityCol: "Activity",
+                    emptyList: "No request threads yet.", detailTitle: "Thread",
+                    reply: "Reply", closeThread: "Close thread", closeHelp: "Closing ends this thread. Choose a reason.",
+                    reasonSatisfied: "Request Satisfied", reasonOther: "Other",
+                    confirmClose: "Confirm close", cancel: "Cancel", create: "Create",
+                    newThreadTitle: "New request thread",
+                    newThreadHelp: "Describe the item you need — it does not exist in the catalogue yet. The warehouse will read your request and reply.",
+                    statusAwaitingWarehouse: "Awaiting warehouse", statusAwaitingBranch: "Awaiting branch",
+                    statusClosed: "Closed", unread: "new", sideBranch: "branch", sideWarehouse: "warehouse",
+                    openedBy: "Opened by", lastActivity: "Last activity", items: "Created items:",
+                    none: "none", closedBy: "Closed by", postedBy: "posted by",
+                },
+                pt: {
+                    title: "Fios de pedido", threadsTitle: "Fios", newThread: "Novo fio",
+                    subject: "Assunto", statusCol: "Estado", activityCol: "Atividade",
+                    emptyList: "Ainda não existem fios de pedido.", detailTitle: "Fio",
+                    reply: "Responder", closeThread: "Fechar fio", closeHelp: "Fechar termina este fio. Escolha um motivo.",
+                    reasonSatisfied: "Pedido satisfeito", reasonOther: "Outro",
+                    confirmClose: "Confirmar fecho", cancel: "Cancelar", create: "Criar",
+                    newThreadTitle: "Novo fio de pedido",
+                    newThreadHelp: "Descreva o artigo de que precisa — ainda não existe no catálogo. O armazém lerá o seu pedido e responderá.",
+                    statusAwaitingWarehouse: "A aguardar armazém", statusAwaitingBranch: "A aguardar filial",
+                    statusClosed: "Fechado", unread: "novo", sideBranch: "filial", sideWarehouse: "armazém",
+                    openedBy: "Aberto por", lastActivity: "Última atividade", items: "Artigos criados:",
+                    none: "nenhum", closedBy: "Fechado por", postedBy: "enviada por",
+                },
+            };
+
+            function lang() { try { return localStorage.getItem(LANG_KEY) || "en"; } catch (e) { return "en"; } }
+            function t(key) { var d = I18N[lang()] || I18N.en; return d[key] !== undefined ? d[key] : (I18N.en[key] || key); }
+            function statusLabel(s) { return t("status" + s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, "")) || s; }
+
+            function applyI18n() {
+                document.querySelectorAll("[data-i18n]").forEach(function (el) {
+                    el.textContent = t(el.getAttribute("data-i18n"));
+                });
+            }
+            applyI18n();
+
+            var threadBody = document.getElementById("thread-body");
+            var messageBody = document.getElementById("message-body");
+            var itemLinks = document.getElementById("item-links");
+            var detailMeta = document.getElementById("detail-meta");
+            var replyBody = document.getElementById("reply-body");
+            var replyBtn = document.getElementById("reply-btn");
+            var closeThreadBtn = document.getElementById("close-thread-btn");
+            var closeDialog = document.getElementById("close-dialog");
+            var closeReason = document.getElementById("close-reason");
+            var closeReasonText = document.getElementById("close-reason-text");
+            var closeOtherRow = document.getElementById("close-other-row");
+            var newDialog = document.getElementById("new-dialog");
+            var banner = document.getElementById("banner");
+            var emptyList = document.getElementById("empty-list");
+
+            function el(tag, text, className) {
+                var node = document.createElement(tag);
+                if (text != null) node.textContent = text;
+                if (className) node.className = className;
+                return node;
+            }
+
+            function showError(msg) { banner.textContent = msg || "Request failed."; banner.hidden = false; }
+            function clearError() { banner.hidden = true; }
+
+            function api(path, method, body) {
+                var opts = { method: method || "GET", headers: { "Accept": "application/json", "X-CSRFToken": CSRF } };
+                if (body !== undefined) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+                return fetch(path, opts).then(function (resp) {
+                    return resp.json().then(function (data) {
+                        if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+                        return data;
+                    });
+                });
+            }
+
+            function fmtTime(iso) {
+                if (!iso) return "";
+                var d = new Date(iso);
+                if (isNaN(d.getTime())) return "";
+                return d.toLocaleString(lang() === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+            }
+
+            function loadThreads() {
+                return api("/api/branch/threads/").then(function (data) {
+                    state.threads = data.threads || [];
+                    renderList();
+                    if (state.selectedId) {
+                        var still = state.threads.some(function (th) { return th.id === state.selectedId; });
+                        if (!still) { state.selectedId = null; renderDetail(null); }
+                    }
+                    if (!state.selectedId && state.threads.length) { selectThread(state.threads[0].id); }
+                    if (!state.threads.length) { renderDetail(null); emptyList.hidden = false; }
+                });
+            }
+
+            function renderList() {
+                threadBody.textContent = "";
+                state.threads.forEach(function (th) {
+                    var tr = document.createElement("tr");
+                    if (th.id === state.selectedId) tr.className = "selected";
+                    tr.style.cursor = "pointer";
+                    tr.addEventListener("click", function () { selectThread(th.id); });
+                    var tdSubject = el("td", th.subject);
+                    if (th.unread) tdSubject.className = "unread";
+                    var badge = el("span", th.unread ? t("unread") : "", "badge");
+                    if (th.unread) tdSubject.appendChild(badge);
+                    tr.appendChild(tdSubject);
+                    tr.appendChild(el("td", statusLabel(th.status), "status"));
+                    tr.appendChild(el("td", fmtTime(th.last_activity_at), "muted"));
+                    threadBody.appendChild(tr);
+                });
+            }
+
+            function renderDetail(th) {
+                if (!th) {
+                    messageBody.textContent = "";
+                    itemLinks.textContent = "";
+                    detailMeta.textContent = "";
+                    replyBtn.hidden = true;
+                    closeThreadBtn.hidden = true;
+                    replyBody.disabled = true;
+                    return;
+                }
+                detailMeta.textContent =
+                    t("statusCol") + ": " + statusLabel(th.status) + " · " +
+                    t("openedBy") + " " + th.opened_by_email + " · " +
+                    t("lastActivity") + " " + fmtTime(th.last_activity_at);
+                itemLinks.textContent = "";
+                if (th.items && th.items.length) {
+                    itemLinks.appendChild(el("span", t("items") + " ", "muted"));
+                    th.items.forEach(function (it) {
+                        itemLinks.appendChild(el("span", (it.internal_code || "") + " — " + it.description, "item-link"));
+                    });
+                }
+                if (th.closed_by_email) {
+                    detailMeta.textContent += " · " + t("closedBy") + " " + th.closed_by_email;
+                }
+                return api("/api/branch/threads/" + th.id + "/").then(function (data) {
+                    renderMessages(data.messages || []);
+                    replyBody.disabled = th.status === "closed";
+                    replyBtn.hidden = th.status === "closed";
+                    closeThreadBtn.hidden = !th.can_close;
+                }).catch(showError);
+            }
+
+            function renderMessages(messages) {
+                messageBody.textContent = "";
+                if (!messages.length) { messageBody.appendChild(el("p", t("none"), "muted")); return; }
+                messages.forEach(function (m) {
+                    var div = el("div", null, "msg");
+                    var meta = el("div", null, "meta");
+                    meta.appendChild(el("span", (m.author_email || "?") + " ", null));
+                    meta.appendChild(el("span", t("side" + m.side.charAt(0).toUpperCase() + m.side.slice(1)), "badge " + (m.side === "branch" ? "badge-branch" : "badge-warehouse")));
+                    meta.appendChild(el("span", " · " + fmtTime(m.created_at), null));
+                    div.appendChild(meta);
+                    div.appendChild(el("div", m.body, "body"));
+                    messageBody.appendChild(div);
+                });
+            }
+
+            function selectThread(id) {
+                state.selectedId = id;
+                var th = state.threads.find(function (t) { return t.id === id; });
+                renderList();
+                renderDetail(th);
+            }
+
+            replyBtn.addEventListener("click", function () {
+                clearError();
+                var body = replyBody.value.trim();
+                if (!body) { showError(t("reply") + "?"); return; }
+                api("/api/branch/threads/" + state.selectedId + "/post/", "POST", { body: body })
+                    .then(function () { replyBody.value = ""; return loadThreads(); })
+                    .catch(showError);
+            });
+
+            closeThreadBtn.addEventListener("click", function () { closeDialog.hidden = false; });
+            closeReason.addEventListener("change", function () {
+                closeOtherRow.hidden = closeReason.value !== "other";
+                if (closeReason.value !== "other") closeReasonText.value = "";
+            });
+            document.getElementById("cancel-close").addEventListener("click", function () {
+                closeDialog.hidden = true; closeReasonText.value = "";
+            });
+            document.getElementById("confirm-close").addEventListener("click", function () {
+                clearError();
+                api("/api/branch/threads/" + state.selectedId + "/close/", "POST", {
+                    close_reason: closeReason.value,
+                    close_reason_text: closeReasonText.value,
+                }).then(function () {
+                    closeDialog.hidden = true; closeReasonText.value = "";
+                    return loadThreads();
+                }).catch(showError);
+            });
+
+            document.getElementById("new-thread").addEventListener("click", function () {
+                newDialog.hidden = false;
+                document.getElementById("new-subject").focus();
+            });
+            document.getElementById("cancel-create").addEventListener("click", function () {
+                newDialog.hidden = true;
+                document.getElementById("new-subject").value = "";
+                document.getElementById("new-first-message").value = "";
+            });
+            document.getElementById("confirm-create").addEventListener("click", function () {
+                clearError();
+                api("/api/branch/threads/create/", "POST", {
+                    subject: document.getElementById("new-subject").value,
+                    first_message: document.getElementById("new-first-message").value,
+                }).then(function () {
+                    newDialog.hidden = true;
+                    document.getElementById("new-subject").value = "";
+                    document.getElementById("new-first-message").value = "";
+                    return loadThreads();
+                }).catch(showError);
+            });
+
+            loadThreads().catch(showError);
+        })();
+    </script>
+</body>
+</html>

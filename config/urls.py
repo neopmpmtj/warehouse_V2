@@ -6,8 +6,10 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("branch/", include("branches.web_urls")),
     path("branch/", include("orders.web_urls")),
+    path("branch/", include("threads.web_urls")),
     path("api/", include("branches.urls")),
     path("api/", include("orders.urls")),
+    path("api/", include("threads.urls")),
     path("api/", include("products.urls")),
     path("api/", include("procurement.urls")),
     path("api/", include("inventory.urls")),
@@ -15,4 +17,5 @@ urlpatterns = [
     path("", include("procurement.web_urls")),
     path("", include("inventory.web_urls")),
     path("", include("orders.warehouse_web_urls")),
+    path("", include("threads.warehouse_web_urls")),
 ]

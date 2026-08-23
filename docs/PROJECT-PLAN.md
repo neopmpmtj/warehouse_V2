@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 23 August 2026, 16:40 WEST
-- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Next:** Phase 6 — email automation. Full suite **438 tests green**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 23 August 2026, 19:15 WEST
+- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Next:** Phase 6 — email automation. Full suite **459 tests green**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Email and offline remain later phases.
 
 ## Status vocabulary
@@ -166,6 +166,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 5 | Branches + internal request + branch catalog | ✅ **Done** | Phase 4 |
 | 5+ | Item `internal_code` constraints (Genesis lifecycle) | ✅ **Done** (Phases 1–2) | Phase 5 |
 | 5+ | Warehouse FIFO stock reservation (D32 / R1–R12) | ✅ **Done** | Phase 5 |
+| 5+ | Request threads (catalogue-gap requests) | ✅ **Done** | Phase 5 |
 | 6 | Email automation (supplier notifications) | 🔵 **Next** | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
@@ -453,6 +454,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - [x] Manage header — Settings gear + popover (items, catalog, POs, goods receipts)
 - [x] Sub-families — `SubFamily` under `FamilyProduct`, optional `Item.sub_family`, console + admin + catalog surfaces
 - [x] Warehouse FIFO stock reservation — `quantity_reserved` at approve (D32 / R1–R12)
+- [x] Request threads — `threads` app: `ItemRequestThread` (awaiting_warehouse/awaiting_branch/closed), `ThreadMessage` (explicit side), `ThreadReadState` (unread), changelog (created/item_linked/closed); branch + warehouse consoles; opener-only close + manager/admin/warehouse-admin override; reason required; item traceability M2M; manual `08-request-threads.md`
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---

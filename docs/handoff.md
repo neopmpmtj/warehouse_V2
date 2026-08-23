@@ -20,9 +20,9 @@
 | 6 — Email automation | 🔵 **Next** |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, and warehouse FIFO reservation (D32) are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), and the request-threads feature (catalogue-gap requests) are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**Full suite green (438 tests).**
+**Full suite green (459 tests).**
 
 ---
 
@@ -36,6 +36,18 @@
 ---
 
 ## This session (23 Aug 2026) — landed
+
+### Request threads (catalogue-gap requests) ✅
+
+- **Feature:** a branch opens a written **thread** (subject + free-text first message) when the needed item does **not** exist in the `Item` table. Warehouse engages; back-and-forth until understood; warehouse creates the item via the item console; **only the opener closes** (reason required: default "Request Satisfied" / "Other" + text). Branch manager/admin + warehouse admin can force-close (override).
+- **App:** `threads` — `ItemRequestThread` (status `awaiting_warehouse` / `awaiting_branch` / `closed`; `last_activity_at`; `message_count`; close fields; M2M `items` traceability), `ThreadMessage` (append-only, explicit `side` branch|warehouse), `ThreadReadState` (read-cursor + unread badge), `ItemRequestThreadChangeLog` (lifecycle-only: created / item_linked / closed).
+- **Gates:** branch via `active_branch_required` + other-branch **404**; warehouse via **capability** `is_warehouse_staff()` / `can_force_close_thread()` (the `threads` app deliberately has no Django group perms — `CATALOG_APP_LABELS` untouched).
+- **Concurrency:** `post_message` and `close_thread` both `select_for_update`; post-to-closed raises `ThreadClosedError`; linking allowed after close.
+- **Surfaces:** `/branch/threads/` (list + create + reply + close) and `/manage/threads/` (all branches incl. inactive-branch flagged, status/branch filters, oldest-awaiting-first, link-item search, admin force-close). Dashboard links added. i18n EN + pt-PT.
+- **Seed:** one sample thread (North, awaiting warehouse) in `seed_dev_data`.
+- **Tests:** `threads.tests` — state flips, opener-only close, override matrix (incl. deactivated opener), reason rules, other-branch 404, post-vs-close, capability gating, explicit side, unread → **459** total.
+- **Manual:** [`08-request-threads.md`](user-manuals/08-request-threads.md).
+- Plan: [`.cursor/plans/branch_request_threads_0d6a50a7.plan.md`](../.cursor/plans/branch_request_threads_0d6a50a7.plan.md) (complete; do not treat as a work queue).
 
 ### Warehouse FIFO stock reservation (D32) ✅
 
@@ -267,10 +279,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 ## Tests
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput
+.venv/bin/python manage.py test products accounts procurement inventory branches orders threads --noinput
 ```
 
-- Last full suite: **438 OK** with `--noinput` (includes warehouse FIFO reservation).
+- Last full suite: **459 OK** with `--noinput` (includes warehouse FIFO reservation + request threads).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -285,6 +297,7 @@ inventory/      goods receipt + stock ledger (models, services, console_views, a
 accounts/       custom User, warehouse groups, grades, login, timezone middleware, authz.py, capabilities.py
 branches/       tenancy: Branch + BranchMembership, ActiveBranchMiddleware, picker, capabilities, admin, tests
 orders/         internal request (requisição interna): models, services, console API, web UI, admin, tests
+threads/        request threads (catalogue-gap requests): models, services, console API, web UI, admin, tests
 config/         settings, urls
 logging_utils/  rotating per-app logs
 docs/           plan, handoff, archived reviews (incl. 1303), user-manuals/, tenancy design
@@ -305,7 +318,7 @@ python manage.py runserver
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded). **Branch:** `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…` (North), `branch.operator.south@…` / `branch.manager.south@…` (South), and `branch.dual@…` (both branches).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/branch-approval-limits/` branch caps (admin edit) · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden) · `/branch/requests/` requisição interna · `/admin/` superuser only.
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden) · `/branch/requests/` requisição interna · `/branch/threads/` request threads (branch side) · `/admin/` superuser only.
 
 ---
 
@@ -321,8 +334,7 @@ python manage.py runserver
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |
 | `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — concluded |
-| `docs/user-manuals/` | staff user manuals (update when constraints change — see `.cursor/rules/user-manuals.mdc`) |
-| `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | Item `internal_code` — **complete** |
+| `docs/user-manuals/` | staff user manuals (update when constraints change — see `.cursor/rules/user-manuals.mdc`) || `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | Item `internal_code` — **complete** |
 | `.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md` | Warehouse FIFO reservation (D32 / R1–R12) — **complete** |
 | `docs/archive/phase5-plan-260821-1756.md` | Phase 5 build spec (locks 1–10) — **archived** ✅ |
 | `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |

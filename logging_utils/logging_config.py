@@ -52,6 +52,9 @@ LOGGING_CONFIG = {
         "centcompras.orders": {
             "log_filename": "orders.log",
         },
+        "centcompras.threads": {
+            "log_filename": "threads.log",
+        },
         "centcompras.django": {
             "log_filename": "django.log",
             "console_level": "INFO",

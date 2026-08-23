@@ -44,6 +44,7 @@ from procurement.services import ensure_default_approval_limits
 from orders import services as order_services
 from orders.models import InternalRequest
 from orders.services import ensure_default_branch_approval_limits
+from threads.services import create_thread as create_request_thread
 
 
 DEFAULT_PASSWORD = "devpass123"
@@ -174,6 +175,29 @@ class Command(BaseCommand):
             req = order_services.submit(req, operator)
             order_services.approve(req, manager)
             self.stdout.write(self.style.SUCCESS(f"Sample approved requisição: #{req.id}"))
+
+    def _seed_sample_threads(self, user_model):
+        """Idempotently seed one open request thread (catalogue-gap request)."""
+        branch = Branch.objects.filter(name__iexact="North").first()
+        if branch is None:
+            return
+        operator = user_model.objects.filter(
+            email="branch.operator.north@centcompras.dev"
+        ).first()
+        if operator is None:
+            return
+        subject = "Sample thread: need a 25mm brass valve (not in catalogue)"
+        from threads.models import ItemRequestThread
+
+        if not ItemRequestThread.objects.filter(branch=branch, subject=subject).exists():
+            thread = create_request_thread(
+                branch,
+                operator,
+                subject,
+                "We need a 25mm brass valve for the new irrigation line. "
+                "It is not in the catalogue yet — please confirm you can source it.",
+            )
+            self.stdout.write(self.style.SUCCESS(f"Sample request thread: #{thread.id}"))
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -447,6 +471,7 @@ class Command(BaseCommand):
 
         if not options["skip_branches"] and not options["skip_items"]:
             self._seed_sample_requests(user_model)
+            self._seed_sample_threads(user_model)
 
         self.stdout.write("")
         self.stdout.write(self.style.WARNING("Dev login credentials:"))
