@@ -90,7 +90,9 @@ Filters combine. They run in the browser on the loaded list — you do not need 
 | **Family** | Family name |
 | **Sub-family** | Sub-family name, or **—** if none |
 | **Unit** | Unit of measure |
-| **Stock** | Cached on-hand quantity (from the stock ledger) |
+| **On hand** | Cached physical quantity (from the stock ledger) |
+| **Reserved** | Quantity held for approved / fulfilling requisições |
+| **Available** | On hand minus reserved — what is still free to ship today |
 | **Reorder** | Reorder level set on the item |
 | **Buying** | Cost we pay — see §5 |
 | **Retail / Wholesale / Special** | The three **manual** selling prices |
@@ -103,14 +105,14 @@ Rows at or below reorder are highlighted (warning styling) as well as the Status
 
 ## 4. Stock and “below reorder”
 
-**Stock** is the same cached balance as everywhere else: goods receipts add, goods issues subtract, admin **Adjust stock** corrects. This page only **displays** it. If stock looks wrong, trust **Stock movements** on the [goods receipt console](03-goods-receipts.md) — that is the ledger.
+**On hand** is the same cached physical balance as everywhere else: goods receipts add, goods issues subtract, admin **Adjust stock** corrects. **Reserved** is stock already promised to approved requisições. **Available** is on hand minus reserved. This page only **displays** these figures. If on-hand looks wrong, trust **Stock movements** on the [goods receipt console](03-goods-receipts.md) — that is the ledger.
 
 **Below reorder** is true when:
 
 - the item’s **reorder level is greater than zero**, **and**
-- **stock ≤ reorder level**.
+- **available ≤ reorder level**.
 
-A reorder level of **0** means “no reorder trigger” — the status stays **OK** even if stock is 0.
+A reorder level of **0** means “no reorder trigger” — the status stays **OK** even if available is 0.
 
 Use **Below reorder only** when you want a shortlist of items that need procuring.
 
@@ -179,16 +181,19 @@ That supplier is **inactive**, or there is no supplier price for this item. Add 
 That supplier is the item’s **primary** (preferred). Its cost is the Buying figure. Only one primary per item.
 
 **Q4. Why does this page show exact stock but the branch catalogue does not?**
-Deliberate. Warehouse staff see the cached quantity here. Branch staff see only **In stock / Low / None** on `/branch/catalog/` — see [Branches & Requisição interna](04-internal-requests.md) §3.
+Deliberate. Warehouse staff see on-hand, reserved, and available here. Branch staff see only **In stock / Low / None** on `/branch/catalog/` (from **available**, not raw on-hand) — see [Branches & Requisição interna](04-internal-requests.md) §3.
 
 **Q5. I deactivated an item and it vanished from this list — is it deleted?**
 No. Deactivated items (and items whose family is inactive) are excluded from this view. Reactivate in the item console to bring them back.
 
-**Q6. Stock is 0 but Status says OK — is that a bug?**
-Not if **Reorder** is 0. A zero reorder level means “do not flag”. Set a reorder level greater than 0 on the item if you want the warning.
+**Q6. On hand is 0 but Status says OK — is that a bug?**
+Not if **Reorder** is 0. A zero reorder level means “do not flag”. Set a reorder level greater than 0 on the item if you want the warning. Status uses **available**, so 10 on hand with 10 reserved also flags as below reorder when reorder > 0.
 
-**Q7. I am a warehouse operator — should I see cost?**
+**Q7. On hand is 10 but Available is 0 — where did the stock go?**
+It is **reserved** for approved requisições. The warehouse queue at `/manage/internal-requests/` shows who holds it.
+
+**Q8. I am a warehouse operator — should I see cost?**
 Yes. Every warehouse group that can open this page sees buying price. Cost is hidden only on the **branch** catalogue.
 
-**Q8. Can two items have the same internal code?**
+**Q9. Can two items have the same internal code?**
 No — codes are unique (case-insensitive) and stored **uppercase**. That rule is enforced in the item console, not here. See [Item Console](01-items.md) FAQ.

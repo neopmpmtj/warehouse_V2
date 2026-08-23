@@ -74,6 +74,7 @@ const GR_I18N = {
         "invalid_receipt_line": "Each receipt line must be a valid object with line_id and quantity_received.",
         "duplicate_receipt_line": "A purchase order line was provided more than once in this receipt.",
         "adjust_reason_required": "A reason is required to adjust stock.",
+        "adjust_below_reserved": "Cannot reduce stock below the quantity reserved for approved requests.",
     },
     "pt-PT": {
         title: "Receção de mercadorias e stock",
@@ -150,5 +151,6 @@ const GR_I18N = {
         "invalid_receipt_line": "Cada linha da receção tem de ser um objeto válido com line_id e quantity_received.",
         "duplicate_receipt_line": "Uma linha da encomenda foi indicada mais do que uma vez nesta receção.",
         "adjust_reason_required": "É obrigatório indicar um motivo para ajustar o stock.",
+        "adjust_below_reserved": "Não é possível reduzir o stock abaixo da quantidade reservada para requisições aprovadas.",
     },
 };

@@ -103,6 +103,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Received quantity X exceeds remaining Y for PO line N.` | Over-receipt | You can't receive more than ordered |
 | `No lines to receive.` | Empty receipt | Add a line |
 | `Stock cannot be adjusted below zero.` | Would make on-hand negative | Check your quantities |
+| `Cannot reduce stock of 'X' below N reserved for approved requests.` | A negative adjust would steal units already held for requisições | Short-close or cancel the hold first, then adjust |
 | `A reason is required to adjust stock.` | `adjust_stock` needs a reason | Type one |
 
 **Goods issue (warehouse, `/manage/internal-requests/`)**
@@ -112,7 +113,8 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Cannot issue goods against a request with status 'X'.` | Request isn't **approved** or **fulfilling** | Only those are issuable |
 | `Request line not found on this request.` | Wrong line id | Re-select |
 | `Issued quantity X exceeds remaining Y for request line N.` | Over-issue vs the request | Lower it |
-| `Insufficient stock for 'X': N requested, M on hand.` | Over-issue vs on-hand | The warehouse must procure first |
+| `Cannot issue X of 'Y': Z reserved for this request.` | Over-issue vs this request's hold | Issue only the reserved qty, or wait for incoming stock to be allocated |
+| `Insufficient stock for 'X': N requested, M on hand.` | Over-issue vs on-hand (safety net) | The warehouse must procure first |
 | `No lines to issue.` | Empty issue | Add a line |
 | `A reason is required to short-close a request.` | Warehouse short-close needs a reason | Type one |
 
@@ -178,6 +180,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | **Reason / notes (reason fields)** | `CharField` / `TextField` | reason ≤ **255 chars** | over-long reason rejected |
 | **Email** | `EmailField` | valid email | supplier & user |
 | **Stock balances** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | can't go negative |
+| **Reserved qty** (`InternalRequestLine.quantity_reserved`) | `Decimal(12,3)` | `≥ 0` and `≤` line quantity | claim on warehouse stock, not a ledger movement |
 
 **Rounding:** the whole app uses **half-away-from-zero** (`ROUND_HALF_UP` — not banker's rounding). Unit costs round to **4 dp** first, then line amounts (net / VAT / gross) round to **2 dp**.
 
@@ -224,6 +227,12 @@ cancelled                                cancelled         ▼               shi
 
 **No cancel after the first goods issue** — short-close only.
 
+**Reservation (D32):**
+
+- **Approve** holds `min(remaining, unreserved on-hand)` on each line. A zero hold still approves (the request waits for stock).
+- **Issue** may ship only from that line's reserved quantity. Incoming receipts / positive adjusts fill older backorders first (FIFO by `approved_at`, then request id, then line id).
+- **Cancel** (approved, no issue) and **warehouse short-close** release the hold, then re-allocate free units to waiting lines.
+
 ### 4.3 Inactive entities (lock 9 / D16)
 
 - **Inactive branch:** blocks new requests/lines/submit/approve, but **in-flight** issue / branch receipt / short-close still work (stock in transit isn't stuck).
@@ -250,6 +259,7 @@ cancelled                                cancelled         ▼               shi
 These are guarantees, not "best effort":
 
 - **No lost updates / no overselling:** every write that touches stock or an order **locks the rows** (`select_for_update`), and stock items are locked in a **fixed (sorted) order** to avoid deadlocks. Two people receiving the last unit: one succeeds, the other gets an explicit "insufficient stock" error.
+- **FIFO warehouse reservation:** approve holds the free portion for that requisição. A later branch cannot be issued those units. Issue is capped at the line's `quantity_reserved`. Incoming stock is offered to the oldest `approved`/`fulfilling` backorder first.
 - **Append-only ledgers:** `StockMovement` and `BranchStockMovement` are never edited or deleted — only new rows. The cached `Item.quantity` / `BranchItemStock.quantity` are **computed** from the ledger; if they ever disagree, the ledger is the truth.
 - **Frozen snapshots:** PO and request **lines** snapshot description, code, unit, VAT, price at creation/approval, so later master-data edits don't rewrite history.
 - **Audit-by-design:** every create/update/lifecycle change writes a `*ChangeLog` row (`who`, `action`, `changes`, `reason`, `when`). There is no silent delete — deactivation/cancel instead.
@@ -269,7 +279,6 @@ These are deliberate deferrals — ask before assuming they exist:
 | **Offline / PWA** | Not built (Phase 7) |
 | **Google OAuth / public signup** | Not implemented in dev |
 | **Linked / auto purchase order** | Seam exists (nullable PO FK on request lines) but no automation |
-| **Stock reservation** | Deferred — stock is checked at issue time, not reserved at approve |
 | **Branch-tiered prices** | Only the 3 global selling prices (retail/wholesale/special) |
 | **Categories / vector or LLM search / bulk import** | Not built |
 
@@ -308,8 +317,8 @@ These are deliberate deferrals — ask before assuming they exist:
 - Code already used (case-insensitive — `cem-50` collides with `CEM-50`) → pick another.
 - Lowercase is fine — it is **saved as uppercase**.
 
-**"I got 'insufficient stock'."**
-- Issue: on-hand is less than requested → procure (PO → goods receipt) first.
+**"I got 'insufficient stock' / 'cannot issue … reserved'."**
+- Issue: this request has no hold (or not enough) for that qty — a earlier approved requisição may be holding the units. Procure, wait, or short-close the earlier hold (reason required).
 - Receipt (branch): you typed more than the dispatch shipped.
 
 ---

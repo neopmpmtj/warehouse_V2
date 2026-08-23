@@ -175,11 +175,17 @@ def post_login_landing(request):
 def availability_hint(item):
     """Lock 7 stock hint for branch UI: ``none`` / ``low`` / ``in stock``.
 
-    Derived from warehouse quantity + reorder level. The exact quantity is
-    never exposed to the branch.
+    Derived from *available* warehouse quantity (on-hand minus reservations)
+    plus reorder level. The exact quantity is never exposed to the branch.
+    None means nothing is free to ship today; it does not block a requisição.
     """
-    if item.quantity == 0:
+    available = getattr(item, "available", None)
+    if available is None:
+        from inventory.services import available_quantity
+
+        available = available_quantity(item)
+    if available <= 0:
         return "none"
-    if item.reorder_level > 0 and item.quantity <= item.reorder_level:
+    if item.reorder_level > 0 and available <= item.reorder_level:
         return "low"
     return "in stock"

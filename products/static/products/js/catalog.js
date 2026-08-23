@@ -235,6 +235,8 @@ function renderCatalog() {
         row.appendChild(textTd(item.sub_family ? item.sub_family.name : "—"));
         row.appendChild(textTd(item.unit_of_measure || "—"));
         row.appendChild(textTd(formatQty(item.quantity)));
+        row.appendChild(textTd(formatQty(item.reserved)));
+        row.appendChild(textTd(formatQty(item.available)));
         row.appendChild(textTd(formatQty(item.reorder_level)));
         row.appendChild(textTd(formatCost(item.buying_price)));
         row.appendChild(textTd(formatCost(item.retail_price)));

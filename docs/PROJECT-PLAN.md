@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 22 August 2026, 19:15 WEST
-- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Next:** Phase 6 — email automation. Full suite **421 tests green**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 23 August 2026, 16:40 WEST
+- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Next:** Phase 6 — email automation. Full suite **438 tests green**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Email and offline remain later phases.
 
 ## Status vocabulary
@@ -129,6 +129,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D29 | `internal_code` lifecycle (Phases 1–2 ✅) | Charset `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive; **immutable after first save** (set-if-empty once); console create = mandatory Genesis with `retail_price > 0` |
 | D30 | Server-side item drafts | **Deferred** — localStorage autosave first if needed |
 | D31 | Warehouse short-close (zero dispatch) | `approved` with no `GoodsIssue` → **closed** (not `shipped`) |
+| D32 | Warehouse stock reservation | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO by `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `StockMovement.Type.RESERVE` (D5 unchanged). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |
 | O1 | Item-level buying-price display | **Option A** — `primary` flag (one per item); fall back to cheapest if none marked — **implemented** |
 
 ### Open ⚠️
@@ -143,7 +144,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (Aug 2026):** phases 0–5 complete; both review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **421 tests green**. **Next:** Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
+**Current (Aug 2026):** phases 0–5 complete; both review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **438 tests green**. **Next:** Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -164,6 +165,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 4 | Manager catalog (stock + price view) | ✅ Done | Phase 3 |
 | 5 | Branches + internal request + branch catalog | ✅ **Done** | Phase 4 |
 | 5+ | Item `internal_code` constraints (Genesis lifecycle) | ✅ **Done** (Phases 1–2) | Phase 5 |
+| 5+ | Warehouse FIFO stock reservation (D32 / R1–R12) | ✅ **Done** | Phase 5 |
 | 6 | Email automation (supplier notifications) | 🔵 **Next** | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
@@ -351,7 +353,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 
 ### Implementation notes (as built)
 
-- Service: `get_catalog()` (read-only `Item` join with `select_related` family/vat + `prefetch_related` supplier prices), `catalog_buying_price()` (O1 — primary else cheapest, from prefetched prices), `catalog_below_reorder()` (`reorder_level > 0 and quantity <= reorder_level`).
+- Service: `get_catalog()` (read-only `Item` join with `select_related` family/vat + `prefetch_related` supplier prices), `catalog_buying_price()` (O1 — primary else cheapest, from prefetched prices), `catalog_below_reorder()` (`reorder_level > 0 and available <= reorder_level`; available = on-hand − reserved).
 - API: `GET /api/manage/catalog/` → joined rows (quantity, reorder level, buying price, 3 selling prices, suppliers, `below_reorder` flag).
 - UI: `/manage/catalog/` — read-only table with search, family filter, "below reorder only" toggle, and a warning row/pill for items at/below reorder. EN + pt-PT.
 - Permission: view-only, gated by `catalog_required` (`products.view_item`) — warehouse groups only (cost hidden from branches is Phase 5).
@@ -367,7 +369,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - ✅ `orders` app: internal request ("Requisição interna") — priced (wholesale snapshot at approve); branch approve caps mirror PO.
 - ✅ Warehouse: `GoodsIssue` + queue (approved requests only); partial issue + short-close; manual PO when out of stock (nullable PO FK on lines for later automation).
 - ✅ Branch receipt + branch stock ledger (`BranchReceipt` on `GoodsIssue`, `BranchStockMovement` + cached `BranchItemStock`).
-- **Not in Phase 5:** offline/sync (Phase 7), email notify (Phase 6), stock reservation (deferred), linked/auto PO (later slice).
+- **Not in Phase 5:** offline/sync (Phase 7), email notify (Phase 6), linked/auto PO (later slice). **Stock reservation (A4)** was deferred in Phase 5; it shipped later as **D32**.
 
 ### 12.1 Item `internal_code` — catalogue constraints ✅
 
@@ -379,6 +381,12 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | **Phase 2** | ✅ Done | Lock `internal_code` on first save; mandatory Genesis (atomic create); qualification gates; console UI |
 
 **Locked decisions:** draft = new-item form before first POST; Genesis requires `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`, `retail_price > 0`; server-side drafts **deferred** (D30).
+
+### 12.2 Warehouse FIFO stock reservation ✅
+
+**Plan:** [`.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md`](../.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md) — **complete** (R1–R12 / D32).
+
+When a requisição is **approved**, the warehouse holds `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. Incoming stock auto-allocates FIFO. Goods issue ships only from that line's hold. `Item.quantity` stays physical (D5); **available** = on-hand − reserved. Branch catalog hint uses available. Approve never fails for lack of stock.
 
 ---
 
@@ -444,6 +452,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - [x] Item `internal_code` Phase 2 — immutability + mandatory Genesis + qualification gates
 - [x] Manage header — Settings gear + popover (items, catalog, POs, goods receipts)
 - [x] Sub-families — `SubFamily` under `FamilyProduct`, optional `Item.sub_family`, console + admin + catalog surfaces
+- [x] Warehouse FIFO stock reservation — `quantity_reserved` at approve (D32 / R1–R12)
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---

@@ -132,14 +132,28 @@ def _serialize_sub_family(sub_family):
     return payload
 
 
-def _serialize_item(item):
+def _stock_fields(item):
+    reserved = getattr(item, "reserved", None)
+    available = getattr(item, "available", None)
+    if reserved is None or available is None:
+        from inventory.services import available_quantity, reserved_quantity
+
+        reserved = reserved_quantity(item)
+        available = available_quantity(item)
     return {
+        "quantity": _decimal_string(item.quantity),
+        "reserved": _decimal_string(reserved),
+        "available": _decimal_string(available),
+    }
+
+
+def _serialize_item(item):
+    payload = {
         "id": item.id,
         "internal_code": item.internal_code,
         "description": item.description,
         "unit_of_measure": item.unit_of_measure,
         "reorder_level": _decimal_string(item.reorder_level),
-        "quantity": _decimal_string(item.quantity),
         "retail_price": _decimal_string(item.retail_price),
         "wholesale_price": _decimal_string(item.wholesale_price),
         "special_price": _decimal_string(item.special_price),
@@ -152,6 +166,8 @@ def _serialize_item(item):
         "created_at": item.created_at.isoformat(),
         "updated_at": item.updated_at.isoformat(),
     }
+    payload.update(_stock_fields(item))
+    return payload
 
 
 def _serialize_history_entry(entry):
@@ -1132,7 +1148,7 @@ def manage_supplier_item_price_history(request, sip_id):
 
 def _serialize_catalog_item(item):
     buying_price = catalog_buying_price(item)
-    return {
+    payload = {
         "id": item.id,
         "internal_code": item.internal_code,
         "description": item.description,
@@ -1143,7 +1159,6 @@ def _serialize_catalog_item(item):
             _serialize_sub_family(item.sub_family) if item.sub_family_id else None
         ),
         "vat_rate": _serialize_vat_rate(item.vat_rate),
-        "quantity": _decimal_string(item.quantity),
         "reorder_level": _decimal_string(item.reorder_level),
         "below_reorder": catalog_below_reorder(item),
         "retail_price": _decimal_string(item.retail_price),
@@ -1161,6 +1176,8 @@ def _serialize_catalog_item(item):
             if price.supplier.is_active
         ],
     }
+    payload.update(_stock_fields(item))
+    return payload
 
 
 @catalog_required

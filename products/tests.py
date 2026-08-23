@@ -2948,6 +2948,15 @@ class CatalogServiceTests(ItemTestCaseMixin, TestCase):
         item.quantity = Decimal("0")
         self.assertFalse(catalog_below_reorder(item))
 
+    def test_catalog_below_reorder_uses_available_not_on_hand(self):
+        item = get_catalog().get(pk=self.item.pk)
+        item.quantity = Decimal("20")
+        item.reorder_level = Decimal("10")
+        item.reserved = Decimal("15")
+        self.assertTrue(catalog_below_reorder(item))
+        item.reserved = Decimal("5")
+        self.assertFalse(catalog_below_reorder(item))
+
     def test_catalog_buying_price_ignores_deactivated_supplier(self):
         other = create_supplier(name="Porto Materials Co")
         create_supplier_item_price(self.supplier, self.item, "12.50", primary=True)
@@ -3031,6 +3040,8 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(row["internal_code"], "CEM-50")
         self.assertEqual(row["family"]["name"], self.family.name)
         self.assertEqual(Decimal(row["quantity"]), Decimal("0"))
+        self.assertEqual(Decimal(row["reserved"]), Decimal("0"))
+        self.assertEqual(Decimal(row["available"]), Decimal("0"))
         self.assertEqual(Decimal(row["reorder_level"]), Decimal("10"))
         self.assertEqual(Decimal(row["buying_price"]), Decimal("8.50"))
         self.assertTrue(row["below_reorder"])

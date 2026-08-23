@@ -3,7 +3,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import DecimalField, F, OuterRef, Subquery, Sum, Value
+from django.db.models.functions import Coalesce
 
 from logging_utils import get_logger
 
@@ -26,7 +27,7 @@ from .models import (
     GoodsReceiptLine,
     StockMovement,
 )
-from orders.models import InternalRequest, InternalRequestLine
+from orders.models import InternalRequest, InternalRequestLine, InternalRequestLineChangeLog
 
 logger = get_logger("centcompras.inventory")
 
@@ -269,6 +270,9 @@ def receive_goods(po, lines, user, reference="", notes=""):
             content_object=receipt,
         )
 
+    for item_id in item_ids:
+        allocate_available_stock(item_id, user)
+
     _log_goods_received(
         po,
         user,
@@ -320,6 +324,13 @@ def adjust_stock(item, quantity, reason, user):
             code="adjust_reason_required",
         )
 
+    item = Item.objects.select_for_update().get(pk=item.pk)
+    if quantity < 0:
+        reserved = reserved_quantity(item)
+        projected = _qty3(item.quantity) + quantity
+        if reserved > 0 and projected < reserved:
+            raise AdjustBelowReservedError(item, reserved)
+
     movement = _write_movement(
         item,
         quantity,
@@ -327,6 +338,8 @@ def adjust_stock(item, quantity, reason, user):
         user,
         reason=reason,
     )
+    if quantity > 0:
+        allocate_available_stock(item, user)
 
     logger.info(
         "Adjusted stock item=%s quantity=%s user=%s",
@@ -422,6 +435,201 @@ class InsufficientStockError(ValidationError):
         )
 
 
+class InsufficientReservationError(ValidationError):
+    def __init__(self, item, qty, reserved):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or item.pk
+        super().__init__(
+            f"Cannot issue {qty} of '{label}': {reserved} reserved for this request.",
+            code="insufficient_reservation",
+        )
+
+
+class AdjustBelowReservedError(ValidationError):
+    def __init__(self, item, reserved):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or item.pk
+        super().__init__(
+            f"Cannot reduce stock of '{label}' below {reserved} reserved for approved requests.",
+            code="adjust_below_reserved",
+        )
+
+
+QTY_3DP = Decimal("0.001")
+ACTIVE_RESERVATION_STATUSES = (
+    InternalRequest.Status.APPROVED,
+    InternalRequest.Status.FULFILLING,
+)
+
+
+def _qty3(value):
+    if value is None:
+        return Decimal("0.000")
+    return Decimal(value).quantize(QTY_3DP)
+
+
+def reserved_quantity(item):
+    """Sum of active (approved/fulfilling) reservations for an item."""
+    item = _resolve_item(item)
+    total = InternalRequestLine.objects.filter(
+        item=item,
+        internal_request__status__in=ACTIVE_RESERVATION_STATUSES,
+    ).aggregate(total=Sum("quantity_reserved"))["total"]
+    return _qty3(total)
+
+
+def available_quantity(item):
+    """On-hand minus active reservations. Never reports negative."""
+    item = Item.objects.get(pk=_resolve_item(item).pk)
+    available = _qty3(item.quantity) - reserved_quantity(item)
+    if available < 0:
+        return Decimal("0.000")
+    return available
+
+
+def annotate_item_reservations(queryset):
+    """Annotate Item queryset with reserved and available (unreserved on-hand)."""
+    reserved_sq = (
+        InternalRequestLine.objects.filter(
+            item_id=OuterRef("pk"),
+            internal_request__status__in=ACTIVE_RESERVATION_STATUSES,
+        )
+        .values("item_id")
+        .annotate(total=Sum("quantity_reserved"))
+        .values("total")
+    )
+    decimal_field = DecimalField(max_digits=12, decimal_places=3)
+    return queryset.annotate(
+        reserved=Coalesce(
+            Subquery(reserved_sq, output_field=decimal_field),
+            Value(Decimal("0.000"), output_field=decimal_field),
+        )
+    ).annotate(available=F("quantity") - F("reserved"))
+
+
+def _issued_qty_for_line_ids(line_ids):
+    if not line_ids:
+        return {}
+    totals = (
+        GoodsIssueLine.objects.filter(internal_request_line_id__in=line_ids)
+        .values("internal_request_line_id")
+        .annotate(total=Sum("quantity_issued"))
+    )
+    return {
+        row["internal_request_line_id"]: _qty3(row["total"])
+        for row in totals
+    }
+
+
+def _log_reservation_change(line, user, old, new):
+    InternalRequestLineChangeLog.objects.create(
+        internal_request_line=line,
+        user=user,
+        action=InternalRequestLineChangeLog.Action.UPDATED,
+        changes={
+            "quantity_reserved": {"old": str(_qty3(old)), "new": str(_qty3(new))},
+        },
+    )
+
+
+def _set_line_reserved(line, new_qty, user=None):
+    new_qty = _qty3(new_qty)
+    if new_qty < 0:
+        new_qty = Decimal("0.000")
+    old = _qty3(line.quantity_reserved)
+    if old == new_qty:
+        return line
+    line.quantity_reserved = new_qty
+    line.save(update_fields=["quantity_reserved", "updated_at"])
+    _log_reservation_change(line, user, old, new_qty)
+    return line
+
+
+def allocate_available_stock(item, user=None):
+    """Assign unreserved on-hand to backordered lines FIFO (R3/R4).
+
+    Locks the Item row, then candidate InternalRequestLine rows by pk.
+    Does not lock InternalRequest headers.
+    """
+    item = Item.objects.select_for_update().get(pk=_resolve_item(item).pk)
+    candidates = list(
+        InternalRequestLine.objects.filter(
+            item=item,
+            internal_request__status__in=ACTIVE_RESERVATION_STATUSES,
+        )
+        .select_related("internal_request")
+        .order_by(
+            "internal_request__approved_at",
+            "internal_request_id",
+            "pk",
+        )
+    )
+    if not candidates:
+        return item
+
+    line_ids = sorted(line.pk for line in candidates)
+    locked = {
+        line.pk: line
+        for line in InternalRequestLine.objects.filter(pk__in=line_ids)
+        .order_by("pk")
+        .select_for_update()
+    }
+    issued_map = _issued_qty_for_line_ids(line_ids)
+    reserved_total = sum((_qty3(locked[pk].quantity_reserved) for pk in locked), Decimal("0.000"))
+    available = _qty3(item.quantity) - reserved_total
+    if available < 0:
+        available = Decimal("0.000")
+
+    for candidate in candidates:
+        line = locked[candidate.pk]
+        remaining = _qty3(line.quantity) - issued_map.get(line.pk, Decimal("0.000"))
+        if remaining < 0:
+            remaining = Decimal("0.000")
+        current = _qty3(line.quantity_reserved)
+        if current > remaining:
+            _set_line_reserved(line, remaining, user)
+            available += current - remaining
+            current = remaining
+        backorder = remaining - current
+        if backorder <= 0 or available <= 0:
+            continue
+        take = min(available, backorder)
+        _set_line_reserved(line, current + take, user)
+        available -= take
+    return item
+
+
+def release_reservations_for_request(request, user=None):
+    """Zero reserved on this request's lines. Caller then changes status, then reallocates."""
+    lines = list(request.lines.all())
+    if not lines:
+        return []
+    item_ids = sorted({line.item_id for line in lines})
+    list(Item.objects.filter(pk__in=item_ids).order_by("pk").select_for_update())
+    line_ids = sorted(line.pk for line in lines)
+    locked_lines = list(
+        InternalRequestLine.objects.filter(pk__in=line_ids).order_by("pk").select_for_update()
+    )
+    for line in locked_lines:
+        _set_line_reserved(line, Decimal("0"), user)
+    return item_ids
+
+
+def reallocate_items(item_ids, user=None):
+    for item_id in sorted(set(item_ids)):
+        allocate_available_stock(item_id, user)
+
+
+def backfill_reservations(user=None):
+    """Allocate current on-hand FIFO onto existing approved/fulfilling lines."""
+    item_ids = (
+        InternalRequestLine.objects.filter(
+            internal_request__status__in=ACTIVE_RESERVATION_STATUSES,
+        )
+        .values_list("item_id", flat=True)
+        .distinct()
+    )
+    reallocate_items(item_ids, user)
+
+
 def _resolve_request(request):
     if isinstance(request, InternalRequest):
         return request
@@ -506,10 +714,20 @@ def issue_goods(request, lines, user, reference="", notes=""):
         for item in Item.objects.filter(pk__in=item_ids).order_by("pk").select_for_update()
     }
 
+    for item_id in item_ids:
+        allocate_available_stock(items[item_id], user)
+
+    issued_pairs = []
     for request_line, qty in normalized:
-        on_hand = items[request_line.item_id].quantity
+        request_line.refresh_from_db()
+        reserved = _qty3(request_line.quantity_reserved)
+        if qty > reserved:
+            raise InsufficientReservationError(request_line.item, qty, reserved)
+        item = Item.objects.select_for_update().get(pk=request_line.item_id)
+        on_hand = _qty3(item.quantity)
         if qty > on_hand:
             raise InsufficientStockError(request_line.item, on_hand, qty)
+        issued_pairs.append((request_line, qty))
 
     goods_issue = GoodsIssue.objects.create(
         internal_request=request,
@@ -518,11 +736,16 @@ def issue_goods(request, lines, user, reference="", notes=""):
         notes=(notes or "").strip(),
     )
 
-    for request_line, qty in normalized:
+    for request_line, qty in issued_pairs:
         GoodsIssueLine.objects.create(
             goods_issue=goods_issue,
             internal_request_line=request_line,
             quantity_issued=qty,
+        )
+        _set_line_reserved(
+            request_line,
+            _qty3(request_line.quantity_reserved) - qty,
+            user,
         )
         _write_movement(
             request_line.item,
@@ -572,10 +795,12 @@ def short_close_issue(request, user, reason=""):
             code="short_close_reason_required",
         )
 
+    item_ids = release_reservations_for_request(request, user)
     if request.status == InternalRequest.Status.APPROVED:
         request = mark_closed(request, user, reason=reason)
     else:
         request = mark_shipped(request, user, reason=reason)
+    reallocate_items(item_ids, user)
     logger.info(
         "Short-closed request id=%s user=%s",
         request.id,
@@ -585,24 +810,40 @@ def short_close_issue(request, user, reason=""):
 
 
 def get_issue_summary(request):
-    """Per-line ordered / issued / remaining / on-hand for a request (warehouse queue)."""
+    """Per-line ordered / issued / remaining / reserved / on-hand for a request."""
     request = _resolve_request(request)
     lines = list(request.lines.select_related("item").all())
     issued_map = _issued_qty_map(request)
-    return [
-        {
-            "line_id": line.id,
-            "item_id": line.item_id,
-            "internal_code": line.internal_code,
-            "description": line.description,
-            "unit_of_measure": line.unit_of_measure,
-            "quantity": str(line.quantity),
-            "issued": str(issued_map.get(line.id, Decimal("0"))),
-            "remaining": str(line.quantity - issued_map.get(line.id, Decimal("0"))),
-            "on_hand": str(line.item.quantity),
-        }
-        for line in lines
-    ]
+    item_ids = list({line.item_id for line in lines})
+    available_by_item = {
+        item.id: available_quantity(item)
+        for item in Item.objects.filter(pk__in=item_ids)
+    }
+    summary = []
+    for line in lines:
+        issued = issued_map.get(line.id, Decimal("0"))
+        remaining = line.quantity - issued
+        reserved = _qty3(line.quantity_reserved)
+        backorder = remaining - reserved
+        if backorder < 0:
+            backorder = Decimal("0.000")
+        summary.append(
+            {
+                "line_id": line.id,
+                "item_id": line.item_id,
+                "internal_code": line.internal_code,
+                "description": line.description,
+                "unit_of_measure": line.unit_of_measure,
+                "quantity": str(line.quantity),
+                "issued": str(issued),
+                "remaining": str(remaining),
+                "reserved": str(reserved),
+                "backorder": str(_qty3(backorder)),
+                "on_hand": str(line.item.quantity),
+                "available": str(available_by_item.get(line.item_id, Decimal("0.000"))),
+            }
+        )
+    return summary
 
 
 class BranchReceiptNotAllowedError(ValidationError):

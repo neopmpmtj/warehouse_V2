@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 23 August 2026, 10:50 WEST.*
+*Last updated: 23 August 2026, 16:40 WEST.*
 
-**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Next:** Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Next:** Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -318,8 +318,7 @@ views (login required) → API + HTML
 
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
-- **Email automation** (Phase 6 — wire notify stubs to real email; after internal_code Phase 2)
-- **Orders workflow** after that — do not implement the tenancy-doc `item_name` stub
-- Email automation (stub exists), offline / PWA / OAuth, shared chrome, console polish
-- Integration tests (unit suites are green, **383 tests**)
+- **Email automation** (Phase 6 — wire notify stubs to real email)
+- Shared chrome / branch phone UX / console polish; offline / PWA / OAuth
+- Integration tests (unit suites are green, **438 tests**)
 - Login rate limiting (pre-production blocker; documented in `settings.example.py`)

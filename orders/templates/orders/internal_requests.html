@@ -53,7 +53,7 @@
             <h2 id="detail-title">Request</h2>
             <p id="detail-meta" style="color:var(--muted);margin:0 0 10px;"></p>
             <table>
-                <thead><tr><th>Code</th><th>Description</th><th>Qty</th><th>Issued</th><th>Remaining</th><th>On hand</th><th>Issue qty</th></tr></thead>
+                <thead><tr><th>Code</th><th>Description</th><th>Qty</th><th>Issued</th><th>Remaining</th><th>Reserved</th><th>Backorder</th><th>On hand</th><th>Available</th><th>Issue qty</th></tr></thead>
                 <tbody id="line-body"></tbody>
             </table>
             <div class="row">
@@ -123,11 +123,18 @@
                     tr.appendChild(el("td", line.quantity));
                     tr.appendChild(el("td", line.issued));
                     tr.appendChild(el("td", line.remaining));
+                    tr.appendChild(el("td", line.reserved));
+                    tr.appendChild(el("td", line.backorder));
                     tr.appendChild(el("td", line.on_hand));
+                    tr.appendChild(el("td", line.available));
                     var td = document.createElement("td");
                     var input = document.createElement("input");
                     input.type = "number"; input.step = "0.001"; input.min = "0.001"; input.className = "qty";
                     input.dataset.lineId = line.line_id;
+                    if (line.reserved && Number(line.reserved) > 0) {
+                        input.value = line.reserved;
+                        input.max = line.reserved;
+                    }
                     input.disabled = !CAN_ISSUE || req.status === "shipped";
                     td.appendChild(input);
                     tr.appendChild(td);

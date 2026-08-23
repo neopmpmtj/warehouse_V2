@@ -14,10 +14,10 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - `accounts` — custom User (email, timezone), warehouse groups, login
 - `products` — catalogue + selling prices + `SupplierItemPrice`, staff console `/manage/items/`, manager catalog `/manage/catalog/` (read-only stock + prices)
 - `procurement` — purchase orders at `/manage/purchase-orders/`
-- `inventory` — goods receipt + `StockMovement` ledger + cached `Item.quantity` at `/manage/goods-receipts/`; goods issue at `/manage/internal-requests/`; branch receipt + branch stock ledger (`BranchStockMovement` + `BranchItemStock`)
+- `inventory` — goods receipt + `StockMovement` ledger + cached `Item.quantity` at `/manage/goods-receipts/`; goods issue at `/manage/internal-requests/`; FIFO warehouse reservation (`quantity_reserved`, available = on-hand − reserved); branch receipt + branch stock ledger (`BranchStockMovement` + `BranchItemStock`)
 - `logging_utils` — rotating logs in `logs/`
 - `branches` — tenancy (`Branch`, `BranchMembership`, picker, `/branch/catalog/`) — **built** (Phase 5 ✅)
-- `orders` — internal request (requisição interna) — **built** (Phase 5 ✅)
+- `orders` — internal request (requisição interna) — **built** (Phase 5 ✅); warehouse FIFO reservation at approve (D32)
 - Offline catalogue — **removed** (Phase 7 may re-add it)
 
 ## Non-negotiables

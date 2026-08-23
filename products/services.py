@@ -686,7 +686,9 @@ def get_items(active_only=True, family=None, sub_family=None):
         queryset = queryset.filter(family=family)
     if sub_family is not None:
         queryset = queryset.filter(sub_family=_resolve_sub_family(sub_family))
-    return queryset
+    from inventory.services import annotate_item_reservations
+
+    return annotate_item_reservations(queryset)
 
 
 def get_item_history(item):
@@ -1404,7 +1406,9 @@ def get_catalog(active_only=True, family=None, sub_family=None):
         queryset = queryset.filter(family=_resolve_family(family))
     if sub_family is not None:
         queryset = queryset.filter(sub_family=_resolve_sub_family(sub_family))
-    return queryset
+    from inventory.services import annotate_item_reservations
+
+    return annotate_item_reservations(queryset)
 
 
 def catalog_buying_price(item):
@@ -1413,5 +1417,14 @@ def catalog_buying_price(item):
 
 
 def catalog_below_reorder(item):
-    """True when the item has a reorder level and stock is at/below it."""
-    return item.reorder_level > 0 and item.quantity <= item.reorder_level
+    """True when the item has a reorder level and *available* stock is at/below it."""
+    reserved = getattr(item, "reserved", None)
+    if reserved is not None:
+        available = item.quantity - reserved
+    else:
+        available = getattr(item, "available", None)
+        if available is None:
+            from inventory.services import available_quantity
+
+            available = available_quantity(item)
+    return item.reorder_level > 0 and available <= item.reorder_level

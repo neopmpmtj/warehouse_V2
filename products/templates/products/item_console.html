@@ -217,6 +217,11 @@
                 <span data-i18n="reorderLevel">Reorder level</span>
                 <input type="number" id="field-reorder" step="0.001" required>
             </label>
+            <p id="stock-figure" class="drawer-help" hidden>
+                <span data-i18n="onHand">On hand</span>: <strong id="field-on-hand">—</strong>
+                ·
+                <span data-i18n="available">Available</span>: <strong id="field-available">—</strong>
+            </p>
             <label>
                 <span data-i18n="retailPrice">Retail price</span>
                 <input type="number" id="field-retail-price" step="0.01" min="0">
@@ -463,8 +468,8 @@
         </div>
     </div>
 
-    <script src="{% static 'products/js/console_i18n.js' %}?v=15"></script>
+    <script src="{% static 'products/js/console_i18n.js' %}?v=16"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=1"></script>
-    <script src="{% static 'products/js/console.js' %}?v=17"></script>
+    <script src="{% static 'products/js/console.js' %}?v=18"></script>
 </body>
 </html>

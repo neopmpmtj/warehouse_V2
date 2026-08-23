@@ -624,6 +624,10 @@ def approve(request, user=None, reason=""):
         reason=reason,
     )
     logger.info("Approved request id=%s user=%s", request.id, getattr(user, "email", None))
+    from inventory.services import allocate_available_stock
+
+    for item_id in sorted({line.item_id for line in lines}):
+        allocate_available_stock(item_id, user)
     return request
 
 
@@ -669,6 +673,12 @@ def cancel(request, user=None, reason=""):
         if GoodsIssue.objects.filter(internal_request=request).exists():
             raise RequestHasGoodsIssueError()
 
+        from inventory.services import reallocate_items, release_reservations_for_request
+
+        item_ids = release_reservations_for_request(request, user)
+    else:
+        item_ids = []
+
     request.status = InternalRequest.Status.CANCELLED
     request.save(update_fields=["status", "updated_at"])
     _log(
@@ -678,6 +688,8 @@ def cancel(request, user=None, reason=""):
         {"status": {"old": from_status, "new": InternalRequest.Status.CANCELLED}},
         reason=reason,
     )
+    if item_ids:
+        reallocate_items(item_ids, user)
     logger.info("Cancelled request id=%s user=%s", request.id, getattr(user, "email", None))
     return request
 

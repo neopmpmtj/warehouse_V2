@@ -18,6 +18,7 @@ class InternalRequestLineInline(admin.TabularInline):
         "internal_code",
         "description",
         "quantity",
+        "quantity_reserved",
         "unit_price",
         "vat_rate",
     )
