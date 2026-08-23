@@ -1,5 +1,6 @@
 const API_ROOT = "/api/manage/items/";
 const FAMILY_API = "/api/manage/families/";
+const SUBFAMILY_API = "/api/manage/sub-families/";
 const SUPPLIER_API = "/api/manage/suppliers/";
 const SUPPLIER_PRICE_API = "/api/manage/supplier-prices/";
 const THEME_KEY = "cc-theme";
@@ -35,6 +36,9 @@ const state = {
     pageSize: 50,
     familyHistoryId: null,
     familyHistoryEntries: [],
+    subFamilies: [],
+    subFamilyHistoryId: null,
+    subFamilyHistoryEntries: [],
     supplierHistoryId: null,
     supplierHistoryEntries: [],
     supplierPriceSupplierId: null,
@@ -43,6 +47,7 @@ const state = {
 };
 
 let familyHistoryRequestId = 0;
+let subFamilyHistoryRequestId = 0;
 let supplierHistoryRequestId = 0;
 let itemHistoryRequestId = 0;
 let supplierPriceRequestId = 0;
@@ -105,6 +110,8 @@ function catalogPermissions() {
         changeItem: body.dataset.canChangeItem === "true",
         addFamily: body.dataset.canAddFamily === "true",
         changeFamily: body.dataset.canChangeFamily === "true",
+        addSubFamily: body.dataset.canAddSubFamily === "true",
+        changeSubFamily: body.dataset.canChangeSubFamily === "true",
         addSupplier: body.dataset.canAddSupplier === "true",
         changeSupplier: body.dataset.canChangeSupplier === "true",
         addSupplierItemPrice: body.dataset.canAddSupplierItemPrice === "true",
@@ -121,6 +128,8 @@ function applyCatalogPermissions(permissions) {
     body.dataset.canChangeItem = permissions.change_item ? "true" : "false";
     body.dataset.canAddFamily = permissions.add_family ? "true" : "false";
     body.dataset.canChangeFamily = permissions.change_family ? "true" : "false";
+    body.dataset.canAddSubFamily = permissions.add_sub_family ? "true" : "false";
+    body.dataset.canChangeSubFamily = permissions.change_sub_family ? "true" : "false";
     body.dataset.canAddSupplier = permissions.add_supplier ? "true" : "false";
     body.dataset.canChangeSupplier = permissions.change_supplier ? "true" : "false";
     body.dataset.canAddSupplierItemPrice = permissions.add_supplier_item_price ? "true" : "false";
@@ -141,6 +150,7 @@ function setItemFormEditable(editable, isNew, item) {
     [
         "field-description",
         "field-family",
+        "field-sub-family",
         "field-unit",
         "field-vat-rate",
         "field-reorder",
@@ -204,6 +214,7 @@ function setLanguage(lang) {
     fillFormLookups();
     renderTable();
     renderFamilyTable();
+    renderSubFamilyTable();
     renderSupplierTable();
     refreshDrawerLabels();
     refreshEntityHistoryLabels();
@@ -232,6 +243,30 @@ function clearBanner() {
     banner.textContent = "";
 }
 
+function apiErrorMessage(payload) {
+    const fallback = payload.error || t("errorGeneric");
+    const code = payload.code;
+    if (!code) {
+        return fallback;
+    }
+    const localized = t(code);
+    if (!localized || localized === code) {
+        return fallback;
+    }
+    if (!localized.includes("{name}")) {
+        if (currentLang() === "en" && payload.error) {
+            return payload.error;
+        }
+        return localized;
+    }
+    const quoted = (payload.error || "").match(/'([^']+)'|"([^"]+)"/);
+    const name = quoted ? (quoted[1] || quoted[2]) : null;
+    if (name) {
+        return t(code, { name });
+    }
+    return currentLang() === "en" && payload.error ? payload.error : localized;
+}
+
 async function api(path, options) {
     const response = await fetch(path, {
         credentials: "same-origin",
@@ -244,11 +279,7 @@ async function api(path, options) {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-        const mapped = payload.code ? t(payload.code) : "";
-        const message = mapped && mapped !== payload.code
-            ? mapped
-            : (payload.error || t("errorGeneric"));
-        throw new Error(message);
+        throw new Error(apiErrorMessage(payload));
     }
     return payload;
 }
@@ -263,6 +294,12 @@ function filteredItems() {
         if (familyId && String(item.family.id) !== familyId) {
             return false;
         }
+        const subFamilyId = document.getElementById("sub-family-filter").value;
+        if (subFamilyId) {
+            if (!item.sub_family || String(item.sub_family.id) !== subFamilyId) {
+                return false;
+            }
+        }
         if (status === "active" && !item.is_active) {
             return false;
         }
@@ -275,7 +312,8 @@ function filteredItems() {
         if (!query) {
             return true;
         }
-        const haystack = `${item.internal_code} ${item.description} ${item.family.name}`.toLowerCase();
+        const subFamilyName = item.sub_family ? item.sub_family.name : "";
+        const haystack = `${item.internal_code} ${item.description} ${item.family.name} ${subFamilyName}`.toLowerCase();
         return haystack.includes(query);
     });
 }
@@ -292,6 +330,8 @@ function sortValue(item, key) {
             return item.description;
         case "family":
             return item.family.name;
+        case "sub_family":
+            return item.sub_family ? item.sub_family.name : "";
         case "unit_of_measure":
             return unitLabel(item.unit_of_measure);
         case "reorder_level":
@@ -387,6 +427,73 @@ function fillSelect(select, options, placeholder) {
     }
 }
 
+function subFamilyFamilyId(subFamily) {
+    if (subFamily.family && subFamily.family.id != null) {
+        return subFamily.family.id;
+    }
+    return subFamily.family_id;
+}
+
+function subFamilyLabel(subFamily, withFamily) {
+    const name = subFamily.is_active ? subFamily.name : `${subFamily.name} (${t("inactive")})`;
+    if (!withFamily) {
+        return name;
+    }
+    const familyName = subFamily.family ? subFamily.family.name : "";
+    return familyName ? `${familyName} / ${name}` : name;
+}
+
+function fillSubFamilyFilter() {
+    const select = document.getElementById("sub-family-filter");
+    if (!select) {
+        return;
+    }
+    const familyId = document.getElementById("family-filter").value;
+    const rows = state.subFamilies.filter((subFamily) => {
+        if (!familyId) {
+            return true;
+        }
+        return String(subFamilyFamilyId(subFamily)) === familyId;
+    });
+    fillSelect(
+        select,
+        rows.map((subFamily) => ({
+            value: String(subFamily.id),
+            label: subFamilyLabel(subFamily, !familyId),
+        })),
+        t("allSubFamilies")
+    );
+}
+
+function fillSubFamilyField(options) {
+    const select = document.getElementById("field-sub-family");
+    if (!select) {
+        return;
+    }
+    const reset = Boolean(options && options.reset);
+    const familyId = document.getElementById("field-family").value;
+    const selected = reset ? "" : select.value;
+    const rows = state.subFamilies.filter((subFamily) => {
+        if (!familyId || String(subFamilyFamilyId(subFamily)) !== familyId) {
+            return false;
+        }
+        return subFamily.is_active || String(subFamily.id) === selected;
+    });
+    fillSelect(
+        select,
+        rows.map((subFamily) => ({
+            value: String(subFamily.id),
+            label: subFamilyLabel(subFamily, false),
+        })),
+        t("noSubFamily")
+    );
+    if (reset) {
+        select.value = "";
+    } else if ([...select.options].some((option) => option.value === selected)) {
+        select.value = selected;
+    }
+}
+
 function fillFilterOptions() {
     fillSelect(
         document.getElementById("family-filter"),
@@ -396,6 +503,7 @@ function fillFilterOptions() {
         })),
         t("allFamilies")
     );
+    fillSubFamilyFilter();
     fillSelect(
         document.getElementById("unit-filter"),
         state.units.map((unit) => ({
@@ -434,6 +542,7 @@ function fillFormLookups() {
             label: vatRate.label,
         }))
     );
+    fillSubFamilyField();
 }
 
 function currentPageItems() {
@@ -489,7 +598,7 @@ function renderTable() {
     if (full.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.colSpan = 9;
+        cell.colSpan = 10;
         cell.className = "empty-row";
         cell.textContent = state.items.length === 0 ? t("empty") : t("noMatch");
         row.appendChild(cell);
@@ -535,6 +644,9 @@ function renderTable() {
         const family = document.createElement("td");
         family.textContent = item.family.name;
 
+        const subFamily = document.createElement("td");
+        subFamily.textContent = item.sub_family ? item.sub_family.name : "—";
+
         const unit = document.createElement("td");
         unit.textContent = unitLabel(item.unit_of_measure);
 
@@ -578,6 +690,7 @@ function renderTable() {
             code,
             description,
             family,
+            subFamily,
             unit,
             reorder,
             vatRate,
@@ -594,14 +707,68 @@ function renderTable() {
     updateSortHeaders();
 }
 
+function bumpFamilyItemCount(familyId, delta) {
+    if (!familyId || !delta) {
+        return false;
+    }
+    const family = state.families.find((row) => row.id === familyId);
+    if (!family) {
+        return false;
+    }
+    family.item_count = Math.max(0, (family.item_count ?? 0) + delta);
+    return true;
+}
+
+function bumpSubFamilyItemCount(subFamilyId, delta) {
+    if (!subFamilyId || !delta) {
+        return false;
+    }
+    const subFamily = state.subFamilies.find((row) => row.id === subFamilyId);
+    if (!subFamily) {
+        return false;
+    }
+    subFamily.item_count = Math.max(0, (subFamily.item_count ?? 0) + delta);
+    return true;
+}
+
 function replaceItem(item) {
     const index = state.items.findIndex((entry) => entry.id === item.id);
+    let countsChanged = false;
     if (index === -1) {
         state.items.push(item);
         state.items.sort((left, right) => left.id - right.id);
-        return;
+        if (bumpFamilyItemCount(item.family?.id, 1)) {
+            countsChanged = true;
+        }
+        if (bumpSubFamilyItemCount(item.sub_family?.id, 1)) {
+            countsChanged = true;
+        }
+    } else {
+        const previous = state.items[index];
+        state.items[index] = item;
+        if (previous.family?.id !== item.family?.id) {
+            if (bumpFamilyItemCount(previous.family?.id, -1)) {
+                countsChanged = true;
+            }
+            if (bumpFamilyItemCount(item.family?.id, 1)) {
+                countsChanged = true;
+            }
+        }
+        const previousSubFamilyId = previous.sub_family?.id ?? null;
+        const nextSubFamilyId = item.sub_family?.id ?? null;
+        if (previousSubFamilyId !== nextSubFamilyId) {
+            if (bumpSubFamilyItemCount(previousSubFamilyId, -1)) {
+                countsChanged = true;
+            }
+            if (bumpSubFamilyItemCount(nextSubFamilyId, 1)) {
+                countsChanged = true;
+            }
+        }
     }
-    state.items[index] = item;
+    if (countsChanged) {
+        renderFamilyTable();
+        renderSubFamilyTable();
+    }
 }
 
 function refreshDrawerLabels() {
@@ -692,6 +859,7 @@ function closeSupplierDrawer() {
 async function openFamilyDrawer() {
     closeDrawer();
     closeSupplierDrawer();
+    closeSubFamilyDrawer();
     document.getElementById("family-drawer").hidden = false;
     document.getElementById("family-drawer-backdrop").hidden = false;
     try {
@@ -896,6 +1064,337 @@ async function toggleFamilyActive(family) {
     }
 }
 
+function sortSubFamilies() {
+    state.subFamilies.sort((left, right) => {
+        const familyCmp = (left.family ? left.family.name : "").localeCompare(
+            right.family ? right.family.name : "",
+            currentLang(),
+            { sensitivity: "base" }
+        );
+        if (familyCmp !== 0) {
+            return familyCmp;
+        }
+        return left.name.localeCompare(right.name, currentLang(), { sensitivity: "base" });
+    });
+}
+
+function replaceSubFamily(subFamily) {
+    const index = state.subFamilies.findIndex((item) => item.id === subFamily.id);
+    if (index === -1) {
+        state.subFamilies.push(subFamily);
+    } else {
+        state.subFamilies[index] = subFamily;
+    }
+    sortSubFamilies();
+    state.items.forEach((item) => {
+        if (item.sub_family && item.sub_family.id === subFamily.id) {
+            item.sub_family = {
+                id: subFamily.id,
+                name: subFamily.name,
+                is_active: subFamily.is_active,
+                family: subFamily.family,
+            };
+        }
+    });
+    fillFilterOptions();
+    fillFormLookups();
+    renderTable();
+    renderSubFamilyTable();
+}
+
+function closeSubFamilyDrawer() {
+    const drawer = document.getElementById("sub-family-drawer");
+    const backdrop = document.getElementById("sub-family-drawer-backdrop");
+    if (drawer) {
+        drawer.hidden = true;
+    }
+    if (backdrop) {
+        backdrop.hidden = true;
+    }
+    resetSubFamilyHistory();
+}
+
+async function openSubFamilyDrawer() {
+    closeDrawer();
+    closeFamilyDrawer();
+    closeSupplierDrawer();
+    const drawer = document.getElementById("sub-family-drawer");
+    const backdrop = document.getElementById("sub-family-drawer-backdrop");
+    if (drawer) {
+        drawer.hidden = false;
+    }
+    if (backdrop) {
+        backdrop.hidden = false;
+    }
+    try {
+        const data = await api(SUBFAMILY_API);
+        state.subFamilies = data.sub_families || [];
+        sortSubFamilies();
+        fillFilterOptions();
+        fillFormLookups();
+        renderSubFamilyTable();
+        resetSubFamilyHistory();
+    } catch (error) {
+        showBanner(error.message, true);
+        renderSubFamilyTable();
+    }
+}
+
+function renderSubFamilyTable() {
+    const body = document.getElementById("sub-family-table-body");
+    if (!body) {
+        return;
+    }
+    body.replaceChildren();
+    if (!state.subFamilies.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 5;
+        cell.className = "empty-row";
+        cell.textContent = t("emptySubFamilies");
+        row.appendChild(cell);
+        body.appendChild(row);
+        return;
+    }
+    state.subFamilies.forEach((subFamily) => {
+        const row = document.createElement("tr");
+        if (!subFamily.is_active) {
+            row.classList.add("is-inactive");
+        }
+
+        const name = document.createElement("td");
+        name.textContent = subFamily.name;
+
+        const family = document.createElement("td");
+        family.textContent = subFamily.family ? subFamily.family.name : "—";
+
+        const count = document.createElement("td");
+        count.textContent = String(subFamily.item_count ?? 0);
+
+        const status = document.createElement("td");
+        const pill = document.createElement("span");
+        pill.className = subFamily.is_active ? "pill pill-ok" : "pill pill-muted";
+        pill.textContent = subFamily.is_active ? t("active") : t("inactive");
+        status.appendChild(pill);
+
+        const actions = document.createElement("td");
+        actions.className = "row-actions";
+        const perms = catalogPermissions();
+        if (perms.changeSubFamily) {
+            const lifecycle = document.createElement("button");
+            lifecycle.type = "button";
+            lifecycle.className = subFamily.is_active ? "btn btn-danger" : "btn";
+            lifecycle.textContent = subFamily.is_active ? t("deactivate") : t("reactivate");
+            lifecycle.addEventListener("click", () => toggleSubFamilyActive(subFamily));
+            actions.appendChild(lifecycle);
+        }
+        const history = document.createElement("button");
+        history.type = "button";
+        history.className = "btn";
+        history.textContent = t("history");
+        history.addEventListener("click", () => loadSubFamilyHistory(subFamily));
+        actions.appendChild(history);
+
+        row.append(name, family, count, status, actions);
+        body.appendChild(row);
+    });
+}
+
+function askSubFamilyCreate() {
+    return new Promise((resolve) => {
+        const backdrop = document.getElementById("sub-family-dialog-backdrop");
+        const dialog = document.getElementById("sub-family-dialog");
+        const familyInput = document.getElementById("sub-family-family-input");
+        const nameInput = document.getElementById("sub-family-name-input");
+        const error = document.getElementById("sub-family-dialog-error");
+        const confirmButton = document.getElementById("sub-family-dialog-confirm");
+        const cancelButton = document.getElementById("sub-family-dialog-cancel");
+        if (!dialog || !familyInput || !nameInput) {
+            resolve(null);
+            return;
+        }
+
+        fillSelect(
+            familyInput,
+            state.families
+                .filter((family) => family.is_active)
+                .map((family) => ({
+                    value: String(family.id),
+                    label: family.name,
+                })),
+            t("family")
+        );
+        confirmButton.textContent = t("save");
+        nameInput.value = "";
+        error.hidden = true;
+        backdrop.hidden = false;
+        dialog.hidden = false;
+        familyInput.focus();
+
+        function finish(value) {
+            backdrop.hidden = true;
+            dialog.hidden = true;
+            confirmButton.removeEventListener("click", onConfirm);
+            cancelButton.removeEventListener("click", onCancel);
+            backdrop.removeEventListener("click", onCancel);
+            nameInput.removeEventListener("keydown", onKey);
+            familyInput.removeEventListener("keydown", onKey);
+            resolve(value);
+        }
+
+        function onConfirm() {
+            const familyId = familyInput.value;
+            const name = nameInput.value.trim();
+            if (!familyId) {
+                error.textContent = t("familyRequired");
+                error.hidden = false;
+                familyInput.focus();
+                return;
+            }
+            if (!name) {
+                error.textContent = t("sub_family_name_required");
+                error.hidden = false;
+                nameInput.focus();
+                return;
+            }
+            finish({ family_id: Number(familyId), name });
+        }
+
+        function onCancel() {
+            finish(null);
+        }
+
+        function onKey(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                onConfirm();
+            }
+            if (event.key === "Escape") {
+                onCancel();
+            }
+        }
+
+        confirmButton.addEventListener("click", onConfirm);
+        cancelButton.addEventListener("click", onCancel);
+        backdrop.addEventListener("click", onCancel);
+        nameInput.addEventListener("keydown", onKey);
+        familyInput.addEventListener("keydown", onKey);
+    });
+}
+
+async function promptCreateSubFamily() {
+    if (!catalogPermissions().addSubFamily) {
+        return null;
+    }
+    const payload = await askSubFamilyCreate();
+    if (payload === null) {
+        return null;
+    }
+    if (isBusy()) {
+        return null;
+    }
+    state.busy = true;
+    try {
+        const data = await api(SUBFAMILY_API, {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+        replaceSubFamily(data.sub_family);
+        showBanner(t("subFamilyCreated"));
+        const drawer = document.getElementById("sub-family-drawer");
+        if (drawer && !drawer.hidden) {
+            loadSubFamilyHistory(data.sub_family);
+        }
+        return data.sub_family;
+    } catch (error) {
+        showBanner(error.message, true);
+        return null;
+    } finally {
+        state.busy = false;
+    }
+}
+
+async function toggleSubFamilyActive(subFamily) {
+    if (!catalogPermissions().changeSubFamily) {
+        return;
+    }
+    if (subFamily.is_active && !window.confirm(t("confirmDeactivateSubFamily"))) {
+        return;
+    }
+    if (isBusy()) {
+        return;
+    }
+    state.busy = true;
+    try {
+        const data = await api(`${SUBFAMILY_API}${subFamily.id}/`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_active: !subFamily.is_active }),
+        });
+        replaceSubFamily(data.sub_family);
+        showBanner(t("subFamilySaved"));
+        if (state.subFamilyHistoryId === subFamily.id) {
+            loadSubFamilyHistory(data.sub_family);
+        }
+    } catch (error) {
+        showBanner(error.message, true);
+    } finally {
+        state.busy = false;
+    }
+}
+
+function resetSubFamilyHistory() {
+    subFamilyHistoryRequestId += 1;
+    state.subFamilyHistoryId = null;
+    state.subFamilyHistoryEntries = [];
+    const title = document.getElementById("sub-family-history-title");
+    const hint = document.getElementById("sub-family-history-hint");
+    const list = document.getElementById("sub-family-history-list");
+    if (!title || !hint || !list) {
+        return;
+    }
+    title.textContent = t("history");
+    hint.hidden = false;
+    list.replaceChildren();
+}
+
+function showSubFamilyHistory(subFamily) {
+    const title = document.getElementById("sub-family-history-title");
+    const hint = document.getElementById("sub-family-history-hint");
+    const list = document.getElementById("sub-family-history-list");
+    if (!title || !hint || !list) {
+        return;
+    }
+    title.textContent = t("historyFor", { name: subFamily.name });
+    hint.hidden = true;
+    fillHistoryList(list, state.subFamilyHistoryEntries);
+}
+
+async function loadSubFamilyHistory(subFamily) {
+    const requestId = ++subFamilyHistoryRequestId;
+    state.subFamilyHistoryId = subFamily.id;
+    const title = document.getElementById("sub-family-history-title");
+    const hint = document.getElementById("sub-family-history-hint");
+    if (title) {
+        title.textContent = t("historyFor", { name: subFamily.name });
+    }
+    if (hint) {
+        hint.hidden = true;
+    }
+    try {
+        const data = await api(`${SUBFAMILY_API}${subFamily.id}/history/`);
+        if (requestId !== subFamilyHistoryRequestId) {
+            return;
+        }
+        state.subFamilyHistoryEntries = data.history;
+        showSubFamilyHistory(subFamily);
+    } catch (error) {
+        if (requestId !== subFamilyHistoryRequestId) {
+            return;
+        }
+        showBanner(error.message, true);
+    }
+}
+
 function supplierContactLabel(supplier) {
     return supplier.contact_name || supplier.email || supplier.phone || "—";
 }
@@ -920,6 +1419,7 @@ function replaceSupplier(supplier) {
 async function openSupplierDrawer() {
     closeDrawer();
     closeFamilyDrawer();
+    closeSubFamilyDrawer();
     document.getElementById("supplier-drawer").hidden = false;
     document.getElementById("supplier-drawer-backdrop").hidden = false;
     try {
@@ -1171,11 +1671,16 @@ async function createFamilyFromItemForm() {
         return;
     }
     document.getElementById("field-family").value = String(family.id);
+    fillSubFamilyField({ reset: true });
 }
 
 function formPayload(isPatch) {
     const payload = {
         family_id: Number(document.getElementById("field-family").value),
+        sub_family_id: (() => {
+            const value = document.getElementById("field-sub-family").value;
+            return value ? Number(value) : null;
+        })(),
         description: document.getElementById("field-description").value,
         unit_of_measure: document.getElementById("field-unit").value,
         reorder_level: document.getElementById("field-reorder").value,
@@ -1622,11 +2127,25 @@ function refreshEntityHistoryLabels() {
             title.textContent = t("history");
         }
     }
+    if (state.subFamilyHistoryId) {
+        const subFamily = state.subFamilies.find((item) => item.id === state.subFamilyHistoryId);
+        if (subFamily) {
+            showSubFamilyHistory(subFamily);
+        } else {
+            resetSubFamilyHistory();
+        }
+    } else {
+        const title = document.getElementById("sub-family-history-title");
+        if (title) {
+            title.textContent = t("history");
+        }
+    }
 }
 
 async function openDrawer(item, selectFamilyId) {
     closeFamilyDrawer();
     closeSupplierDrawer();
+    closeSubFamilyDrawer();
     fillFormLookups();
     document.getElementById("drawer").hidden = false;
     document.getElementById("drawer-backdrop").hidden = false;
@@ -1655,6 +2174,7 @@ async function openDrawer(item, selectFamilyId) {
         if (state.vat_rates.length) {
             document.getElementById("field-vat-rate").value = String(state.vat_rates[0].id);
         }
+        fillSubFamilyField({ reset: true });
         refreshDrawerLabels();
         return;
     }
@@ -1664,6 +2184,10 @@ async function openDrawer(item, selectFamilyId) {
     document.getElementById("field-internal-code").value = item.internal_code;
     document.getElementById("field-description").value = item.description;
     document.getElementById("field-family").value = String(item.family.id);
+    fillSubFamilyField();
+    document.getElementById("field-sub-family").value = item.sub_family
+        ? String(item.sub_family.id)
+        : "";
     document.getElementById("field-reorder").value = item.reorder_level;
     document.getElementById("field-retail-price").value = item.retail_price ?? "0";
     document.getElementById("field-wholesale-price").value = item.wholesale_price ?? "0";
@@ -1977,14 +2501,21 @@ async function loadCatalog() {
     applyCatalogPermissions(data.permissions);
     state.items = data.items;
     state.families = data.families;
+    state.subFamilies = data.sub_families || [];
+    sortSubFamilies();
     state.units = data.units;
     state.vat_rates = data.vat_rates || [];
     fillFilterOptions();
     fillFormLookups();
     renderTable();
     renderFamilyTable();
+    renderSubFamilyTable();
     const perms = catalogPermissions();
     document.getElementById("new-family").hidden = !perms.addFamily;
+    const newSubFamily = document.getElementById("new-sub-family");
+    if (newSubFamily) {
+        newSubFamily.hidden = !perms.addSubFamily;
+    }
     document.getElementById("new-supplier").hidden = !perms.addSupplier;
 }
 
@@ -1996,9 +2527,15 @@ function bindEvents() {
     document.getElementById("theme-toggle").addEventListener("click", () => {
         setTheme(currentTheme() === "dark" ? "light" : "dark");
     });
-    ["search-input", "family-filter", "status-filter", "unit-filter"].forEach((id) => {
+    ["search-input", "family-filter", "sub-family-filter", "status-filter", "unit-filter"].forEach((id) => {
         document.getElementById(id).addEventListener("input", () => { resetPage(); renderTable(); });
-        document.getElementById(id).addEventListener("change", () => { resetPage(); renderTable(); });
+        document.getElementById(id).addEventListener("change", () => {
+            if (id === "family-filter") {
+                fillSubFamilyFilter();
+            }
+            resetPage();
+            renderTable();
+        });
     });
     document.getElementById("select-all").addEventListener("change", (event) => {
         const { rows } = currentPageItems();
@@ -2015,6 +2552,9 @@ function bindEvents() {
     document.getElementById("manage-families").addEventListener("click", () => {
         openFamilyDrawer();
     });
+    document.getElementById("manage-sub-families").addEventListener("click", () => {
+        openSubFamilyDrawer();
+    });
     document.getElementById("manage-suppliers").addEventListener("click", () => {
         openSupplierDrawer();
     });
@@ -2023,6 +2563,12 @@ function bindEvents() {
     document.getElementById("new-family-inline").addEventListener("click", () => createFamilyFromItemForm());
     document.getElementById("family-drawer-close").addEventListener("click", closeFamilyDrawer);
     document.getElementById("family-drawer-backdrop").addEventListener("click", closeFamilyDrawer);
+    document.getElementById("new-sub-family").addEventListener("click", () => promptCreateSubFamily());
+    document.getElementById("sub-family-drawer-close").addEventListener("click", closeSubFamilyDrawer);
+    document.getElementById("sub-family-drawer-backdrop").addEventListener("click", closeSubFamilyDrawer);
+    document.getElementById("field-family").addEventListener("change", () => {
+        fillSubFamilyField({ reset: true });
+    });
     document.getElementById("new-supplier").addEventListener("click", () => promptSupplierForm(null));
     document.getElementById("supplier-drawer-close").addEventListener("click", closeSupplierDrawer);
     document.getElementById("supplier-drawer-backdrop").addEventListener("click", closeSupplierDrawer);

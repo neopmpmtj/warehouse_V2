@@ -23,6 +23,8 @@ from products.models import (
     FamilyProduct,
     Item,
     ItemChangeLog,
+    SubFamily,
+    SubFamilyChangeLog,
     Supplier,
     SupplierChangeLog,
     SupplierItemPrice,
@@ -35,11 +37,13 @@ from products.services import (
     DescriptionRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
+    DuplicateSubFamilyNameError,
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
     InactiveFamilyError,
     InactiveItemError,
+    InactiveSubFamilyError,
     InactiveSupplierError,
     InvalidCostPriceError,
     InvalidInternalCodeError,
@@ -50,6 +54,8 @@ from products.services import (
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
     SupplierNameRequiredError,
+    SubFamilyFamilyMismatchError,
+    SubFamilyNameRequiredError,
     _save_family,
     _save_item,
     _save_supplier,
@@ -60,6 +66,7 @@ from products.services import (
     create_family,
     create_and_activate_item,
     create_item,
+    create_sub_family,
     create_supplier,
     create_supplier_item_price,
     deactivate_item,
@@ -67,6 +74,8 @@ from products.services import (
     get_families,
     get_item_buying_price,
     get_items,
+    get_sub_families,
+    get_sub_family_history,
     get_supplier_history,
     get_supplier_item_price_history,
     get_supplier_item_prices,
@@ -74,6 +83,7 @@ from products.services import (
     reactivate_item,
     update_family,
     update_item,
+    update_sub_family,
     update_supplier,
     update_supplier_item_price,
     validate_internal_code_available,
@@ -614,6 +624,171 @@ class FamilyProductServiceTests(TestCase):
         )
 
 
+class SubFamilyServiceTests(TestCase):
+    def setUp(self):
+        self.family = create_family("Cement")
+        self.other_family = create_family("Pipes")
+
+    def test_create_sub_family_rejects_empty_name(self):
+        with self.assertRaises(SubFamilyNameRequiredError):
+            create_sub_family("   ", self.family)
+
+        self.assertEqual(SubFamily.objects.count(), 0)
+
+    def test_create_sub_family_rejects_duplicate_name_in_same_family(self):
+        create_sub_family("Bags", self.family)
+
+        with self.assertRaises(DuplicateSubFamilyNameError):
+            create_sub_family("bags", self.family)
+
+        self.assertEqual(SubFamily.objects.filter(family=self.family).count(), 1)
+
+    def test_same_sub_family_name_allowed_under_different_families(self):
+        create_sub_family("Steel", self.family)
+        other = create_sub_family("Steel", self.other_family)
+
+        self.assertEqual(other.family_id, self.other_family.pk)
+
+    def test_create_sub_family_rejects_inactive_parent_family(self):
+        inactive = create_family("Inactive", is_active=False)
+
+        with self.assertRaises(InactiveFamilyError):
+            create_sub_family("Bags", inactive)
+
+    def test_update_sub_family_rejects_name_and_parent_change(self):
+        sub_family = create_sub_family("Bags", self.family)
+
+        with self.assertRaises(ValueError):
+            update_sub_family(sub_family, name="Bulk")
+
+        with self.assertRaises(ValueError):
+            update_sub_family(sub_family, family=self.other_family)
+
+        sub_family.refresh_from_db()
+        self.assertEqual(sub_family.name, "Bags")
+        self.assertEqual(sub_family.family_id, self.family.pk)
+
+    def test_update_sub_family_toggles_is_active(self):
+        sub_family = create_sub_family("Bags", self.family)
+
+        updated = update_sub_family(sub_family, is_active=False)
+
+        self.assertFalse(updated.is_active)
+
+    def test_create_sub_family_writes_audit_log(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            email="sub-family@example.com",
+            password="test-pass-123",
+        )
+
+        sub_family = create_sub_family("Bags", self.family, user=user)
+
+        log = sub_family.change_logs.get(action=SubFamilyChangeLog.Action.CREATED)
+        self.assertEqual(log.user, user)
+        self.assertEqual(log.changes["name"], "Bags")
+
+    def test_item_optional_sub_family_on_create_and_genesis(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            email="item-sub@example.com",
+            password="test-pass-123",
+        )
+        sub_family = create_sub_family("Bags", self.family)
+        vat_rate = VatRate.objects.get(code="VAT16")
+
+        without = create_item(
+            user,
+            family=self.family,
+            description="Plain cement",
+            unit_of_measure=Item.UnitOfMeasure.KG,
+            vat_rate=vat_rate,
+            internal_code="CEM-PLAIN",
+            retail_price="10.00",
+        )
+        self.assertIsNone(without.sub_family_id)
+
+        with_sub = create_and_activate_item(
+            user,
+            family=self.family,
+            description="Bagged cement",
+            unit_of_measure=Item.UnitOfMeasure.KG,
+            vat_rate=vat_rate,
+            internal_code="CEM-BAG",
+            retail_price="12.00",
+            sub_family=sub_family,
+        )
+        self.assertEqual(with_sub.sub_family_id, sub_family.pk)
+
+    def test_item_rejects_sub_family_family_mismatch(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            email="mismatch@example.com",
+            password="test-pass-123",
+        )
+        sub_family = create_sub_family("Steel", self.other_family)
+        vat_rate = VatRate.objects.get(code="VAT16")
+
+        with self.assertRaises(SubFamilyFamilyMismatchError):
+            create_item(
+                user,
+                family=self.family,
+                description="Mismatch",
+                unit_of_measure=Item.UnitOfMeasure.M,
+                vat_rate=vat_rate,
+                internal_code="MISMATCH-1",
+                retail_price="1.00",
+                sub_family=sub_family,
+            )
+
+    def test_item_rejects_inactive_sub_family(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            email="inactive-sub@example.com",
+            password="test-pass-123",
+        )
+        sub_family = create_sub_family("Bags", self.family, is_active=False)
+        vat_rate = VatRate.objects.get(code="VAT16")
+
+        with self.assertRaises(InactiveSubFamilyError):
+            create_item(
+                user,
+                family=self.family,
+                description="Inactive sub",
+                unit_of_measure=Item.UnitOfMeasure.KG,
+                vat_rate=vat_rate,
+                internal_code="INACT-SUB",
+                retail_price="1.00",
+                sub_family=sub_family,
+            )
+
+    def test_deactivate_sub_family_does_not_deactivate_items(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            email="deact-sub@example.com",
+            password="test-pass-123",
+        )
+        sub_family = create_sub_family("Bags", self.family)
+        vat_rate = VatRate.objects.get(code="VAT16")
+        item = create_and_activate_item(
+            user,
+            family=self.family,
+            description="Bagged",
+            unit_of_measure=Item.UnitOfMeasure.KG,
+            vat_rate=vat_rate,
+            internal_code="BAG-1",
+            retail_price="5.00",
+            sub_family=sub_family,
+        )
+
+        update_sub_family(sub_family, is_active=False)
+
+        item.refresh_from_db()
+        self.assertTrue(item.is_active)
+        self.assertEqual(item.sub_family_id, sub_family.pk)
+        self.assertEqual(get_catalog().filter(pk=item.pk).count(), 1)
+
+
 class ItemPermissionTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
@@ -778,6 +953,22 @@ class AddItemCommandTests(TestCase):
         item = Item.objects.get(internal_code="CLI-ACTIVE")
         self.assertTrue(item.is_active)
         self.assertEqual(item.retail_price, Decimal("12.50"))
+
+    def test_add_item_with_sub_family(self):
+        sub_family = create_sub_family("Bags", self.family)
+        call_command(
+            "add_item",
+            "Bagged cement",
+            family=self.family.name,
+            vat_rate="VAT16",
+            internal_code="CLI-BAG",
+            retail_price="9.50",
+            sub_family="Bags",
+            verbosity=0,
+        )
+
+        item = Item.objects.get(internal_code="CLI-BAG")
+        self.assertEqual(item.sub_family_id, sub_family.pk)
 
 
 class FamilyProductAdminAccessTests(TestCase):
@@ -1189,6 +1380,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'data-can-change-item="false"')
         self.assertContains(response, 'data-can-add-family="false"')
         self.assertContains(response, 'data-can-change-family="false"')
+        self.assertContains(response, 'data-can-add-sub-family="false"')
+        self.assertContains(response, 'data-can-change-sub-family="false"')
         self.assertContains(response, 'data-can-add-supplier="false"')
         self.assertContains(response, 'data-can-change-supplier="false"')
 
@@ -1208,6 +1401,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 "change_item": False,
                 "add_family": False,
                 "change_family": False,
+                "add_sub_family": False,
+                "change_sub_family": False,
                 "add_supplier": False,
                 "change_supplier": False,
                 "add_supplier_item_price": False,
@@ -1224,6 +1419,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'data-can-change-item="true"')
         self.assertContains(response, 'data-can-add-family="true"')
         self.assertContains(response, 'data-can-change-family="true"')
+        self.assertContains(response, 'data-can-add-sub-family="true"')
+        self.assertContains(response, 'data-can-change-sub-family="true"')
         self.assertContains(response, 'data-can-add-supplier="true"')
         self.assertContains(response, 'data-can-change-supplier="true"')
 
@@ -1239,6 +1436,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 "change_item": True,
                 "add_family": True,
                 "change_family": True,
+                "add_sub_family": True,
+                "change_sub_family": True,
                 "add_supplier": True,
                 "change_supplier": True,
                 "add_supplier_item_price": True,
@@ -1771,6 +1970,136 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
             self.staff_user,
         )
 
+    def test_staff_can_create_sub_family_through_console_api(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_sub_family_list"),
+            data=json.dumps({"name": "Bags", "family_id": self.family.id}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()["sub_family"]
+        self.assertEqual(payload["name"], "Bags")
+        self.assertEqual(payload["family"]["id"], self.family.id)
+
+    def test_console_create_sub_family_rejects_empty_and_duplicate_name(self):
+        self.client.force_login(self.staff_user)
+
+        empty = self.client.post(
+            reverse("manage_sub_family_list"),
+            data=json.dumps({"name": "  ", "family_id": self.family.id}),
+            content_type="application/json",
+        )
+        self.assertEqual(empty.status_code, 400)
+        self.assertEqual(empty.json()["code"], "sub_family_name_required")
+
+        self.client.post(
+            reverse("manage_sub_family_list"),
+            data=json.dumps({"name": "Bags", "family_id": self.family.id}),
+            content_type="application/json",
+        )
+        duplicate = self.client.post(
+            reverse("manage_sub_family_list"),
+            data=json.dumps({"name": "bags", "family_id": self.family.id}),
+            content_type="application/json",
+        )
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertEqual(duplicate.json()["code"], "duplicate_sub_family_name")
+
+    def test_staff_cannot_rename_sub_family_through_console_api(self):
+        sub_family = create_sub_family("Bags", self.family)
+        self.client.force_login(self.staff_user)
+
+        rename = self.client.patch(
+            reverse("manage_sub_family_detail", args=[sub_family.id]),
+            data=json.dumps({"name": "Bulk"}),
+            content_type="application/json",
+        )
+        self.assertEqual(rename.status_code, 200)
+        sub_family.refresh_from_db()
+        self.assertEqual(sub_family.name, "Bags")
+
+    def test_item_create_rejects_sub_family_family_mismatch(self):
+        other_family = self.create_test_family("Other")
+        sub_family = create_sub_family("Steel", other_family)
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps({
+                "family_id": self.family.id,
+                "sub_family_id": sub_family.id,
+                "description": "Mismatch",
+                "unit_of_measure": Item.UnitOfMeasure.PIECE,
+                "internal_code": "MIS-1",
+                "retail_price": "5.00",
+                "vat_rate_id": self.vat_rate.id,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "sub_family_family_mismatch")
+
+    def test_item_patch_rejects_family_change_with_mismatched_sub_family(self):
+        sub_family = create_sub_family("Bags", self.family)
+        other_family = self.create_test_family("Pipes")
+        item = self.create_test_item(
+            self.staff_user,
+            description="Bagged cement",
+            internal_code="BAG-PATCH",
+            sub_family=sub_family,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.patch(
+            reverse("manage_item_detail", args=[item.id]),
+            data=json.dumps({
+                "family_id": other_family.id,
+                "sub_family_id": sub_family.id,
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "sub_family_family_mismatch")
+        item.refresh_from_db()
+        self.assertEqual(item.family_id, self.family.id)
+        self.assertEqual(item.sub_family_id, sub_family.id)
+
+    def test_item_patch_can_clear_sub_family_with_null(self):
+        sub_family = create_sub_family("Bags", self.family)
+        item = self.create_test_item(
+            self.staff_user,
+            description="Bagged cement",
+            internal_code="CLR-SUB",
+            sub_family=sub_family,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.patch(
+            reverse("manage_item_detail", args=[item.id]),
+            data=json.dumps({"sub_family_id": None}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertIsNone(item.sub_family_id)
+        self.assertIsNone(response.json()["item"]["sub_family"])
+
+    def test_manage_item_list_includes_sub_families(self):
+        sub_family = create_sub_family("Bags", self.family)
+        self.client.force_login(self.staff_user)
+
+        payload = self.client.get(reverse("manage_item_list")).json()
+
+        self.assertIn("sub_families", payload)
+        names = [row["name"] for row in payload["sub_families"]]
+        self.assertIn(sub_family.name, names)
+
     def test_non_staff_user_cannot_use_family_history_api(self):
         family = self.create_test_family("Pipes")
         self.client.force_login(self.non_staff_user)
@@ -1906,6 +2235,7 @@ class SeedDevDataCommandTests(TestCase):
             FamilyProduct.objects.filter(name__iexact="Cement").count(),
             1,
         )
+        self.assertEqual(item.sub_family.name, "Bags")
 
     def test_second_seed_keeps_legacy_family_inactive(self):
         call_command("seed_dev_data", verbosity=0)
@@ -2706,6 +3036,37 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertTrue(row["below_reorder"])
         self.assertEqual(row["suppliers"][0]["name"], self.supplier.name)
         self.assertTrue(row["suppliers"][0]["primary"])
+        self.assertIsNone(row["sub_family"])
+
+    def test_catalog_api_includes_sub_family_when_set(self):
+        sub_family = create_sub_family("Bags", self.family)
+        self.item.sub_family = sub_family
+        self.item.save(update_fields=["sub_family"])
+        self.client.force_login(self.staff_user)
+
+        row = self.client.get(reverse("manage_catalog_list")).json()["catalog"][0]
+
+        self.assertEqual(row["sub_family"]["name"], "Bags")
+
+    def test_catalog_api_filters_by_sub_family_id(self):
+        sub_family = create_sub_family("Bags", self.family)
+        self.item.sub_family = sub_family
+        self.item.save(update_fields=["sub_family"])
+        other = self.create_test_item(
+            self.staff_user,
+            description="Other item",
+            internal_code="OTHER-1",
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(
+            reverse("manage_catalog_list") + f"?sub_family_id={sub_family.id}"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        codes = [row["internal_code"] for row in response.json()["catalog"]]
+        self.assertEqual(codes, ["CEM-50"])
+        self.assertNotIn(other.internal_code, codes)
 
     def test_catalog_api_requires_view_permission(self):
         self.client.force_login(self.non_staff_user)
