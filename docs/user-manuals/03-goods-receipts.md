@@ -151,6 +151,8 @@ Several receipts against the same PO are normal.
 
 You do not close the PO by hand from this screen. Closing is the result of having received everything.
 
+New units also become **available to promise** for waiting branch requisições: the oldest approved request that still needs the item gets the hold first. See [Branches & Requisição interna](04-internal-requests.md) §7.
+
 If the list of purchase orders is empty: *"No approved or partially-received purchase orders."* Approve a PO first, or the open ones are already closed.
 
 ---
@@ -183,6 +185,10 @@ Use this for **corrections**, not for supplier deliveries. Typical reasons: stoc
 5. Click **Adjust** (*Ajustar*).
 
 You should see: *"Stock adjusted."* (*Stock ajustado.*) A new row of type **Adjustment** appears in the ledger.
+
+A **negative** adjust cannot take on-hand **below the quantity already reserved** for approved / fulfilling requisições. For damage or a count that is lower than held stock: short-close or cancel those holds (reason required), then adjust.
+
+A **positive** adjust (and a goods receipt) offers the new units to waiting requisições, oldest `approved_at` first.
 
 Managers and operators do not see this button. If a count is wrong, ask an admin.
 

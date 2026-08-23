@@ -4,28 +4,28 @@ overview: "When a branch requisição is approved, reserve min(requested, unrese
 todos:
   - id: model-migration
     content: Add InternalRequestLine.quantity_reserved + CheckConstraint; data backfill allocate on existing approved/fulfilling lines
-    status: in_progress
+    status: completed
   - id: allocation-service
     content: "inventory.services allocate/release helpers; available_quantity(); lock items then lines; wire approve/cancel/issue/short-close/receive/adjust"
-    status: in_progress
+    status: completed
   - id: issue-guard
     content: issue_goods ships only from this line's reservation (run FIFO allocate first); new error strings
-    status: in_progress
+    status: completed
   - id: surfaces
     content: Manager catalog + item console + warehouse queue show on-hand / reserved / available; branch hint uses available
-    status: pending
+    status: completed
   - id: tests
     content: Partial reserve, later-branch cannot steal, FIFO on receipt/cancel, concurrent approve, adjust-below-reserved, issue/short-close release
-    status: pending
+    status: completed
   - id: docs
     content: "Manuals 03/04/05/07; PROJECT-PLAN D32; handoff; retire A4 deferred + parking-lot line"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # Warehouse stock reservation (FIFO partial claim)
 
-**Status:** **R1–R12 accepted** 23 Aug 2026 — implementing.
+**Status:** **R1–R12 accepted and implemented** 23 Aug 2026.
 
 **Origin:** Phase 5 locked **A4 = no reservation** (check at goods issue). This plan **promotes A4** from deferred to a dedicated slice. It supersedes parking-lot A1 (“committed vs on-hand” visibility-only).
 

@@ -106,11 +106,11 @@ Warehouse staff see exact stock **and** cost on the [manager catalog](07-manager
 
 | Hint | Meaning |
 |------|---------|
-| **In stock** | Available — there is stock above the reorder level. |
-| **Low** | At or below the reorder level — order soon. |
-| **None** | No warehouse stock right now (the warehouse must procure first). |
+| **In stock** | Something is **free to ship today** (available stock above the reorder level). |
+| **Low** | Free-to-ship quantity is at or below the reorder level — request soon. |
+| **None** | Nothing is free to ship **today** (the shelf is empty, or everything on the shelf is already held for earlier approved requisições). You may still raise a requisição — the warehouse will procure and you wait in line. |
 
-You will **not** see the exact on-hand quantity — that is a warehouse figure. The hint is enough to decide what to request.
+You will **not** see the exact on-hand quantity — that is a warehouse figure. **None does not block a requisição.**
 
 ---
 
@@ -158,6 +158,8 @@ Open a **submitted** request.
 
 Approving **freezes the totals** — the prices and VAT are snapshotted at this moment, so later price changes don't rewrite history.
 
+Approving also **holds whatever warehouse stock is currently free** for this request (see §7). A later branch cannot take those units. If the hub has less than you asked for, the request is still approved: the free portion is held, and the rest waits for incoming stock (first approved wins).
+
 | Approver | Limit |
 |----------|-------|
 | **Admin** | Unlimited |
@@ -178,6 +180,8 @@ Click **Reject** (*Rejeitar*) and give a **reason**. The request ends as **rejec
 | **Draft** | Any branch role | No |
 | **Approved** | Manager / admin | Yes |
 
+Cancelling an **approved** request (no dispatch yet) **releases the hold** immediately; those units are offered to the next waiting requisição (oldest `approved_at` first).
+
 Once the warehouse has **shipped** (issued goods), a request can no longer be cancelled — only **short-closed** (§7 / §8). That rule stops stock from being dispatched and then "un-dispatched".
 
 ---
@@ -195,16 +199,20 @@ Open **`/manage/internal-requests/`**. This queue shows **approved** and **fulfi
 
 Rules:
 
-- You cannot issue **more than the warehouse has on hand**.
+- You cannot issue **more than is reserved for this request** (the quantity held at approve, plus any later incoming stock allocated to it).
 - You cannot issue **more than the request's remaining** quantity.
 - **Partial issue** is fine — the request becomes **fulfilling** and the rest ships later.
 - A **complete** issue marks the request **shipped**.
 
-Issuing **decrements central stock** immediately.
+The queue shows **reserved**, **backorder** (still waiting for stock), **on hand**, and **available** (on hand minus all holds) per line. Issue quantity defaults to the reserved amount.
+
+Issuing **decrements central stock** and the hold together.
+
+If another branch is first in line for free stock, you cannot ship to a later request until that hold is issued, cancelled, or short-closed (reason required).
 
 ### 7.2 Warehouse short-close
 
-If you can't (or won't) ship the rest, click **Short close** and give a **reason**. The unshipped remainder is written off.
+If you can't (or won't) ship the rest, click **Short close** and give a **reason**. The unshipped remainder is written off and any hold on that remainder is **released** to the next waiting requisição (oldest `approved_at` first).
 
 - If **nothing was dispatched yet** (request still **approved**), the request becomes **closed** — there is nothing for the branch to receive.
 - If you already **partially issued** goods (request **fulfilling**), the request becomes **shipped** so the branch can receive what was sent and short-close any remainder.
@@ -299,7 +307,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - Approve as an **operator**, or approve over your **manager cap**.
 - Request an **inactive** item, or a line with **no wholesale price**, or the **same item twice** on one request.
 - Edit a request after **submit**.
-- **Issue** more than on-hand or more than the request's remaining.
+- **Issue** more than is reserved for that request, or more than the request's remaining.
 - **Receive** more than was shipped.
 - **Cancel** a request after goods have been issued (short-close instead).
 - Short-close as an **operator** (either side).
@@ -333,7 +341,7 @@ Same as the other consoles:
 Deliberate. Branches see selling prices only; supplier cost is warehouse-confidential. Warehouse staff see cost on the [manager catalog](07-manager-catalog.md) at `/manage/catalog/`. If you need a price you can't see, ask the warehouse.
 
 **Q2. The catalogue says "None" for an item — can I still request it?**
-Yes, but the warehouse will have to **procure it first** (a purchase order to a supplier). Your request waits until stock exists, then it ships.
+Yes. **None** means nothing is free to ship *today* (empty shelf, or stock already held for earlier approved requisições). Raise the requisição anyway — you join the wait. Incoming stock is offered to the oldest approved request first.
 
 **Q3. Why was my line rejected?**
 The three rules: the item must have a **wholesale price**, it must be **active**, and it must not already be on the request. Check which one applies.
@@ -359,8 +367,14 @@ Head office hasn't assigned you to a branch (or your branch is inactive). Contac
 **Q10. What does "gross" mean on the approve button?**
 The request's total **including VAT** (wholesale × quantity, plus VAT). That's the figure your approval cap is measured against.
 
-**Q11. Why can't I cancel an approved request after the warehouse shipped?**
+**Q11. Another branch asked for the same item after us — will they take our stock?**
+No, once your requisição is **approved**. The warehouse holds the free quantity for you. A later branch can still approve (and wait), but they cannot be issued those held units.
+
+**Q12. We cancelled an approved request — what happens to the hold?**
+The hold is released immediately and offered to the next waiting requisição (oldest first).
+
+**Q13. Why can't I cancel an approved request after the warehouse shipped?**
 Stock is already in motion. After the first goods issue the only way to finish early is **short-close** (warehouse side) or **branch short-close** (branch side).
 
-**Q12. How is branch stock different from warehouse stock?**
+**Q14. How is branch stock different from warehouse stock?**
 Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it.

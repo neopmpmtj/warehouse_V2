@@ -151,6 +151,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
 | **VAT rate** | Yes | 1%, 3%, 7%, 16%, Exempt |
 | **Reorder level** | Yes | The level that later triggers reordering. |
+| **On hand / Available** | (read-only, edit only) | Physical warehouse stock and what is still free to promise after reservations. Not editable here. |
 | **Retail price** | Yes (> 0) | Selling price for Genesis (see §6). Must be **greater than zero** on create. |
 | **Wholesale price** | No | Selling price (see §6). |
 | **Special price** | No | Selling price (see §6). |
@@ -331,6 +332,9 @@ Letters (`A–Z`, `a–z`), digits (`0–9`), dots (`.`), hyphens (`-`), and und
 
 **Q11. Can I change an internal code later?**
 No — after the item is saved, the code is locked. Plan the code before Genesis. Exception: an older item that still has an **empty** code may set it **once**.
+
+**Q12. On hand and Available differ — which one is the shelf?**
+**On hand** is physical warehouse stock (the ledger). **Available** is what is still free to promise after approved requisições have held their share. You cannot type either number here — change stock with a [goods receipt](03-goods-receipts.md) or (admin) Adjust stock. See [Branches & Requisição interna](04-internal-requests.md) §7.
 
 ---
 

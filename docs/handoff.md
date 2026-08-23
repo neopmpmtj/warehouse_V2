@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 23 August 2026, 13:50 WEST.
+> **Read this first when resuming work.** Last updated: 23 August 2026, 16:40 WEST.
 
 ---
 
@@ -16,12 +16,13 @@
 | 5 — Branches + internal request | ✅ **Done** |
 | 5+ — Item `internal_code` constraints | ✅ **Phase 1 + 2 done** |
 | 5+ — Sub-families (`FamilyProduct` → `SubFamily`) | ✅ **Done** |
+| 5+ — Warehouse FIFO stock reservation (D32) | ✅ **Done** |
 | 6 — Email automation | 🔵 **Next** |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5, item `internal_code` Phases 1–2, and the sub-families catalogue slice are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, and warehouse FIFO reservation (D32) are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**Full suite green (424 tests).**
+**Full suite green (438 tests).**
 
 ---
 
@@ -30,11 +31,25 @@
 1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
 2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
 3. **Review backlog is cleared** — sub-family stitch-in review is **closed and archived** ([`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md)); do **not** treat it, 1303, or 2208 archives as work queues.
-4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`products/migrations/0009_subfamily.py`).
+4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`orders/migrations/0002_line_quantity_reserved.py`).
 
 ---
 
 ## This session (23 Aug 2026) — landed
+
+### Warehouse FIFO stock reservation (D32) ✅
+
+- **Locks:** R1–R12 accepted — reserve at **branch approve**; hold `min(remaining, unreserved on-hand)`; FIFO by `(approved_at, request.id, line.id)`; incoming stock auto-allocates; issue only from that line's hold; no `RESERVE` movement (D5); `available = on-hand − reserved`; branch hint uses available; approve never fails for lack of stock; negative adjust cannot go below reserved when reserved > 0.
+- **Model:** `InternalRequestLine.quantity_reserved` (`Decimal(12,3)`, default 0); CheckConstraints `>= 0` and `<= quantity`; migration `orders/0002_line_quantity_reserved.py` with `backfill_reservations()`.
+- **Services:** `inventory.services` allocate/release/reallocate helpers; wired from `approve` / `cancel`, `issue_goods`, `short_close_issue`, `receive_goods`, `adjust_stock`. Errors: `InsufficientReservationError`, `AdjustBelowReservedError`.
+- **Surfaces:** manager catalog on-hand / reserved / available (below-reorder uses available); item drawer read-only on-hand/available; warehouse queue reserved/backorder/available; issue qty defaults to reserved; branch catalog hint from available.
+- **Tests:** `inventory.tests.StockReservationTests` + `ConcurrentApproveTests` (+ catalog/branch hint cases) → **438** total.
+- **Manuals:** [`01-items.md`](user-manuals/01-items.md), [`03-goods-receipts.md`](user-manuals/03-goods-receipts.md), [`04-internal-requests.md`](user-manuals/04-internal-requests.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md), [`07-manager-catalog.md`](user-manuals/07-manager-catalog.md).
+- Plan: [`.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md`](../.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md) (complete; do not treat as a work queue).
+
+---
+
+## Earlier today (23 Aug 2026) — already on main
 
 ### Sub-family stitch-in review ✅
 
@@ -183,6 +198,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D29 | **`internal_code` lifecycle (Phases 1–2 ✅)** | Charset: `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. **Locked after first save** (set-if-empty once for legacy). Console create = **mandatory Genesis** (atomic); requires internal code + description + unit + VAT + active family + **retail_price > 0** |
 | D30 | **Server-side item drafts** | **Deferred** — try localStorage autosave first if staff report lost forms; see plan advisory |
 | D31 | **Warehouse short-close** | `approved` + zero dispatch → **closed**; `fulfilling` (partial issue) → **shipped** for branch receipt path |
+| D32 | **Warehouse stock reservation** | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `RESERVE` movement (D5). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |
 
 ---
 
@@ -240,10 +256,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 22 Aug 2026, 11:30 WEST)
+## Git (as of 23 Aug 2026, 16:40 WEST)
 
-- Branch: **`phase5-branches`** (or current working branch). Phase 5 Slices 1–6 committed; session work includes internal_code Phases 1–2, requisição bug fixes, session-handoff tooling (may be uncommitted).
-- The 1303 review fixes (N1–N12), **M7 console pagination**, and the `PROJECT-PLAN.md` rename are on `main`. The 1303 review is archived under `docs/archive/`.
+- Branch: **`cursor/stock-reservation-plan-84e1`** — warehouse FIFO reservation (D32 / R1–R12).
+- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, and dashboard links.
 - Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -254,7 +270,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput
 ```
 
-- Last full suite: **402 OK** with `--keepdb --noinput` (includes Settings gear header + earlier internal_code / short-close work).
+- Last full suite: **438 OK** with `--noinput` (includes warehouse FIFO reservation).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -306,7 +322,8 @@ python manage.py runserver
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |
 | `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — concluded |
 | `docs/user-manuals/` | staff user manuals (update when constraints change — see `.cursor/rules/user-manuals.mdc`) |
-| `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | **Active plan** — Phase 1 ✅, Phase 2 🔜 next |
+| `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | Item `internal_code` — **complete** |
+| `.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md` | Warehouse FIFO reservation (D32 / R1–R12) — **complete** |
 | `docs/archive/phase5-plan-260821-1756.md` | Phase 5 build spec (locks 1–10) — **archived** ✅ |
 | `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |
 | `docs/archive/phase5-brainstorm-260821-1530.md` | Phase 5 brainstorm + locked decisions (A1–B8) — **archived** ✅ |

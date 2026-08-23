@@ -20,7 +20,6 @@ Kept here as a single glanceable list; the authoritative sequencing stays in `PR
 - Email automation (real send) — Phase 6
 - Google OAuth / public signup / password reset — production (later)
 - Linked / auto PO (full automation) — beyond Phase 5's manual shortfall path (C1/C2 are the Phase 5 seam)
-- Stock reservation — deferred (A4)
 - Branch-tiered prices — D2 unchanged
 - Shared chrome / restyle `/` — deferred
 - Per-branch approval caps — lock 2 (global table only for MVP)
