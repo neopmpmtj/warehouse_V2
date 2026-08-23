@@ -11,6 +11,8 @@
     --danger-bg: #fef3f2;
     --ok: #067647;
     --ok-bg: #ecfdf3;
+    --warn: #b54708;
+    --warn-bg: #fef0c7;
     --shadow: 0 12px 32px rgba(16, 24, 40, 0.12);
     --row-hover: #f0f7f6;
     --selected: #e6f4f2;
@@ -29,6 +31,8 @@
     --danger-bg: #3a1d1d;
     --ok: #75e0a7;
     --ok-bg: #163427;
+    --warn: #fbbf24;
+    --warn-bg: #3a2e0f;
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
     --row-hover: #1d2a2a;
     --selected: #163532;
@@ -333,6 +337,11 @@ input[type="search"] {
 .pill-ok {
     background: var(--ok-bg);
     color: var(--ok);
+}
+
+.pill-warn {
+    background: var(--warn-bg);
+    color: var(--warn);
 }
 
 .pill-muted {

@@ -1,5 +1,6 @@
 .row-warn td {
-    background: var(--warn-bg, #fff7e6);
+    background: var(--warn-bg);
+    color: var(--text);
 }
 
 .empty-note {

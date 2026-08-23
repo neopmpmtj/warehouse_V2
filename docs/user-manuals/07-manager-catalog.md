@@ -99,7 +99,7 @@ Filters combine. They run in the browser on the loaded list — you do not need 
 | **Suppliers** | Suppliers that have a price for this item; the **primary** is marked ★ |
 | **Status** | **Below reorder** (warning pill) or **OK** |
 
-Rows at or below reorder are highlighted (warning styling) as well as the Status pill.
+Rows at or below reorder are highlighted with a warning tint **and** a Status pill. The tint follows the theme: pale amber on light, dark amber on dark, so the row text stays readable.
 
 ---
 
@@ -164,7 +164,7 @@ The family dropdown can include **inactive** families (it reuses the families li
 Same as the other warehouse consoles:
 
 - **Language:** English / Português (Settings gear; remembered).
-- **Theme:** light / dark (Settings gear; remembered).
+- **Theme:** light / dark (Settings gear; remembered). Below-reorder row highlighting follows the theme (it is not a fixed pale yellow).
 - **Dates** are not shown on this page (no created/updated column). Quantity and money use a plain decimal format.
 
 ---
@@ -197,3 +197,6 @@ Yes. Every warehouse group that can open this page sees buying price. Cost is hi
 
 **Q9. Can two items have the same internal code?**
 No — codes are unique (case-insensitive) and stored **uppercase**. That rule is enforced in the item console, not here. See [Item Console](01-items.md) FAQ.
+
+**Q10. Why are some rows tinted amber?**
+Those items are **Below reorder**. Status **OK** keeps the normal table background. The tint follows the theme (pale amber in light, dark amber in dark) so the text stays readable.
