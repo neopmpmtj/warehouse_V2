@@ -121,6 +121,21 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# --- Google OAuth login (login-only scopes: openid, email, profile) ---
+# AUTH_MODE:
+#   "both"        (default) password login + Google button (dev + initial prod)
+#   "google_only" password login disabled; Google is the only method (final prod)
+# GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_OAUTH_REDIRECT_URI come from
+# .env — create a dedicated OAuth client in Google Cloud Console (Desktop app
+# type for local dev; Web application + domain callback once deployed).
+AUTH_MODE = config("AUTH_MODE", default="both")
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
+GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default="")
+GOOGLE_OAUTH_REDIRECT_URI = config(
+    "GOOGLE_OAUTH_REDIRECT_URI",
+    default="http://localhost:8000/accounts/google/callback/",
+)
+
 # Logging: see logging_utils/ — files written to logs/ (gitignored)
 # Per-module: get_logger("centcompras.products"), etc.
 

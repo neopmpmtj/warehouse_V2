@@ -177,6 +177,28 @@ sudo systemctl restart centcompras-gunicorn
 
 ---
 
+## Google OAuth login (after deploy)
+
+Login-only Google Sign-In (openid/email/profile — no Calendar/Drive/Gmail).
+
+1. In Google Cloud Console create an **OAuth client ID** for this app.
+   - During dev: **Desktop app** type → loopback redirect (`http://localhost:8000/accounts/google/callback/`).
+   - After deploy: **Web application** type → `https://centcompras.yourdomain.com/accounts/google/callback/`.
+2. Put the credentials in `.env`:
+
+   ```ini
+   AUTH_MODE=both
+   GOOGLE_CLIENT_ID=...
+   GOOGLE_CLIENT_SECRET=...
+   GOOGLE_OAUTH_REDIRECT_URI=https://centcompras.yourdomain.com/accounts/google/callback/
+   ```
+
+3. Google login is **existing-only**: the Google email must already exist as a user (no auto-create). Before flipping to `google_only`, every user must have linked Google once (they sign in with Google, then confirm their password once on the link-confirm page).
+4. When ready for the extra security layer, set `AUTH_MODE=google_only` in `.env` — password login is then disabled and Google is the only method.
+5. Restart: `sudo systemctl restart centcompras-gunicorn`.
+
+---
+
 ## 12. Sanity checks
 
 ```bash

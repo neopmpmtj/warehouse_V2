@@ -1,6 +1,8 @@
+from unittest import mock
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from accounts.groups import (
@@ -374,3 +376,114 @@ class InactiveSessionTests(TestCase):
         self.user.is_active = False
         self.user.save(update_fields=["is_active"])
         self.assertFalse(can_view_catalog(self.user))
+
+
+class GoogleOAuthTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(
+            email="google@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(self.user, GROUP_ADMINS)
+
+    @override_settings(
+        GOOGLE_CLIENT_ID="client-id",
+        GOOGLE_CLIENT_SECRET="client-secret",
+    )
+    def test_login_page_shows_google_button_when_configured(self):
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("google_login"))
+        self.assertContains(response, "Continue with Google")
+
+    @override_settings(GOOGLE_CLIENT_ID="", GOOGLE_CLIENT_SECRET="")
+    def test_login_page_hides_google_button_when_not_configured(self):
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse("google_login"))
+
+    @override_settings(
+        GOOGLE_CLIENT_ID="client-id",
+        GOOGLE_CLIENT_SECRET="client-secret",
+        AUTH_MODE="google_only",
+    )
+    def test_google_only_mode_redirects_password_login_to_google(self):
+        response = self.client.get(reverse("login"))
+        self.assertRedirects(response, reverse("google_login"), fetch_redirect_response=False)
+
+    @override_settings(GOOGLE_CLIENT_ID="", GOOGLE_CLIENT_SECRET="", AUTH_MODE="google_only")
+    def test_google_only_mode_without_credentials_shows_message(self):
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Google login is not configured yet")
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    @mock.patch("accounts.google_views.create_authorization_url", return_value=("https://accounts.google.com/o/oauth2/v2/auth?x=1", "state123"))
+    def test_google_login_redirects_to_google(self, mock_create):
+        response = self.client.get(reverse("google_login"))
+        self.assertRedirects(
+            response,
+            "https://accounts.google.com/o/oauth2/v2/auth?x=1",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(self.client.session.get("oauth_state"), "state123")
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    @mock.patch("accounts.google_views.get_google_user_info", return_value={"email": "unknown@example.com", "email_verified": True})
+    @mock.patch("accounts.google_views.exchange_code_for_tokens", return_value={"access_token": "tok"})
+    def test_callback_unknown_email_blocked_existing_only(self, mock_exchange, mock_info):
+        session = self.client.session
+        session["oauth_state"] = "state123"
+        session.save()
+        response = self.client.get(reverse("google_callback"), {"code": "code1", "state": "state123"})
+        self.assertRedirects(response, reverse("login"))
+        self.assertFalse(get_user_model().objects.filter(email="unknown@example.com").exists())
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    @mock.patch("accounts.google_views.get_google_user_info", return_value={"email": "google@example.com", "email_verified": True, "given_name": "Google", "family_name": "User"})
+    @mock.patch("accounts.google_views.exchange_code_for_tokens", return_value={"access_token": "tok"})
+    def test_callback_existing_password_user_goes_to_link_confirm(self, mock_exchange, mock_info):
+        session = self.client.session
+        session["oauth_state"] = "state123"
+        session.save()
+        response = self.client.get(reverse("google_callback"), {"code": "code1", "state": "state123"})
+        self.assertRedirects(response, reverse("google_link_confirm"))
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    @mock.patch("accounts.google_views.get_google_user_info", return_value={"email": "google@example.com", "email_verified": True, "given_name": "Google", "family_name": "User"})
+    @mock.patch("accounts.google_views.exchange_code_for_tokens", return_value={"access_token": "tok"})
+    def test_link_confirm_wrong_password_rejected(self, mock_exchange, mock_info):
+        session = self.client.session
+        session["oauth_state"] = "state123"
+        session["google_link_data"] = {"email": "google@example.com", "user_info": {}}
+        session.save()
+        response = self.client.post(reverse("google_link_confirm"), {"password": "wrong"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    @mock.patch("accounts.google_views.get_google_user_info", return_value={"email": "google@example.com", "email_verified": True, "given_name": "Google", "family_name": "User"})
+    @mock.patch("accounts.google_views.exchange_code_for_tokens", return_value={"access_token": "tok"})
+    def test_link_confirm_success_links_and_logs_in(self, mock_exchange, mock_info):
+        session = self.client.session
+        session["oauth_state"] = "state123"
+        session["google_link_data"] = {"email": "google@example.com", "user_info": {"given_name": "Google", "family_name": "User"}}
+        session.save()
+        response = self.client.post(reverse("google_link_confirm"), {"password": "test-pass-123"})
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertIn("_auth_user_id", self.client.session)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_google_account)
+        self.assertTrue(self.user.is_email_verified)
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    @mock.patch("accounts.google_views.get_google_user_info", return_value={"email": "google@example.com", "email_verified": True, "given_name": "Google", "family_name": "User"})
+    @mock.patch("accounts.google_views.exchange_code_for_tokens", return_value={"access_token": "tok"})
+    def test_callback_state_mismatch_rejected(self, mock_exchange, mock_info):
+        session = self.client.session
+        session["oauth_state"] = "expected-state"
+        session.save()
+        response = self.client.get(reverse("google_callback"), {"code": "code1", "state": "wrong-state"})
+        self.assertRedirects(response, reverse("login"))
+        self.assertNotIn("_auth_user_id", self.client.session)

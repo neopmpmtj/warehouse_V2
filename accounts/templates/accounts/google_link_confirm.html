@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Google account — CentCompras</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f4f6f8;
+            color: #1c2430;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #d5dde6;
+            border-radius: 10px;
+            padding: 2rem 2.25rem;
+            width: 100%;
+            max-width: 22rem;
+            box-shadow: 0 12px 32px rgba(16, 24, 40, 0.12);
+        }
+        h1 { margin: 0 0 0.5rem; font-size: 1.25rem; }
+        p.hint { color: #5b6776; font-size: 0.9rem; }
+        input[type="password"] {
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0.25rem 0 0.9rem;
+            padding: 0.5rem 0.65rem;
+            border: 1px solid #d5dde6;
+            border-radius: 6px;
+            font: inherit;
+        }
+        button {
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            border: 1px solid #0f766e;
+            border-radius: 6px;
+            background: #0f766e;
+            color: #fff;
+            font: inherit;
+            cursor: pointer;
+        }
+        .error { color: #b42318; font-size: 0.9rem; }
+        .messages { list-style: none; padding: 0; margin: 0 0 1rem; }
+        .messages li {
+            background: #fef3f2;
+            border: 1px solid #fecdca;
+            color: #b42318;
+            padding: 0.5rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Confirm your password</h1>
+        <p class="hint">
+            An account already exists for <strong>{{ email }}</strong>. Enter its
+            password to link your Google account — afterwards you can sign in with
+            either method.
+        </p>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+
+        <form method="post" action="{% url 'google_link_confirm' %}">
+            {% csrf_token %}
+            <p>
+                <label for="id_password">Password</label><br>
+                <input type="password" name="password" id="id_password" required autofocus>
+            </p>
+            <button type="submit">Link Google account</button>
+        </form>
+    </div>
+</body>
+</html>

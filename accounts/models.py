@@ -62,6 +62,14 @@ class User(AbstractBaseUser, PermissionsMixin):
             "warehouse_admins ignore this (always treated as 1 / unlimited)."
         ),
     )
+    is_google_account = models.BooleanField(
+        default=False,
+        help_text="True once the user has authenticated via Google OAuth.",
+    )
+    is_email_verified = models.BooleanField(
+        default=False,
+        help_text="Email verified by Google (Google verifies emails).",
+    )
 
     objects = UserManager()
 

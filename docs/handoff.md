@@ -108,6 +108,13 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 
 ---
 
+## This session (24 Aug 2026) — settings split + Google OAuth
+
+- **Settings split** (mirrors voice diary): `config/settings/{base,dev,prod,test}.py`; `DATABASE_URL` via `dj_database_url` (+ `POSTGRES_*` fallback for dev); `manage.py`/`wsgi.py`/`asgi.py` read `DJANGO_SETTINGS_MODULE` via `python-decouple` (default `config.settings.dev`; `manage.py test` auto-selects `.test`); `.env`/`.env.example`; `requirements` += `python-decouple`, `dj-database-url`, `gunicorn`, `whitenoise`. Deploy artifacts: `deploy/centcompras-gunicorn.service`, `deploy/centcompras-nginx.conf`, `docs/DEPLOYMENT.md` (12-step DigitalOcean guide).
+- **Google OAuth login (login-only)** — copied/trimmed from voice diary: `accounts/google_auth.py` (pure stdlib urllib helpers, scopes openid/email/profile only), `google_urls.py` + `google_views.py` (login/callback/link-confirm; **existing-only** — no auto-create; one-time password link-confirm for existing password users). Settings: `AUTH_MODE` (`both` default → `google_only` later), `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_OAUTH_REDIRECT_URI` in `.env`. User migration `0004` adds `is_google_account` + `is_email_verified`. Login page shows a "Continue with Google" button when credentials are configured; `AUTH_MODE=google_only` disables password login. Pedro will create a dedicated Google Cloud OAuth app (Desktop client during dev, Web app at deploy) and fill `.env` later.
+
+---
+
 ## This session (24 Aug 2026) — request-threads review
 
 - **Reviewer:** DeepSeek Flash sub-agent (read-only; no source modified).
