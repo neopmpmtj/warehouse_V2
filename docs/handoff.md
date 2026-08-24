@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 23 August 2026, 16:40 WEST.
+> **Read this first when resuming work.** Last updated: 24 August 2026, 07:55 WEST.
 
 ---
 
@@ -17,25 +17,52 @@
 | 5+ — Item `internal_code` constraints | ✅ **Phase 1 + 2 done** |
 | 5+ — Sub-families (`FamilyProduct` → `SubFamily`) | ✅ **Done** |
 | 5+ — Warehouse FIFO stock reservation (D32) | ✅ **Done** |
-| 6 — Email automation | 🔵 **Next** |
+| 5+ — Request threads (catalogue-gap requests) | ✅ **Done** (reviewed 24 Aug) |
+| 5+ — Request threads review fixes (M1–M5, L1–L6) | 🔵 **Next — do this FIRST** |
+| 6 — Email automation | ⏸ Next (after review fixes) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, and warehouse FIFO reservation (D32) are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), and the request-threads feature (catalogue-gap requests) are complete.** **Next session: fix the request-threads review findings FIRST (see below), then Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**Full suite green (438 tests).**
+**Full suite green (461 tests).**
 
 ---
 
 ## Next session — do this
 
-1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
-2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
-3. **Review backlog is cleared** — sub-family stitch-in review is **closed and archived** ([`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md)); do **not** treat it, 1303, or 2208 archives as work queues.
-4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`orders/migrations/0002_line_quantity_reserved.py`).
+1. **🔴 FIX THE REQUEST-THREADS REVIEW FINDINGS FIRST — before any Phase 6 work.** Report: [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md) — **17 findings: 5 Medium (M1–M5), 6 Low (L1–L6), 6 Nit (N1–N6); no Critical/High**. Fix at minimum M1–M5 (M1/M2: one-line 400/type-coercion; M3: prefetch/N+1; M4: hide close/link dialogs in `selectThread` — wrong-thread close/link; M5: override-close satisfaction semantics), then L1–L6 as time allows. Re-run the full suite (**461 tests**) after each fix. Do **not** start Phase 6 until the review findings are fixed.
+2. **Then: Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
+3. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
+4. **Review backlogs** — sub-family stitch-in review is **closed and archived** ([`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md)); 1303 and 2208 archives are **not** work queues. The **24 Aug threads review IS a live queue** (see item 1).
+5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`orders/migrations/0002_line_quantity_reserved.py`).
+
+---
+
+## This session (24 Aug 2026) — request-threads review
+
+- **Reviewer:** DeepSeek Flash sub-agent (read-only; no source modified).
+- **Report:** [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md).
+- **Verdict:** **ISSUES FOUND** — no Critical/High; **5 Medium, 6 Low, 6 Nit**. Full suite **461 tests OK** (41.4s).
+- **M1–M5 (Medium):** non-string JSON → 500 (`services.py:97,129,133`); `?branch_id=abc` → 500 (`console_views.py:225`); N+1 list queries (dead prefetch, `models.py:108–116`); stale dialogs on thread switch → wrong-thread close/link (both templates); override close stamps the opener's satisfaction (`services.py:279–341`).
+- **L1–L6 (Low):** `link_items` silently accepts nonexistent item IDs; page-load auto-mark-read (GET side-effect); branch empty-state stays visible; lighter gate on `search_items_for_link`; `create_thread` no membership check; satisfaction coercion (`3.7→3`, `True→1`).
+- **N1–N6 (Nit):** dead code (`_bump`, `for_user_branches`, `read_attr`); pointless catalog call on warehouse page; mixed visibility patterns; no pagination; silent double-close; unrecognized `?status=` → empty set.
+- ⚠️ **All agents: fix M1–M5 (then L1–L6) before starting Phase 6.** The branch was merged to `main` on 24 Aug with this backlog live.
 
 ---
 
 ## This session (23 Aug 2026) — landed
+
+### Request threads (catalogue-gap requests) ✅
+
+- **Feature:** a branch opens a written **thread** (subject + free-text first message) when the needed item does **not** exist in the `Item` table. Warehouse engages; back-and-forth until understood; warehouse creates the item via the item console; **only the opener closes** (reason required: default "Request Satisfied" / "Other" + text). Branch manager/admin + warehouse admin can force-close (override).
+- **App:** `threads` — `ItemRequestThread` (status `awaiting_warehouse` / `awaiting_branch` / `closed`; `last_activity_at`; `message_count`; close fields; M2M `items` traceability), `ThreadMessage` (append-only, explicit `side` branch|warehouse), `ThreadReadState` (read-cursor + unread badge), `ItemRequestThreadChangeLog` (lifecycle-only: created / item_linked / closed).
+- **Gates:** branch via `active_branch_required` + other-branch **404**; warehouse via **capability** `is_warehouse_staff()` / `can_force_close_thread()` (the `threads` app deliberately has no Django group perms — `CATALOG_APP_LABELS` untouched).
+- **Concurrency:** `post_message` and `close_thread` both `select_for_update`; post-to-closed raises `ThreadClosedError`; linking allowed after close.
+- **Surfaces:** `/branch/threads/` (list + create + reply + close) and `/manage/threads/` (all branches incl. inactive-branch flagged, status/branch filters, oldest-awaiting-first, link-item search, admin force-close). Dashboard links added. i18n EN + pt-PT.
+- **Seed:** one sample thread (North, awaiting warehouse) in `seed_dev_data`.
+- **Tests:** `threads.tests` — state flips, opener-only close, override matrix (incl. deactivated opener), reason rules, other-branch 404, post-vs-close, capability gating, explicit side, unread → **459** total.
+- **Manual:** [`08-request-threads.md`](user-manuals/08-request-threads.md).
+- Plan: [`.cursor/plans/branch_request_threads_0d6a50a7.plan.md`](../.cursor/plans/branch_request_threads_0d6a50a7.plan.md) (complete; do not treat as a work queue).
 
 ### Warehouse FIFO stock reservation (D32) ✅
 
@@ -256,10 +283,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 23 Aug 2026, 16:40 WEST)
+## Git (as of 24 Aug 2026, 07:55 WEST)
 
-- Branch: **`cursor/stock-reservation-plan-84e1`** — warehouse FIFO reservation (D32 / R1–R12).
-- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, and dashboard links.
+- Branch: **`feature/branch-request-threads`** — request threads (catalogue-gap requests) + 24 Aug review report + doc updates; **merged to `main` and pushed 24 Aug**.
+- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, and the **live review backlog**.
 - Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -267,10 +294,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 ## Tests
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput
+.venv/bin/python manage.py test products accounts procurement inventory branches orders threads --noinput
 ```
 
-- Last full suite: **438 OK** with `--noinput` (includes warehouse FIFO reservation).
+- Last full suite: **461 OK** with `--noinput` (includes warehouse FIFO reservation + request threads).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -285,6 +312,7 @@ inventory/      goods receipt + stock ledger (models, services, console_views, a
 accounts/       custom User, warehouse groups, grades, login, timezone middleware, authz.py, capabilities.py
 branches/       tenancy: Branch + BranchMembership, ActiveBranchMiddleware, picker, capabilities, admin, tests
 orders/         internal request (requisição interna): models, services, console API, web UI, admin, tests
+threads/        request threads (catalogue-gap requests): models, services, console API, web UI, admin, tests
 config/         settings, urls
 logging_utils/  rotating per-app logs
 docs/           plan, handoff, archived reviews (incl. 1303), user-manuals/, tenancy design
@@ -305,7 +333,7 @@ python manage.py runserver
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded). **Branch:** `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…` (North), `branch.operator.south@…` / `branch.manager.south@…` (South), and `branch.dual@…` (both branches).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/branch-approval-limits/` branch caps (admin edit) · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden) · `/branch/requests/` requisição interna · `/admin/` superuser only.
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden) · `/branch/requests/` requisição interna · `/branch/threads/` request threads (branch side) · `/admin/` superuser only.
 
 ---
 
@@ -316,13 +344,13 @@ python manage.py runserver
 | `README.md` | setup, URLs, seed, how to run |
 | `docs/PROJECT-PLAN.md` | **Living plan** — sequencing + status tracker + locked decisions; tick its tracker every session |
 | `docs/archive/code-review-full-2026-08-21-1303.md` | Follow-up review — **concluded & archived** (N1–N12 applied) |
+| `docs/reviews/threads-review-2026-08-24.md` | Request-threads review — **LIVE work queue: fix M1–M5, L1–L6 before Phase 6** |
 | `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; L13 deferred) |
 | `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |
 | `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — concluded |
-| `docs/user-manuals/` | staff user manuals (update when constraints change — see `.cursor/rules/user-manuals.mdc`) |
-| `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | Item `internal_code` — **complete** |
+| `docs/user-manuals/` | staff user manuals (update when constraints change — see `.cursor/rules/user-manuals.mdc`) || `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | Item `internal_code` — **complete** |
 | `.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md` | Warehouse FIFO reservation (D32 / R1–R12) — **complete** |
 | `docs/archive/phase5-plan-260821-1756.md` | Phase 5 build spec (locks 1–10) — **archived** ✅ |
 | `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |

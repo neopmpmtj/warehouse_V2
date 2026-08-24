@@ -1,0 +1,61 @@
+from django.urls import path
+
+from . import console_views
+
+urlpatterns = [
+    path(
+        "branch/threads/",
+        console_views.branch_thread_list,
+        name="branch_thread_list",
+    ),
+    path(
+        "branch/threads/create/",
+        console_views.branch_thread_create,
+        name="branch_thread_create",
+    ),
+    path(
+        "branch/threads/<int:thread_id>/",
+        console_views.branch_thread_detail,
+        name="branch_thread_detail",
+    ),
+    path(
+        "branch/threads/<int:thread_id>/post/",
+        console_views.branch_thread_post,
+        name="branch_thread_post",
+    ),
+    path(
+        "branch/threads/<int:thread_id>/close/",
+        console_views.branch_thread_close,
+        name="branch_thread_close",
+    ),
+    path(
+        "manage/threads/",
+        console_views.warehouse_thread_list,
+        name="warehouse_thread_list",
+    ),
+    path(
+        "manage/threads/<int:thread_id>/",
+        console_views.warehouse_thread_detail,
+        name="warehouse_thread_detail",
+    ),
+    path(
+        "manage/threads/<int:thread_id>/post/",
+        console_views.warehouse_thread_post,
+        name="warehouse_thread_post",
+    ),
+    path(
+        "manage/threads/<int:thread_id>/link-items/",
+        console_views.warehouse_thread_link_items,
+        name="warehouse_thread_link_items",
+    ),
+    path(
+        "manage/threads/<int:thread_id>/close/",
+        console_views.warehouse_thread_close,
+        name="warehouse_thread_close",
+    ),
+    path(
+        "manage/threads/items/search/",
+        console_views.search_items_for_link,
+        name="thread_items_search",
+    ),
+]

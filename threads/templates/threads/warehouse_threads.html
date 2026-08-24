@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Request threads — CentCompras</title>
+    <style>
+        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; --warn: #b00020; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+        header h1 { font-size: 1.2rem; margin: 0; }
+        header .user { color: var(--muted); font-size: .9rem; }
+        header a, header button { margin-left: 12px; color: var(--brand); text-decoration: none; }
+        header form { display: inline; }
+        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
+        main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px; }
+        @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+        .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+        h2 { margin: 0 0 10px; font-size: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+        th { color: var(--muted); font-weight: 600; font-size: .8rem; }
+        .btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
+        .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+        input, select, textarea { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
+        textarea { width: 100%; min-height: 72px; box-sizing: border-box; }
+        .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: var(--warn); margin-top: 10px; }
+        .selected { background: #eef4fe; }
+        .unread { font-weight: 700; }
+        .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .75rem; background: #e8f0fe; color: var(--brand); margin-left: 6px; }
+        .badge-branch { background: #e6f4ea; color: #137333; }
+        .badge-warehouse { background: #e8f0fe; color: var(--brand); }
+        .badge-closed { background: #f1f3f4; color: var(--muted); }
+        .badge-inactive { background: #fef7e0; color: #b06000; }
+        .msg { border-bottom: 1px solid var(--border); padding: 8px 0; }
+        .msg .meta { color: var(--muted); font-size: .8rem; margin-bottom: 4px; }
+        .msg .body { white-space: pre-wrap; }
+        .status { text-transform: capitalize; font-weight: 600; }
+        .dialog { border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-top: 10px; background: #fff; }
+        .hidden { display: none; }
+        .muted { color: var(--muted); font-size: .8rem; }
+        .item-link { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: 999px; background: #e6f4ea; color: #137333; font-size: .8rem; }
+        .stale { color: var(--warn); font-weight: 600; }
+        .stars { font-size: 1.4rem; cursor: pointer; user-select: none; }
+        .stars .star { color: #ddd; }
+        .stars .star.on { color: #f5a623; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 data-i18n="title">Request threads</h1>
+        <div class="user">
+            <span>{{ user.email }}</span>
+            <a href="{% url 'staff_dashboard' %}">Dashboard</a>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+        </div>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2 data-i18n="queueTitle">All threads</h2>
+            <div class="row">
+                <select id="filter-status">
+                    <option value="open" data-i18n="filterOpen">Open (awaiting)</option>
+                    <option value="awaiting_warehouse" data-i18n="filterAwaitingWarehouse">Awaiting warehouse</option>
+                    <option value="awaiting_branch" data-i18n="filterAwaitingBranch">Awaiting branch</option>
+                    <option value="closed" data-i18n="filterClosed">Closed</option>
+                </select>
+                <select id="filter-branch">
+                    <option value="" data-i18n="allBranches">All branches</option>
+                </select>
+            </div>
+            <table>
+                <thead><tr><th data-i18n="branchCol">Branch</th><th data-i18n="subject">Subject</th><th data-i18n="statusCol">Status</th><th data-i18n="activityCol">Activity</th></tr></thead>
+                <tbody id="thread-body"></tbody>
+            </table>
+            <p id="empty-list" class="muted hidden" data-i18n="emptyList">No threads match these filters.</p>
+        </section>
+
+        <section class="panel">
+            <h2 id="detail-title" data-i18n="detailTitle">Thread</h2>
+            <p id="detail-meta" class="muted" style="margin:0 0 10px;"></p>
+            <div id="item-links"></div>
+            <div id="message-body"></div>
+            <div class="row">
+                <textarea id="reply-body" placeholder="Write a message…"></textarea>
+            </div>
+            <div class="row">
+                <button id="reply-btn" class="btn btn-primary" data-i18n="reply">Reply</button>
+                <button id="link-items-btn" class="btn" data-i18n="linkItems">Link created item</button>
+                <button id="close-thread-btn" class="btn" data-i18n="closeThread">Close thread</button>
+            </div>
+            <div id="link-dialog" class="dialog hidden">
+                <p data-i18n="linkHelp">Link the Item(s) created from this thread (traceability).</p>
+                <input id="link-item-search" placeholder="Search item…" style="width:100%;box-sizing:border-box;margin-bottom:8px;">
+                <div id="link-results"></div>
+                <div class="row">
+                    <button id="cancel-link" class="btn" data-i18n="cancel">Cancel</button>
+                </div>
+            </div>
+            <div id="close-dialog" class="dialog hidden">
+                <p data-i18n="closeHelp">Closing ends this thread. Choose a reason.</p>
+                <select id="close-reason">
+                    <option value="request_satisfied" data-i18n="reasonSatisfied">Request Satisfied</option>
+                    <option value="other" data-i18n="reasonOther">Other</option>
+                </select>
+                <div id="close-other-row" class="row hidden">
+                    <input id="close-reason-text" placeholder="Reason…" maxlength="255">
+                </div>
+                <div class="row">
+                    <span data-i18n="satisfactionLabel">Satisfaction</span>
+                    <span id="satisfaction-stars" class="stars"></span>
+                </div>
+                <div class="row">
+                    <button id="confirm-close" class="btn btn-primary" data-i18n="confirmClose">Confirm close</button>
+                    <button id="cancel-close" class="btn" data-i18n="cancel">Cancel</button>
+                </div>
+            </div>
+            <p id="banner" class="banner hidden"></p>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            var CSRF = document.querySelector('meta[name="csrf-token"]').content;
+            var LANG_KEY = "cc-lang";
+            var state = { selectedId: null, threads: [], branches: [] };
+
+            var I18N = {
+                en: {
+                    title: "Request threads", queueTitle: "All threads", newThread: "New thread",
+                    subject: "Subject", statusCol: "Status", activityCol: "Activity", branchCol: "Branch",
+                    emptyList: "No threads match these filters.", detailTitle: "Thread",
+                    reply: "Reply", closeThread: "Close thread", linkItems: "Link created item",
+                    closeHelp: "Closing ends this thread. Choose a reason.",
+                    reasonSatisfied: "Request Satisfied", reasonOther: "Other",
+                    confirmClose: "Confirm close", cancel: "Cancel", create: "Create",
+                    filterOpen: "Open (awaiting)", filterAwaitingWarehouse: "Awaiting warehouse",
+                    filterAwaitingBranch: "Awaiting branch", filterClosed: "Closed", allBranches: "All branches",
+                    statusAwaitingWarehouse: "Awaiting warehouse", statusAwaitingBranch: "Awaiting branch",
+                    statusClosed: "Closed", unread: "new", sideBranch: "branch", sideWarehouse: "warehouse",
+                    openedBy: "Opened by", lastActivity: "Last activity", items: "Created items:",
+                    none: "none", closedBy: "Closed by", inactiveBranch: "inactive branch",
+                    linkHelp: "Link the Item(s) created from this thread (traceability).",
+                    searchPlaceholder: "Search item…", stale: "awaiting", satisfactionLabel: "Satisfaction",
+                },
+                pt: {
+                    title: "Fios de pedido", queueTitle: "Todos os fios", newThread: "Novo fio",
+                    subject: "Assunto", statusCol: "Estado", activityCol: "Atividade", branchCol: "Filial",
+                    emptyList: "Nenhum fio corresponde a estes filtros.", detailTitle: "Fio",
+                    reply: "Responder", closeThread: "Fechar fio", linkItems: "Ligar artigo criado",
+                    closeHelp: "Fechar termina este fio. Escolha um motivo.",
+                    reasonSatisfied: "Pedido satisfeito", reasonOther: "Outro",
+                    confirmClose: "Confirmar fecho", cancel: "Cancelar", create: "Criar",
+                    filterOpen: "Abertos (a aguardar)", filterAwaitingWarehouse: "A aguardar armazém",
+                    filterAwaitingBranch: "A aguardar filial", filterClosed: "Fechados", allBranches: "Todas as filiais",
+                    statusAwaitingWarehouse: "A aguardar armazém", statusAwaitingBranch: "A aguardar filial",
+                    statusClosed: "Fechado", unread: "novo", sideBranch: "filial", sideWarehouse: "armazém",
+                    openedBy: "Aberto por", lastActivity: "Última atividade", items: "Artigos criados:",
+                    none: "nenhum", closedBy: "Fechado por", inactiveBranch: "filial inativa",
+                    linkHelp: "Ligue o(s) artigo(s) criado(s) a partir deste fio (rastreabilidade).",
+                    searchPlaceholder: "Pesquisar artigo…", stale: "a aguardar", satisfactionLabel: "Satisfação",
+                },
+            };
+
+            function lang() { try { return localStorage.getItem(LANG_KEY) || "en"; } catch (e) { return "en"; } }
+            function t(key) { var d = I18N[lang()] || I18N.en; return d[key] !== undefined ? d[key] : (I18N.en[key] || key); }
+            function statusLabel(s) {
+                var key = s.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); });
+                key = key.charAt(0).toUpperCase() + key.slice(1);
+                var label = t("status" + key);
+                return label === ("status" + key) ? s : label;
+            }
+
+            function applyI18n() {
+                document.querySelectorAll("[data-i18n]").forEach(function (el) {
+                    el.textContent = t(el.getAttribute("data-i18n"));
+                });
+            }
+            applyI18n();
+
+            var threadBody = document.getElementById("thread-body");
+            var messageBody = document.getElementById("message-body");
+            var itemLinks = document.getElementById("item-links");
+            var detailMeta = document.getElementById("detail-meta");
+            var replyBody = document.getElementById("reply-body");
+            var replyBtn = document.getElementById("reply-btn");
+            var linkItemsBtn = document.getElementById("link-items-btn");
+            var closeThreadBtn = document.getElementById("close-thread-btn");
+            var closeDialog = document.getElementById("close-dialog");
+            var closeReason = document.getElementById("close-reason");
+            var closeReasonText = document.getElementById("close-reason-text");
+            var closeOtherRow = document.getElementById("close-other-row");
+            var satisfactionStars = document.getElementById("satisfaction-stars");
+            var satisfactionValue = 1;
+            (function renderStars() {
+                satisfactionStars.textContent = "";
+                for (var i = 1; i <= 5; i++) {
+                    var star = document.createElement("span");
+                    star.className = "star" + (i <= satisfactionValue ? " on" : "");
+                    star.textContent = "★";
+                    star.dataset.value = i;
+                    star.addEventListener("click", function () {
+                        satisfactionValue = parseInt(this.dataset.value, 10);
+                        renderStars();
+                    });
+                    satisfactionStars.appendChild(star);
+                }
+            })();
+            var linkDialog = document.getElementById("link-dialog");
+            var linkResults = document.getElementById("link-results");
+            var linkSearch = document.getElementById("link-item-search");
+            var filterStatus = document.getElementById("filter-status");
+            var filterBranch = document.getElementById("filter-branch");
+            var banner = document.getElementById("banner");
+            var emptyList = document.getElementById("empty-list");
+
+            function el(tag, text, className) {
+                var node = document.createElement(tag);
+                if (text != null) node.textContent = text;
+                if (className) node.className = className;
+                return node;
+            }
+
+            function showError(msg) { banner.textContent = msg || "Request failed."; banner.classList.remove("hidden"); }
+            function clearError() { banner.classList.add("hidden"); }
+
+            function setVisible(el, visible) {
+                if (!el) return;
+                el.classList.toggle("hidden", !visible);
+            }
+
+            function api(path, method, body) {
+                var opts = { method: method || "GET", headers: { "Accept": "application/json", "X-CSRFToken": CSRF } };
+                if (body !== undefined) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+                return fetch(path, opts).then(function (resp) {
+                    return resp.json().then(function (data) {
+                        if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+                        return data;
+                    });
+                });
+            }
+
+            function fmtTime(iso) {
+                if (!iso) return "";
+                var d = new Date(iso);
+                if (isNaN(d.getTime())) return "";
+                return d.toLocaleString(lang() === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+            }
+
+            function loadBranches() {
+                return api("/api/branch/catalog/").catch(function () { return { catalog: [] }; }).then(function () {
+                    /* branch list comes from the threads list itself; keep select simple */
+                });
+            }
+
+            function loadThreads() {
+                var params = new URLSearchParams({ status: filterStatus.value });
+                if (filterBranch.value) params.set("branch_id", filterBranch.value);
+                return api("/api/manage/threads/?" + params.toString()).then(function (data) {
+                    state.threads = data.threads || [];
+                    var seen = {};
+                    state.threads.forEach(function (th) { seen[th.branch_id] = th.branch_name; });
+                    var current = filterBranch.value;
+                    filterBranch.textContent = "";
+                    var allOpt = document.createElement("option");
+                    allOpt.value = ""; allOpt.textContent = t("allBranches");
+                    filterBranch.appendChild(allOpt);
+                    Object.keys(seen).sort().forEach(function (bid) {
+                        var opt = document.createElement("option");
+                        opt.value = bid; opt.textContent = seen[bid];
+                        if (String(bid) === String(current)) opt.selected = true;
+                        filterBranch.appendChild(opt);
+                    });
+                    renderList();
+                    if (state.selectedId) {
+                        var still = state.threads.some(function (th) { return th.id === state.selectedId; });
+                        if (!still) { state.selectedId = null; renderDetail(null); }
+                    }
+                    if (!state.selectedId && state.threads.length) { selectThread(state.threads[0].id); }
+                    if (!state.threads.length) { renderDetail(null); setVisible(emptyList, true); }
+                });
+            }
+
+            function renderList() {
+                threadBody.textContent = "";
+                setVisible(emptyList, state.threads.length === 0);
+                state.threads.forEach(function (th) {
+                    var tr = document.createElement("tr");
+                    if (th.id === state.selectedId) tr.className = "selected";
+                    tr.style.cursor = "pointer";
+                    tr.addEventListener("click", function () { selectThread(th.id); });
+                    var tdBranch = el("td", th.branch_name);
+                    if (!th.branch_active) tdBranch.appendChild(el("span", t("inactiveBranch"), "badge badge-inactive"));
+                    tr.appendChild(tdBranch);
+                    var tdSubject = el("td", th.subject);
+                    if (th.unread) tdSubject.className = "unread";
+                    if (th.unread) tdSubject.appendChild(el("span", t("unread"), "badge"));
+                    tr.appendChild(tdSubject);
+                    tr.appendChild(el("td", statusLabel(th.status), "status"));
+                    var tdAct = el("td", fmtTime(th.last_activity_at), "muted");
+                    if (th.status !== "closed") {
+                        var days = Math.floor((Date.now() - new Date(th.last_activity_at).getTime()) / 86400000);
+                        if (days >= 2) tdAct.appendChild(el("span", " " + t("stale") + " " + days + "d", "stale"));
+                    }
+                    tr.appendChild(tdAct);
+                    threadBody.appendChild(tr);
+                });
+            }
+
+            function renderDetail(th) {
+                if (!th) {
+                    messageBody.textContent = ""; itemLinks.textContent = ""; detailMeta.textContent = "";
+                    replyBtn.hidden = true; closeThreadBtn.hidden = true; linkItemsBtn.hidden = true;
+                    replyBody.disabled = true;
+                    return;
+                }
+                detailMeta.textContent =
+                    t("statusCol") + ": " + statusLabel(th.status) + " · " +
+                    t("openedBy") + " " + th.opened_by_email + " · " +
+                    t("lastActivity") + " " + fmtTime(th.last_activity_at);
+                itemLinks.textContent = "";
+                if (th.items && th.items.length) {
+                    itemLinks.appendChild(el("span", t("items") + " ", "muted"));
+                    th.items.forEach(function (it) {
+                        itemLinks.appendChild(el("span", (it.internal_code || "") + " — " + it.description, "item-link"));
+                    });
+                }
+                if (th.closed_by_email) {
+                    detailMeta.textContent += " · " + t("closedBy") + " " + th.closed_by_email;
+                }
+                return api("/api/manage/threads/" + th.id + "/").then(function (data) {
+                    renderMessages(data.messages || []);
+                    replyBody.disabled = th.status === "closed";
+                    replyBtn.hidden = th.status === "closed";
+                    closeThreadBtn.hidden = !th.can_close;
+                    linkItemsBtn.hidden = false;
+                }).catch(showError);
+            }
+
+            function renderMessages(messages) {
+                messageBody.textContent = "";
+                if (!messages.length) { messageBody.appendChild(el("p", t("none"), "muted")); return; }
+                messages.forEach(function (m) {
+                    var div = el("div", null, "msg");
+                    var meta = el("div", null, "meta");
+                    meta.appendChild(el("span", (m.author_email || "?") + " ", null));
+                    meta.appendChild(el("span", t("side" + m.side.charAt(0).toUpperCase() + m.side.slice(1)), "badge " + (m.side === "branch" ? "badge-branch" : "badge-warehouse")));
+                    meta.appendChild(el("span", " · " + fmtTime(m.created_at), null));
+                    div.appendChild(meta);
+                    div.appendChild(el("div", m.body, "body"));
+                    messageBody.appendChild(div);
+                });
+            }
+
+            function selectThread(id) {
+                state.selectedId = id;
+                renderList();
+                var th = state.threads.find(function (t) { return t.id === id; });
+                renderDetail(th);
+            }
+
+            replyBtn.addEventListener("click", function () {
+                clearError();
+                var body = replyBody.value.trim();
+                if (!body) { showError(t("reply") + "?"); return; }
+                api("/api/manage/threads/" + state.selectedId + "/post/", "POST", { body: body })
+                    .then(function () { replyBody.value = ""; return loadThreads(); })
+                    .catch(showError);
+            });
+
+            linkItemsBtn.addEventListener("click", function () { setVisible(linkDialog, true); linkSearch.focus(); });
+            document.getElementById("cancel-link").addEventListener("click", function () {
+                setVisible(linkDialog, false); linkResults.textContent = "";
+            });
+            linkSearch.addEventListener("input", function () {
+                var q = linkSearch.value.trim();
+                if (!q) { linkResults.textContent = ""; return; }
+                api("/api/manage/threads/items/search/?q=" + encodeURIComponent(q)).then(function (data) {
+                    linkResults.textContent = "";
+                    (data.items || []).forEach(function (it) {
+                        var row = el("div", null, "row");
+                        row.style.margin = "2px 0";
+                        row.appendChild(el("span", (it.internal_code || "") + " — " + it.description, null));
+                        var btn = el("button", t("linkItems"), "btn");
+                        btn.addEventListener("click", function () {
+                            clearError();
+                            api("/api/manage/threads/" + state.selectedId + "/link-items/", "POST", { item_ids: [it.id] })
+                                .then(function () { setVisible(linkDialog, false); linkResults.textContent = ""; return loadThreads(); })
+                                .catch(showError);
+                        });
+                        row.appendChild(btn);
+                        linkResults.appendChild(row);
+                    });
+                }).catch(showError);
+            });
+
+            closeThreadBtn.addEventListener("click", function () {
+                setVisible(closeDialog, true);
+                satisfactionValue = 1;
+                renderStars();
+            });
+            closeReason.addEventListener("change", function () {
+                setVisible(closeOtherRow, closeReason.value === "other");
+                if (closeReason.value !== "other") closeReasonText.value = "";
+            });
+            document.getElementById("cancel-close").addEventListener("click", function () {
+                setVisible(closeDialog, false); closeReasonText.value = "";
+            });
+            document.getElementById("confirm-close").addEventListener("click", function () {
+                clearError();
+                api("/api/manage/threads/" + state.selectedId + "/close/", "POST", {
+                    close_reason: closeReason.value,
+                    close_reason_text: closeReasonText.value,
+                    satisfaction: satisfactionValue,
+                }).then(function () {
+                    setVisible(closeDialog, false); closeReasonText.value = "";
+                    return loadThreads();
+                }).catch(showError);
+            });
+
+            filterStatus.addEventListener("change", function () { loadThreads().catch(showError); });
+            filterBranch.addEventListener("change", function () { loadThreads().catch(showError); });
+
+            loadBranches().then(loadThreads).catch(showError);
+        })();
+    </script>
+</body>
+</html>
