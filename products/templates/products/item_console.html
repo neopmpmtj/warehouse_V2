@@ -20,7 +20,7 @@
             document.documentElement.setAttribute("lang", lang);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=13">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=14">
 </head>
 <body
     data-can-add-item="{% if catalog_flags.add_item %}true{% else %}false{% endif %}"
@@ -40,6 +40,22 @@
             <h1 data-i18n="title">Item console</h1>
         </div>
         <div class="topbar-actions">
+            <div id="master-data-cluster" class="master-data-cluster">
+                <button
+                    type="button"
+                    id="master-data-toggle"
+                    class="btn master-data-toggle"
+                    aria-expanded="false"
+                    aria-controls="master-data-buttons"
+                    aria-haspopup="true"
+                    data-i18n="masterData"
+                >Master data</button>
+                <div id="master-data-buttons" class="master-data-buttons" role="group" data-i18n-aria="masterData">
+                    <button type="button" id="manage-families" class="btn" data-i18n="manageFamilies">Families</button>
+                    <button type="button" id="manage-sub-families" class="btn" data-i18n="manageSubFamilies">Sub-families</button>
+                    <button type="button" id="manage-suppliers" class="btn" data-i18n="manageSuppliers">Suppliers</button>
+                </div>
+            </div>
             <div class="settings-menu">
                 <button
                     type="button"
@@ -101,9 +117,6 @@
                 <option value="reactivate" data-i18n="bulkReactivate">Reactivate</option>
             </select>
             <button type="button" id="bulk-apply" class="btn" data-i18n="apply">Apply</button>
-            <button type="button" id="manage-families" class="btn" data-i18n="manageFamilies">Families</button>
-            <button type="button" id="manage-sub-families" class="btn" data-i18n="manageSubFamilies">Sub-families</button>
-            <button type="button" id="manage-suppliers" class="btn" data-i18n="manageSuppliers">Suppliers</button>
             <button type="button" id="new-item" class="btn btn-primary" data-i18n="newItem">New item</button>
         </section>
 
@@ -468,9 +481,9 @@
         </div>
     </div>
 
-    <script src="{% static 'products/js/console_i18n.js' %}?v=16"></script>
+    <script src="{% static 'products/js/console_i18n.js' %}?v=17"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=2"></script>
-    <script src="{% static 'products/js/console_escape_close.js' %}?v=1"></script>
-    <script src="{% static 'products/js/console.js' %}?v=18"></script>
+    <script src="{% static 'products/js/console_escape_close.js' %}?v=2"></script>
+    <script src="{% static 'products/js/console.js' %}?v=19"></script>
 </body>
 </html>

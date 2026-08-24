@@ -3,6 +3,20 @@
         return Boolean(element) && !element.hidden;
     }
 
+    function dismissMasterData() {
+        const cluster = document.getElementById("master-data-cluster");
+        const toggle = document.getElementById("master-data-toggle");
+        if (!cluster || !cluster.classList.contains("is-open")) {
+            return false;
+        }
+        cluster.classList.remove("is-open");
+        if (toggle) {
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.focus();
+        }
+        return true;
+    }
+
     function dismissSettings() {
         const toggle = document.getElementById("settings-toggle");
         const popover = document.getElementById("settings-popover");
@@ -42,6 +56,11 @@
         "keydown",
         (event) => {
             if (event.key !== "Escape" || event.defaultPrevented || event.isComposing) {
+                return;
+            }
+            if (dismissMasterData()) {
+                event.preventDefault();
+                event.stopPropagation();
                 return;
             }
             if (dismissSettings()) {
