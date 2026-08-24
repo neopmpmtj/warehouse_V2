@@ -2,7 +2,7 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 24 August 2026, 10:30 WEST
+- **Last updated:** 24 August 2026, 11:20 WEST
 - **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Request-threads review M1–M5 and L1–L6 complete** ✅. **Company Voice built** ✅. **Company Voice review H1, M1–M9, L1–L8 complete** ✅. **Next:** Phase 6 — email automation. Full suite **502 tests green**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Email and offline remain later phases.
 
@@ -144,7 +144,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (Aug 2026):** phases 0–5 complete; both 2208/1303 review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **request threads** done; **request-threads review M1–M5 and L1–L6** done; **Company Voice** built; **Company Voice review H1, M1–M9, L1–L8** done. Full suite **502 tests green**. Leftover threads-review nits N1–N6 and Company Voice nits N1–N3 are optional. **Next:** Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
+**Current (Aug 2026):** phases 0–5 complete; both 2208/1303 review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **request threads** done; **request-threads review M1–M5 and L1–L6** done; **Company Voice** built; **Company Voice review H1, M1–M9, L1–L8, N2, N3** done. Full suite **502 tests green**. Leftover nits are **recorded, not a work queue** (threads N1–N6; Company Voice N1). **Next:** Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -398,7 +398,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 
 - Wire `notify_supplier_on_approval` to real email (SMTP / provider).
 - Templates EN + pt-PT; audit sent-notifications.
-- Deferred by D9. Request-threads review M1–M5 and L1–L6 no longer block this phase (leftover nits N1–N6 are optional). Company Voice review H1, M1–M9, and L1–L8 no longer block this phase (leftover nits N1–N3 are optional).
+- Deferred by D9. Request-threads and Company Voice M/L review queues no longer block this phase. Leftover nits are recorded in the 24 Aug review files — **not a work queue**.
 
 ---
 
@@ -458,9 +458,9 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - [x] Sub-families — `SubFamily` under `FamilyProduct`, optional `Item.sub_family`, console + admin + catalog surfaces
 - [x] Warehouse FIFO stock reservation — `quantity_reserved` at approve (D32 / R1–R12)
 - [x] Request threads — `threads` app: `ItemRequestThread` (awaiting_warehouse/awaiting_branch/closed), `ThreadMessage` (explicit side), `ThreadReadState` (unread), changelog (created/item_linked/closed); branch + warehouse consoles; opener-only close + manager/admin/warehouse-admin override; reason required; item traceability M2M; manual `08-request-threads.md`
-- [x] Request-threads review fixes — M1–M5 and L1–L6 (nits N1–N6 leftover, optional) — report `docs/reviews/threads-review-2026-08-24.md`
+- [x] Request-threads review fixes — M1–M5 and L1–L6 — report `docs/reviews/threads-review-2026-08-24.md` (N1–N6 recorded leftovers, not a queue)
 - [x] Company Voice — `company_voice` app (suggestion box, `/company-voice/`) — built
-- [x] Company Voice review fixes — H1, M1–M9, L1–L8 (nits N1–N3 leftover, optional) — report `docs/reviews/company-voice-review-2026-08-24-1010.md`
+- [x] Company Voice review fixes — H1, M1–M9, L1–L8, N2, N3 — report `docs/reviews/company-voice-review-2026-08-24-1010.md` (N1 recorded leftover, not a queue)
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---
@@ -472,6 +472,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - Categories, LLM/vector search, bulk import.
 - Real email sending (Phase 6 — stub exists).
 - Server-side item draft rows (deferred; see plan § advisory).
+- **24 Aug review nits** (not lost, not Next): threads N1–N6; Company Voice N1. Full text stays in [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md) and [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md). Pick up only in a dedicated polish session.
 
 ---
 

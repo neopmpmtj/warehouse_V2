@@ -8,7 +8,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 24 August 2026, 10:30 WEST.*
+*Last updated: 24 August 2026, 11:20 WEST.*
 
 **Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Request-threads review M1–M5 and L1–L6 are done.** **Company Voice is built.** **Company Voice review H1, M1–M9, L1–L8 are done.** **Next:** Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
 
