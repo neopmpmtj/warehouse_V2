@@ -250,3 +250,7 @@ const PO_I18N = {
         approval_limit_exceeded: "Esta encomenda ultrapassa o seu limite de aprovação.",
     },
 };
+
+// Dashboard selector stores "pt"; the old Settings popover stored "pt-PT".
+PO_I18N.pt = PO_I18N["pt-PT"];
+

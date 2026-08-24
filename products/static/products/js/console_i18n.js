@@ -358,3 +358,7 @@ const CONSOLE_I18N = {
         invalid_cost_price: "O preço de custo tem de ser zero ou superior.",
     },
 };
+
+// Dashboard selector stores "pt"; the old Settings popover stored "pt-PT".
+CONSOLE_I18N.pt = CONSOLE_I18N["pt-PT"];
+

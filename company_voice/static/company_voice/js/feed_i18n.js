@@ -98,3 +98,7 @@ window.COMPANY_VOICE_I18N = {
         err_invalid_updated_at: "updated_at tem de ser um instante ISO.",
     },
 };
+
+// Accept the legacy Settings popover value as well as the dashboard "pt".
+window.COMPANY_VOICE_I18N["pt-PT"] = window.COMPANY_VOICE_I18N.pt;
+

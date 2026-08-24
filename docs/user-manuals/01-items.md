@@ -42,16 +42,16 @@ Open the **Settings** gear (top-right of the console) and click **Sign out**. Si
 
 ### 1.3 Language
 
-The whole console works in two languages. Open the **Settings** gear and use the **Language** selector:
+The whole console works in two languages. Set **Language** on the staff dashboard (`/`) — the control sits in the top-right bar, next to theme:
 
 - **English**
 - **Português**
 
-The choice is remembered for your next visit.
+The choice is remembered in this browser and applies to every warehouse console, Company Voice, and request threads. Branch staff set the same control on the branch catalog (`/branch/catalog/`). The **Settings** gear is for signed-in email, **Sign out**, and **Help** only.
 
 ### 1.4 Light / dark theme
 
-Open the **Settings** gear and click the **theme toggle** to switch between **Light theme** and **Dark theme**. Also remembered between visits.
+Use the **theme** button on the staff dashboard (`/`) — next to **Language** — to switch between **Light theme** and **Dark theme**. Also remembered in this browser. Branch staff use the same control on the branch catalog (`/branch/catalog/`).
 
 ---
 
@@ -79,7 +79,7 @@ The console is one screen, split into three areas.
 **A. Top bar**
 - App name (**CentCompras**) and title (**Item console** / *Gestão de artigos*)
 - **Families**, **Sub-families**, and **Suppliers** — open the master-data drawers. On a narrow window they collapse under **Master data** (*Dados mestres*).
-- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", language, theme, **Sign out**, and **Help** (placeholder)
+- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", **Sign out**, and **Help** (placeholder). Language and theme live on the [staff dashboard](01-items.md#13-language) (`/`).
 
 ![Settings popover](screenshots/08-settings-popover.png)
 
@@ -290,8 +290,8 @@ This is your safety net: nothing is ever silently overwritten.
 
 - **Dates** are shown as **DD/MM/YYYY** (day, month, year), with a 24-hour time — e.g. `20/08/2026 10:30`.
 - **Timezone:** times are shown in *your* local time, wherever you are. A colleague in Singapore sees the same event in Singapore time; you see it in Portugal time. (The system stores everything in UTC and converts automatically.) New users default to **Europe/Lisbon**.
-- **Language:** English / Português (Settings gear; remembered).
-- **Theme:** light / dark (Settings gear; remembered).
+- **Language:** English / Português — set on the staff dashboard (`/`) or branch catalog (`/branch/catalog/`); remembered in this browser.
+- **Theme:** light / dark — same bar as language; remembered.
 
 ---
 

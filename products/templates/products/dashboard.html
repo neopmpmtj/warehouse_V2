@@ -5,6 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            var lang = "en";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "en";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
+            if (String(lang).toLowerCase().indexOf("pt") === 0) {
+                lang = "pt-PT";
+            } else {
+                lang = "en";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
     <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=2">
     <link rel="stylesheet" href="{% static 'products/css/dashboard.css' %}?v=1">
 </head>
@@ -16,34 +35,34 @@
 
     <main class="dash-main">
         <p class="groups-line">
-            Groups:
+            <span data-i18n="groupsLabel">Groups:</span>
             {% if groups %}
                 {% for group in groups %}<code>{{ group }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
             {% else %}
-                none
+                <span data-i18n="groupsNone">none</span>
             {% endif %}
         </p>
 
         <h1>CentCompras</h1>
 
         <section class="dash-section">
-            <h2>Company Voice</h2>
+            <h2 data-i18n="sectionCompanyVoice">Company Voice</h2>
             <div class="card-grid">
                 <a class="dash-card" href="/company-voice/">
-                    <span class="dash-card-title">Company Voice</span>
-                    <span class="dash-card-desc">Suggestions, praise, and concerns — all logged-in staff can read and post.</span>
+                    <span class="dash-card-title" data-i18n="cardCompanyVoice">Company Voice</span>
+                    <span class="dash-card-desc" data-i18n="cardCompanyVoiceDesc">Suggestions, praise, and concerns — all logged-in staff can read and post.</span>
                 </a>
             </div>
         </section>
 
         {% if warehouse_cards %}
         <section class="dash-section">
-            <h2>Warehouse pages</h2>
+            <h2 data-i18n="sectionWarehouse">Warehouse pages</h2>
             <div class="card-grid">
                 {% for card in warehouse_cards %}
                 <a class="dash-card" href="{{ card.url }}">
-                    <span class="dash-card-title">{{ card.title }}</span>
-                    <span class="dash-card-desc">{{ card.desc }}</span>
+                    <span class="dash-card-title" data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                    <span class="dash-card-desc" data-i18n="{{ card.desc_key }}">{{ card.desc }}</span>
                 </a>
                 {% endfor %}
             </div>
@@ -52,13 +71,13 @@
 
         {% if branch_cards %}
         <section class="dash-section">
-            <h2>Branch pages</h2>
-            <p class="dash-note">These need a branch membership. Warehouse-only logins are sent to the picker or refused.</p>
+            <h2 data-i18n="sectionBranch">Branch pages</h2>
+            <p class="dash-note" data-i18n="branchNote">These need a branch membership. Warehouse-only logins are sent to the picker or refused.</p>
             <div class="card-grid">
                 {% for card in branch_cards %}
                 <a class="dash-card" href="{{ card.url }}">
-                    <span class="dash-card-title">{{ card.title }}</span>
-                    <span class="dash-card-desc">{{ card.desc }}</span>
+                    <span class="dash-card-title" data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                    <span class="dash-card-desc" data-i18n="{{ card.desc_key }}">{{ card.desc }}</span>
                 </a>
                 {% endfor %}
             </div>
@@ -66,7 +85,7 @@
         {% endif %}
 
         <details class="dev-ref">
-            <summary>Developer reference — permissions, auth &amp; APIs</summary>
+            <summary data-i18n="devReference">Developer reference — permissions, auth &amp; APIs</summary>
 
             {% if permissions %}
             <h2>Your Django permissions</h2>
@@ -204,7 +223,7 @@
         </details>
     </main>
 
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=1"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=3"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
 </body>
 </html>

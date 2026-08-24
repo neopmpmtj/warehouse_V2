@@ -16,7 +16,7 @@ Company Voice is an internal suggestion box for all CentCompras staff. Anyone lo
 
 No branch selection is required. Warehouse and branch users share the same feed.
 
-Open the **Settings** gear (top-right) for **Signed in as**, **Language** (English / Português), and **Sign out**. **Help** at the bottom of that panel is a placeholder.
+Open the **Settings** gear (top-right) for **Signed in as** and **Sign out**. **Help** at the bottom of that panel is a placeholder. **Language** (English / Português) is set on the staff dashboard (`/`) or the branch catalog (`/branch/catalog/`) and remembered in this browser.
 
 ---
 

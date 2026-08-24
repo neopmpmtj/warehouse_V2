@@ -68,7 +68,7 @@ Clicking a row does nothing — there is no detail drawer.
 
 **A. Top bar**
 - Title: **Manager catalog** (*Catálogo do gestor*)
-- **Settings** gear (top-right) — signed in as *you@company*, language (English / Português), theme toggle, **Sign out**, **Help** (placeholder). Press **Escape** to close the Settings panel.
+- **Settings** gear (top-right) — signed in as *you@company*, **Sign out**, **Help** (placeholder). Press **Escape** to close the Settings panel. Language and theme are set on the staff dashboard (`/`).
 
 **B. Toolbar (filters)**
 
@@ -163,8 +163,8 @@ The family dropdown can include **inactive** families (it reuses the families li
 
 Same as the other warehouse consoles:
 
-- **Language:** English / Português (Settings gear; remembered).
-- **Theme:** light / dark (Settings gear; remembered). Below-reorder row highlighting follows the theme (it is not a fixed pale yellow).
+- **Language:** English / Português — set on the staff dashboard (`/`) or branch catalog (`/branch/catalog/`); remembered in this browser.
+- **Theme:** light / dark — same bar as language; remembered. Below-reorder row highlighting follows the theme (it is not a fixed pale yellow).
 - **Dates** are not shown on this page (no created/updated column). Quantity and money use a plain decimal format.
 
 ---

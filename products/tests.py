@@ -1,4 +1,6 @@
 import json
+import re
+import subprocess
 import uuid
 from decimal import Decimal
 from unittest import mock
@@ -10,7 +12,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.contrib.messages import get_messages
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.urls import reverse
 
 from accounts.groups import (
@@ -1295,6 +1297,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="pref-language"')
         self.assertContains(response, 'id="pref-theme"')
         self.assertContains(response, 'class="dash-card"')
+        self.assertContains(response, 'data-i18n="cardItemConsole"')
+        self.assertContains(response, 'data-i18n="sectionWarehouse"')
         # Warehouse cards (all groups)
         self.assertContains(response, 'href="/manage/items/"')
         self.assertContains(response, 'href="/manage/catalog/"')
@@ -3185,3 +3189,132 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.client.force_login(self.staff_user)
         response = self.client.get(reverse("manage_catalog_list") + "?family_id=abc")
         self.assertEqual(response.status_code, 400)
+
+
+class LanguageCodeContractTests(SimpleTestCase):
+    """The dashboard language <select> must resolve in every i18n dictionary.
+
+    Django tests never execute console JS, so the 24 Aug 2026 move of the
+    selector from Settings (`value="pt-PT"`) to the dashboard (`value="pt"`)
+    shipped green: pages still contained `#pref-language`, and consoles no
+    longer contained `#language-select`. `t()` then did
+    `CONSOLE_I18N["pt"] || CONSOLE_I18N.en` and stayed in English.
+
+    These tests evaluate the real dictionaries in Node so a code/key mismatch
+    fails the suite.
+    """
+
+    _LOAD_JS = r"""
+const fs = require("fs");
+const vm = require("vm");
+const src = fs.readFileSync(process.argv[1], "utf8") + "\nthis.__export = " + process.argv[2] + ";";
+const ctx = {
+    window: {},
+    document: {
+        readyState: "complete",
+        querySelectorAll: () => [],
+        getElementById: () => null,
+        documentElement: { lang: "en", setAttribute() {} },
+        addEventListener() {},
+    },
+    localStorage: { getItem: () => null, setItem() {} },
+};
+ctx.window = ctx;
+vm.createContext(ctx);
+vm.runInContext(src, ctx);
+if (ctx.__export === undefined) {
+    process.stderr.write("missing binding " + process.argv[2] + "\n");
+    process.exit(2);
+}
+process.stdout.write(JSON.stringify(ctx.__export));
+"""
+
+    def _load_js_binding(self, path, binding):
+        result = subprocess.run(
+            ["node", "-e", self._LOAD_JS, str(path), binding],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            f"failed to evaluate {path.name} ({binding}): {result.stderr}",
+        )
+        return json.loads(result.stdout)
+
+    def _dashboard_lang_codes(self):
+        html = (
+            settings.BASE_DIR / "products/templates/products/includes/preferences_bar.html"
+        ).read_text()
+        values = re.findall(r'<option value="([^"]+)">', html)
+        self.assertEqual(set(values), {"en", "pt"}, html)
+        return values
+
+    def test_dashboard_select_values_resolve_in_warehouse_i18n(self):
+        codes = self._dashboard_lang_codes()
+        files = [
+            (
+                settings.BASE_DIR / "products/static/products/js/console_i18n.js",
+                "CONSOLE_I18N",
+            ),
+            (
+                settings.BASE_DIR / "products/static/products/js/catalog_i18n.js",
+                "CATALOG_I18N",
+            ),
+            (
+                settings.BASE_DIR / "inventory/static/inventory/js/goods_receipts_i18n.js",
+                "GR_I18N",
+            ),
+            (
+                settings.BASE_DIR
+                / "procurement/static/procurement/js/purchase_orders_i18n.js",
+                "PO_I18N",
+            ),
+            (
+                settings.BASE_DIR / "company_voice/static/company_voice/js/feed_i18n.js",
+                "window.COMPANY_VOICE_I18N",
+            ),
+        ]
+        for path, binding in files:
+            with self.subTest(file=path.name):
+                dictionary = self._load_js_binding(path, binding)
+                self.assertIn("en", dictionary)
+                for code in codes:
+                    self.assertIn(
+                        code,
+                        dictionary,
+                        f"{path.name} has no key {code!r}; "
+                        f"dashboard <select> stores cc-lang={code!r}. "
+                        f"Keys: {sorted(dictionary)}",
+                    )
+                    self.assertTrue(
+                        dictionary[code].get("title"),
+                        f"{path.name}[{code!r}] is missing title",
+                    )
+                self.assertNotEqual(
+                    dictionary["pt"]["title"],
+                    dictionary["en"]["title"],
+                    f"{path.name} Portuguese title is identical to English "
+                    "(lookup probably fell through)",
+                )
+                # Legacy Settings popover value must still resolve.
+                self.assertEqual(
+                    dictionary["pt"]["title"],
+                    dictionary["pt-PT"]["title"],
+                )
+
+    def test_preferences_bar_normalizes_legacy_pt_PT(self):
+        source = (
+            settings.BASE_DIR / "products/static/products/js/preferences_bar.js"
+        ).read_text()
+        self.assertIn("function normalizeLang", source)
+        self.assertIn('startsWith("pt")', source)
+
+    def test_preferences_bar_includes_dashboard_card_keys(self):
+        source = (
+            settings.BASE_DIR / "products/static/products/js/preferences_bar.js"
+        ).read_text()
+        self.assertIn("cardItemConsole:", source)
+        self.assertIn("Gestão de artigos", source)
+        self.assertIn("sectionWarehouse:", source)

@@ -3,7 +3,19 @@
     const LANG_KEY = "cc-lang";
     const KNOWN_TAGS = { praise: true, concern: true, suggestion: true, wish: true };
 
-    let lang = localStorage.getItem(LANG_KEY) || "en";
+    function readLang() {
+        try {
+            const raw = localStorage.getItem(LANG_KEY) || "en";
+            if (raw.toLowerCase().startsWith("pt")) {
+                return "pt";
+            }
+            return "en";
+        } catch (error) {
+            return "en";
+        }
+    }
+
+    let lang = readLang();
     let posts = [];
     let editWindowMs = 15 * 60 * 1000;
     let editExpiryTimer = null;
