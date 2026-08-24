@@ -1,10 +1,41 @@
 from django.contrib import admin
 
-from .models import VoiceComment, VoicePost, VoiceSubThread
+from .models import VoiceChangeLog, VoiceComment, VoicePost, VoiceSubThread
+
+
+class SuperuserReadOnlyMixin:
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class VoiceChangeLogInline(admin.TabularInline):
+    model = VoiceChangeLog
+    extra = 0
+    can_delete = False
+    readonly_fields = ("user", "action", "comment", "changes", "created_at")
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(VoicePost)
-class VoicePostAdmin(admin.ModelAdmin):
+class VoicePostAdmin(SuperuserReadOnlyMixin, admin.ModelAdmin):
     list_display = (
         "id",
         "author",
@@ -22,19 +53,21 @@ class VoicePostAdmin(admin.ModelAdmin):
         "is_anonymous",
         "created_at",
         "updated_at",
+        "edited_at",
         "deleted_at",
     )
+    inlines = (VoiceChangeLogInline,)
 
 
 @admin.register(VoiceSubThread)
-class VoiceSubThreadAdmin(admin.ModelAdmin):
+class VoiceSubThreadAdmin(SuperuserReadOnlyMixin, admin.ModelAdmin):
     list_display = ("id", "post", "created_at", "deleted_at")
     list_filter = ("deleted_at",)
     readonly_fields = ("post", "created_at", "deleted_at")
 
 
 @admin.register(VoiceComment)
-class VoiceCommentAdmin(admin.ModelAdmin):
+class VoiceCommentAdmin(SuperuserReadOnlyMixin, admin.ModelAdmin):
     list_display = (
         "id",
         "sub_thread",
@@ -52,5 +85,14 @@ class VoiceCommentAdmin(admin.ModelAdmin):
         "is_anonymous",
         "created_at",
         "updated_at",
+        "edited_at",
         "deleted_at",
     )
+
+
+@admin.register(VoiceChangeLog)
+class VoiceChangeLogAdmin(SuperuserReadOnlyMixin, admin.ModelAdmin):
+    list_display = ("id", "post", "comment", "user", "action", "created_at")
+    list_filter = ("action",)
+    search_fields = ("post__id", "user__email")
+    readonly_fields = ("post", "comment", "user", "action", "changes", "created_at")

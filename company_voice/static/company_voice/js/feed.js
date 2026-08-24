@@ -1,10 +1,16 @@
 (function () {
     const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || "";
-    const LANG_KEY = "company_voice_lang";
+    const LANG_KEY = "cc-lang";
+    const KNOWN_TAGS = { praise: true, concern: true, suggestion: true, wish: true };
 
     let lang = localStorage.getItem(LANG_KEY) || "en";
     let posts = [];
+    let editWindowMs = 15 * 60 * 1000;
+    let editExpiryTimer = null;
+    let posting = false;
+    const sendingComment = new Set();
     const expandedPosts = new Set();
+    let activeEdit = null;
 
     function t(key, vars) {
         const dict = window.COMPANY_VOICE_I18N[lang] || window.COMPANY_VOICE_I18N.en;
@@ -43,6 +49,17 @@
         document.getElementById("banner").classList.add("hidden");
     }
 
+    function apiErrorMessage(data, fallback) {
+        if (data && data.code) {
+            const key = "err_" + data.code;
+            const translated = t(key);
+            if (translated !== key) {
+                return translated;
+            }
+        }
+        return (data && data.error) || fallback;
+    }
+
     async function api(path, options = {}) {
         const headers = {
             "Content-Type": "application/json",
@@ -52,7 +69,10 @@
         const response = await fetch(path, { ...options, headers });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
-            throw new Error(data.error || `HTTP ${response.status}`);
+            const err = new Error(apiErrorMessage(data, `HTTP ${response.status}`));
+            err.status = response.status;
+            err.payload = data;
+            throw err;
         }
         return data;
     }
@@ -75,15 +95,69 @@
         return t("deletedByAuthor");
     }
 
+    function displayName(item) {
+        if (item.deleted) {
+            return deletedLabel();
+        }
+        if (item.is_anonymous) {
+            return t("anonymous");
+        }
+        return escapeHtml(item.display_name);
+    }
+
+    function stillEditable(item) {
+        if (!item || item.deleted || !item.can_edit) {
+            return false;
+        }
+        const created = Date.parse(item.created_at);
+        if (Number.isNaN(created)) {
+            return false;
+        }
+        return Date.now() - created <= editWindowMs;
+    }
+
+    function scheduleEditExpiry() {
+        if (editExpiryTimer) {
+            clearTimeout(editExpiryTimer);
+            editExpiryTimer = null;
+        }
+        const now = Date.now();
+        let next = Infinity;
+        posts.forEach((post) => {
+            const candidates = [post, ...((post.sub_thread && post.sub_thread.comments) || [])];
+            candidates.forEach((item) => {
+                if (!item || item.deleted || !item.can_edit) {
+                    return;
+                }
+                const created = Date.parse(item.created_at);
+                if (Number.isNaN(created)) {
+                    return;
+                }
+                const expires = created + editWindowMs;
+                if (expires > now && expires < next) {
+                    next = expires;
+                }
+            });
+        });
+        if (next !== Infinity) {
+            editExpiryTimer = setTimeout(() => {
+                renderFeed();
+            }, Math.min(next - now + 50, 2147483647));
+        }
+    }
+
     function renderTag(tag) {
-        if (!tag) return "";
-        return `<span class="tag-pill ${tag}">${t("tag" + tag.charAt(0).toUpperCase() + tag.slice(1))}</span>`;
+        if (!tag || !KNOWN_TAGS[tag]) {
+            return "";
+        }
+        const key = "tag" + tag.charAt(0).toUpperCase() + tag.slice(1);
+        return `<span class="tag-pill ${tag}">${t(key)}</span>`;
     }
 
     function renderActions(item, type, postId) {
         if (item.deleted) return "";
         const parts = [];
-        if (item.can_edit) {
+        if (stillEditable(item)) {
             parts.push(`<button type="button" class="btn-link" data-action="edit-${type}" data-id="${item.id}" data-post-id="${postId || ""}">${t("edit")}</button>`);
         }
         if (item.can_delete) {
@@ -97,7 +171,7 @@
             ? `<p class="comment-body deleted-text">${deletedLabel()}</p>`
             : `<p class="comment-body">${escapeHtml(comment.body)}</p>`;
         const edited = comment.edited ? ` <span class="edited-mark">${t("edited")}</span>` : "";
-        const name = comment.deleted ? deletedLabel() : escapeHtml(comment.display_name);
+        const name = displayName(comment);
         return `
             <article class="comment" data-comment-id="${comment.id}">
                 <div class="comment-meta">${name} · ${formatTime(comment.created_at)}${edited}</div>
@@ -141,7 +215,7 @@
             ? `<p class="post-body deleted-text">${deletedLabel()}</p>`
             : `<p class="post-body">${escapeHtml(post.body)}</p>`;
         const edited = post.edited ? ` <span class="edited-mark">${t("edited")}</span>` : "";
-        const name = post.deleted ? deletedLabel() : escapeHtml(post.display_name);
+        const name = displayName(post);
         const tag = post.tag && !post.deleted ? renderTag(post.tag) : "";
         return `
             <article class="post-card ${post.deleted ? "deleted" : ""}" data-post-id="${post.id}">
@@ -158,14 +232,45 @@
     }
 
     function escapeHtml(text) {
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
+        return String(text ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function captureDrafts() {
+        const drafts = {};
+        document.querySelectorAll("[data-comment-body]").forEach((el) => {
+            const postId = el.getAttribute("data-comment-body");
+            const anon = document.querySelector(`[data-comment-anonymous="${postId}"]`);
+            drafts[postId] = {
+                body: el.value,
+                anonymous: !!(anon && anon.checked),
+            };
+        });
+        return drafts;
+    }
+
+    function restoreDrafts(drafts) {
+        Object.keys(drafts).forEach((postId) => {
+            const ta = document.querySelector(`[data-comment-body="${postId}"]`);
+            const anon = document.querySelector(`[data-comment-anonymous="${postId}"]`);
+            if (ta) {
+                ta.value = drafts[postId].body;
+            }
+            if (anon) {
+                anon.checked = drafts[postId].anonymous;
+            }
+        });
     }
 
     function renderFeed() {
         const feed = document.getElementById("feed");
         const empty = document.getElementById("feed-empty");
+        const drafts = captureDrafts();
+        activeEdit = null;
         if (!posts.length) {
             feed.innerHTML = "";
             empty.classList.remove("hidden");
@@ -173,7 +278,9 @@
         }
         empty.classList.add("hidden");
         feed.innerHTML = posts.map(renderPost).join("");
+        restoreDrafts(drafts);
         feed.scrollTop = feed.scrollHeight;
+        scheduleEditExpiry();
     }
 
     async function loadFeed() {
@@ -181,6 +288,9 @@
         try {
             const data = await api("/api/company-voice/feed/");
             posts = data.posts || [];
+            if (typeof data.edit_window_minutes === "number") {
+                editWindowMs = data.edit_window_minutes * 60 * 1000;
+            }
             renderFeed();
         } catch (err) {
             showBanner(t("loadError"));
@@ -188,10 +298,16 @@
     }
 
     async function submitPost() {
+        if (posting) {
+            return;
+        }
         const body = document.getElementById("compose-body").value;
         const tag = document.getElementById("compose-tag").value;
         const isAnonymous = document.getElementById("compose-anonymous").checked;
+        const button = document.getElementById("compose-submit");
         hideBanner();
+        posting = true;
+        button.disabled = true;
         try {
             await api("/api/company-voice/posts/", {
                 method: "POST",
@@ -203,15 +319,26 @@
             await loadFeed();
         } catch (err) {
             showBanner(err.message || t("postError"));
+        } finally {
+            posting = false;
+            button.disabled = false;
         }
     }
 
     async function sendComment(postId) {
+        if (sendingComment.has(postId)) {
+            return;
+        }
         const textarea = document.querySelector(`[data-comment-body="${postId}"]`);
         const anon = document.querySelector(`[data-comment-anonymous="${postId}"]`);
+        const button = document.querySelector(`[data-action="send-comment"][data-id="${postId}"]`);
         if (!textarea) return;
         const body = textarea.value;
         hideBanner();
+        sendingComment.add(postId);
+        if (button) {
+            button.disabled = true;
+        }
         try {
             await api(`/api/company-voice/posts/${postId}/comments/`, {
                 method: "POST",
@@ -226,6 +353,12 @@
             await loadFeed();
         } catch (err) {
             showBanner(err.message || t("postError"));
+            await loadFeed();
+        } finally {
+            sendingComment.delete(postId);
+            if (button) {
+                button.disabled = false;
+            }
         }
     }
 
@@ -237,6 +370,7 @@
             await loadFeed();
         } catch (err) {
             showBanner(err.message);
+            await loadFeed();
         }
     }
 
@@ -248,7 +382,16 @@
             await loadFeed();
         } catch (err) {
             showBanner(err.message);
+            await loadFeed();
         }
+    }
+
+    function cancelActiveEdit() {
+        if (!activeEdit) {
+            return;
+        }
+        activeEdit = null;
+        renderFeed();
     }
 
     function startEdit(type, id, postId) {
@@ -262,7 +405,7 @@
             item = post?.sub_thread?.comments?.find((c) => c.id === Number(id));
             container = document.querySelector(`[data-comment-id="${id}"]`);
         }
-        if (!item || !container || item.deleted) return;
+        if (!item || !container || item.deleted || !stillEditable(item)) return;
 
         const isPost = type === "post";
         const form = document.createElement("div");
@@ -283,39 +426,63 @@
             </div>
         `;
         container.querySelector(".post-body, .comment-body")?.replaceWith(form);
+        activeEdit = { type, id, form };
 
-        form.querySelector(".edit-cancel").addEventListener("click", () => renderFeed());
+        form.querySelector(".edit-cancel").addEventListener("click", () => {
+            cancelActiveEdit();
+        });
         form.querySelector(".edit-save").addEventListener("click", async () => {
             const newBody = form.querySelector(".edit-body").value;
             hideBanner();
+            const saveBtn = form.querySelector(".edit-save");
+            saveBtn.disabled = true;
             try {
                 if (isPost) {
                     const newTag = form.querySelector(".edit-tag").value;
                     await api(`/api/company-voice/posts/${id}/`, {
                         method: "PATCH",
-                        body: JSON.stringify({ body: newBody, tag: newTag || "" }),
+                        body: JSON.stringify({
+                            body: newBody,
+                            tag: newTag || "",
+                            updated_at: item.updated_at,
+                        }),
                     });
                 } else {
                     await api(`/api/company-voice/comments/${id}/`, {
                         method: "PATCH",
-                        body: JSON.stringify({ body: newBody }),
+                        body: JSON.stringify({
+                            body: newBody,
+                            updated_at: item.updated_at,
+                        }),
                     });
                 }
+                activeEdit = null;
                 await loadFeed();
             } catch (err) {
                 showBanner(err.message);
+                await loadFeed();
+            } finally {
+                saveBtn.disabled = false;
             }
         });
     }
 
     function bindEvents() {
         document.getElementById("compose-submit").addEventListener("click", submitPost);
+        document.getElementById("feed-refresh").addEventListener("click", loadFeed);
 
         document.getElementById("lang-select").addEventListener("change", (e) => {
             lang = e.target.value;
             localStorage.setItem(LANG_KEY, lang);
             applyI18n();
             renderFeed();
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && activeEdit) {
+                event.preventDefault();
+                cancelActiveEdit();
+            }
         });
 
         document.getElementById("feed").addEventListener("click", (e) => {

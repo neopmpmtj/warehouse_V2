@@ -2,7 +2,7 @@
 
 **Reference** · Version 1.0 · For warehouse staff, branch staff, and administrators
 
-> **Companion to:** [Item Console](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Admin & Superuser Reference](06-admin-reference.md) · [Manager catalog](07-manager-catalog.md) · [Request threads](08-request-threads.md).
+> **Companion to:** [Item Console](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Admin & Superuser Reference](06-admin-reference.md) · [Manager catalog](07-manager-catalog.md) · [Request threads](08-request-threads.md) · [Company Voice](09-company-voice.md).
 >
 > Those manuals teach the normal path. **This one is the lookup reference** for the boundaries: the exact errors you can hit, the hard numeric limits, the state-machine rules, and the things that are *deliberately not built yet*. When something "won't let you", look here.
 
@@ -171,7 +171,26 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 **Unread:** GET-ing a thread's messages does **not** mark it read. Clicking the thread in the list (POST mark-read) does.
 
-### 2.6 Account, permissions & isolation
+### 2.6 Company Voice (`/company-voice/`)
+
+| Message (exact) | Why it appears | What to do |
+|-----------------|----------------|------------|
+| `Message body cannot be empty.` | Blank or whitespace-only post/comment | Type a message |
+| `Message body cannot exceed 4000 characters.` | Body longer than 4000 characters | Shorten the text |
+| `The edit window has expired.` | Edit more than 15 minutes after posting | You can still delete; you cannot edit |
+| `Only the author can change or delete this message.` | Someone else tried to edit/delete | Only the author can |
+| `This message has been deleted.` | Second delete, or edit of a deleted row | Refresh the feed |
+| `This post has been deleted.` | Comment on a post the author already deleted | Refresh; the post is a tombstone |
+| `Invalid tag.` | Tag is not praise/concern/suggestion/wish | Pick a tag from the list, or leave untagged |
+| `Request body must be valid JSON.` | Malformed API body | Use the website form |
+| `Body must be a string.` | API sent a non-text body | Send text |
+| `is_anonymous must be a boolean.` | API sent `"false"` / `1` instead of `true`/`false` | Use a real boolean |
+| `This message was changed in another tab. Refresh and try again.` | Two edits of the same message; the second used a stale `updated_at` (HTTP **409**) | Refresh and re-apply your change |
+| `updated_at is required.` / `updated_at must be an ISO timestamp.` | PATCH omitted or malformed version token | Refresh; the website sends this automatically |
+
+**(edited)** is stored as `edited_at` — a new post is never labelled edited. Reply counts ignore soft-deleted comments.
+
+### 2.7 Account, permissions & isolation
 
 | What you see | When | Meaning |
 |--------------|------|---------|
@@ -203,6 +222,8 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | **Email** | `EmailField` | valid email | supplier & user |
 | **Stock balances** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | can't go negative |
 | **Reserved qty** (`InternalRequestLine.quantity_reserved`) | `Decimal(12,3)` | `≥ 0` and `≤` line quantity | claim on warehouse stock, not a ledger movement |
+| **Company Voice body** | `TextField` | **1–4000** characters after trim | empty rejected |
+| **Company Voice edit window** | — | **15 minutes** from `created_at` | author only |
 
 **Rounding:** the whole app uses **half-away-from-zero** (`ROUND_HALF_UP` — not banker's rounding). Unit costs round to **4 dp** first, then line amounts (net / VAT / gross) round to **2 dp**.
 
@@ -284,7 +305,8 @@ These are guarantees, not "best effort":
 - **FIFO warehouse reservation:** approve holds the free portion for that requisição. A later branch cannot be issued those units. Issue is capped at the line's `quantity_reserved`. Incoming stock is offered to the oldest `approved`/`fulfilling` backorder first.
 - **Append-only ledgers:** `StockMovement` and `BranchStockMovement` are never edited or deleted — only new rows. The cached `Item.quantity` / `BranchItemStock.quantity` are **computed** from the ledger; if they ever disagree, the ledger is the truth.
 - **Frozen snapshots:** PO and request **lines** snapshot description, code, unit, VAT, price at creation/approval, so later master-data edits don't rewrite history.
-- **Audit-by-design:** every create/update/lifecycle change writes a `*ChangeLog` row (`who`, `action`, `changes`, `reason`, `when`). There is no silent delete — deactivation/cancel instead.
+- **Audit-by-design:** every create/update/lifecycle change writes a `*ChangeLog` row (`who`, `action`, `changes`, `reason`, `when`). There is no silent delete — deactivation/cancel instead. Company Voice uses `VoiceChangeLog` (created / edited / deleted) and **soft-delete** placeholders; Django admin cannot hard-delete Voice rows.
+- **Company Voice row lock:** `delete_post` and `add_comment` lock the parent post (`select_for_update`). A first comment concurrent with parent delete cannot leave a live sub-thread on a tombstone. Two first comments share one sub-thread. Edits require the caller's `updated_at` and return **409** on a stale version.
 - **Isolation:** one branch cannot read another branch's rows (404).
 
 ---

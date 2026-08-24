@@ -2,7 +2,7 @@
 
 **Site administration** · Version 1.0 · For the **site superuser** / head office
 
-> **Companion to the staff manuals:** [Item Console](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Edge cases & limits](05-edge-cases-and-limits.md) · [Manager catalog](07-manager-catalog.md).
+> **Companion to the staff manuals:** [Item Console](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Edge cases & limits](05-edge-cases-and-limits.md) · [Manager catalog](07-manager-catalog.md) · [Request threads](08-request-threads.md) · [Company Voice](09-company-voice.md).
 
 This guide covers the **administrative** work: logging in to Django `/admin/`, creating users, assigning roles and permissions, and managing branches and branch users. It is **not** about the day-to-day consoles — those are the 01–04 and 07 manuals.
 
@@ -206,6 +206,8 @@ Most business tables in `/admin/` are **read-only on purpose** — day-to-day ch
 | Goods receipts, stock movements | `/manage/goods-receipts/` |
 | Internal requests, goods issues | `/manage/internal-requests/` + `/branch/…` |
 | Branch receipts, branch stock | `/branch/receipts/` |
+| Request threads | `/branch/threads/` + `/manage/threads/` (admin is inspect-only) |
+| Company Voice | `/company-voice/` (admin is inspect-only; **no hard delete**) |
 | Change logs (all `*ChangeLog`) | Read-only everywhere (audit) |
 
 The **only** tables you normally edit in `/admin/` are: **Users**, **Groups** (membership only, see §5), **Branches**, and **Branch memberships**.

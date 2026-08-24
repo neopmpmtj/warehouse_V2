@@ -151,6 +151,12 @@ body {
     cursor: pointer;
 }
 
+.compose-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .btn-primary {
     background: var(--brand);
     color: #fff;
