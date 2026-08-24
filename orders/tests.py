@@ -245,6 +245,11 @@ class InternalRequestApiTests(TestCase):
         r = self.client.get(reverse("request_console"))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Requisição interna")
+        self.assertContains(r, 'id="settings-toggle"')
+        self.assertContains(r, "Catalog")
+        self.assertContains(r, "Switch branch")
+        self.assertNotContains(r, 'id="language-select"')
+        self.assertNotContains(r, 'id="theme-toggle"')
 
     def test_other_branch_request_is_404(self):
         req_id = self._create_and_submit()
@@ -333,6 +338,26 @@ class WarehouseConsoleTests(TestCase):
         self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
         with self.assertRaises(InvalidStatusTransitionError):
             cancel(req, self.manager, reason="changed mind")
+
+    def test_queue_page_uses_account_settings_gear(self):
+        admin = self._warehouse_user("wh-queue-ui@example.com", GROUP_ADMINS)
+        self.client.force_login(admin)
+        r = self.client.get(reverse("internal_request_queue_console"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'id="settings-toggle"')
+        self.assertContains(r, "Branch caps")
+        self.assertNotContains(r, 'id="language-select"')
+        self.assertNotContains(r, 'id="theme-toggle"')
+
+    def test_branch_caps_page_uses_account_settings_gear(self):
+        admin = self._warehouse_user("wh-caps-ui@example.com", GROUP_ADMINS)
+        self.client.force_login(admin)
+        r = self.client.get(reverse("branch_approval_limit_console"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'id="settings-toggle"')
+        self.assertContains(r, "Requests")
+        self.assertNotContains(r, 'id="language-select"')
+        self.assertNotContains(r, 'id="theme-toggle"')
 
     def _post_json(self, url, payload):
         return self.client.post(url, data=json.dumps(payload), content_type="application/json")

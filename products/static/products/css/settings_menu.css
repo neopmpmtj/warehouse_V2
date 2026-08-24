@@ -1,0 +1,129 @@
+.page-account-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.header-actions > a {
+    margin-left: 0;
+}
+
+.settings-menu {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.settings-menu .btn {
+    font: inherit;
+    border: 1px solid var(--border, #d5dde6);
+    background: var(--surface, #ffffff);
+    color: var(--text, #1c2430);
+    border-radius: 6px;
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+}
+
+.settings-menu .btn-ghost {
+    background: transparent;
+}
+
+.settings-menu .btn:hover,
+.settings-menu .btn-ghost:hover {
+    background: var(--surface-2, #eef2f5);
+}
+
+button.settings-toggle,
+header button.settings-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem;
+    margin-left: 0;
+    background: none;
+    border: 1px solid var(--border, #d5dde6);
+    border-radius: 6px;
+    color: var(--muted, #5b6776);
+    cursor: pointer;
+    font: inherit;
+}
+
+button.settings-toggle:hover,
+header button.settings-toggle:hover {
+    background: var(--surface-2, #eef2f5);
+}
+
+.settings-icon {
+    display: block;
+}
+
+.settings-popover {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    min-width: 16rem;
+    padding: 0.85rem 1rem;
+    display: grid;
+    gap: 0.75rem;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #d5dde6);
+    border-radius: 8px;
+    box-shadow: var(--shadow, 0 12px 32px rgba(16, 24, 40, 0.12));
+    color: var(--text, #1c2430);
+    z-index: 40;
+}
+
+.settings-popover[hidden] {
+    display: none !important;
+}
+
+.settings-popover-title {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.settings-popover .user-line {
+    margin: 0;
+    color: var(--muted, #5b6776);
+    font-size: 0.9rem;
+}
+
+.settings-popover form {
+    display: block;
+    margin: 0;
+}
+
+header .settings-popover button.btn,
+.settings-popover button.btn {
+    color: var(--text, #1c2430);
+    margin-left: 0;
+    width: 100%;
+    text-align: left;
+}
+
+.settings-popover .control-inline,
+.settings-popover .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.settings-popover select {
+    font: inherit;
+    color: var(--text, #1c2430);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #d5dde6);
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+}

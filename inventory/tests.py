@@ -377,6 +377,11 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         self.assertContains(response, 'id="theme-toggle"')
         self.assertContains(response, self.user.email)
         self.assertContains(response, reverse("logout"))
+        self.assertContains(response, 'id="settings-help"')
+        self.assertRegex(
+            response.content.decode(),
+            r'data-i18n="signOut"[\s\S]*id="settings-help"',
+        )
         self.assertRegex(
             response.content.decode(),
             r'id="settings-popover"[^>]*\bhidden\b',
@@ -1058,6 +1063,16 @@ class BranchReceiptApiTests(TestCase):
         goods_issue = services.issue_goods(req, [{"line_id": line.id, "quantity_issued": qty}], self.wh_admin)
         req.refresh_from_db()
         return req, goods_issue
+
+    def test_receipts_page_uses_account_settings_gear(self):
+        self._login(self.operator)
+        r = self.client.get(reverse("branch_receipt_console"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'id="settings-toggle"')
+        self.assertContains(r, "Catalog")
+        self.assertContains(r, "Requests")
+        self.assertNotContains(r, 'id="language-select"')
+        self.assertNotContains(r, 'id="theme-toggle"')
 
     def test_operator_can_receive(self):
         req, goods_issue = self._shipped_issue("4")

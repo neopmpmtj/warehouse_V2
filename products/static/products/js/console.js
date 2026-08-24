@@ -673,17 +673,6 @@ function renderTable() {
             openDrawer(item);
         });
         actions.appendChild(openButton);
-        if (perms.changeItem) {
-            const lifeButton = document.createElement("button");
-            lifeButton.type = "button";
-            lifeButton.className = item.is_active ? "btn btn-danger" : "btn";
-            lifeButton.textContent = item.is_active ? t("deactivate") : t("reactivate");
-            lifeButton.addEventListener("click", (event) => {
-                event.stopPropagation();
-                toggleLifecycle(item);
-            });
-            actions.appendChild(lifeButton);
-        }
 
         row.append(
             checkCell,

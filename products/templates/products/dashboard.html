@@ -1,12 +1,16 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard — CentCompras</title>
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=1">
 </head>
 <body>
-    <p>Signed in as <strong>{{ user.email }}</strong></p>
+    <header class="page-account-bar">
+        {% include "products/includes/account_settings.html" %}
+    </header>
     <p>Groups:
         {% if groups %}
             {% for group in groups %}<code>{{ group }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
@@ -14,10 +18,6 @@
             none
         {% endif %}
     </p>
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Sign out</button>
-    </form>
 
     <h1>CentCompras</h1>
     {% if permissions %}
@@ -184,5 +184,6 @@
         <li>/api/company-voice/comments/&lt;id&gt;/ — edit comment (PATCH)</li>
         <li>/api/company-voice/comments/&lt;id&gt;/delete/ — soft-delete comment (DELETE)</li>
     </ul>
+    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
 </body>
 </html>

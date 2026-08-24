@@ -64,7 +64,7 @@ The screen is one page with a top bar, two action buttons, then two tables.
 
 **A. Top bar**
 - Title: **Goods receipt & stock** (*Receção de mercadorias e stock*)
-- **Settings** gear (top-right) — signed in as *you@company*, language (English / Português), theme toggle, **Sign out**
+- **Settings** gear (top-right) — signed in as *you@company*, language (English / Português), theme toggle, **Sign out**, **Help** (placeholder)
 - Press **Escape** to close the Settings panel, or the **New receipt** / **Adjust stock** dialog (**Cancel**)
 
 **B. Toolbar**

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,14 +24,14 @@
         .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: #b00020; margin-top: 10px; }
         .ok { padding: 8px 12px; border-radius: 4px; background: #e6f4ea; color: #1e7d32; margin-top: 10px; }
     </style>
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=1">
 </head>
 <body>
     <header>
         <h1>Branch approval limits</h1>
-        <div class="user">
-            <span>{{ user.email }}</span>
+        <div class="header-actions">
             <a href="{% url 'internal_request_queue_console' %}">Requests</a>
-            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+            {% include "products/includes/account_settings.html" %}
         </div>
     </header>
 
@@ -90,5 +91,6 @@
             });
         })();
     </script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
 </body>
 </html>

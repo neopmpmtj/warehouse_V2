@@ -264,6 +264,7 @@ class BranchViewTests(TestCase):
         response = self.client.get(reverse("branch_select"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "no active branch access")
+        self.assertContains(response, 'id="settings-toggle"')
 
     def test_picker_single_membership_auto_selects(self):
         user = _make_user("single@example.com")
@@ -282,6 +283,7 @@ class BranchViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.north.name)
         self.assertContains(response, self.south.name)
+        self.assertContains(response, 'id="settings-toggle"')
 
     def test_picker_post_selects_branch(self):
         user = _make_user("post@example.com")
@@ -322,7 +324,10 @@ class BranchViewTests(TestCase):
         response = self.client.get(reverse("branch_catalog"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.north.name)
-        self.assertNotContains(response, 'id="settings-toggle"')
+        self.assertContains(response, 'id="settings-toggle"')
+        self.assertContains(response, "Switch branch")
+        self.assertNotContains(response, 'id="language-select"')
+        self.assertNotContains(response, 'id="theme-toggle"')
 
     def test_catalog_page_lists_price_columns(self):
         user = _make_user("catalog-page@example.com")

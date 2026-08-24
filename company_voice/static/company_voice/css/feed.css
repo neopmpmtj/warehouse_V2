@@ -53,55 +53,6 @@ body {
     position: relative;
 }
 
-.icon-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px;
-    cursor: pointer;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-}
-
-.settings-popover {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 6px);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    min-width: 200px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    z-index: 20;
-}
-
-.settings-email {
-    margin: 0 0 10px;
-    font-size: 0.85rem;
-    color: var(--muted);
-    word-break: break-all;
-}
-
-.settings-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
-}
-
-.btn-text {
-    background: none;
-    border: none;
-    color: var(--brand);
-    cursor: pointer;
-    font: inherit;
-    padding: 0;
-}
-
 .feed-layout {
     flex: 1;
     display: flex;

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,14 +24,14 @@
         .avail-ok { color: var(--ok); font-weight: 600; }
         .empty { color: var(--muted); }
     </style>
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=1">
 </head>
 <body>
     <header>
         <h1>{{ branch.name }} — Catalog</h1>
-        <div class="user">
-            <span>{{ user.email }}</span>
+        <div class="header-actions">
             <a href="{% url 'branch_select' %}">Switch branch</a>
-            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+            {% include "products/includes/account_settings.html" %}
         </div>
     </header>
 
@@ -105,5 +106,6 @@
                 });
         })();
     </script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
 </body>
 </html>
