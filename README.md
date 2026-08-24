@@ -205,7 +205,22 @@ cp .env.example .env
 
 `DATABASE_URL` is the primary DB setting (dev and prod); `POSTGRES_*` vars remain a fallback for local dev.
 
-### 4. Migrate and create site admin
+### 4. Google OAuth login (optional until configured)
+
+Login-only Google Sign-In (scopes: openid, email, profile) — **no** Calendar/Drive/Gmail. Set in `.env`:
+
+```ini
+AUTH_MODE=both            # both = password + Google (dev + initial prod); google_only = Google only
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:8000/accounts/google/callback/  # loopback for Desktop-app client
+```
+
+- Google login is **existing-only**: the email must already exist as a user (no auto-create).
+- During dev, keep `AUTH_MODE=both`; to test the Google flow create one user whose email is a real Google account you control.
+- At deploy: start `both`, flip to `google_only` only after every user has linked Google once.
+
+### 5. Migrate and create site admin
 
 ```bash
 source .venv/bin/activate
