@@ -117,7 +117,7 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 
 ```bash
 source .venv/bin/activate
-cp config/settings.example.py config/settings.py   # first time only
+cp .env.example .env   # secrets; config/settings/ package is tracked (base/dev/prod/test)
 python manage.py migrate
 python manage.py createsuperuser                 # optional site admin
 ./scripts/seed_dev_data.sh                         # warehouse + branch users, families, suppliers, items, prices
@@ -144,7 +144,7 @@ Agents boot from a prebuilt snapshot. `.cursor/install.sh` installs PostgreSQL, 
 
 ## Security
 
-- Do not commit `config/settings.py`, `.env`, or credentials
+- Do not commit `.env`, `config/settings/prod.py` secrets, or credentials
 - Do not add product creation or editing from the branch phone UI or public web unless explicitly requested
 
 ## Before large changes

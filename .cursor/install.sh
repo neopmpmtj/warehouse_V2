@@ -42,9 +42,9 @@ fi
 .venv/bin/python -m pip install --upgrade pip -q
 .venv/bin/pip install -r requirements.txt -q
 
-# 6. Django settings (config/settings.py is gitignored).
-if [ ! -f config/settings.py ]; then
-    cp config/settings.example.py config/settings.py
+# 6. Environment (config/settings/ package is tracked; secrets live in .env, gitignored).
+if [ ! -f .env ]; then
+    cp .env.example .env
 fi
 
 # 7. Schema + seed data (both idempotent). Snapshot bake; start.sh repeats this
