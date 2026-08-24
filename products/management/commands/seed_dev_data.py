@@ -45,6 +45,8 @@ from orders import services as order_services
 from orders.models import InternalRequest
 from orders.services import ensure_default_branch_approval_limits
 from threads.services import create_thread as create_request_thread
+from company_voice.services import add_comment as add_voice_comment
+from company_voice.services import create_post as create_voice_post
 
 
 DEFAULT_PASSWORD = "devpass123"
@@ -198,6 +200,46 @@ class Command(BaseCommand):
                 "It is not in the catalogue yet — please confirm you can source it.",
             )
             self.stdout.write(self.style.SUCCESS(f"Sample request thread: #{thread.id}"))
+
+    def _seed_company_voice(self, user_model):
+        """Idempotently seed sample Company Voice posts."""
+        from company_voice.models import VoicePost
+
+        manager = user_model.objects.filter(
+            email="warehouse.manager@centcompras.dev"
+        ).first()
+        branch_manager = user_model.objects.filter(
+            email="branch.manager.north@centcompras.dev"
+        ).first()
+        if manager is None or branch_manager is None:
+            return
+
+        praise_body = (
+            "Sample: the new reservation workflow makes it much easier to see what is held for branches."
+        )
+        if not VoicePost.objects.filter(body=praise_body).exists():
+            post = create_voice_post(
+                manager,
+                praise_body,
+                tag="praise",
+                is_anonymous=False,
+            )
+            add_voice_comment(
+                branch_manager,
+                post,
+                "Agreed — the available stock hint on the branch catalog is helpful too.",
+            )
+            self.stdout.write(self.style.SUCCESS(f"Sample Company Voice post: #{post.id}"))
+
+        concern_body = "Sample anonymous concern (seed) — please keep improving branch receipt UX."
+        if not VoicePost.objects.filter(body=concern_body).exists():
+            anon_post = create_voice_post(
+                branch_manager,
+                concern_body,
+                tag="concern",
+                is_anonymous=True,
+            )
+            self.stdout.write(self.style.SUCCESS(f"Sample anonymous Company Voice post: #{anon_post.id}"))
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -472,6 +514,8 @@ class Command(BaseCommand):
         if not options["skip_branches"] and not options["skip_items"]:
             self._seed_sample_requests(user_model)
             self._seed_sample_threads(user_model)
+
+        self._seed_company_voice(user_model)
 
         self.stdout.write("")
         self.stdout.write(self.style.WARNING("Dev login credentials:"))

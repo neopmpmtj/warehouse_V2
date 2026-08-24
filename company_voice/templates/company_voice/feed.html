@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Company Voice — CentCompras</title>
+    <link rel="stylesheet" href="/static/company_voice/css/feed.css">
+</head>
+<body>
+    <header class="page-header">
+        <div class="header-left">
+            <a href="/" class="brand">CentCompras</a>
+            <h1 data-i18n="title">Company Voice</h1>
+        </div>
+        <div class="header-right">
+            <button type="button" id="settings-toggle" class="icon-btn" aria-expanded="false" aria-haspopup="true" data-i18n-aria="settingsAria">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+            </button>
+            <div id="settings-popover" class="settings-popover" hidden>
+                <p class="settings-email">{{ user.email }}</p>
+                <div class="settings-row">
+                    <label for="lang-select" data-i18n="language">Language</label>
+                    <select id="lang-select">
+                        <option value="en">English</option>
+                        <option value="pt">Português</option>
+                    </select>
+                </div>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-text" data-i18n="signOut">Sign out</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <main class="feed-layout">
+        <section class="compose-panel">
+            <select id="compose-tag" aria-label="Tag">
+                <option value="" data-i18n="tagNone">No tag</option>
+                <option value="praise" data-i18n="tagPraise">Praise</option>
+                <option value="concern" data-i18n="tagConcern">Concern</option>
+                <option value="suggestion" data-i18n="tagSuggestion">Suggestion</option>
+                <option value="wish" data-i18n="tagWish">Wish</option>
+            </select>
+            <textarea id="compose-body" rows="3" data-i18n-placeholder="composePlaceholder" placeholder="Share a thought…"></textarea>
+            <div class="compose-actions">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="compose-anonymous">
+                    <span data-i18n="postAnonymous">Post anonymously</span>
+                </label>
+                <button type="button" id="compose-submit" class="btn-primary" data-i18n="post">Post</button>
+            </div>
+        </section>
+
+        <section id="feed" class="feed-panel" aria-live="polite"></section>
+        <p id="feed-empty" class="feed-empty hidden" data-i18n="feedEmpty">No posts yet. Be the first to share.</p>
+        <div id="banner" class="banner hidden" role="alert"></div>
+    </main>
+
+    <script src="/static/company_voice/js/feed_i18n.js"></script>
+    <script src="/static/products/js/console_settings_menu.js"></script>
+    <script src="/static/company_voice/js/feed.js"></script>
+</body>
+</html>

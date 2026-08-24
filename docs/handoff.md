@@ -19,12 +19,13 @@
 | 5+ — Warehouse FIFO stock reservation (D32) | ✅ **Done** |
 | 5+ — Request threads (catalogue-gap requests) | ✅ **Done** (reviewed 24 Aug) |
 | 5+ — Request threads review fixes (M1–M5, L1–L6) | 🔵 **Next — do this FIRST** |
+| 5+ — Company Voice (suggestion box) | ✅ **Done** |
 | 6 — Email automation | ⏸ Next (after review fixes) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
 **Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), and the request-threads feature (catalogue-gap requests) are complete.** **Next session: fix the request-threads review findings FIRST (see below), then Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**Full suite green (461 tests).**
+**Full suite green (479 tests).**
 
 ---
 
@@ -35,6 +36,17 @@
 3. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
 4. **Review backlogs** — sub-family stitch-in review is **closed and archived** ([`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md)); 1303 and 2208 archives are **not** work queues. The **24 Aug threads review IS a live queue** (see item 1).
 5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`orders/migrations/0002_line_quantity_reserved.py`).
+
+---
+
+## This session — Company Voice app ✅
+
+- **App:** `company_voice` — company-wide suggestion box at `/company-voice/` (all logged-in staff).
+- **Models:** `VoicePost` (optional tag, anonymous flag), `VoiceSubThread` (one per post), `VoiceComment`.
+- **Rules:** 15-minute edit window; creator-only soft delete; parent delete cascades to sub-thread + comments; `[Deleted by author]` placeholder.
+- **UI:** Single scrollable feed; inline reply panel; EN + pt-PT i18n.
+- **Tests:** `company_voice.tests` (+18) → **479** total.
+- **Manual:** [`09-company-voice.md`](user-manuals/09-company-voice.md).
 
 ---
 
@@ -294,7 +306,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 ## Tests
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement inventory branches orders threads --noinput
+.venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput
 ```
 
 - Last full suite: **461 OK** with `--noinput` (includes warehouse FIFO reservation + request threads).
@@ -313,6 +325,7 @@ accounts/       custom User, warehouse groups, grades, login, timezone middlewar
 branches/       tenancy: Branch + BranchMembership, ActiveBranchMiddleware, picker, capabilities, admin, tests
 orders/         internal request (requisição interna): models, services, console API, web UI, admin, tests
 threads/        request threads (catalogue-gap requests): models, services, console API, web UI, admin, tests
+company_voice/  Company Voice suggestion box: models, services, console API, web UI, admin, tests
 config/         settings, urls
 logging_utils/  rotating per-app logs
 docs/           plan, handoff, archived reviews (incl. 1303), user-manuals/, tenancy design
@@ -333,7 +346,7 @@ python manage.py runserver
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded). **Branch:** `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…` (North), `branch.operator.south@…` / `branch.manager.south@…` (South), and `branch.dual@…` (both branches).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden) · `/branch/requests/` requisição interna · `/branch/threads/` request threads (branch side) · `/admin/` superuser only.
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/company-voice/` Company Voice (all staff) · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden) · `/branch/requests/` requisição interna · `/branch/threads/` request threads (branch side) · `/admin/` superuser only.
 
 ---
 
