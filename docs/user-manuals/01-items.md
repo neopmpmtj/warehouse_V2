@@ -78,6 +78,7 @@ The console is one screen, split into three areas.
 
 **A. Top bar**
 - App name (**CentCompras**) and title (**Item console** / *Gestão de artigos*)
+- **Families**, **Sub-families**, and **Suppliers** — open the master-data drawers. On a narrow window they collapse under **Master data** (*Dados mestres*).
 - **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", language, theme, and **Sign out**
 
 ![Settings popover](screenshots/08-settings-popover.png)
@@ -92,9 +93,6 @@ The console is one screen, split into three areas.
 | **Status** dropdown | All / Active / Inactive |
 | **Unit** dropdown | Filter by unit of measure |
 | **Bulk action** + **Apply** | Deactivate/reactivate several items at once |
-| **Families** | Open the family management drawer |
-| **Sub-families** | Open the sub-family management drawer |
-| **Suppliers** | Open the supplier management drawer |
 | **New item** | Create a new item |
 
 **C. Items table**
@@ -102,7 +100,7 @@ The console is one screen, split into three areas.
 - A checkbox column (if your role can edit) for bulk actions
 - Click any row to open it
 
-**Close a panel:** press **Escape** to dismiss the front-most overlay — the Settings gear, a dialog (**Cancel**), or a drawer (**Close**). If a dialog is open on top of a drawer, the first Escape closes the dialog; a second Escape closes the drawer.
+**Close a panel:** press **Escape** to dismiss the front-most overlay — the **Master data** menu, the Settings gear, a dialog (**Cancel**), or a drawer (**Close**). If a dialog is open on top of a drawer, the first Escape closes the dialog; a second Escape closes the drawer.
 
 ---
 
@@ -207,7 +205,7 @@ Two different kinds of price — easy to confuse.
 
 A **family** groups related items (e.g. *Cement*, *Pipes*, *Electrical*). Every item must belong to a family.
 
-1. Click **Families** (*Famílias*).
+1. Click **Families** (*Famílias*) in the top bar. On a narrow window, open **Master data** (*Dados mestres*) first.
 2. Click **New family** (*Nova família*), type the name, confirm.
 3. Family names are unique (case-insensitive) — you can't create two families with the same name.
 
@@ -219,7 +217,7 @@ A **family** groups related items (e.g. *Cement*, *Pipes*, *Electrical*). Every 
 
 A **sub-family** is an optional second level under a family (e.g. *Cement → Bags*, *Pipes → PVC*). Items do **not** require a sub-family — family alone is enough for Genesis and activation.
 
-1. Click **Sub-families** (*Sub-famílias*).
+1. Click **Sub-families** (*Sub-famílias*) in the top bar. On a narrow window, open **Master data** first.
 2. Click **New sub-family** (*Nova sub-família*), choose the **parent family**, type the name, confirm.
 3. Sub-family names are unique **within each family** (case-insensitive) — the same name under two different families is allowed.
 4. On the item form, pick a sub-family only after choosing the family; changing the family clears incompatible sub-family choices.
@@ -234,7 +232,7 @@ A **sub-family** is an optional second level under a family (e.g. *Cement → Ba
 
 A **supplier** is a company we buy from — master data that will be used for purchasing.
 
-1. Click **Suppliers** (*Fornecedores*).
+1. Click **Suppliers** (*Fornecedores*) in the top bar. On a narrow window, open **Master data** first.
 2. Click **New supplier** (*Novo fornecedor*), fill the form:
    - **Name** (required, unique)
    - **Contact name**, **Email**, **Phone**, **Notes** (optional)

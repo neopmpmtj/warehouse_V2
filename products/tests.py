@@ -1250,6 +1250,31 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         )
         self.assertContains(response, "console_escape_close.js")
 
+    def test_console_header_groups_master_data_buttons(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("item_console"))
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="master-data-cluster"')
+        self.assertContains(response, 'id="master-data-toggle"')
+        self.assertContains(response, 'id="manage-families"')
+        self.assertContains(response, 'id="manage-sub-families"')
+        self.assertContains(response, 'id="manage-suppliers"')
+        self.assertRegex(
+            html,
+            r'id="master-data-cluster"[\s\S]*id="manage-families"[\s\S]*id="settings-toggle"',
+        )
+        self.assertRegex(
+            html,
+            r'id="bulk-apply"[\s\S]*id="new-item"',
+        )
+        self.assertNotRegex(
+            html,
+            r'id="bulk-apply"[\s\S]*id="manage-families"[\s\S]*id="new-item"',
+        )
+
     def test_staff_can_open_dashboard(self):
         self.client.force_login(self.staff_user)
 

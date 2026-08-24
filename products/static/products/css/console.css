@@ -87,6 +87,26 @@ body {
     align-items: center;
 }
 
+.master-data-cluster {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-right: 0.75rem;
+    border-right: 1px solid var(--border);
+}
+
+.master-data-toggle {
+    display: none;
+}
+
+.master-data-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .user-line {
     margin: 0;
     color: var(--muted);
@@ -549,6 +569,38 @@ body[data-can-change-item="false"] #bulk-action,
 body[data-can-change-item="false"] #bulk-apply,
 body[data-can-change-item="false"] .col-check {
     display: none !important;
+}
+
+@media (max-width: 64rem) {
+    .master-data-toggle {
+        display: inline-block;
+    }
+
+    .master-data-buttons {
+        display: none;
+        position: absolute;
+        top: calc(100% + 0.4rem);
+        right: 0;
+        min-width: 12rem;
+        padding: 0.5rem;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        z-index: 15;
+    }
+
+    .master-data-cluster.is-open .master-data-buttons {
+        display: flex;
+    }
+
+    .master-data-buttons .btn {
+        width: 100%;
+        text-align: left;
+    }
 }
 
 @media (max-width: 900px) {

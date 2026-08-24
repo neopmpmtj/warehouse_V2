@@ -2524,6 +2524,56 @@ async function loadCatalog() {
     document.getElementById("new-supplier").hidden = !perms.addSupplier;
 }
 
+function closeMasterDataMenu() {
+    const cluster = document.getElementById("master-data-cluster");
+    const toggle = document.getElementById("master-data-toggle");
+    if (!cluster) {
+        return;
+    }
+    cluster.classList.remove("is-open");
+    if (toggle) {
+        toggle.setAttribute("aria-expanded", "false");
+    }
+}
+
+function bindMasterDataMenu() {
+    const cluster = document.getElementById("master-data-cluster");
+    const toggle = document.getElementById("master-data-toggle");
+    if (!cluster || !toggle) {
+        return;
+    }
+
+    toggle.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const open = !cluster.classList.contains("is-open");
+        if (open) {
+            const popover = document.getElementById("settings-popover");
+            const settingsToggle = document.getElementById("settings-toggle");
+            if (popover) {
+                popover.hidden = true;
+            }
+            if (settingsToggle) {
+                settingsToggle.setAttribute("aria-expanded", "false");
+            }
+        }
+        cluster.classList.toggle("is-open", open);
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener(
+        "click",
+        (event) => {
+            if (!cluster.classList.contains("is-open")) {
+                return;
+            }
+            if (cluster.contains(event.target)) {
+                return;
+            }
+            closeMasterDataMenu();
+        },
+        true
+    );
+}
+
 function bindEvents() {
     document.getElementById("language-select").value = currentLang();
     document.getElementById("language-select").addEventListener("change", (event) => {
@@ -2554,13 +2604,17 @@ function bindEvents() {
     document.getElementById("items-prev").addEventListener("click", () => goToPage(state.page - 1));
     document.getElementById("items-next").addEventListener("click", () => goToPage(state.page + 1));
     document.getElementById("bulk-apply").addEventListener("click", applyBulk);
+    bindMasterDataMenu();
     document.getElementById("manage-families").addEventListener("click", () => {
+        closeMasterDataMenu();
         openFamilyDrawer();
     });
     document.getElementById("manage-sub-families").addEventListener("click", () => {
+        closeMasterDataMenu();
         openSubFamilyDrawer();
     });
     document.getElementById("manage-suppliers").addEventListener("click", () => {
+        closeMasterDataMenu();
         openSupplierDrawer();
     });
     document.getElementById("new-item").addEventListener("click", () => startNewItem());
