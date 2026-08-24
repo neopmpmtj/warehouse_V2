@@ -122,6 +122,15 @@ python manage.py test products accounts procurement inventory branches orders --
 
 Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, not both).
 
+## Cursor Cloud specific instructions
+
+Agents boot from a prebuilt snapshot. `.cursor/install.sh` installs PostgreSQL, the venv, and Python deps, then migrates and seeds. `.cursor/start.sh` starts PostgreSQL on every boot and re-runs migrate + `seed_dev_data` so the database matches the checked-out revision (install is not re-run on snapshot boots).
+
+- App URL: `http://127.0.0.1:8000/` — Django `runserver` is the `django-runserver` terminal on port 8000. Use this host consistently (do not mix with `localhost`) if a later offline/PWA session tests service workers.
+- Seed logins: warehouse `warehouse.admin@centcompras.dev` and branch `branch.manager.north@centcompras.dev` (password `devpass123`; full list in `README.md`).
+- UI checks: log in, then exercise the page under change. Warehouse consoles are `/manage/…`; branch pages are `/branch/…`; Company Voice is `/company-voice/`.
+- Tests: `.venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput`
+
 ## Security
 
 - Do not commit `config/settings.py`, `.env`, or credentials
