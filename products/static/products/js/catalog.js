@@ -318,13 +318,19 @@ function fillSubFamilyFilter() {
 }
 
 function bindEvents() {
-    document.getElementById("language-select").value = currentLang();
-    document.getElementById("language-select").addEventListener("change", (event) => {
-        setLanguage(event.target.value);
-    });
-    document.getElementById("theme-toggle").addEventListener("click", () => {
-        setTheme(currentTheme() === "dark" ? "light" : "dark");
-    });
+    const langSelect = document.getElementById("language-select");
+    if (langSelect) {
+        langSelect.value = currentLang();
+        langSelect.addEventListener("change", (event) => {
+            setLanguage(event.target.value);
+        });
+    }
+    const themeToggle = document.getElementById("theme-toggle");
+    if (themeToggle) {
+        themeToggle.addEventListener("click", () => {
+            setTheme(currentTheme() === "dark" ? "light" : "dark");
+        });
+    }
 
     document.getElementById("catalog-search").addEventListener("input", (event) => {
         state.search = event.target.value;

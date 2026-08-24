@@ -1241,8 +1241,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="settings-toggle"')
         self.assertContains(response, 'id="settings-popover"')
-        self.assertContains(response, 'id="language-select"')
-        self.assertContains(response, 'id="theme-toggle"')
+        self.assertNotContains(response, 'id="language-select"')
+        self.assertNotContains(response, 'id="theme-toggle"')
         self.assertContains(response, self.staff_user.email)
         self.assertContains(response, reverse("logout"))
         self.assertContains(response, 'id="settings-help"')
@@ -1292,17 +1292,26 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         response = self.client.get(reverse("staff_dashboard"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "/manage/items/")
-        self.assertContains(response, "/manage/catalog/")
-        self.assertContains(response, "/manage/purchase-orders/")
-        self.assertContains(response, "/manage/approval-limits/")
-        self.assertContains(response, "/manage/goods-receipts/")
-        self.assertContains(response, "/manage/internal-requests/")
-        self.assertContains(response, "/manage/branch-approval-limits/")
-        self.assertContains(response, "/branch/select/")
-        self.assertContains(response, "/branch/catalog/")
-        self.assertContains(response, "/branch/requests/")
-        self.assertContains(response, "/branch/receipts/")
+        self.assertContains(response, 'id="pref-language"')
+        self.assertContains(response, 'id="pref-theme"')
+        self.assertContains(response, 'class="dash-card"')
+        # Warehouse cards (all groups)
+        self.assertContains(response, 'href="/manage/items/"')
+        self.assertContains(response, 'href="/manage/catalog/"')
+        self.assertContains(response, 'href="/manage/purchase-orders/"')
+        self.assertContains(response, 'href="/manage/goods-receipts/"')
+        self.assertContains(response, 'href="/manage/internal-requests/"')
+        self.assertContains(response, 'href="/manage/threads/"')
+        # Admin-only cards visible for warehouse admin
+        self.assertContains(response, 'href="/manage/approval-limits/"')
+        self.assertContains(response, 'href="/manage/branch-approval-limits/"')
+        # Branch cards hidden: staff_user has no branch membership
+        self.assertNotContains(response, 'href="/branch/select/"')
+        self.assertNotContains(response, 'href="/branch/catalog/"')
+        self.assertNotContains(response, 'href="/branch/requests/"')
+        self.assertNotContains(response, 'href="/branch/receipts/"')
+        # Developer reference still on the page (collapsed)
+        self.assertContains(response, "Developer reference")
         self.assertContains(response, "/api/manage/suppliers/")
         self.assertContains(response, "/api/manage/catalog/")
         self.assertContains(response, "/api/manage/approval-limits/")
@@ -1326,6 +1335,42 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, "warehouse_admins")
         self.assertNotContains(response, "products.view_item")
         self.assertNotContains(response, "products.delete_item")
+
+    def test_operator_and_manager_hide_admin_only_cards(self):
+        for group in (GROUP_OPERATORS, GROUP_MANAGERS):
+            user = make_warehouse_user(f"{group}@example.com", group_name=group)
+            self.client.force_login(user)
+            response = self.client.get(reverse("staff_dashboard"))
+            self.assertEqual(response.status_code, 200)
+            # Regular warehouse cards
+            self.assertContains(response, 'href="/manage/items/"')
+            self.assertContains(response, 'href="/manage/catalog/"')
+            self.assertContains(response, 'href="/manage/purchase-orders/"')
+            self.assertContains(response, 'href="/manage/goods-receipts/"')
+            self.assertContains(response, 'href="/manage/internal-requests/"')
+            self.assertContains(response, 'href="/manage/threads/"')
+            # Admin-only cards hidden
+            self.assertNotContains(response, 'href="/manage/approval-limits/"')
+            self.assertNotContains(response, 'href="/manage/branch-approval-limits/"')
+            self.assertNotContains(response, 'href="/admin/"')
+
+    def test_branch_membership_user_sees_branch_cards(self):
+        from branches.models import Branch
+        from branches.services import assign_membership
+        from branches.capabilities import ROLE_OPERATOR
+
+        branch = Branch.objects.create(name="Dashboard Test Branch")
+        assign_membership(self.staff_user, branch, ROLE_OPERATOR)
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("staff_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/branch/select/"')
+        self.assertContains(response, 'href="/branch/catalog/"')
+        self.assertContains(response, 'href="/branch/requests/"')
+        self.assertContains(response, 'href="/branch/threads/"')
+        self.assertContains(response, 'href="/branch/receipts/"')
 
     def test_superuser_sees_permission_codenames_on_dashboard(self):
         user_model = get_user_model()
@@ -3063,8 +3108,8 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="settings-toggle"')
         self.assertContains(response, 'id="settings-popover"')
-        self.assertContains(response, 'id="language-select"')
-        self.assertContains(response, 'id="theme-toggle"')
+        self.assertNotContains(response, 'id="language-select"')
+        self.assertNotContains(response, 'id="theme-toggle"')
         self.assertContains(response, self.staff_user.email)
         self.assertContains(response, reverse("logout"))
         self.assertContains(response, 'id="settings-help"')

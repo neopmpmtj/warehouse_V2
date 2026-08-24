@@ -326,6 +326,8 @@ class BranchViewTests(TestCase):
         self.assertContains(response, self.north.name)
         self.assertContains(response, 'id="settings-toggle"')
         self.assertContains(response, "Switch branch")
+        self.assertContains(response, 'id="pref-language"')
+        self.assertContains(response, 'id="pref-theme"')
         self.assertNotContains(response, 'id="language-select"')
         self.assertNotContains(response, 'id="theme-toggle"')
 
