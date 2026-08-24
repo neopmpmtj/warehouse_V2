@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 23 August 2026, 16:40 WEST.*
+*Last updated: 24 August 2026, 09:50 WEST.*
 
-**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Next:** fix request-threads review findings (M1–M5, L1–L6 — see [`docs/reviews/threads-review-2026-08-24.md`](docs/reviews/threads-review-2026-08-24.md)), then Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Request-threads review M1–M5 and L1–L6 are done.** **Next:** Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** fix request-threads review findings ([`docs/reviews/threads-review-2026-08-24.md`](docs/reviews/threads-review-2026-08-24.md)), then [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — **Phase 6: email automation** (wire notify stubs; templates EN + pt-PT).
+4. **Next:** [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — **Phase 6: email automation** (wire notify stubs; templates EN + pt-PT).
 
 ---
 
@@ -327,5 +327,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 
 - **Email automation** (Phase 6 — wire notify stubs to real email)
 - Shared chrome / branch phone UX / console polish; offline / PWA / OAuth
-- Integration tests (unit suites are green, **461 tests**) — **request-threads review (24 Aug) fixes pending: M1–M5, L1–L6** ([`docs/reviews/threads-review-2026-08-24.md`](docs/reviews/threads-review-2026-08-24.md))
+- Integration tests (unit suites are green, **489 tests**)
 - Login rate limiting (pre-production blocker; documented in `settings.example.py`)

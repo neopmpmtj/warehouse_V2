@@ -1,5 +1,7 @@
 # Code Review — `feature/branch-request-threads` (Request Threads)
 
+> **Status (24 August 2026, 09:50 WEST):** **M1–M5 and L1–L6 applied.** Leftover **N1–N6 nits** are optional and do not block Phase 6.
+
 **Date:** 2026-08-24
 **Reviewer:** subagent code-review (read-only)
 **Repo:** `/home/pmpmt/.openclaw/workspace/projetos/warehouse_V2`
