@@ -77,12 +77,14 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database — DATABASE_URL when set (production); POSTGRES_* env fallback keeps
 # local dev working exactly as before without URL-encoding the password.
+# conn_max_age=60: reuse connections per worker (M2); health checks apply
+# only when conn_max_age > 0.
 _database_url = config("DATABASE_URL", default=None)
 if _database_url:
     DATABASES = {
         "default": dj_database_url.config(
             default=_database_url,
-            conn_max_age=0,
+            conn_max_age=60,
             conn_health_checks=True,
         )
     }
@@ -110,6 +112,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+# Login throttling (H2 — production blocker fix). DB-backed LoginFailure rows
+# shared across gunicorn workers; window + threshold configurable via .env.
+LOGIN_THROTTLE_MAX_FAILURES = config("LOGIN_THROTTLE_MAX_FAILURES", default=5, cast=int)
+LOGIN_THROTTLE_WINDOW_MINUTES = config("LOGIN_THROTTLE_WINDOW_MINUTES", default=15, cast=int)
 
 LANGUAGE_CODE = "en-gb"
 TIME_ZONE = "UTC"

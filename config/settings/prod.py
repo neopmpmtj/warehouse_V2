@@ -10,7 +10,10 @@ from .base import *  # noqa: F401, F403
 
 DEBUG = False
 
-SECRET_KEY = config("DJANGO_SECRET_KEY")
+# Accept both env names; .env.example and DEPLOYMENT.md historically used
+# SECRET_KEY, prod.py used DJANGO_SECRET_KEY. Read DJANGO_SECRET_KEY first,
+# fall back to SECRET_KEY. Empty (both unset) fails fast at startup.
+SECRET_KEY = config("DJANGO_SECRET_KEY", default=config("SECRET_KEY", default=""))
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 

@@ -27,9 +27,11 @@ from .google_auth import (
     GoogleAuthError,
     create_authorization_url,
     exchange_code_for_tokens,
+    generate_pkce_pair,
     get_google_user_info,
 )
 from .models import User
+from .throttle import clear_failures, is_login_locked, record_failure
 
 logger = get_logger("centcompras.accounts")
 
@@ -43,8 +45,13 @@ class GoogleLoginView(View):
             return redirect(settings.LOGIN_REDIRECT_URL)
 
         try:
-            auth_url, state = create_authorization_url(request=request)
+            verifier, challenge = generate_pkce_pair()
+            auth_url, state = create_authorization_url(
+                request=request,
+                code_challenge=challenge,
+            )
             request.session["oauth_state"] = state
+            request.session["oauth_code_verifier"] = verifier
             request.session["oauth_flow"] = "login"
             logger.debug("Redirecting to Google OAuth")
             return redirect(auth_url)
@@ -77,7 +84,12 @@ class GoogleCallbackView(View):
             return redirect("login")
 
         try:
-            tokens = exchange_code_for_tokens(code, request)
+            code_verifier = request.session.pop("oauth_code_verifier", None)
+            tokens = exchange_code_for_tokens(
+                code,
+                request,
+                code_verifier=code_verifier,
+            )
             access_token = tokens.get("access_token")
             if not access_token:
                 raise GoogleAuthError("No access token in response")
@@ -122,6 +134,7 @@ class GoogleCallbackView(View):
             return redirect("login")
         finally:
             request.session.pop("oauth_state", None)
+            request.session.pop("oauth_code_verifier", None)
 
     def _login_google_user(self, request, user, user_info):
         if not user.first_name and user_info.get("given_name"):
@@ -154,6 +167,13 @@ class GoogleLinkConfirmView(View):
             return redirect("login")
 
         email = link_data["email"]
+        if is_login_locked(email):
+            messages.error(
+                request,
+                _("Too many failed attempts. Please try again later."),
+            )
+            return redirect("login")
+
         user = User.objects.filter(email=email).first()
         if user is None:
             request.session.pop("google_link_data", None)
@@ -162,6 +182,10 @@ class GoogleLinkConfirmView(View):
 
         password = request.POST.get("password", "")
         if not user.check_password(password):
+            record_failure(
+                email,
+                ip=request.META.get("REMOTE_ADDR", ""),
+            )
             messages.error(request, _("Incorrect password. Please try again."))
             return render(request, self.template_name, {"email": email})
 
@@ -175,6 +199,7 @@ class GoogleLinkConfirmView(View):
         user.save(update_fields=["first_name", "last_name", "is_google_account", "is_email_verified"])
 
         request.session.pop("google_link_data", None)
+        clear_failures(email)
         login(request, user)
         logger.info(f"Linked Google account for user: {user.email}")
         messages.success(request, _("Your Google account has been linked successfully!"))

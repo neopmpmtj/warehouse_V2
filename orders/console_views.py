@@ -10,7 +10,12 @@ from logging_utils import get_logger
 from accounts.capabilities import can_edit_approval_policy, can_short_close_issue
 from branches.capabilities import can_approve_request
 from branches.permissions import active_branch_required
-from inventory.services import get_issue_summary, issue_goods, short_close_issue
+from inventory.services import (
+    get_issue_summaries,
+    get_issue_summary,
+    issue_goods,
+    short_close_issue,
+)
 
 from .models import BranchApprovalLimit, InternalRequest, InternalRequestLine
 from .permissions import ISSUE_GOODS, deny_unless, internal_request_queue_required
@@ -278,7 +283,9 @@ def _parse_int_id(value, field_name):
     raise ValidationError(f"{field_name} must be an integer.")
 
 
-def _serialize_warehouse_request(request):
+def _serialize_warehouse_request(request, lines=None):
+    if lines is None:
+        lines = get_issue_summary(request)
     return {
         "id": request.id,
         "branch_id": request.branch_id,
@@ -291,7 +298,7 @@ def _serialize_warehouse_request(request):
         "created_at": request.created_at.isoformat(),
         "submitted_at": request.submitted_at.isoformat() if request.submitted_at else None,
         "approved_at": request.approved_at.isoformat() if request.approved_at else None,
-        "lines": get_issue_summary(request),
+        "lines": lines,
     }
 
 
@@ -325,8 +332,15 @@ def warehouse_request_list(request):
         except ValidationError:
             return _json_error("Invalid branch_id.", status=400)
         queryset = queryset.for_branch(branch_id)
+    requests = list(queryset)
+    summaries = get_issue_summaries(requests)
     return JsonResponse(
-        {"requests": [_serialize_warehouse_request(r) for r in queryset]}
+        {
+            "requests": [
+                _serialize_warehouse_request(r, summaries[r.id])
+                for r in requests
+            ]
+        }
     )
 
 

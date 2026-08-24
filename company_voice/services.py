@@ -174,6 +174,7 @@ def display_name(user, is_anonymous, *, viewer=None):
     return email or "User"
 
 
+@transaction.atomic
 def create_post(user, body, tag=None, is_anonymous=False):
     body = _validate_body(body)
     tag = _validate_tag(tag)

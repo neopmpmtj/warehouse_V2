@@ -694,6 +694,7 @@ def cancel(request, user=None, reason=""):
     return request
 
 
+@transaction.atomic
 def mark_fulfilling(request, user=None):
     """Transition approved -> fulfilling after a partial issue (called by inventory)."""
     request = InternalRequest.objects.select_for_update().get(pk=request.pk)

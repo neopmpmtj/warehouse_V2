@@ -26,7 +26,26 @@
 
 **Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), request threads, Company Voice, the 24 Aug threads-review M/L fixes, and the Company Voice review H1/M/L fixes are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**Full suite green (502 tests).**
+**Full suite green (528 tests).**
+
+## This session (24 Aug PM) — production-readiness fixes ✅
+
+- **"Sign out other devices"** button in the account settings popover (M7):
+  POST-only `logout_other_devices` view (`/accounts/sessions/logout-other/`)
+  deletes every session for the user except the current one. i18n key
+  `signOutOtherDevices` added to all 6 popover i18n maps (en + pt); cache-busters bumped.
+- **Login rate limiting (H2):** DB-backed throttle (`accounts/throttle.py`,
+  `LoginFailure` model, migration `accounts/0005_login_failure.py`).
+  5 failures / 15 min locks the username (configurable via
+  `LOGIN_THROTTLE_MAX_FAILURES` / `LOGIN_THROTTLE_WINDOW_MINUTES`); wired into
+  password login and the Google link-confirm password check; success clears.
+- **SECRET_KEY env alignment (H1):** `prod.py` accepts `DJANGO_SECRET_KEY`
+  (primary) with legacy `SECRET_KEY` fallback; `.env.example` and
+  `docs/DEPLOYMENT.md` now document `DJANGO_SECRET_KEY`.
+- **M1:** `mark_fulfilling` is `@transaction.atomic`. **M2:** `conn_max_age=60`.
+- **M3:** warehouse request list N+1 → batch `get_issue_summaries()`.
+- **M5:** Google OAuth now uses PKCE (S256). **M6:** `create_post` is atomic.
+- Tests: +26 → **528** (throttle, session management, PKCE).
 
 ---
 

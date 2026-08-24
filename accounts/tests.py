@@ -2,8 +2,10 @@ from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.contrib.sessions.models import Session
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.groups import (
     ADD_ITEM,
@@ -214,6 +216,88 @@ class LoginViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse("_auth_user_id" in self.client.session)
+
+    def test_login_throttled_after_five_failures(self):
+        for _ in range(5):
+            self.client.post(
+                reverse("login"),
+                {"username": self.user.email, "password": "wrong-password"},
+            )
+        # Even the correct password is rejected while locked out.
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.email, "password": "test-pass-123"},
+        )
+        self.assertRedirects(
+            response, reverse("login"), fetch_redirect_response=False
+        )
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_login_throttle_cleared_by_success(self):
+        for _ in range(3):
+            self.client.post(
+                reverse("login"),
+                {"username": self.user.email, "password": "wrong-password"},
+            )
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.email, "password": "test-pass-123"},
+        )
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertIn("_auth_user_id", self.client.session)
+        # Failures were cleared: 4 more failures do not lock the account.
+        for _ in range(4):
+            self.client.post(
+                reverse("login"),
+                {"username": self.user.email, "password": "wrong-password"},
+            )
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.email, "password": "test-pass-123"},
+        )
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertIn("_auth_user_id", self.client.session)
+
+
+class SessionManagementTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="sessions@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(self.user, GROUP_ADMINS)
+
+    def test_logout_other_devices_keeps_current_session(self):
+        client_a = Client()
+        client_b = Client()
+        client_a.force_login(self.user)
+        client_b.force_login(self.user)
+        self.assertEqual(
+            Session.objects.filter(expire_date__gte=timezone.now()).count(),
+            2,
+        )
+        response = client_a.post(reverse("logout_other_devices"))
+        self.assertEqual(response.status_code, 302)
+        remaining = Session.objects.filter(
+            expire_date__gte=timezone.now()
+        )
+        self.assertEqual(remaining.count(), 1)
+        self.assertEqual(remaining.get().session_key, client_a.session.session_key)
+        # Client B's session is gone: next request is anonymous.
+        response_b = client_b.get(reverse("login"))
+        self.assertEqual(response_b.status_code, 200)
+
+    def test_logout_other_devices_requires_login(self):
+        client = Client()
+        response = client.post(reverse("logout_other_devices"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response.url)
+
+    def test_logout_other_devices_rejects_get(self):
+        client = Client()
+        client.force_login(self.user)
+        response = client.get(reverse("logout_other_devices"))
+        self.assertEqual(response.status_code, 405)
 
 
 class DjangoAdminAccessTests(TestCase):

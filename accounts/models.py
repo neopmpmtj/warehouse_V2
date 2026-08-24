@@ -87,3 +87,19 @@ class User(AbstractBaseUser, PermissionsMixin):
             raise ValidationError(
                 {"timezone": f"Unknown timezone: {self.timezone}"}
             ) from exc
+
+
+class LoginFailure(models.Model):
+    """One failed login / link-confirm attempt (rate limiting, H2).
+
+    DB-backed so the throttle is shared across all gunicorn workers.
+    Rows older than the throttle window are ignored; a successful login
+    clears the failures for that username.
+    """
+
+    username = models.CharField(max_length=254, db_index=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]

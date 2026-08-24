@@ -100,7 +100,7 @@ Set at least:
 
 ```ini
 DJANGO_SETTINGS_MODULE=config.settings.prod
-SECRET_KEY=<generate: python -c "import secrets; print(secrets.token_urlsafe(50))">
+DJANGO_SECRET_KEY=<generate: python -c "import secrets; print(secrets.token_urlsafe(50))">
 DEBUG=False
 ALLOWED_HOSTS=centcompras.yourdomain.com
 CSRF_TRUSTED_ORIGINS=https://centcompras.yourdomain.com
@@ -209,6 +209,6 @@ sudo tail -f /srv/centcompras/logs/gunicorn-error.log   # gunicorn errors
 ```
 
 If the app runs but shows errors, the most common causes are:
-- `.env` missing/typo'd `DATABASE_URL` or `SECRET_KEY`
+- `.env` missing/typo'd `DATABASE_URL` or `DJANGO_SECRET_KEY`
 - `ALLOWED_HOSTS` not including the domain
 - static files 404 → `collectstatic` not run or nginx `alias` path wrong

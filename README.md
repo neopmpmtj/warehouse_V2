@@ -344,6 +344,6 @@ views (login required) → API + HTML
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
 - **Email automation** (Phase 6 — wire notify stubs to real email)
-- Shared chrome / branch phone UX / console polish; offline / PWA / OAuth
-- Integration tests (unit suites are green, **489 tests**)
-- Login rate limiting (pre-production blocker; documented in `config/settings/base.py`)
+- Shared chrome / branch phone UX / console polish; offline / PWA
+- Integration tests (unit suites are green, **528 tests**)
+- ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

@@ -8,6 +8,8 @@ their Google account. No service scopes, no token storage, no refresh flow.
 Pure stdlib (urllib) — no google-api-* dependencies required.
 """
 
+import base64
+import hashlib
 import json
 import secrets
 from typing import Any, Dict, List, Optional, Tuple
@@ -66,11 +68,25 @@ def get_redirect_uri(request=None) -> str:
     return "http://localhost:8000/accounts/google/callback/"
 
 
+def generate_pkce_pair() -> Tuple[str, str]:
+    """Return (code_verifier, code_challenge) per RFC 7636 (S256).
+
+    The verifier is stored in the session and sent at token exchange;
+    the challenge goes in the authorization URL. This protects the
+    authorization-code flow from interception/CSRF (M5).
+    """
+    verifier = secrets.token_urlsafe(64)
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+    return verifier, challenge
+
+
 def create_authorization_url(
     request=None,
     scopes: Optional[List[str]] = None,
     state: Optional[str] = None,
     login_hint: Optional[str] = None,
+    code_challenge: Optional[str] = None,
 ) -> Tuple[str, str]:
     """Build the Google consent URL. Returns (authorization_url, state)."""
     client_config = get_google_client_config()
@@ -89,13 +105,18 @@ def create_authorization_url(
         "access_type": "online",  # login-only: no refresh token needed
         "prompt": "select_account",  # let the user pick an account each time
     }
+    if code_challenge:
+        params["code_challenge"] = code_challenge
+        params["code_challenge_method"] = "S256"
     if login_hint:
         params["login_hint"] = login_hint
 
     return f"{GOOGLE_AUTH_URI}?{urlencode(params)}", state
 
 
-def exchange_code_for_tokens(code: str, request=None) -> Dict[str, Any]:
+def exchange_code_for_tokens(
+    code: str, request=None, code_verifier: Optional[str] = None
+) -> Dict[str, Any]:
     """Exchange the authorization code for an access token."""
     client_config = get_google_client_config()
     redirect_uri = get_redirect_uri(request)
@@ -107,6 +128,8 @@ def exchange_code_for_tokens(code: str, request=None) -> Dict[str, Any]:
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
     }
+    if code_verifier:
+        token_data["code_verifier"] = code_verifier
 
     try:
         data = urlencode(token_data).encode("utf-8")

@@ -809,41 +809,76 @@ def short_close_issue(request, user, reason=""):
     return request
 
 
+def get_issue_summaries(requests):
+    """Batch per-line issue summaries for many requests (2 queries, not 2+ per request).
+
+    Returns {request_id: [line_summary_dict, ...]} with the same shape as
+    get_issue_summary. Callers should prefetch ``lines__item`` on the queryset.
+    """
+    requests = list(requests)
+    request_ids = [r.id for r in requests]
+
+    issued_rows = (
+        GoodsIssueLine.objects.filter(
+            internal_request_line__internal_request_id__in=request_ids
+        )
+        .values(
+            "internal_request_line__internal_request_id",
+            "internal_request_line_id",
+        )
+        .annotate(total=Sum("quantity_issued"))
+    )
+    issued_by_req = {}
+    for row in issued_rows:
+        issued_by_req.setdefault(
+            row["internal_request_line__internal_request_id"], {}
+        )[row["internal_request_line_id"]] = row["total"] or Decimal("0")
+
+    item_ids = set()
+    for r in requests:
+        item_ids.update(r.lines.values_list("item_id", flat=True))
+    items = annotate_item_reservations(Item.objects.filter(pk__in=item_ids))
+    available_by_item = {i.id: i.available for i in items}
+
+    summaries = {}
+    for r in requests:
+        lines = list(r.lines.all())
+        issued_map = issued_by_req.get(r.id, {})
+        summary = []
+        for line in lines:
+            issued = issued_map.get(line.id, Decimal("0"))
+            remaining = line.quantity - issued
+            reserved = _qty3(line.quantity_reserved)
+            backorder = remaining - reserved
+            if backorder < 0:
+                backorder = Decimal("0.000")
+            available = available_by_item.get(line.item_id, Decimal("0.000"))
+            if available < 0:
+                available = Decimal("0.000")
+            summary.append(
+                {
+                    "line_id": line.id,
+                    "item_id": line.item_id,
+                    "internal_code": line.internal_code,
+                    "description": line.description,
+                    "unit_of_measure": line.unit_of_measure,
+                    "quantity": str(line.quantity),
+                    "issued": str(issued),
+                    "remaining": str(remaining),
+                    "reserved": str(reserved),
+                    "backorder": str(_qty3(backorder)),
+                    "on_hand": str(line.item.quantity),
+                    "available": str(available),
+                }
+            )
+        summaries[r.id] = summary
+    return summaries
+
+
 def get_issue_summary(request):
     """Per-line ordered / issued / remaining / reserved / on-hand for a request."""
     request = _resolve_request(request)
-    lines = list(request.lines.select_related("item").all())
-    issued_map = _issued_qty_map(request)
-    item_ids = list({line.item_id for line in lines})
-    available_by_item = {
-        item.id: available_quantity(item)
-        for item in Item.objects.filter(pk__in=item_ids)
-    }
-    summary = []
-    for line in lines:
-        issued = issued_map.get(line.id, Decimal("0"))
-        remaining = line.quantity - issued
-        reserved = _qty3(line.quantity_reserved)
-        backorder = remaining - reserved
-        if backorder < 0:
-            backorder = Decimal("0.000")
-        summary.append(
-            {
-                "line_id": line.id,
-                "item_id": line.item_id,
-                "internal_code": line.internal_code,
-                "description": line.description,
-                "unit_of_measure": line.unit_of_measure,
-                "quantity": str(line.quantity),
-                "issued": str(issued),
-                "remaining": str(remaining),
-                "reserved": str(reserved),
-                "backorder": str(_qty3(backorder)),
-                "on_hand": str(line.item.quantity),
-                "available": str(available_by_item.get(line.item_id, Decimal("0.000"))),
-            }
-        )
-    return summary
+    return get_issue_summaries([request])[request.pk]
 
 
 class BranchReceiptNotAllowedError(ValidationError):
