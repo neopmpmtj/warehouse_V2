@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 24 August 2026, 09:50 WEST.
+> **Read this first when resuming work.** Last updated: 24 August 2026, 10:10 WEST.
 
 ---
 
@@ -19,11 +19,12 @@
 | 5+ — Warehouse FIFO stock reservation (D32) | ✅ **Done** |
 | 5+ — Request threads (catalogue-gap requests) | ✅ **Done** (reviewed 24 Aug) |
 | 5+ — Request threads review fixes (M1–M5, L1–L6) | ✅ **Done** |
-| 5+ — Company Voice (suggestion box) | ✅ **Done** |
-| 6 — Email automation | 🔵 **Next** |
+| 5+ — Company Voice (suggestion box) | ✅ **Done** (reviewed 24 Aug — findings open) |
+| 5+ — Company Voice review | 🔵 **Next** — act on H1 + M1–M9 |
+| 6 — Email automation | ⏸ After Company Voice review queue |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), request threads, Company Voice, and the 24 Aug threads-review M/L fixes are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), request threads, Company Voice, and the 24 Aug threads-review M/L fixes are complete.** **Next session: act on the Company Voice review** ([`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md)), then Phase 6 email.
 
 **Full suite green (489 tests).**
 
@@ -31,14 +32,25 @@
 
 ## Next session — do this
 
-1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
-2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
-3. **Review backlogs** — sub-family stitch-in review is **closed and archived**; 1303 and 2208 archives are **not** work queues. The 24 Aug threads review **M1–M5 and L1–L6 are applied**; leftover **N1–N6 nits** are optional (not a Phase 6 blocker). Report: [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md).
+1. **Act on the Company Voice review** — [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md). Start with **H1** (every row marked edited), **M1** (invalid JSON → 500), **M2** (delete vs first-comment race). Then M3–M9; L1–L8 follow-up; N1–N3 optional.
+2. **Do not start** Phase 6 email, offline, shared chrome, or server-side item drafts until the Company Voice queue is applied or explicitly deferred.
+3. **Review backlogs** — sub-family stitch-in review is **closed and archived**; 1303 and 2208 archives are **not** work queues. The 24 Aug threads review **M1–M5 and L1–L6 are applied**; leftover **N1–N6 nits** are optional. Company Voice review is the **live** queue.
 4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`threads/migrations/0003_satisfaction_nullable.py`).
 
 ---
 
-## This session (24 Aug 2026) — request-threads review fixes ✅
+## This session (24 Aug 2026) — Company Voice review
+
+- **Method:** two sub-agents in parallel (backend; frontend + live API) + independent parent pass; notes compared.
+- **Report:** [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md).
+- **Verdict:** **ISSUES FOUND** — no Critical; **1 High, 9 Medium, 8 Low, 3 Nit**.
+- **H1:** every new post/comment is serialized `edited: true` (`updated_at > created_at` by microseconds on insert). Confirmed in PostgreSQL.
+- **M1–M9:** invalid JSON → 500; parent-delete vs first-comment race (no `select_for_update`); last-write-wins PATCH; failed writes leave stale UI; `renderFeed()` innerHTML wipes drafts; `comment_count` includes tombstones; admin hard-delete still enabled; no ChangeLog; shared feed never refreshes other users.
+- **Do not implement in this session** — report only. Next session applies the queue.
+
+---
+
+## Earlier this session (24 Aug 2026) — request-threads review fixes ✅
 
 - **Applied:** M1–M5 and L1–L6 from [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md). Nits N1–N6 left as-is (not blocking Phase 6).
 - **M1/M2:** non-string JSON and `?branch_id=abc` return **400** (not 500).
@@ -312,10 +324,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 24 August 2026, 09:50 WEST)
+## Git (as of 24 August 2026, 10:10 WEST)
 
-- Branch: **`cursor/threads-review-fixes-a734`** — request-threads review M1–M5 + L1–L6.
-- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, Company Voice, and the 24 Aug review report.
+- Branch: **`cursor/company-voice-review-a734`** — Company Voice review report (docs). May sit on top of threads-review-fixes commits until that lands on `main`.
+- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, Company Voice, and the 24 Aug **threads** review report.
 - Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -375,6 +387,7 @@ python manage.py runserver
 | `docs/PROJECT-PLAN.md` | **Living plan** — sequencing + status tracker + locked decisions; tick its tracker every session |
 | `docs/archive/code-review-full-2026-08-21-1303.md` | Follow-up review — **concluded & archived** (N1–N12 applied) |
 | `docs/reviews/threads-review-2026-08-24.md` | Request-threads review — **M1–M5 and L1–L6 applied**; leftover N1–N6 nits optional |
+| `docs/reviews/company-voice-review-2026-08-24-1010.md` | Company Voice review — **live queue** (H1, M1–M9) |
 | `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; L13 deferred) |
 | `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |

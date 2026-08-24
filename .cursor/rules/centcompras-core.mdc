@@ -18,6 +18,8 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - `logging_utils` — rotating logs in `logs/`
 - `branches` — tenancy (`Branch`, `BranchMembership`, picker, `/branch/catalog/`) — **built** (Phase 5 ✅)
 - `orders` — internal request (requisição interna) — **built** (Phase 5 ✅); warehouse FIFO reservation at approve (D32)
+- `threads` — catalogue-gap request threads — **built** (review M/L applied)
+- `company_voice` — company-wide suggestion box `/company-voice/` — **built**; review queue live (`docs/reviews/company-voice-review-2026-08-24-1010.md`)
 - Offline catalogue — **removed** (Phase 7 may re-add it)
 
 ## Non-negotiables
@@ -28,7 +30,7 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - Plain Django + plain JavaScript — no React/Vue
 - Incremental phases — no large application dumps
 - Do not implement the tenancy-doc `Order` stub (`item_name`)
-- Do not start offline, email, or shared chrome in passing (Phase 5 is done)
+- Do not start offline, email, or shared chrome in passing (Phase 5 is done). Next is the Company Voice review queue, then Phase 6 email.
 - Do not restyle `/` or polish the staff console unless that session is requested
 
 ## References
