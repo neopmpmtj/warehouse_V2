@@ -72,3 +72,6 @@ node_modules/
 
 # Ignore settings containing DB password
 config/settings.py
+
+# Keep the example template tracked
+!.env.example

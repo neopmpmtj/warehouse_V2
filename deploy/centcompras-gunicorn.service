@@ -1,0 +1,24 @@
+[Unit]
+Description=CentCompras (warehouse) Django app — gunicorn
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=notify
+User=centcompras
+Group=centcompras
+WorkingDirectory=/srv/centcompras/warehouse_V2
+EnvironmentFile=/srv/centcompras/warehouse_V2/.env
+Environment=DJANGO_SETTINGS_MODULE=config.settings.prod
+ExecStart=/srv/centcompras/warehouse_V2/.venv/bin/gunicorn config.wsgi:application \
+    --bind 127.0.0.1:8000 \
+    --workers 3 \
+    --timeout 120 \
+    --access-logfile /srv/centcompras/logs/gunicorn-access.log \
+    --error-logfile /srv/centcompras/logs/gunicorn-error.log
+Restart=always
+RestartSec=5
+KillSignal=SIGQUIT
+
+[Install]
+WantedBy=multi-user.target

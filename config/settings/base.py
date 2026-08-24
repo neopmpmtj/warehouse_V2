@@ -1,21 +1,22 @@
 """
-Copy to config/settings.py and adjust values for your local environment.
+Django base settings for CentCompras (shared by dev, prod, and test).
 
-    cp config/settings.example.py config/settings.py
+For more information on this file, see
+https://docs.djangoproject.com/en/6.1/topics/settings/
+
+Secrets and environment-specific values live in .env (gitignored), read via
+python-decouple. A DATABASE_URL connection string is the primary DB config
+(dev and prod); POSTGRES_* variables remain a supported fallback for local dev.
 """
-
-# Environment variables (optional overrides):
-#   DJANGO_SECRET_KEY, DJANGO_DEBUG, POSTGRES_PASSWORD
 
 import os
 import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+from decouple import Csv, config
+import dj_database_url
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production")
-
-DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # True when running under `manage.py test` — used to keep test output quiet/fast.
 TESTING = "test" in sys.argv
@@ -23,8 +24,6 @@ TESTING = "test" in sys.argv
 if TESTING:
     # PBKDF2 (~870k iterations) dominates test time; use a fast hasher under test.
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
-
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 INSTALLED_APPS = [
     "logging_utils",
@@ -46,6 +45,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -75,16 +75,28 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "centcompras_db",
-        "USER": "postgres",
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "your_password_here"),
-        "HOST": "localhost",
-        "PORT": "5432",
+# Database — DATABASE_URL when set (production); POSTGRES_* env fallback keeps
+# local dev working exactly as before without URL-encoding the password.
+_database_url = config("DATABASE_URL", default=None)
+if _database_url:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=_database_url,
+            conn_max_age=0,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "centcompras_db",
+            "USER": config("POSTGRES_USER", default="appuser"),
+            "PASSWORD": config("POSTGRES_PASSWORD", default="your_password_here"),
+            "HOST": config("POSTGRES_HOST", default="localhost"),
+            "PORT": config("POSTGRES_PORT", default="5432"),
+        }
+    }
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -104,32 +116,14 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Logging: see logging_utils/ — files written to logs/ (gitignored)
 # Per-module: get_logger("centcompras.products"), etc.
 
-# Production (later): Google OAuth via django-allauth — not used in dev.
-# GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
-# GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
-
-
-# ---------------------------------------------------------------------------
-# Production deploy checklist (commented out for dev).
-# Enable before going live behind HTTPS + a trusted reverse proxy.
-# ---------------------------------------------------------------------------
-# SECURE_SSL_REDIRECT = True
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SECURE = True
-# SECURE_CONTENT_TYPE_NOSNIFF = True
-# SECURE_REFERRER_POLICY = "same-origin"
-# SECURE_HSTS_SECONDS = 31536000
-# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-# SECURE_HSTS_PRELOAD = True
-# SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-# CSRF_TRUSTED_ORIGINS = ["https://example.com"]
-
-# Login rate limiting (BLOCKER before production): add django-axes or a
-# reverse-proxy rate limit on /accounts/login/. Not implemented in dev.
+# Google OAuth (later, production): via django-allauth — not used in dev.
+# GOOGLE_OAUTH_CLIENT_ID = config("GOOGLE_OAUTH_CLIENT_ID", default="")
+# GOOGLE_OAUTH_CLIENT_SECRET = config("GOOGLE_OAUTH_CLIENT_SECRET", default="")

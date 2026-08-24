@@ -289,7 +289,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D24 | PO line quantity upper bound = `1e9` (matches inventory) |
 | D25 | `User.timezone` validated (IANA) in `clean()`; middleware `finally: deactivate()` so the timezone never leaks across requests |
 | D26 | Dashboard shows permission codenames only for superusers / `DEBUG` |
-| D27 | **Login rate limiting is a pre-production blocker** — deferred (`django-axes` or proxy); documented in `settings.example.py` |
+| D27 | **Login rate limiting is a pre-production blocker** — deferred (`django-axes` or proxy); documented in `config/settings/base.py` |
 | D28 | **Money rounding:** `ROUND_HALF_UP` (half away from zero). Unit costs → 4 dp first, then monetary amounts (net / vat / gross) → 2 dp. Implemented via `procurement.models.round_money`; the future `orders` app must reuse it |
 | — | Dates DD/MM/YYYY (24h); per-user timezone (default `Europe/Lisbon`); EN + pt-PT |
 | D29 | **`internal_code` lifecycle (Phases 1–2 ✅)** | Charset: `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. **Locked after first save** (set-if-empty once for legacy). Console create = **mandatory Genesis** (atomic); requires internal code + description + unit + VAT + active family + **retail_price > 0** |
@@ -341,7 +341,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 - **L9** — dashboard permission codenames hidden except superuser/DEBUG.
 - **L10** — removed `StockMovement.Type.INITIAL` and `SupplierItemPriceChangeLog` DEACTIVATED/REACTIVATED (`inventory/0003`, `products/0008`).
 - **L11** — removed unused `CHANGE_GOODS_RECEIPT`.
-- **L12** — commented production-settings block in `settings.example.py`.
+- **L12** — commented production-settings block in `config/settings/prod.py`.
 - **L13** — deferred (rate limiting) — documented blocker.
 - **L14** — ledger-sum / concurrency / primary-race tests already present from H1/H3/M5.
 

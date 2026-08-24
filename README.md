@@ -148,7 +148,7 @@ There is no `GET /api/products/` and no `/service-worker.js`.
 warehouse/
 ├── manage.py
 ├── requirements.txt
-├── config/                   # settings.example.py (copy to settings.py), urls.py
+├── config/                   # settings package (base/dev/prod/test) + urls.py
 ├── accounts/                 # custom User (email, timezone, warehouse_grade), login, groups, authz
 ├── branches/                 # tenancy: Branch + BranchMembership, picker, middleware
 ├── products/                 # catalogue + pricing
@@ -180,7 +180,7 @@ pip install -r requirements.txt
 
 ### 2. PostgreSQL
 
-The app expects database `centcompras_db` and user `postgres` (local dev). Adjust in `config/settings.py` if your setup differs.
+The app expects a PostgreSQL database (local dev defaults: `centcompras_db`, user from `POSTGRES_USER`). Connection is configured via `DATABASE_URL` in `.env` (primary) or `POSTGRES_*` env vars (fallback). See [`config/settings/base.py`](config/settings/base.py).
 
 ```bash
 sudo -u postgres psql
@@ -192,15 +192,18 @@ ALTER USER postgres WITH PASSWORD 'your_password_here';
 \q
 ```
 
-### 3. Django settings
+### 3. Environment (`.env`)
 
-`config/settings.py` is gitignored. Copy the example and set the database password:
+Settings are split into a package: `config/settings/base.py` (shared), `dev.py` (local), `prod.py` (VPS), `test.py` (test runner). `manage.py test` auto-selects `config.settings.test`; local runs default to `config.settings.dev`; production sets `DJANGO_SETTINGS_MODULE=config.settings.prod`.
+
+Secrets live in `.env` (gitignored). Copy the template and set the database connection:
 
 ```bash
-cp config/settings.example.py config/settings.py
+cp .env.example .env
+# edit DATABASE_URL (and optionally SECRET_KEY / DEBUG / ALLOWED_HOSTS)
 ```
 
-`SECRET_KEY`, `DEBUG`, and `POSTGRES_PASSWORD` can come from environment variables (see the example file). Dev fallbacks exist for localhost.
+`DATABASE_URL` is the primary DB setting (dev and prod); `POSTGRES_*` vars remain a fallback for local dev.
 
 ### 4. Migrate and create site admin
 
@@ -328,4 +331,4 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Email automation** (Phase 6 — wire notify stubs to real email)
 - Shared chrome / branch phone UX / console polish; offline / PWA / OAuth
 - Integration tests (unit suites are green, **489 tests**)
-- Login rate limiting (pre-production blocker; documented in `settings.example.py`)
+- Login rate limiting (pre-production blocker; documented in `config/settings/base.py`)
