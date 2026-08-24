@@ -95,6 +95,17 @@ CLI / API / views  →  services.py  →  models.py  →  PostgreSQL
 - Plain Django + plain JavaScript — no React, Vue
 - One concept per phase; no large application dumps
 
+## Frontend / static assets — MANDATORY (2026-08-24)
+
+**If you change any static file (JS/CSS) that a template references with `?v=` (e.g. `catalog.js?v=4`), you MUST bump the version in EVERY template that references it** (e.g. `?v=4` → `?v=5`). The `?v=` query is the cache-buster: without a bump, browsers keep serving the OLD cached JS against the NEW HTML.
+
+**Real incident (2026-08-24):** the preferences-bar change removed `#language-select`/`#theme-toggle` from the settings popover HTML and guarded the JS that referenced them, but the templates kept `catalog.js?v=4`. Browsers ran the old unguarded JS against the new HTML → `null.value` threw in `bindEvents()` → `init()` died before `loadCatalog()` → `/manage/catalog/` rendered an empty table with a dead header. Same landmine was left in `purchase_orders.js` (guarded late). Fix commit: `305e372` (bump `?v=` on catalog.js/console.js/goods_receipts.js/purchase_orders.js/feed.js/preferences_bar.js/settings_menu.css).
+
+**Rules:**
+1. Change a static file → bump its `?v=` everywhere it is referenced (grep the templates!).
+2. Remove a DOM element from a template → guard every JS `getElementById(...)` that referenced it (`if (el) { ... }`) — check ALL JS files, not just the one you think you touched (procurement was missed).
+3. After any JS/template change, run `node --check` on the JS and grep for unguarded lookups, then run the Django suite.
+
 ## Documentation conventions
 
 - **Always put a full timestamp (date + time) in document filenames** — e.g. `code-review-full-2026-08-20-1928.md` (format `YYYY-MM-DD-HHMM`). The timestamp makes the chronological order self-evident when many similarly-named docs accumulate.
