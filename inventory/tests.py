@@ -377,6 +377,11 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         self.assertContains(response, 'id="theme-toggle"')
         self.assertContains(response, self.user.email)
         self.assertContains(response, reverse("logout"))
+        self.assertContains(response, 'id="settings-help"')
+        self.assertRegex(
+            response.content.decode(),
+            r'data-i18n="signOut"[\s\S]*id="settings-help"',
+        )
         self.assertRegex(
             response.content.decode(),
             r'id="settings-popover"[^>]*\bhidden\b',

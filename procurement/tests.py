@@ -493,6 +493,11 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertContains(response, 'id="theme-toggle"')
         self.assertContains(response, self.user.email)
         self.assertContains(response, reverse("logout"))
+        self.assertContains(response, 'id="settings-help"')
+        self.assertRegex(
+            response.content.decode(),
+            r'data-i18n="signOut"[\s\S]*id="settings-help"',
+        )
         self.assertRegex(
             response.content.decode(),
             r'id="settings-popover"[^>]*\bhidden\b',
@@ -511,6 +516,7 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertNotContains(response, 'id="theme-toggle"')
         self.assertContains(response, self.user.email)
         self.assertContains(response, reverse("logout"))
+        self.assertContains(response, 'id="settings-help"')
 
     def test_admin_can_create_and_view_po(self):
         self.client.force_login(self.user)

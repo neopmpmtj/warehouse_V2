@@ -79,7 +79,7 @@ The console is one screen, split into three areas.
 **A. Top bar**
 - App name (**CentCompras**) and title (**Item console** / *Gestão de artigos*)
 - **Families**, **Sub-families**, and **Suppliers** — open the master-data drawers. On a narrow window they collapse under **Master data** (*Dados mestres*).
-- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", language, theme, and **Sign out**
+- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", language, theme, **Sign out**, and **Help** (placeholder)
 
 ![Settings popover](screenshots/08-settings-popover.png)
 

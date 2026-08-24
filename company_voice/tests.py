@@ -226,6 +226,7 @@ class FeedApiTests(CompanyVoiceTestMixin, TestCase):
         self.assertContains(response, 'id="settings-toggle"')
         self.assertContains(response, 'id="lang-select"')
         self.assertContains(response, "settings-icon")
+        self.assertContains(response, 'id="settings-help"')
         self.assertNotContains(response, 'id="theme-toggle"')
 
     def test_branch_user_can_load_feed_page(self):

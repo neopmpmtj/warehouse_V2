@@ -87,7 +87,7 @@ You may belong to **one branch, several branches, or none**. After signing in:
 | **Several branches** | You land on `/branch/select/` — pick one. |
 | **No branch** | The picker says *"You have no active branch access."* Ask your administrator. |
 
-To switch later, click **Switch branch** on any branch page. **Sign out** is in the **Settings** gear (top-right); extra links such as **Catalog**, **Requests**, and **Switch branch** stay visible in the header.
+To switch later, click **Switch branch** on any branch page. **Sign out** is in the **Settings** gear (top-right); extra links such as **Catalog**, **Requests**, and **Switch branch** stay visible in the header. **Help** in that panel is a placeholder.
 
 > 📷 **[SCREENSHOT — branch picker with two branches listed]**
 

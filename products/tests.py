@@ -1245,6 +1245,11 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="theme-toggle"')
         self.assertContains(response, self.staff_user.email)
         self.assertContains(response, reverse("logout"))
+        self.assertContains(response, 'id="settings-help"')
+        self.assertRegex(
+            response.content.decode(),
+            r'data-i18n="signOut"[\s\S]*id="settings-help"',
+        )
         self.assertRegex(
             response.content.decode(),
             r'id="settings-popover"[^>]*\bhidden\b',
@@ -1314,6 +1319,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertNotContains(response, 'id="language-select"')
         self.assertNotContains(response, 'id="theme-toggle"')
         self.assertContains(response, reverse("logout"))
+        self.assertContains(response, 'id="settings-help"')
         self.assertNotContains(response, 'href="/admin/"')
         self.assertNotContains(response, "/api/items/")
         self.assertContains(response, self.staff_user.email)
@@ -3061,6 +3067,11 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="theme-toggle"')
         self.assertContains(response, self.staff_user.email)
         self.assertContains(response, reverse("logout"))
+        self.assertContains(response, 'id="settings-help"')
+        self.assertRegex(
+            response.content.decode(),
+            r'data-i18n="signOut"[\s\S]*id="settings-help"',
+        )
         self.assertRegex(
             response.content.decode(),
             r'id="settings-popover"[^>]*\bhidden\b',
