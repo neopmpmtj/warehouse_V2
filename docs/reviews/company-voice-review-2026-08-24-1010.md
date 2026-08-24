@@ -1,6 +1,6 @@
 # Code Review — `company_voice` (Company Voice)
 
-> **Status (24 August 2026, 10:10 WEST):** **ISSUES FOUND.** This is the live queue before Phase 6. Do **not** archive until H1 and M1–M9 are applied or explicitly deferred.
+> **Status (24 August 2026, 10:25 WEST):** **H1, M1–M9, and L1–L8 applied.** Leftover **N1–N3 nits** are optional and do not block Phase 6.
 
 **Date:** 2026-08-24
 **Method:** two sub-agents reviewed in parallel (backend; frontend + live API); parent reviewed independently; notes compared below. No source was changed for the review itself.

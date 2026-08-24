@@ -25,6 +25,7 @@ class VoicePost(models.Model):
     is_anonymous = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -83,6 +84,7 @@ class VoiceComment(models.Model):
     is_anonymous = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -98,3 +100,44 @@ class VoiceComment(models.Model):
     @property
     def deleted(self):
         return self.deleted_at is not None
+
+
+class VoiceChangeLog(models.Model):
+    """Audit row for Company Voice create / edit / delete."""
+
+    class Action(models.TextChoices):
+        POST_CREATED = "post_created", "Post created"
+        POST_EDITED = "post_edited", "Post edited"
+        POST_DELETED = "post_deleted", "Post deleted"
+        COMMENT_CREATED = "comment_created", "Comment created"
+        COMMENT_EDITED = "comment_edited", "Comment edited"
+        COMMENT_DELETED = "comment_deleted", "Comment deleted"
+
+    post = models.ForeignKey(
+        VoicePost,
+        on_delete=models.PROTECT,
+        related_name="change_logs",
+    )
+    comment = models.ForeignKey(
+        VoiceComment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="change_logs",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="voice_change_logs",
+    )
+    action = models.CharField(max_length=30, choices=Action.choices)
+    changes = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"VoiceChangeLog {self.action} post #{self.post_id}"
