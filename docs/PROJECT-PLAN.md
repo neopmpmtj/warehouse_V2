@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 23 August 2026, 19:15 WEST
-- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Next:** Phase 6 — email automation. Full suite **459 tests green**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 24 August 2026, 07:55 WEST
+- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Request-threads review (24 Aug) complete — fixes pending.** **Next:** fix review findings (M1–M5, L1–L6), then Phase 6 — email automation. Full suite **461 tests green**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Email and offline remain later phases.
 
 ## Status vocabulary
@@ -144,7 +144,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (Aug 2026):** phases 0–5 complete; both review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **438 tests green**. **Next:** Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
+**Current (Aug 2026):** phases 0–5 complete; both review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **request threads** done; **461 tests green**. **Request-threads review (24 Aug): 5 Medium / 6 Low / 6 Nit — fixes are the current work item** (report [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md)). **Next:** fix review findings (M1–M5, L1–L6), then Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -167,7 +167,8 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 5+ | Item `internal_code` constraints (Genesis lifecycle) | ✅ **Done** (Phases 1–2) | Phase 5 |
 | 5+ | Warehouse FIFO stock reservation (D32 / R1–R12) | ✅ **Done** | Phase 5 |
 | 5+ | Request threads (catalogue-gap requests) | ✅ **Done** | Phase 5 |
-| 6 | Email automation (supplier notifications) | 🔵 **Next** | Phase 2 (stub) |
+| 5+ | Request-threads review fixes (M1–M5, L1–L6) | 🔵 **Next** | Request threads |
+| 6 | Email automation (supplier notifications) | 🔵 **Next** (after review fixes) | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
 ---
@@ -393,6 +394,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 
 ## 13. Phase 6 — Email automation (pending) ⏸
 
+- **Blocked on:** request-threads review fixes (M1–M5, L1–L6) — do **not** start Phase 6 until the review backlog is cleared (report [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md)).
 - Wire `notify_supplier_on_approval` to real email (SMTP / provider).
 - Templates EN + pt-PT; audit sent-notifications.
 - Deferred by D9.
@@ -455,6 +457,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - [x] Sub-families — `SubFamily` under `FamilyProduct`, optional `Item.sub_family`, console + admin + catalog surfaces
 - [x] Warehouse FIFO stock reservation — `quantity_reserved` at approve (D32 / R1–R12)
 - [x] Request threads — `threads` app: `ItemRequestThread` (awaiting_warehouse/awaiting_branch/closed), `ThreadMessage` (explicit side), `ThreadReadState` (unread), changelog (created/item_linked/closed); branch + warehouse consoles; opener-only close + manager/admin/warehouse-admin override; reason required; item traceability M2M; manual `08-request-threads.md`
+- [ ] Request-threads review fixes — M1–M5 (Medium: JSON-type 500s, `?branch_id` 500, N+1, stale dialogs, override satisfaction), L1–L6 (Low), N1–N6 (Nit) — report `docs/reviews/threads-review-2026-08-24.md` (do **before** Phase 6)
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---

@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 23 August 2026, 16:40 WEST.
+> **Read this first when resuming work.** Last updated: 24 August 2026, 07:55 WEST.
 
 ---
 
@@ -17,21 +17,36 @@
 | 5+ — Item `internal_code` constraints | ✅ **Phase 1 + 2 done** |
 | 5+ — Sub-families (`FamilyProduct` → `SubFamily`) | ✅ **Done** |
 | 5+ — Warehouse FIFO stock reservation (D32) | ✅ **Done** |
-| 6 — Email automation | 🔵 **Next** |
+| 5+ — Request threads (catalogue-gap requests) | ✅ **Done** (reviewed 24 Aug) |
+| 5+ — Request threads review fixes (M1–M5, L1–L6) | 🔵 **Next — do this FIRST** |
+| 6 — Email automation | ⏸ Next (after review fixes) |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), and the request-threads feature (catalogue-gap requests) are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), and the request-threads feature (catalogue-gap requests) are complete.** **Next session: fix the request-threads review findings FIRST (see below), then Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**Full suite green (459 tests).**
+**Full suite green (461 tests).**
 
 ---
 
 ## Next session — do this
 
-1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
-2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
-3. **Review backlog is cleared** — sub-family stitch-in review is **closed and archived** ([`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md)); do **not** treat it, 1303, or 2208 archives as work queues.
-4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`orders/migrations/0002_line_quantity_reserved.py`).
+1. **🔴 FIX THE REQUEST-THREADS REVIEW FINDINGS FIRST — before any Phase 6 work.** Report: [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md) — **17 findings: 5 Medium (M1–M5), 6 Low (L1–L6), 6 Nit (N1–N6); no Critical/High**. Fix at minimum M1–M5 (M1/M2: one-line 400/type-coercion; M3: prefetch/N+1; M4: hide close/link dialogs in `selectThread` — wrong-thread close/link; M5: override-close satisfaction semantics), then L1–L6 as time allows. Re-run the full suite (**461 tests**) after each fix. Do **not** start Phase 6 until the review findings are fixed.
+2. **Then: Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
+3. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
+4. **Review backlogs** — sub-family stitch-in review is **closed and archived** ([`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md)); 1303 and 2208 archives are **not** work queues. The **24 Aug threads review IS a live queue** (see item 1).
+5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`orders/migrations/0002_line_quantity_reserved.py`).
+
+---
+
+## This session (24 Aug 2026) — request-threads review
+
+- **Reviewer:** DeepSeek Flash sub-agent (read-only; no source modified).
+- **Report:** [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md).
+- **Verdict:** **ISSUES FOUND** — no Critical/High; **5 Medium, 6 Low, 6 Nit**. Full suite **461 tests OK** (41.4s).
+- **M1–M5 (Medium):** non-string JSON → 500 (`services.py:97,129,133`); `?branch_id=abc` → 500 (`console_views.py:225`); N+1 list queries (dead prefetch, `models.py:108–116`); stale dialogs on thread switch → wrong-thread close/link (both templates); override close stamps the opener's satisfaction (`services.py:279–341`).
+- **L1–L6 (Low):** `link_items` silently accepts nonexistent item IDs; page-load auto-mark-read (GET side-effect); branch empty-state stays visible; lighter gate on `search_items_for_link`; `create_thread` no membership check; satisfaction coercion (`3.7→3`, `True→1`).
+- **N1–N6 (Nit):** dead code (`_bump`, `for_user_branches`, `read_attr`); pointless catalog call on warehouse page; mixed visibility patterns; no pagination; silent double-close; unrecognized `?status=` → empty set.
+- ⚠️ **All agents: fix M1–M5 (then L1–L6) before starting Phase 6.** The branch was merged to `main` on 24 Aug with this backlog live.
 
 ---
 
@@ -268,10 +283,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 23 Aug 2026, 16:40 WEST)
+## Git (as of 24 Aug 2026, 07:55 WEST)
 
-- Branch: **`cursor/stock-reservation-plan-84e1`** — warehouse FIFO reservation (D32 / R1–R12).
-- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, and dashboard links.
+- Branch: **`feature/branch-request-threads`** — request threads (catalogue-gap requests) + 24 Aug review report + doc updates; **merged to `main` and pushed 24 Aug**.
+- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, and the **live review backlog**.
 - Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -282,7 +297,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders threads --noinput
 ```
 
-- Last full suite: **459 OK** with `--noinput` (includes warehouse FIFO reservation + request threads).
+- Last full suite: **461 OK** with `--noinput` (includes warehouse FIFO reservation + request threads).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -329,6 +344,7 @@ python manage.py runserver
 | `README.md` | setup, URLs, seed, how to run |
 | `docs/PROJECT-PLAN.md` | **Living plan** — sequencing + status tracker + locked decisions; tick its tracker every session |
 | `docs/archive/code-review-full-2026-08-21-1303.md` | Follow-up review — **concluded & archived** (N1–N12 applied) |
+| `docs/reviews/threads-review-2026-08-24.md` | Request-threads review — **LIVE work queue: fix M1–M5, L1–L6 before Phase 6** |
 | `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; L13 deferred) |
 | `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |
