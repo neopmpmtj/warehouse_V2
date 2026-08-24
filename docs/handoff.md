@@ -39,6 +39,17 @@
 
 ---
 
+## This session — Company Voice app ✅
+
+- **App:** `company_voice` — company-wide suggestion box at `/company-voice/` (all logged-in staff).
+- **Models:** `VoicePost` (optional tag, anonymous flag), `VoiceSubThread` (one per post), `VoiceComment`.
+- **Rules:** 15-minute edit window; creator-only soft delete; parent delete cascades to sub-thread + comments; `[Deleted by author]` placeholder.
+- **UI:** Single scrollable feed; inline reply panel; EN + pt-PT i18n.
+- **Tests:** `company_voice.tests` (+18) → **479** total.
+- **Manual:** [`09-company-voice.md`](user-manuals/09-company-voice.md).
+
+---
+
 ## This session (24 Aug 2026) — request-threads review
 
 - **Reviewer:** DeepSeek Flash sub-agent (read-only; no source modified).
