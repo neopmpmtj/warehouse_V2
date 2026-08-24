@@ -1295,6 +1295,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="pref-language"')
         self.assertContains(response, 'id="pref-theme"')
         self.assertContains(response, 'class="dash-card"')
+        self.assertContains(response, 'data-i18n="cardItemConsole"')
+        self.assertContains(response, 'data-i18n="sectionWarehouse"')
         # Warehouse cards (all groups)
         self.assertContains(response, 'href="/manage/items/"')
         self.assertContains(response, 'href="/manage/catalog/"')
@@ -3230,6 +3232,14 @@ class LanguageCodeContractTests(SimpleTestCase):
                 source = path.read_text()
                 self.assertIn(f'{global_name}.pt = {global_name}["pt-PT"]', source)
                 self.assertIn('"pt-PT":', source)
+
+    def test_preferences_bar_includes_dashboard_card_keys(self):
+        source = (
+            settings.BASE_DIR / "products/static/products/js/preferences_bar.js"
+        ).read_text()
+        self.assertIn("cardItemConsole:", source)
+        self.assertIn("Gestão de artigos", source)
+        self.assertIn("sectionWarehouse:", source)
 
     def test_company_voice_i18n_accepts_legacy_pt_PT(self):
         source = (

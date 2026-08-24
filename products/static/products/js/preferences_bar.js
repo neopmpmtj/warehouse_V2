@@ -22,6 +22,49 @@
             signedInAs: "Signed in as",
             signOut: "Sign out",
             help: "Help",
+            dashTitle: "Dashboard — CentCompras",
+            groupsLabel: "Groups:",
+            groupsNone: "none",
+            sectionCompanyVoice: "Company Voice",
+            cardCompanyVoice: "Company Voice",
+            cardCompanyVoiceDesc:
+                "Suggestions, praise, and concerns — all logged-in staff can read and post.",
+            sectionWarehouse: "Warehouse pages",
+            cardItemConsole: "Item console",
+            cardItemConsoleDesc:
+                "Manage the catalogue: items, families, sub-families, suppliers, prices",
+            cardManagerCatalog: "Manager catalog",
+            cardManagerCatalogDesc: "Stock + price view across the whole catalogue",
+            cardPurchaseOrders: "Purchase orders",
+            cardPurchaseOrdersDesc:
+                "Create, approve, receive and manage purchase orders",
+            cardGoodsReceipts: "Goods receipts & stock",
+            cardGoodsReceiptsDesc: "Receive goods, adjust stock, view stock movements",
+            cardInternalRequests: "Internal requests",
+            cardInternalRequestsDesc:
+                "Warehouse queue: fulfil branch requisições and issue goods",
+            cardRequestThreads: "Request threads",
+            cardRequestThreadsDesc: "Catalogue-gap requests from branches",
+            cardPoLimits: "PO approval limits",
+            cardPoLimitsDesc: "Warehouse approval caps (admins only)",
+            cardBranchLimits: "Branch approval limits",
+            cardBranchLimitsDesc: "Branch manager caps (admins only)",
+            cardDjangoAdmin: "Django admin",
+            cardDjangoAdminDesc: "Site administration (superuser only)",
+            sectionBranch: "Branch pages",
+            branchNote:
+                "These need a branch membership. Warehouse-only logins are sent to the picker or refused.",
+            cardBranchPicker: "Branch picker",
+            cardBranchPickerDesc: "Switch the active branch",
+            cardBranchCatalog: "Branch catalog",
+            cardBranchCatalogDesc: "Read-only catalogue (cost hidden)",
+            cardRequisicao: "Requisição interna",
+            cardRequisicaoDesc: "Request stock from the warehouse",
+            cardBranchThreads: "Branch threads",
+            cardBranchThreadsDesc: "Request items not in the catalogue",
+            cardBranchReceipts: "Branch receipts",
+            cardBranchReceiptsDesc: "Receive goods and view branch stock",
+            devReference: "Developer reference — permissions, auth & APIs",
         },
         pt: {
             language: "Idioma",
@@ -32,6 +75,50 @@
             signedInAs: "Sessão iniciada como",
             signOut: "Terminar sessão",
             help: "Ajuda",
+            dashTitle: "Painel — CentCompras",
+            groupsLabel: "Grupos:",
+            groupsNone: "nenhum",
+            sectionCompanyVoice: "Voz da Empresa",
+            cardCompanyVoice: "Voz da Empresa",
+            cardCompanyVoiceDesc:
+                "Sugestões, elogios e preocupações — todos os colaboradores autenticados podem ler e publicar.",
+            sectionWarehouse: "Páginas do armazém",
+            cardItemConsole: "Gestão de artigos",
+            cardItemConsoleDesc:
+                "Gerir o catálogo: artigos, famílias, sub-famílias, fornecedores, preços",
+            cardManagerCatalog: "Catálogo do gestor",
+            cardManagerCatalogDesc: "Vista de stock e preços de todo o catálogo",
+            cardPurchaseOrders: "Encomendas de compra",
+            cardPurchaseOrdersDesc:
+                "Criar, aprovar, receber e gerir encomendas de compra",
+            cardGoodsReceipts: "Receção de mercadorias e stock",
+            cardGoodsReceiptsDesc:
+                "Receber mercadoria, ajustar stock, ver movimentos de stock",
+            cardInternalRequests: "Pedidos internos",
+            cardInternalRequestsDesc:
+                "Fila do armazém: cumprir requisições das filiais e emitir mercadoria",
+            cardRequestThreads: "Fios de pedido",
+            cardRequestThreadsDesc: "Pedidos de artigos que não estão no catálogo",
+            cardPoLimits: "Limites de aprovação de encomendas",
+            cardPoLimitsDesc: "Tetos de aprovação do armazém (só administradores)",
+            cardBranchLimits: "Limites de aprovação das filiais",
+            cardBranchLimitsDesc: "Tetos dos gestores de filial (só administradores)",
+            cardDjangoAdmin: "Administração Django",
+            cardDjangoAdminDesc: "Administração do sítio (só superutilizador)",
+            sectionBranch: "Páginas da filial",
+            branchNote:
+                "Requerem uma adesão à filial. Inícios de sessão só de armazém são enviados ao seletor ou recusados.",
+            cardBranchPicker: "Seletor de filial",
+            cardBranchPickerDesc: "Mudar a filial ativa",
+            cardBranchCatalog: "Catálogo da filial",
+            cardBranchCatalogDesc: "Catálogo só de leitura (custo oculto)",
+            cardRequisicao: "Requisição interna",
+            cardRequisicaoDesc: "Pedir stock ao armazém",
+            cardBranchThreads: "Fios da filial",
+            cardBranchThreadsDesc: "Pedir artigos que não estão no catálogo",
+            cardBranchReceipts: "Receções da filial",
+            cardBranchReceiptsDesc: "Receber mercadoria e ver o stock da filial",
+            devReference: "Referência para programadores — permissões, autenticação e APIs",
         },
     };
 
@@ -74,6 +161,9 @@
     function applyStaticI18n() {
         const lang = currentLang();
         document.documentElement.lang = lang === "pt" ? "pt-PT" : "en";
+        if (document.querySelector(".dash-main") && DICT[lang] && DICT[lang].dashTitle) {
+            document.title = DICT[lang].dashTitle;
+        }
         document.querySelectorAll("[data-i18n]").forEach((node) => {
             const key = node.getAttribute("data-i18n");
             if (DICT[lang] && DICT[lang][key]) {
