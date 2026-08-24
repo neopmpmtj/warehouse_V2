@@ -30,6 +30,7 @@
     <header>
         <h1>{{ branch.name }} — Catalog</h1>
         <div class="header-actions">
+            {% include "products/includes/preferences_bar.html" %}
             <a href="{% url 'branch_select' %}">Switch branch</a>
             {% include "products/includes/account_settings.html" %}
         </div>
@@ -106,6 +107,7 @@
                 });
         })();
     </script>
+    <script src="{% static 'products/js/preferences_bar.js' %}"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
 </body>
 </html>

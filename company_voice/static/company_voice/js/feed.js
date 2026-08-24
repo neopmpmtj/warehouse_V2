@@ -471,12 +471,15 @@
         document.getElementById("compose-submit").addEventListener("click", submitPost);
         document.getElementById("feed-refresh").addEventListener("click", loadFeed);
 
-        document.getElementById("lang-select").addEventListener("change", (e) => {
-            lang = e.target.value;
-            localStorage.setItem(LANG_KEY, lang);
-            applyI18n();
-            renderFeed();
-        });
+        const langSelect = document.getElementById("lang-select");
+        if (langSelect) {
+            langSelect.addEventListener("change", (e) => {
+                lang = e.target.value;
+                localStorage.setItem(LANG_KEY, lang);
+                applyI18n();
+                renderFeed();
+            });
+        }
 
         document.addEventListener("keydown", (event) => {
             if (event.key === "Escape" && activeEdit) {

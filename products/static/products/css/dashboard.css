@@ -1,0 +1,114 @@
+/* Dashboard card layout (staff landing page) */
+
+body {
+    background: var(--bg, #f4f6f8);
+    color: var(--text, #1c2430);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+}
+
+[data-theme="dark"] body {
+    background: var(--bg, #101418);
+}
+
+.dash-main {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1rem 1.5rem 3rem;
+}
+
+.groups-line {
+    margin: 0.25rem 0 0.5rem;
+    color: var(--muted, #5b6776);
+    font-size: 0.9rem;
+}
+
+.dash-main h1 {
+    margin: 0.25rem 0 1.25rem;
+    font-size: 1.6rem;
+}
+
+.dash-section {
+    margin-bottom: 1.75rem;
+}
+
+.dash-section h2 {
+    margin: 0 0 0.6rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.dash-note {
+    margin: 0 0 0.6rem;
+    color: var(--muted, #5b6776);
+    font-size: 0.9rem;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.85rem;
+}
+
+.dash-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #d5dde6);
+    border-radius: 8px;
+    box-shadow: var(--shadow, 0 12px 32px rgba(16, 24, 40, 0.12));
+    color: var(--text, #1c2430);
+    text-decoration: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dash-card:hover {
+    border-color: var(--accent, #0f766e);
+    box-shadow: var(--shadow, 0 12px 32px rgba(16, 24, 40, 0.12)), 0 0 0 1px var(--accent, #0f766e);
+}
+
+.dash-card-title {
+    font-weight: 600;
+    font-size: 0.98rem;
+}
+
+.dash-card-desc {
+    color: var(--muted, #5b6776);
+    font-size: 0.85rem;
+    line-height: 1.35;
+}
+
+/* Developer reference (collapsed) */
+.dev-ref {
+    margin-top: 2.25rem;
+    padding: 0.9rem 1.1rem;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #d5dde6);
+    border-radius: 8px;
+}
+
+.dev-ref summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text, #1c2430);
+}
+
+.dev-ref h2 {
+    margin: 1.1rem 0 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.dev-ref ul {
+    margin: 0.25rem 0 0;
+    padding-left: 1.4rem;
+    color: var(--text, #1c2430);
+    font-size: 0.88rem;
+}
+
+.dev-ref a {
+    color: var(--accent, #0f766e);
+}

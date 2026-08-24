@@ -19,15 +19,6 @@
             <span data-i18n="signedInAs">Signed in as</span>
             <strong>{{ user.email }}</strong>
         </p>
-        {% if show_language %}
-        <label class="control-inline settings-row" for="lang-select">
-            <span data-i18n="language">Language</span>
-            <select id="lang-select" aria-label="Language">
-                <option value="en">English</option>
-                <option value="pt">Português</option>
-            </select>
-        </label>
-        {% endif %}
         <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-ghost" data-i18n="signOut">Sign out</button>

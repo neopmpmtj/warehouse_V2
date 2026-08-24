@@ -50,14 +50,6 @@
                         <span data-i18n="signedInAs">Signed in as</span>
                         <strong>{{ user.email }}</strong>
                     </p>
-                    <label class="control-inline">
-                        <span data-i18n="language">Language</span>
-                        <select id="language-select" aria-label="Language">
-                            <option value="en">English</option>
-                            <option value="pt-PT">Português</option>
-                        </select>
-                    </label>
-                    <button type="button" id="theme-toggle" class="btn btn-ghost"></button>
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-ghost" data-i18n="signOut">Sign out</button>

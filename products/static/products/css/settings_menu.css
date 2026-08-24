@@ -127,3 +127,52 @@ header .settings-popover button.btn,
     border-radius: 6px;
     padding: 0.35rem 0.5rem;
 }
+
+/* Centralized language + theme bar (landing dashboards) */
+.preferences-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text, #1c2430);
+}
+
+.preferences-bar .pref-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--muted, #5b6776);
+}
+
+.preferences-bar select {
+    font: inherit;
+    color: var(--text, #1c2430);
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #d5dde6);
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+}
+
+.preferences-bar .btn {
+    font: inherit;
+    border: 1px solid var(--border, #d5dde6);
+    background: var(--surface, #ffffff);
+    color: var(--text, #1c2430);
+    border-radius: 6px;
+    padding: 0.45rem 0.75rem;
+    cursor: pointer;
+}
+
+.preferences-bar .btn:hover {
+    background: var(--surface-2, #eef2f5);
+}
+
+/* Dark theme overrides for landing pages + shared chrome */
+[data-theme="dark"] {
+    --surface: #181e24;
+    --surface-2: #222a33;
+    --text: #e7eef4;
+    --muted: #9aa8b6;
+    --border: #2d3844;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
