@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 24 August 2026, 09:50 WEST.*
+*Last updated: 24 August 2026, 10:10 WEST.*
 
-**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Request-threads review M1–M5 and L1–L6 are done.** **Next:** Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Request-threads review M1–M5 and L1–L6 are done.** **Company Voice is built.** **Next:** act on the Company Voice review ([`docs/reviews/company-voice-review-2026-08-24-1010.md`](docs/reviews/company-voice-review-2026-08-24-1010.md)), then Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — **Phase 6: email automation** (wire notify stubs; templates EN + pt-PT).
+4. **Next:** [`docs/reviews/company-voice-review-2026-08-24-1010.md`](docs/reviews/company-voice-review-2026-08-24-1010.md) — **Company Voice review queue** (H1, M1–M9). Then [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — Phase 6 email.
 
 ---
 
