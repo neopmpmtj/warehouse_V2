@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 24 August 2026, 10:30 WEST.
+> **Read this first when resuming work.** Last updated: 24 August 2026, 11:20 WEST.
 
 ---
 
@@ -34,14 +34,25 @@
 
 1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
 2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
-3. **Review backlogs** — sub-family stitch-in, 1303, and 2208 archives are **not** work queues. Threads review leftover **N1–N6** and Company Voice **N1–N3** nits are optional (not Phase 6 blockers). Reports: [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md), [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md).
+3. **Do not treat as a work queue:** archived reviews (1303, 2208, sub-family stitch-in) and leftover **nits** from the 24 Aug reviews. Those findings are **recorded**, not Next. See [Recorded leftover nits](#recorded-leftover-nits-not-a-work-queue).
 4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`company_voice/migrations/0002_edited_at_and_changelog.py`).
+
+---
+
+## Recorded leftover nits (not a work queue)
+
+The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not start a session to apply these** unless someone asks for a dedicated polish slice.
+
+| Review | Still leftover | Applied with the M/L pass |
+|--------|----------------|---------------------------|
+| Request threads ([report](reviews/threads-review-2026-08-24.md)) | **N1–N6** — unused `_bump` / `for_user_branches` / `read_attr`; warehouse page catalog call; mixed `hidden` vs class; unbounded thread list; silent double-close; unknown `?status=` → empty set | M1–M5, L1–L6 |
+| Company Voice ([report](reviews/company-voice-review-2026-08-24-1010.md)) | **N1** — unbounded feed (already deferred in `09-company-voice.md` FAQ) | H1, M1–M9, L1–L8, **N2** (tag allow-list), **N3** (`filter().first()` on sub-thread) |
 
 ---
 
 ## This session (24 Aug 2026) — Company Voice review fixes ✅
 
-- **Applied:** H1, M1–M9, and L1–L8 from [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md). Nits N1–N3 left as-is (pagination already deferred in the manual).
+- **Applied:** H1, M1–M9, L1–L8, N2, and N3 from [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md). **N1** (unbounded feed) remains recorded, not a queue.
 - **H1:** `edited_at` set only on real edits; create API `edited: false`.
 - **M1:** invalid JSON / non-object body → **400** `invalid_json`.
 - **M2:** `select_for_update` on the post for delete/comment; `IntegrityError` savepoint on first-comment `get_or_create`; concurrent tests.
@@ -342,10 +353,9 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 24 August 2026, 10:30 WEST)
+## Git (as of 24 August 2026, 11:20 WEST)
 
-- Branch: **`cursor/company-voice-review-fixes-a734`** — Company Voice review H1, M1–M9, L1–L8.
-- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, Company Voice, and the 24 Aug **threads** review report.
+- **`main`** has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, Company Voice, threads-review M/L, Company Voice review + H1/M/L/N2/N3, and this nits-parking note.
 - Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -404,8 +414,8 @@ python manage.py runserver
 | `README.md` | setup, URLs, seed, how to run |
 | `docs/PROJECT-PLAN.md` | **Living plan** — sequencing + status tracker + locked decisions; tick its tracker every session |
 | `docs/archive/code-review-full-2026-08-21-1303.md` | Follow-up review — **concluded & archived** (N1–N12 applied) |
-| `docs/reviews/threads-review-2026-08-24.md` | Request-threads review — **M1–M5 and L1–L6 applied**; leftover N1–N6 nits optional |
-| `docs/reviews/company-voice-review-2026-08-24-1010.md` | Company Voice review — **H1, M1–M9, L1–L8 applied**; leftover N1–N3 nits optional |
+| `docs/reviews/threads-review-2026-08-24.md` | Request-threads review — **M1–M5 and L1–L6 applied**; leftover N1–N6 **recorded, not a queue** |
+| `docs/reviews/company-voice-review-2026-08-24-1010.md` | Company Voice review — **H1, M1–M9, L1–L8, N2, N3 applied**; leftover N1 **recorded, not a queue** |
 | `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; L13 deferred) |
 | `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |

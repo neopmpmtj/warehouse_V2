@@ -1,6 +1,6 @@
 # Code Review — `company_voice` (Company Voice)
 
-> **Status (24 August 2026, 10:25 WEST):** **H1, M1–M9, and L1–L8 applied.** Leftover **N1–N3 nits** are optional and do not block Phase 6.
+> **Status (24 August 2026, 11:20 WEST):** **H1, M1–M9, L1–L8, N2, and N3 applied.** Leftover **N1** (unbounded feed) is recorded below and in the user-manual FAQ — **not a work queue**; it does not block Phase 6.
 
 **Date:** 2026-08-24
 **Method:** two sub-agents reviewed in parallel (backend; frontend + live API); parent reviewed independently; notes compared below. No source was changed for the review itself.
@@ -74,9 +74,9 @@ No Critical security defect (XSS probe did not fire; mutate is author-only; CSRF
 | L6 | Low | `services.py` `edit_post` | `PATCH` with `"tag": null` does not clear the tag |
 | L7 | Low | `feed.html` / `feed.js` | Console drift: `company_voice_lang` vs `cc-lang`; hardcoded `/static/…`; no Escape-to-cancel edit |
 | L8 | Low | `console_views.py` / `feed_i18n.js` | Dead `is_mine`; unused i18n `anonymous`; server `display_name` hard-codes English `"Anonymous"` |
-| N1 | Nit | `get_feed` / `feed_api` | Unbounded feed — **already deferred** in the manual (§6 FAQ) |
-| N2 | Nit | `feed.js` `renderTag` | Tag interpolated into a CSS class (server allow-list makes this safe today) |
-| N3 | Nit | `services.py` `delete_post` | Reverse OneToOne `DoesNotExist` alias is correct but easy to break; prefer `hasattr` / `select_related` + `None` |
+| N1 | Nit | `get_feed` / `feed_api` | Unbounded feed — **already deferred** in the manual (§6 FAQ). **Leftover (not a queue).** |
+| N2 | Nit | `feed.js` `renderTag` | Tag interpolated into a CSS class — **applied** (allow-list `KNOWN_TAGS` in the fix pass) |
+| N3 | Nit | `services.py` `delete_post` | Reverse OneToOne `DoesNotExist` alias — **applied** (`VoiceSubThread.objects.filter(post=post).first()`) |
 
 ---
 
@@ -253,18 +253,9 @@ These would have caught the High/Medium items:
 
 ## Suggested act-on order
 
-Do **not** start Phase 6 email until this queue is worked or explicitly skipped.
+**Applied 24 August 2026** (H1, M1–M9, L1–L8, N2, N3). Phase 6 email is **unblocked**. The numbered list below is the historical queue from the review pass, not current work.
 
-1. **H1** — edited heuristic (user-visible lie on every row).
-2. **M1** — `_parse_json` inside `try` → 400.
-3. **M2** — `select_for_update` + `IntegrityError` handling; race test.
-4. **M4 + M5** — failed-write refresh; preserve drafts.
-5. **M6** — live `comment_count`.
-6. **M3** — PATCH version / 409 (or defer with a note in the manual).
-7. **M7** — admin: no hard delete (match threads) unless product says otherwise.
-8. **M8** — ChangeLog **or** written deferral in `09-company-voice.md`.
-9. **M9** — at least a Refresh button; polling optional.
-10. **L1–L8** as a follow-up slice; **N1–N3** optional.
+Leftover, recorded only: **N1** (pagination — already out of scope in `09-company-voice.md` §6 FAQ). Do not treat N1 as a Next-session task.
 
 ---
 

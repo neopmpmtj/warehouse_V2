@@ -1,6 +1,6 @@
 # Code Review — `feature/branch-request-threads` (Request Threads)
 
-> **Status (24 August 2026, 09:50 WEST):** **M1–M5 and L1–L6 applied.** Leftover **N1–N6 nits** are optional and do not block Phase 6.
+> **Status (24 August 2026, 11:20 WEST):** **M1–M5 and L1–L6 applied.** Leftover **N1–N6 nits** are recorded in the findings table — **not a work queue**; they do not block Phase 6. The Verdict below is the original read-only pass (historical).
 
 **Date:** 2026-08-24
 **Reviewer:** subagent code-review (read-only)
@@ -19,7 +19,9 @@ I found **no Critical and no High severity issues**. There are **5 Medium** find
 
 ---
 
-## Verdict: **ISSUES FOUND**
+## Verdict: **ISSUES FOUND** *(historical — original read-only pass)*
+
+M1–M5 and L1–L6 were **applied later the same day**. N1–N6 remain recorded leftovers, not a live queue. Do not re-open this review as Next-session work.
 
 No merge-blocking security defect, but **not yet READY TO MERGE as-is** in my judgment. The two 500-class bugs (M1, M2) are trivial one-line fixes; the stale-dialog bug (M4) can cause closing/linking the **wrong thread** in normal multi-user use and is worth fixing before rollout. M3 (N+1) and M5 (satisfaction semantics) can be follow-ups.
 
