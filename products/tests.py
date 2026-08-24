@@ -4,6 +4,7 @@ from decimal import Decimal
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -1250,6 +1251,11 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         )
         self.assertContains(response, "console_escape_close.js")
 
+    def test_console_js_omits_grid_lifecycle_buttons(self):
+        source = (settings.BASE_DIR / "products/static/products/js/console.js").read_text()
+        self.assertNotIn("actions.appendChild(lifeButton)", source)
+        self.assertIn('getElementById("drawer-lifecycle")', source)
+
     def test_console_header_groups_master_data_buttons(self):
         self.client.force_login(self.staff_user)
 
@@ -1303,7 +1309,11 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, "/api/branch/stock/adjust/")
         self.assertContains(response, "/api/manage/purchase-orders/&lt;id&gt;/reopen/")
         self.assertContains(response, "/api/manage/purchase-orders/&lt;id&gt;/cancel/")
-        self.assertNotContains(response, 'id="settings-toggle"')
+        self.assertContains(response, 'id="settings-toggle"')
+        self.assertContains(response, 'id="settings-popover"')
+        self.assertNotContains(response, 'id="language-select"')
+        self.assertNotContains(response, 'id="theme-toggle"')
+        self.assertContains(response, reverse("logout"))
         self.assertNotContains(response, 'href="/admin/"')
         self.assertNotContains(response, "/api/items/")
         self.assertContains(response, self.staff_user.email)

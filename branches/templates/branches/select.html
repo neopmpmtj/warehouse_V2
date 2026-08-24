@@ -1,11 +1,16 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select branch — CentCompras</title>
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=1">
 </head>
 <body>
+    <header class="page-account-bar">
+        {% include "products/includes/account_settings.html" %}
+    </header>
     <h1>Select branch</h1>
 
     {% if memberships %}
@@ -26,5 +31,6 @@
     {% else %}
         <p>You have no active branch access. Please contact your administrator.</p>
     {% endif %}
+    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
 </body>
 </html>

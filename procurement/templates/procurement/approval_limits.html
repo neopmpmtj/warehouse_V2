@@ -26,14 +26,7 @@
             <h1>Approval limits (EUR gross)</h1>
         </div>
         <div class="topbar-actions">
-            <p class="user-line">
-                <span>Signed in as</span>
-                <strong>{{ user.email }}</strong>
-            </p>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-ghost">Sign out</button>
-            </form>
+            {% include "products/includes/account_settings.html" %}
         </div>
     </header>
     <main class="page">
@@ -53,5 +46,6 @@
         </table>
     </main>
     <script src="{% static 'procurement/js/approval_limits.js' %}?v=1"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
 </body>
 </html>

@@ -499,6 +499,19 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         )
         self.assertContains(response, "console_escape_close.js")
 
+    def test_approval_limits_page_uses_account_settings_gear(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("approval_limit_console"), **self.host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="settings-toggle"')
+        self.assertContains(response, 'id="settings-popover"')
+        self.assertNotContains(response, 'id="language-select"')
+        self.assertNotContains(response, 'id="theme-toggle"')
+        self.assertContains(response, self.user.email)
+        self.assertContains(response, reverse("logout"))
+
     def test_admin_can_create_and_view_po(self):
         self.client.force_login(self.user)
 

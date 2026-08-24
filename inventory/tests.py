@@ -1059,6 +1059,16 @@ class BranchReceiptApiTests(TestCase):
         req.refresh_from_db()
         return req, goods_issue
 
+    def test_receipts_page_uses_account_settings_gear(self):
+        self._login(self.operator)
+        r = self.client.get(reverse("branch_receipt_console"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'id="settings-toggle"')
+        self.assertContains(r, "Catalog")
+        self.assertContains(r, "Requests")
+        self.assertNotContains(r, 'id="language-select"')
+        self.assertNotContains(r, 'id="theme-toggle"')
+
     def test_operator_can_receive(self):
         req, goods_issue = self._shipped_issue("4")
         issue_line = goods_issue.lines.get()

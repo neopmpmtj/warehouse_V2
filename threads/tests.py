@@ -353,9 +353,18 @@ class ThreadIsolationTests(TestCase):
         branch_client = self._login(self.opener, self.north)
         resp = branch_client.get("/branch/threads/")
         self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="settings-toggle"')
+        self.assertContains(resp, "Catalog")
+        self.assertContains(resp, "Switch branch")
+        self.assertNotContains(resp, 'id="language-select"')
+        self.assertNotContains(resp, 'id="theme-toggle"')
         wh_client = self._login(self.wh_admin)
         resp = wh_client.get("/manage/threads/")
         self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="settings-toggle"')
+        self.assertContains(resp, "Dashboard")
+        self.assertNotContains(resp, 'id="language-select"')
+        self.assertNotContains(resp, 'id="theme-toggle"')
 
     def test_post_vs_close_race_locked(self):
         """Concurrent-ish check: a post after a close in the same process must raise."""

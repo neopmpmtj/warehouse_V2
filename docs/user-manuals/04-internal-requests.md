@@ -87,7 +87,7 @@ You may belong to **one branch, several branches, or none**. After signing in:
 | **Several branches** | You land on `/branch/select/` — pick one. |
 | **No branch** | The picker says *"You have no active branch access."* Ask your administrator. |
 
-To switch later, click **Switch branch** on any branch page.
+To switch later, click **Switch branch** on any branch page. **Sign out** is in the **Settings** gear (top-right); extra links such as **Catalog**, **Requests**, and **Switch branch** stay visible in the header.
 
 > 📷 **[SCREENSHOT — branch picker with two branches listed]**
 
@@ -188,7 +188,7 @@ Once the warehouse has **shipped** (issued goods), a request can no longer be ca
 
 ## 7. Warehouse — ship (goods issue)
 
-Open **`/manage/internal-requests/`**. This queue shows **approved** and **fulfilling** requests only — never drafts, submitted, rejected, or cancelled.
+Open **`/manage/internal-requests/`**. This queue shows **approved** and **fulfilling** requests only — never drafts, submitted, rejected, or cancelled. The header keeps **Branch caps**. **Sign out** is in the **Settings** gear (top-right).
 
 ### 7.1 Issue goods
 
@@ -263,7 +263,7 @@ Managers and operators do not see this option. Branch stock is a ledger like war
 
 ## 10. Branch approval caps (warehouse admin)
 
-Open **`/manage/branch-approval-limits/`** (warehouse **admin** only). This sets how much a branch **manager** may approve, in **EUR gross**:
+Open **`/manage/branch-approval-limits/`** (warehouse **admin** only). This sets how much a branch **manager** may approve, in **EUR gross**. The header keeps **Requests**. **Sign out** is in the **Settings** gear.
 
 - **Others** — the cap when the manager approves someone else's request.
 - **Self** — the (lower) cap when the manager approves their **own** request.

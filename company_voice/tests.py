@@ -223,6 +223,10 @@ class FeedApiTests(CompanyVoiceTestMixin, TestCase):
         self.client.force_login(self.warehouse_user)
         response = self.client.get(reverse("company_voice_feed"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="settings-toggle"')
+        self.assertContains(response, 'id="lang-select"')
+        self.assertContains(response, "settings-icon")
+        self.assertNotContains(response, 'id="theme-toggle"')
 
     def test_branch_user_can_load_feed_page(self):
         self.client.force_login(self.branch_user)

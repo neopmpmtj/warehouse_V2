@@ -97,6 +97,7 @@ The console is one screen, split into three areas.
 
 **C. Items table**
 - One row per item, with columns: **Code, Description, Family, Sub-family, Unit, Reorder, VAT, Status, Actions**
+- **Actions** is **Edit** (or **View** if you cannot change items). Deactivate / Reactivate is not on the row — open the item drawer, or use **Bulk action** for several items.
 - A checkbox column (if your role can edit) for bulk actions
 - Click any row to open it
 
@@ -167,15 +168,18 @@ Click the item's row (or its **Edit** button), change any field except **interna
 ### 5.3 Deactivating an item
 Deactivation **removes the item from the active catalogue** (it isn't deleted — its history is kept).
 
-- From the row: click **Deactivate** (*Desativar*).
+- Open the item (click the row or **Edit**).
+- In the drawer, click **Deactivate** (*Desativar*).
 - Choose a reason:
   - **Temporarily unavailable** (*Indisponível temporariamente*)
   - **No longer commercialized** (*Deixou de ser comercializado*)
   - **Other** (*Outro*) — describe it
 - Confirm.
 
+Several items at once: use **Bulk action** → **Deactivate** in the toolbar (see §5.5).
+
 ### 5.4 Reactivating an item
-Click **Reactivate** (*Reativar*) on an inactive item and give a reason. It returns to the catalogue.
+Open the inactive item and click **Reactivate** (*Reativar*) in the drawer. Give a reason. It returns to the catalogue. Several items: **Bulk action** → **Reactivate**.
 
 ### 5.5 Bulk actions
 1. Tick the checkboxes of several items.

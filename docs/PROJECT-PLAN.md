@@ -454,7 +454,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
   - [x] Slice 6 — polish + docs
 - [x] Item `internal_code` Phase 1 — format validation + manuals
 - [x] Item `internal_code` Phase 2 — immutability + mandatory Genesis + qualification gates
-- [x] Manage header — Settings gear + popover (items, catalog, POs, goods receipts)
+- [x] Manage header — Settings gear + popover (items, catalog, POs, goods receipts; account-only gear on remaining pages; Company Voice keeps language)
 - [x] Sub-families — `SubFamily` under `FamilyProduct`, optional `Item.sub_family`, console + admin + catalog surfaces
 - [x] Warehouse FIFO stock reservation — `quantity_reserved` at approve (D32 / R1–R12)
 - [x] Request threads — `threads` app: `ItemRequestThread` (awaiting_warehouse/awaiting_branch/closed), `ThreadMessage` (explicit side), `ThreadReadState` (unread), changelog (created/item_linked/closed); branch + warehouse consoles; opener-only close + manager/admin/warehouse-admin override; reason required; item traceability M2M; manual `08-request-threads.md`

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,15 +46,15 @@
         .stars .star { color: #ddd; }
         .stars .star.on { color: #f5a623; }
     </style>
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=1">
 </head>
 <body>
     <header>
         <h1>{{ branch.name }} — <span data-i18n="title">Request threads</span></h1>
-        <div class="user">
-            <span>{{ user.email }}</span>
+        <div class="header-actions">
             <a href="{% url 'branch_catalog' %}">Catalog</a>
             <a href="{% url 'branch_select' %}">Switch branch</a>
-            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form>
+            {% include "products/includes/account_settings.html" %}
         </div>
     </header>
 
@@ -401,5 +402,6 @@
             loadThreads().catch(showError);
         })();
     </script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
 </body>
 </html>

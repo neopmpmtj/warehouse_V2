@@ -22,6 +22,8 @@
 | Warehouse (any group) | `/manage/threads/` | See **all** branches' threads, reply, link created items |
 | Warehouse admin | `/manage/threads/` | Force-close an abandoned / duplicate thread (override) |
 
+The header keeps **Catalog** / **Switch branch** (branch) or **Dashboard** (warehouse). **Sign out** is in the **Settings** gear (top-right).
+
 ---
 
 ## The big picture

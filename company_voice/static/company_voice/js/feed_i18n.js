@@ -2,6 +2,8 @@ window.COMPANY_VOICE_I18N = {
     en: {
         title: "Company Voice",
         settingsAria: "Settings",
+        settings: "Settings",
+        signedInAs: "Signed in as",
         language: "Language",
         signOut: "Sign out",
         tagNone: "No tag",
@@ -48,6 +50,8 @@ window.COMPANY_VOICE_I18N = {
     pt: {
         title: "Voz da Empresa",
         settingsAria: "Definições",
+        settings: "Definições",
+        signedInAs: "Sessão iniciada como",
         language: "Idioma",
         signOut: "Terminar sessão",
         tagNone: "Sem etiqueta",
