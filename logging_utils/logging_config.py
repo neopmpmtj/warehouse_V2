@@ -55,6 +55,9 @@ LOGGING_CONFIG = {
         "centcompras.threads": {
             "log_filename": "threads.log",
         },
+        "centcompras.company_voice": {
+            "log_filename": "company_voice.log",
+        },
         "centcompras.django": {
             "log_filename": "django.log",
             "console_level": "INFO",

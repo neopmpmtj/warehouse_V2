@@ -31,6 +31,12 @@
         {% endfor %}
     </ul>
     {% endif %}
+    <h2>Company Voice</h2>
+    <p>All logged-in staff (warehouse and branch) can read and post.</p>
+    <ul>
+        <li><a href="/company-voice/">/company-voice/</a> — suggestions, praise, and concerns</li>
+    </ul>
+
     <h2>Warehouse pages</h2>
     <ul>
         <li><a href="/">/</a> — this dashboard</li>
@@ -166,6 +172,17 @@
         <li>/api/branch/receipts/issues/&lt;id&gt;/receive/</li>
         <li>/api/branch/receipts/issues/&lt;id&gt;/short-close/</li>
         <li>/api/branch/stock/adjust/ — branch stock adjustment (POST)</li>
+    </ul>
+
+    <h2>Company Voice API</h2>
+    <ul>
+        <li><a href="/api/company-voice/feed/" target="_blank" rel="noopener noreferrer">/api/company-voice/feed/</a> — full feed (GET)</li>
+        <li>/api/company-voice/posts/ — create post (POST)</li>
+        <li>/api/company-voice/posts/&lt;id&gt;/ — edit post (PATCH)</li>
+        <li>/api/company-voice/posts/&lt;id&gt;/delete/ — soft-delete post + replies (DELETE)</li>
+        <li>/api/company-voice/posts/&lt;id&gt;/comments/ — add comment (POST)</li>
+        <li>/api/company-voice/comments/&lt;id&gt;/ — edit comment (PATCH)</li>
+        <li>/api/company-voice/comments/&lt;id&gt;/delete/ — soft-delete comment (DELETE)</li>
     </ul>
 </body>
 </html>
