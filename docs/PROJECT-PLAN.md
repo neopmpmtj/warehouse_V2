@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 24 August 2026, 10:10 WEST
-- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Request-threads review M1–M5 and L1–L6 complete** ✅. **Company Voice built** ✅. **Next:** act on the Company Voice review ([`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md)), then Phase 6 — email automation. Full suite **489 tests green**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 24 August 2026, 10:30 WEST
+- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Request-threads review M1–M5 and L1–L6 complete** ✅. **Company Voice built** ✅. **Company Voice review H1, M1–M9, L1–L8 complete** ✅. **Next:** Phase 6 — email automation. Full suite **502 tests green**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Email and offline remain later phases.
 
 ## Status vocabulary
@@ -144,7 +144,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (Aug 2026):** phases 0–5 complete; both 2208/1303 review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **request threads** done; **request-threads review M1–M5 and L1–L6** done; **Company Voice** built; **Company Voice review 24 Aug** is the live queue. Full suite **489 tests green**. Leftover threads-review nits N1–N6 are optional. **Next:** act on [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md) (H1, M1–M9), then Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
+**Current (Aug 2026):** phases 0–5 complete; both 2208/1303 review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **request threads** done; **request-threads review M1–M5 and L1–L6** done; **Company Voice** built; **Company Voice review H1, M1–M9, L1–L8** done. Full suite **502 tests green**. Leftover threads-review nits N1–N6 and Company Voice nits N1–N3 are optional. **Next:** Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -169,8 +169,8 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 5+ | Request threads (catalogue-gap requests) | ✅ **Done** | Phase 5 |
 | 5+ | Request-threads review fixes (M1–M5, L1–L6) | ✅ **Done** | Request threads |
 | 5+ | Company Voice (suggestion box) | ✅ **Done** | Phase 5 |
-| 5+ | Company Voice review | 🔵 **Next** | Company Voice |
-| 6 | Email automation (supplier notifications) | ⏸ After CV review | Phase 2 (stub) |
+| 5+ | Company Voice review fixes (H1, M1–M9, L1–L8) | ✅ **Done** | Company Voice |
+| 6 | Email automation (supplier notifications) | 🔵 **Next** | Phase 2 (stub) |
 | 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
 
 ---
@@ -398,7 +398,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 
 - Wire `notify_supplier_on_approval` to real email (SMTP / provider).
 - Templates EN + pt-PT; audit sent-notifications.
-- Deferred by D9. Request-threads review M1–M5 and L1–L6 no longer block this phase (leftover nits N1–N6 are optional). **Company Voice review** ([`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md)) should be applied or explicitly deferred first.
+- Deferred by D9. Request-threads review M1–M5 and L1–L6 no longer block this phase (leftover nits N1–N6 are optional). Company Voice review H1, M1–M9, and L1–L8 no longer block this phase (leftover nits N1–N3 are optional).
 
 ---
 
@@ -459,8 +459,8 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - [x] Warehouse FIFO stock reservation — `quantity_reserved` at approve (D32 / R1–R12)
 - [x] Request threads — `threads` app: `ItemRequestThread` (awaiting_warehouse/awaiting_branch/closed), `ThreadMessage` (explicit side), `ThreadReadState` (unread), changelog (created/item_linked/closed); branch + warehouse consoles; opener-only close + manager/admin/warehouse-admin override; reason required; item traceability M2M; manual `08-request-threads.md`
 - [x] Request-threads review fixes — M1–M5 and L1–L6 (nits N1–N6 leftover, optional) — report `docs/reviews/threads-review-2026-08-24.md`
-- [x] Company Voice — `company_voice` app (suggestion box, `/company-voice/`) — built; **review open**
-- [ ] Company Voice review — H1 + M1–M9 ([`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md))
+- [x] Company Voice — `company_voice` app (suggestion box, `/company-voice/`) — built
+- [x] Company Voice review fixes — H1, M1–M9, L1–L8 (nits N1–N3 leftover, optional) — report `docs/reviews/company-voice-review-2026-08-24-1010.md`
 - [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
 
 ---
