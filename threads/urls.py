@@ -29,6 +29,11 @@ urlpatterns = [
         name="branch_thread_close",
     ),
     path(
+        "branch/threads/<int:thread_id>/mark-read/",
+        console_views.branch_thread_mark_read,
+        name="branch_thread_mark_read",
+    ),
+    path(
         "manage/threads/",
         console_views.warehouse_thread_list,
         name="warehouse_thread_list",
@@ -52,6 +57,11 @@ urlpatterns = [
         "manage/threads/<int:thread_id>/close/",
         console_views.warehouse_thread_close,
         name="warehouse_thread_close",
+    ),
+    path(
+        "manage/threads/<int:thread_id>/mark-read/",
+        console_views.warehouse_thread_mark_read,
+        name="warehouse_thread_mark_read",
     ),
     path(
         "manage/threads/items/search/",

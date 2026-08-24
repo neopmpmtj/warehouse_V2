@@ -10,7 +10,7 @@ from logging_utils import get_logger
 from branches.permissions import active_branch_required
 from products.models import Item
 
-from .capabilities import can_force_close_thread, is_warehouse_staff
+from .capabilities import can_force_close_thread
 from .models import ItemRequestThread, ThreadMessage
 from .permissions import warehouse_threads_required
 from .services import (
@@ -50,10 +50,28 @@ def _parse_json(request):
     return payload
 
 
+def _parse_int_id(value, field_name):
+    """Accept a positive integer id; reject floats/bools that int() would coerce."""
+    if isinstance(value, bool) or value is None:
+        raise ValidationError(f"{field_name} must be an integer.")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        raise ValidationError(f"{field_name} must be an integer.")
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped or not stripped.isdigit():
+            raise ValidationError(f"{field_name} must be an integer.")
+        return int(stripped)
+    raise ValidationError(f"{field_name} must be an integer.")
+
+
 def _get_thread_or_404(thread_id, branch=None):
     """Branch isolation: other-branch threads are 404, not 403."""
     try:
-        queryset = ItemRequestThread.objects.prefetch_related("read_states")
+        queryset = ItemRequestThread.objects.select_related(
+            "branch", "opened_by", "closed_by"
+        ).prefetch_related("read_states", "items")
         if branch is not None:
             queryset = queryset.filter(branch=branch)
         return queryset.get(pk=thread_id)
@@ -108,7 +126,9 @@ def _serialize_message(message):
 
 def _thread_list_payload(queryset, user):
     threads = list(
-        queryset.select_related("branch", "opened_by", "closed_by")
+        queryset.select_related("branch", "opened_by", "closed_by").prefetch_related(
+            "read_states", "items"
+        )
     )
     return {
         "threads": [_serialize_thread(t, user) for t in threads],
@@ -152,7 +172,6 @@ def branch_thread_create(request):
 @require_GET
 def branch_thread_detail(request, thread_id):
     thread = _get_thread_or_404(thread_id, request.active_branch)
-    mark_read(thread, request.user)
     return JsonResponse(
         {
             "thread": _serialize_thread(thread, request.user),
@@ -205,6 +224,15 @@ def branch_thread_close(request, thread_id):
     return JsonResponse({"thread": _serialize_thread(thread, request.user)})
 
 
+@active_branch_required
+@require_POST
+def branch_thread_mark_read(request, thread_id):
+    thread = _get_thread_or_404(thread_id, request.active_branch)
+    mark_read(thread, request.user)
+    thread = _get_thread_or_404(thread_id, request.active_branch)
+    return JsonResponse({"thread": _serialize_thread(thread, request.user)})
+
+
 # ---------------------------------------------------------------------------
 # Warehouse side (capability gate)
 # ---------------------------------------------------------------------------
@@ -221,8 +249,12 @@ def warehouse_thread_list(request):
     """
     queryset = ItemRequestThread.objects.for_warehouse()
     branch_id = request.GET.get("branch_id")
-    if branch_id:
-        queryset = queryset.filter(branch_id=branch_id)
+    if branch_id not in (None, ""):
+        try:
+            parsed_branch_id = _parse_int_id(branch_id, "branch_id")
+        except ValidationError as exc:
+            return _validation_error_response(exc)
+        queryset = queryset.filter(branch_id=parsed_branch_id)
     status = request.GET.get("status")
     if status == "open":
         queryset = queryset.exclude(status=ItemRequestThread.Status.CLOSED)
@@ -240,7 +272,6 @@ def warehouse_thread_list(request):
 @require_GET
 def warehouse_thread_detail(request, thread_id):
     thread = _get_thread_or_404(thread_id)
-    mark_read(thread, request.user)
     return JsonResponse(
         {
             "thread": _serialize_thread(thread, request.user),
@@ -308,10 +339,19 @@ def warehouse_thread_close(request, thread_id):
     return JsonResponse({"thread": _serialize_thread(thread, request.user)})
 
 
+@warehouse_threads_required
+@require_POST
+def warehouse_thread_mark_read(request, thread_id):
+    thread = _get_thread_or_404(thread_id)
+    mark_read(thread, request.user)
+    thread = _get_thread_or_404(thread_id)
+    return JsonResponse({"thread": _serialize_thread(thread, request.user)})
+
+
+@warehouse_threads_required
+@require_GET
 def search_items_for_link(request):
     """Minimal item search for the link-item control (warehouse only)."""
-    if not is_warehouse_staff(request.user):
-        return JsonResponse({"error": "Warehouse access required"}, status=403)
     query = (request.GET.get("q") or "").strip()
     items = Item.objects.filter(is_active=True)
     if query:

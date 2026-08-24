@@ -96,7 +96,7 @@ The thread always shows whose turn it is:
 
 A post flips the turn to the other side. Two posts in a row by the same side keep the state (the other side still owes a reply).
 
-**Unread:** new activity on a thread you haven't opened yet shows a **"new"** badge next to it. Opening the thread marks it read.
+**Unread:** new activity on a thread you haven't opened yet shows a **"new"** badge next to it. **Clicking the thread in the list** marks it read and clears the badge. The first thread is previewed when the page loads, but that preview does **not** mark it read (so a shared warehouse queue does not lose the badge just because someone opened the page).
 
 ---
 
@@ -126,7 +126,7 @@ In exceptional circumstances a thread can be force-closed by someone who did **n
 | Branch **manager / admin** of that branch | Abandoned, duplicate, no longer needed |
 | Warehouse **admin** | Abandoned / duplicate threads on the warehouse side |
 
-The override still requires a reason, and the thread history records **who** force-closed it and why, so the opener can always see what happened.
+The override still requires a reason, and the thread history records **who** force-closed it and why, so the opener can always see what happened. Override close does **not** record a satisfaction rating (stars are opener-only; the closer cannot rate on the opener's behalf).
 
 ---
 
@@ -164,6 +164,7 @@ A thread does **not** turn into a Requisição interna automatically. Once the i
 - **Close a thread you didn't open** — unless you're the branch manager/admin or warehouse admin (override, with reason).
 - **Close without a reason** — the reason is required ("Request Satisfied" is pre-selected; "Other" needs text).
 - **See another branch's threads** — other branches are invisible (404), exactly like requisições.
+- **Link a missing item** — unknown or stale item ids are rejected (`One or more items were not found.`). Re-linking an item already on the thread is a no-op (no extra history row).
 - **Create the item inside the thread** — the warehouse creates it in the item console.
 - **Edit or delete a message** — messages are append-only (audit).
 
@@ -190,13 +191,13 @@ Yes — that's the point. Warehouse staff see all branches' threads. Other **bra
 A branch manager/admin or warehouse admin can close any thread in exceptional cases (abandoned, duplicate). The thread history shows who did it and the reason.
 
 **Q7. What does the "new" badge mean?**
-Unread activity — a reply arrived since you last opened the thread. Opening it clears the badge.
+Unread activity — a reply arrived since you last opened the thread. **Clicking the thread in the list** clears the badge. Loading the page (which previews the first thread) does not.
 
 **Q8. We need it again later — can we reopen?**
 No — closed is terminal. Open a new thread.
 
 **Q9. What are the stars in the close dialog?**
-Your **satisfaction rating** (1–5 stars) for how the request was handled. It defaults to **1 star** — raise it if you were properly attended, or leave it low to signal that the request wasn't handled well. The rating is stored with the close and visible in the thread history.
+Your **satisfaction rating** (1–5 stars) for how the request was handled. It defaults to **1 star** — raise it if you were properly attended, or leave it low to signal that the request wasn't handled well. The rating is stored with the close and visible in the thread history. **Only the opener** rates; a manager/admin force-close does not set stars.
 
 ---
 

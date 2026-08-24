@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from logging_utils import get_logger
 
+from branches.capabilities import branch_role
 from branches.models import Branch
 from products.models import Item
 
@@ -78,6 +79,22 @@ class LinkPermissionDeniedError(ValidationError):
         )
 
 
+class NotBranchMemberError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "The opener must be a member of the branch.",
+            code="not_branch_member",
+        )
+
+
+class ItemNotFoundError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "One or more items were not found.",
+            code="item_not_found",
+        )
+
+
 def _resolve_thread(thread):
     if isinstance(thread, ItemRequestThread):
         return thread
@@ -94,7 +111,12 @@ def _ensure_branch_active(branch):
 
 
 def _require_text(value, field_name, code, message, max_length):
-    text = (value or "").strip()
+    if value is None:
+        text = ""
+    elif isinstance(value, str):
+        text = value.strip()
+    else:
+        raise ValidationError(f"{field_name} must be a string.", code=code)
     if not text:
         raise ValidationError(message, code=code)
     if len(text) > max_length:
@@ -126,11 +148,21 @@ def _require_body(body):
 
 
 def _require_close_reason(reason, reason_text):
-    reason = (reason or "").strip()
+    if reason is None:
+        reason = ""
+    elif not isinstance(reason, str):
+        raise CloseReasonRequiredError()
+    else:
+        reason = reason.strip()
     if reason not in ItemRequestThread.CloseReason.values:
         raise CloseReasonRequiredError()
     if reason == ItemRequestThread.CloseReason.OTHER:
-        text = (reason_text or "").strip()
+        if reason_text is None:
+            text = ""
+        elif not isinstance(reason_text, str):
+            raise CloseReasonTextRequiredError()
+        else:
+            text = reason_text.strip()
         if not text:
             raise CloseReasonTextRequiredError()
         if len(text) > REASON_MAX_LENGTH:
@@ -145,16 +177,28 @@ def _require_close_reason(reason, reason_text):
 
 
 def _require_satisfaction(satisfaction):
-    """Validate 1–5 stars; default 1 so an unattended request can signal low satisfaction."""
-    try:
-        value = int(satisfaction) if satisfaction is not None else None
-    except (TypeError, ValueError):
+    """Validate 1–5 stars; default 1 so an unattended request can signal low satisfaction.
+
+    Rejects bools and non-ints (``True`` / ``3.7`` must not coerce).
+    """
+    if satisfaction is None:
+        return ItemRequestThread.Satisfaction.ONE
+    if isinstance(satisfaction, bool) or not isinstance(satisfaction, int):
         raise InvalidSatisfactionError()
-    if value is None:
-        value = ItemRequestThread.Satisfaction.ONE
-    if value not in ItemRequestThread.Satisfaction.values:
+    if satisfaction not in ItemRequestThread.Satisfaction.values:
         raise InvalidSatisfactionError()
-    return value
+    return satisfaction
+
+
+def _item_pk(item):
+    pk = getattr(item, "pk", item)
+    if isinstance(pk, bool) or pk is None:
+        raise ItemNotFoundError()
+    if isinstance(pk, int):
+        return pk
+    if isinstance(pk, str) and pk.strip().isdigit():
+        return int(pk.strip())
+    raise ItemNotFoundError()
 
 
 def _log(thread, user, action, changes, reason=""):
@@ -192,8 +236,11 @@ def create_thread(branch, opened_by, subject, first_message):
     """Open a thread (status ``awaiting_warehouse``) with its first message.
 
     The branch must be active (mirror ``_ensure_branch_active`` in orders).
+    The opener must be a member of that branch.
     """
     _ensure_branch_active(branch)
+    if branch_role(opened_by, branch) is None:
+        raise NotBranchMemberError()
     subject = _require_subject(subject)
     first_message = _require_body(first_message)
 
@@ -282,8 +329,9 @@ def close_thread(thread, user, reason, reason_text="", satisfaction=None):
     Override: branch manager/admin of that branch, or warehouse admin. The
     check uses the *closer's* role so a deactivated opener never blocks a
     legitimate close. Reason required; ``other`` requires text. Satisfaction
-    (1–5 stars) defaults to 1 so an unattended request can signal low
-    satisfaction; the opener can edit it in the close dialog.
+    (1–5 stars) is recorded only when the **opener** closes (default 1 so an
+    unattended request can signal low satisfaction). Override closes store
+    ``satisfaction=None`` so the closer cannot rate on the opener's behalf.
     """
     thread = _lock_thread(thread)
     if thread.status == ItemRequestThread.Status.CLOSED:
@@ -294,7 +342,10 @@ def close_thread(thread, user, reason, reason_text="", satisfaction=None):
         raise ClosePermissionDeniedError()
 
     reason, reason_text = _require_close_reason(reason, reason_text)
-    satisfaction = _require_satisfaction(satisfaction)
+    if is_opener:
+        satisfaction = _require_satisfaction(satisfaction)
+    else:
+        satisfaction = None
 
     thread.status = ItemRequestThread.Status.CLOSED
     thread.closed_by = user
@@ -344,26 +395,49 @@ def link_items(thread, user, items):
     """Attach created Item(s) to a thread for traceability (warehouse staff only).
 
     Allowed after close — the opener often closes the thread as the item
-    lands. Every link writes a changelog row (who/when).
+    lands. Only **newly** linked items write a changelog row. Unknown ids
+    raise ``ItemNotFoundError`` (no silent no-op).
     """
     if not is_warehouse_staff(user):
         raise LinkPermissionDeniedError()
 
     thread = _lock_thread(thread)
-    item_ids = sorted({getattr(item, "pk", item) for item in items})
+    item_ids = []
+    seen = set()
+    for item in items:
+        pk = _item_pk(item)
+        if pk in seen:
+            continue
+        seen.add(pk)
+        item_ids.append(pk)
     if not item_ids:
         raise ValidationError("No items to link.", code="no_items")
-    linked = Item.objects.filter(pk__in=item_ids)
-    thread.items.add(*linked)
+    linked = list(Item.objects.filter(pk__in=item_ids))
+    if len(linked) != len(item_ids):
+        raise ItemNotFoundError()
+    already = set(thread.items.values_list("pk", flat=True))
+    new_items = [item for item in linked if item.pk not in already]
+    if not new_items:
+        return thread
+    thread.items.add(*new_items)
     _log(
         thread,
         user,
         ItemRequestThreadChangeLog.Action.ITEM_LINKED,
-        {"items": [{"id": i.id, "internal_code": i.internal_code, "description": i.description} for i in linked]},
+        {
+            "items": [
+                {
+                    "id": item.id,
+                    "internal_code": item.internal_code,
+                    "description": item.description,
+                }
+                for item in new_items
+            ]
+        },
     )
     logger.info(
         "Linked %d item(s) to thread id=%s user=%s",
-        linked.count(),
+        len(new_items),
         thread.id,
         getattr(user, "email", None),
     )

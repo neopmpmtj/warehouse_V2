@@ -75,8 +75,12 @@ class ItemRequestThread(models.Model):
     close_reason_text = models.CharField(max_length=255, blank=True)
     satisfaction = models.PositiveSmallIntegerField(
         choices=Satisfaction.choices,
-        default=Satisfaction.ONE,
-        help_text="Opener's satisfaction (1–5 stars), set at close. Default 1 star so an unattended request can signal dissatisfaction.",
+        null=True,
+        blank=True,
+        help_text=(
+            "Opener's satisfaction (1–5 stars), set when the opener closes. "
+            "Null while the thread is open and on override close (the closer must not rate for the opener)."
+        ),
     )
     items = models.ManyToManyField(
         "products.Item",
@@ -105,11 +109,19 @@ class ItemRequestThread(models.Model):
     def closed(self):
         return self.status == self.Status.CLOSED
 
-    def is_unread_for(self, user, read_attr="my_read"):
-        """True when activity happened after the user's last read (or never read)."""
-        states = getattr(self, read_attr, None)
-        if states:
-            last_read = states[0].last_read_at
+    def is_unread_for(self, user):
+        """True when activity happened after the user's last read (or never read).
+
+        Uses prefetched ``read_states`` when present so list views stay O(1)
+        queries per page instead of one query per thread.
+        """
+        cache = getattr(self, "_prefetched_objects_cache", None)
+        if cache is not None and "read_states" in cache:
+            user_id = getattr(user, "pk", None)
+            last_read = next(
+                (state.last_read_at for state in self.read_states.all() if state.user_id == user_id),
+                None,
+            )
         else:
             last_read = (
                 ThreadReadState.objects.filter(thread=self, user=user)
