@@ -47,6 +47,7 @@ if [ ! -f config/settings.py ]; then
     cp config/settings.example.py config/settings.py
 fi
 
-# 7. Schema + seed data (both idempotent).
+# 7. Schema + seed data (both idempotent). Snapshot bake; start.sh repeats this
+#    after checkout so later revisions still match the current codebase.
 .venv/bin/python manage.py migrate --noinput
 ./scripts/seed_dev_data.sh
