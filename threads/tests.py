@@ -19,6 +19,9 @@ from .services import (
     CloseReasonRequiredError,
     CloseReasonTextRequiredError,
     InactiveBranchError,
+    InvalidSatisfactionError,
+    ItemNotFoundError,
+    NotBranchMemberError,
     ThreadClosedError,
     close_thread,
     create_thread,
@@ -153,6 +156,8 @@ class ThreadServiceTests(TestCase):
             self.assertEqual(closed.close_reason_text, "Force closed — duplicate request.")
             log = closed.change_logs.get(action="closed")
             self.assertTrue(log.changes.get("override"))
+            self.assertIsNone(closed.satisfaction)
+            self.assertIsNone(log.changes.get("satisfaction"))
             self.assertEqual(log.reason, "Force closed — duplicate request.")
 
     def test_deactivated_opener_does_not_block_override(self):
@@ -190,6 +195,30 @@ class ThreadServiceTests(TestCase):
             close_thread(self._thread(subject="bad high"), self.opener, "request_satisfied", satisfaction=6)
         with self.assertRaises(ValidationError):
             close_thread(self._thread(subject="bad str"), self.opener, "request_satisfied", satisfaction="abc")
+        with self.assertRaises(InvalidSatisfactionError):
+            close_thread(self._thread(subject="bad float"), self.opener, "request_satisfied", satisfaction=3.7)
+        with self.assertRaises(InvalidSatisfactionError):
+            close_thread(self._thread(subject="bad bool"), self.opener, "request_satisfied", satisfaction=True)
+
+    def test_create_requires_branch_membership(self):
+        with self.assertRaises(NotBranchMemberError):
+            create_thread(
+                self.north,
+                self.other_branch,
+                "South user opening North thread",
+                "Should be rejected at the service layer.",
+            )
+
+    def test_link_items_rejects_unknown_ids_and_skips_relink_log(self):
+        thread = self._thread()
+        item = _make_item("Brass valve 25mm")
+        with self.assertRaises(ItemNotFoundError):
+            link_items(thread, self.wh_admin, [item.id, 999999])
+        self.assertEqual(thread.items.count(), 0)
+        link_items(thread, self.wh_admin, [item.id])
+        self.assertEqual(thread.change_logs.filter(action="item_linked").count(), 1)
+        link_items(thread, self.wh_admin, [item.id])
+        self.assertEqual(thread.change_logs.filter(action="item_linked").count(), 1)
 
     def test_link_items_warehouse_only_and_after_close(self):
         thread = self._thread()
@@ -344,3 +373,147 @@ class ThreadIsolationTests(TestCase):
         )
         self.assertEqual(post_resp.status_code, 400)
         self.assertEqual(post_resp.json()["code"], "thread_closed")
+
+
+class ThreadReviewFixTests(TestCase):
+    """M1–M5 / L1–L6 from docs/reviews/threads-review-2026-08-24.md."""
+
+    def setUp(self):
+        self.north = create_branch("North")
+        self.south = create_branch("South")
+        self.opener = _make_branch_user("opener@north.dev", self.north, ROLE_OPERATOR)
+        self.wh_admin = _make_warehouse_user("wh.admin@dev.com", GROUP_ADMINS)
+        self.thread = create_thread(
+            self.north,
+            self.opener,
+            "Need a 25mm brass valve",
+            "Not in catalogue. Please source it.",
+        )
+
+    def _login(self, user, branch=None):
+        client = Client()
+        client.force_login(user)
+        if branch is not None:
+            session = client.session
+            session[SESSION_KEY] = branch.id
+            session.save()
+        return client
+
+    def test_non_string_json_returns_400(self):
+        client = self._login(self.opener, self.north)
+        resp = client.post(
+            "/api/branch/threads/create/",
+            data=json.dumps({"subject": 123, "first_message": "Need a 40mm pipe."}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        resp = client.post(
+            f"/api/branch/threads/{self.thread.id}/close/",
+            data=json.dumps({"close_reason": 5}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        resp = client.post(
+            f"/api/branch/threads/{self.thread.id}/close/",
+            data=json.dumps({"close_reason": "other", "close_reason_text": 42}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.thread.refresh_from_db()
+        self.assertNotEqual(self.thread.status, ItemRequestThread.Status.CLOSED)
+
+    def test_invalid_branch_id_filter_returns_400(self):
+        client = self._login(self.wh_admin)
+        resp = client.get("/api/manage/threads/?branch_id=abc")
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("integer", resp.json()["error"])
+
+    def test_thread_list_query_count_does_not_grow_with_n(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        client = self._login(self.opener, self.north)
+        client.get("/api/branch/threads/")  # warm session / query cache
+
+        def list_query_count():
+            with CaptureQueriesContext(connection) as ctx:
+                resp = client.get("/api/branch/threads/")
+                self.assertEqual(resp.status_code, 200)
+            return len(ctx)
+
+        baseline = list_query_count()
+        for i in range(6):
+            create_thread(
+                self.north,
+                self.opener,
+                f"Extra gap item {i}",
+                "Still not in the catalogue.",
+            )
+        self.assertEqual(list_query_count(), baseline)
+
+    def test_detail_get_does_not_mark_read(self):
+        client = self._login(self.wh_admin)
+        self.assertTrue(self.thread.is_unread_for(self.wh_admin))
+        resp = client.get(f"/api/manage/threads/{self.thread.id}/")
+        self.assertEqual(resp.status_code, 200)
+        thread = ItemRequestThread.objects.get(pk=self.thread.pk)
+        self.assertTrue(thread.is_unread_for(self.wh_admin))
+        resp = client.post(f"/api/manage/threads/{self.thread.id}/mark-read/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.json()["thread"]["unread"])
+        thread = ItemRequestThread.objects.get(pk=self.thread.pk)
+        self.assertFalse(thread.is_unread_for(self.wh_admin))
+
+    def test_override_close_does_not_store_satisfaction(self):
+        client = self._login(self.wh_admin)
+        resp = client.post(
+            f"/api/manage/threads/{self.thread.id}/close/",
+            data=json.dumps({
+                "close_reason": "other",
+                "close_reason_text": "Duplicate request.",
+                "satisfaction": 5,
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.thread.refresh_from_db()
+        self.assertEqual(self.thread.status, ItemRequestThread.Status.CLOSED)
+        self.assertIsNone(self.thread.satisfaction)
+        self.assertIsNone(resp.json()["thread"]["satisfaction"])
+
+    def test_link_items_api_rejects_unknown_ids(self):
+        client = self._login(self.wh_admin)
+        resp = client.post(
+            f"/api/manage/threads/{self.thread.id}/link-items/",
+            data=json.dumps({"item_ids": [999999]}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()["code"], "item_not_found")
+
+    def test_item_search_uses_warehouse_gate(self):
+        anon = Client()
+        resp = anon.get("/api/manage/threads/items/search/?q=valve")
+        self.assertEqual(resp.status_code, 401)
+        branch_client = self._login(self.opener, self.north)
+        resp = branch_client.get("/api/manage/threads/items/search/?q=valve")
+        self.assertEqual(resp.status_code, 403)
+        warehouse = self._login(self.wh_admin)
+        resp = warehouse.get("/api/manage/threads/items/search/?q=valve")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("items", resp.json())
+
+    def test_branch_mark_read_via_api(self):
+        client = self._login(self.opener, self.north)
+        post_message(self.thread, self.wh_admin, "We can source that.", ThreadMessage.Side.WAREHOUSE)
+        thread = ItemRequestThread.objects.get(pk=self.thread.pk)
+        self.assertTrue(thread.is_unread_for(self.opener))
+        resp = client.get(f"/api/branch/threads/{self.thread.id}/")
+        self.assertEqual(resp.status_code, 200)
+        thread = ItemRequestThread.objects.get(pk=self.thread.pk)
+        self.assertTrue(thread.is_unread_for(self.opener))
+        resp = client.post(f"/api/branch/threads/{self.thread.id}/mark-read/")
+        self.assertEqual(resp.status_code, 200)
+        thread = ItemRequestThread.objects.get(pk=self.thread.pk)
+        self.assertFalse(thread.is_unread_for(self.opener))
+

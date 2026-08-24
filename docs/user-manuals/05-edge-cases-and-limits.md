@@ -2,7 +2,7 @@
 
 **Reference** · Version 1.0 · For warehouse staff, branch staff, and administrators
 
-> **Companion to:** [Item Console](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Admin & Superuser Reference](06-admin-reference.md) · [Manager catalog](07-manager-catalog.md).
+> **Companion to:** [Item Console](01-items.md) · [Purchase Orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Admin & Superuser Reference](06-admin-reference.md) · [Manager catalog](07-manager-catalog.md) · [Request threads](08-request-threads.md).
 >
 > Those manuals teach the normal path. **This one is the lookup reference** for the boundaries: the exact errors you can hit, the hard numeric limits, the state-machine rules, and the things that are *deliberately not built yet*. When something "won't let you", look here.
 
@@ -149,7 +149,29 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `A reason is required to cancel an approved request.` | Cancel-approved needs a reason | Type one |
 | `A request with goods issues cannot be cancelled.` | Goods already shipped | Short-close instead (see §4) |
 
-### 2.5 Account, permissions & isolation
+### 2.5 Request threads (`/branch/threads/`, `/manage/threads/`)
+
+| Message | Why | What to do |
+|---------|-----|------------|
+| `A subject is required.` / `Subject must be a string.` | Empty or non-text subject | Type a short title |
+| `A message is required.` / `Message must be a string.` | Empty or non-text first message / reply | Type the message |
+| `This thread is closed. No further messages can be posted.` | Reply after close | Open a new thread |
+| `Only the person who opened the thread can close it.` | You are not the opener and cannot override | Ask the opener, or a branch manager/admin / warehouse admin |
+| `A reason is required to close a thread.` | Close without a valid reason | Pick Request Satisfied or Other |
+| `A reason text is required when 'Other' is selected.` | Other with a blank textbox | Type the reason |
+| `Satisfaction must be between 1 and 5 stars.` | Rating missing, a decimal, or out of range | Pick 1–5 whole stars (opener close only) |
+| `Cannot use inactive branch 'X'.` | Opening a thread on a deactivated branch | Switch to an active branch |
+| `The opener must be a member of the branch.` | Service-level: opener is not a member of that branch | Open from your own branch |
+| `Only warehouse staff can link items to a thread.` | A branch user tried to link | Warehouse users link from `/manage/threads/` |
+| `One or more items were not found.` | Link used a stale or unknown item id | Search again and pick a live catalogue item |
+| `No items to link.` | Empty link request | Pick at least one item |
+| `branch_id must be an integer.` | Warehouse list `?branch_id=` is not a number | Use the branch filter, or omit it |
+
+**Satisfaction** is stored only when the **opener** closes (default 1★). Override close leaves satisfaction empty.
+
+**Unread:** GET-ing a thread's messages does **not** mark it read. Clicking the thread in the list (POST mark-read) does.
+
+### 2.6 Account, permissions & isolation
 
 | What you see | When | Meaning |
 |--------------|------|---------|
@@ -330,3 +352,4 @@ These are deliberate deferrals — ask before assuming they exist:
 - [Goods receipt & stock](03-goods-receipts.md) — receiving, stock ledger, adjustments.
 - [Branches & Requisição interna](04-internal-requests.md) — the branch → warehouse → branch loop.
 - [Manager catalog](07-manager-catalog.md) — warehouse read-only stock + prices (`/manage/catalog/`).
+- [Request threads](08-request-threads.md) — catalogue-gap requests between branch and warehouse.

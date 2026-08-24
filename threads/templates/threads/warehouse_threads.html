@@ -109,7 +109,7 @@
                 <div id="close-other-row" class="row hidden">
                     <input id="close-reason-text" placeholder="Reason…" maxlength="255">
                 </div>
-                <div class="row">
+                <div id="satisfaction-row" class="row">
                     <span data-i18n="satisfactionLabel">Satisfaction</span>
                     <span id="satisfaction-stars" class="stars"></span>
                 </div>
@@ -125,6 +125,7 @@
     <script>
         (function () {
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
+            var CURRENT_USER_ID = {{ user.pk }};
             var LANG_KEY = "cc-lang";
             var state = { selectedId: null, threads: [], branches: [] };
 
@@ -193,9 +194,10 @@
             var closeReason = document.getElementById("close-reason");
             var closeReasonText = document.getElementById("close-reason-text");
             var closeOtherRow = document.getElementById("close-other-row");
+            var satisfactionRow = document.getElementById("satisfaction-row");
             var satisfactionStars = document.getElementById("satisfaction-stars");
             var satisfactionValue = 1;
-            (function renderStars() {
+            function renderStars() {
                 satisfactionStars.textContent = "";
                 for (var i = 1; i <= 5; i++) {
                     var star = document.createElement("span");
@@ -208,7 +210,8 @@
                     });
                     satisfactionStars.appendChild(star);
                 }
-            })();
+            }
+            renderStars();
             var linkDialog = document.getElementById("link-dialog");
             var linkResults = document.getElementById("link-results");
             var linkSearch = document.getElementById("link-item-search");
@@ -291,7 +294,7 @@
                     var tr = document.createElement("tr");
                     if (th.id === state.selectedId) tr.className = "selected";
                     tr.style.cursor = "pointer";
-                    tr.addEventListener("click", function () { selectThread(th.id); });
+                    tr.addEventListener("click", function () { selectThread(th.id, { markRead: true }); });
                     var tdBranch = el("td", th.branch_name);
                     if (!th.branch_active) tdBranch.appendChild(el("span", t("inactiveBranch"), "badge badge-inactive"));
                     tr.appendChild(tdBranch);
@@ -355,11 +358,25 @@
                 });
             }
 
-            function selectThread(id) {
+            function selectThread(id, opts) {
+                opts = opts || {};
+                setVisible(closeDialog, false);
+                setVisible(linkDialog, false);
                 state.selectedId = id;
                 renderList();
                 var th = state.threads.find(function (t) { return t.id === id; });
                 renderDetail(th);
+                if (opts.markRead && th) {
+                    api("/api/manage/threads/" + id + "/mark-read/", "POST").then(function (data) {
+                        if (data.thread) {
+                            var idx = state.threads.findIndex(function (t) { return t.id === id; });
+                            if (idx >= 0) {
+                                state.threads[idx].unread = data.thread.unread;
+                                renderList();
+                            }
+                        }
+                    }).catch(function () { /* unread badge stays until the next list refresh */ });
+                }
             }
 
             replyBtn.addEventListener("click", function () {
@@ -399,8 +416,13 @@
 
             closeThreadBtn.addEventListener("click", function () {
                 setVisible(closeDialog, true);
-                satisfactionValue = 1;
-                renderStars();
+                var th = state.threads.find(function (t) { return t.id === state.selectedId; });
+                var isOpener = th && th.opened_by_id === CURRENT_USER_ID;
+                setVisible(satisfactionRow, isOpener);
+                if (isOpener) {
+                    satisfactionValue = 1;
+                    renderStars();
+                }
             });
             closeReason.addEventListener("change", function () {
                 setVisible(closeOtherRow, closeReason.value === "other");
@@ -411,11 +433,15 @@
             });
             document.getElementById("confirm-close").addEventListener("click", function () {
                 clearError();
-                api("/api/manage/threads/" + state.selectedId + "/close/", "POST", {
+                var th = state.threads.find(function (t) { return t.id === state.selectedId; });
+                var payload = {
                     close_reason: closeReason.value,
                     close_reason_text: closeReasonText.value,
-                    satisfaction: satisfactionValue,
-                }).then(function () {
+                };
+                if (th && th.opened_by_id === CURRENT_USER_ID) {
+                    payload.satisfaction = satisfactionValue;
+                }
+                api("/api/manage/threads/" + state.selectedId + "/close/", "POST", payload).then(function () {
                     setVisible(closeDialog, false); closeReasonText.value = "";
                     return loadThreads();
                 }).catch(showError);

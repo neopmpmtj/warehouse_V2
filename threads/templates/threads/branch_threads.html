@@ -91,7 +91,7 @@
                 <div id="close-other-row" class="row hidden">
                     <input id="close-reason-text" placeholder="Reason…" maxlength="255">
                 </div>
-                <div class="row">
+                <div id="satisfaction-row" class="row">
                     <span data-i18n="satisfactionLabel">Satisfaction</span>
                     <span id="satisfaction-stars" class="stars"></span>
                 </div>
@@ -118,6 +118,7 @@
     <script>
         (function () {
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
+            var CURRENT_USER_ID = {{ user.pk }};
             var LANG_KEY = "cc-lang";
             var state = { selectedId: null, threads: [] };
 
@@ -181,7 +182,7 @@
             var closeOtherRow = document.getElementById("close-other-row");
             var satisfactionStars = document.getElementById("satisfaction-stars");
             var satisfactionValue = 1;
-            (function renderStars() {
+            function renderStars() {
                 satisfactionStars.textContent = "";
                 for (var i = 1; i <= 5; i++) {
                     var star = document.createElement("span");
@@ -194,10 +195,12 @@
                     });
                     satisfactionStars.appendChild(star);
                 }
-            })();
+            }
+            renderStars();
             var newDialog = document.getElementById("new-dialog");
             var banner = document.getElementById("banner");
             var emptyList = document.getElementById("empty-list");
+            var satisfactionRow = document.getElementById("satisfaction-row");
 
             function el(tag, text, className) {
                 var node = document.createElement(tag);
@@ -241,17 +244,18 @@
                         if (!still) { state.selectedId = null; renderDetail(null); }
                     }
                     if (!state.selectedId && state.threads.length) { selectThread(state.threads[0].id); }
-                    if (!state.threads.length) { renderDetail(null); setVisible(emptyList, true); }
+                    if (!state.threads.length) { renderDetail(null); }
                 });
             }
 
             function renderList() {
                 threadBody.textContent = "";
+                setVisible(emptyList, state.threads.length === 0);
                 state.threads.forEach(function (th) {
                     var tr = document.createElement("tr");
                     if (th.id === state.selectedId) tr.className = "selected";
                     tr.style.cursor = "pointer";
-                    tr.addEventListener("click", function () { selectThread(th.id); });
+                    tr.addEventListener("click", function () { selectThread(th.id, { markRead: true }); });
                     var tdSubject = el("td", th.subject);
                     if (th.unread) tdSubject.className = "unread";
                     var badge = el("span", th.unread ? t("unread") : "", "badge");
@@ -310,11 +314,24 @@
                 });
             }
 
-            function selectThread(id) {
+            function selectThread(id, opts) {
+                opts = opts || {};
+                setVisible(closeDialog, false);
                 state.selectedId = id;
                 var th = state.threads.find(function (t) { return t.id === id; });
                 renderList();
                 renderDetail(th);
+                if (opts.markRead && th) {
+                    api("/api/branch/threads/" + id + "/mark-read/", "POST").then(function (data) {
+                        if (data.thread) {
+                            var idx = state.threads.findIndex(function (t) { return t.id === id; });
+                            if (idx >= 0) {
+                                state.threads[idx].unread = data.thread.unread;
+                                renderList();
+                            }
+                        }
+                    }).catch(function () { /* unread badge stays until the next list refresh */ });
+                }
             }
 
             replyBtn.addEventListener("click", function () {
@@ -328,8 +345,13 @@
 
             closeThreadBtn.addEventListener("click", function () {
                 setVisible(closeDialog, true);
-                satisfactionValue = 1;
-                renderStars();
+                var th = state.threads.find(function (t) { return t.id === state.selectedId; });
+                var isOpener = th && th.opened_by_id === CURRENT_USER_ID;
+                setVisible(satisfactionRow, isOpener);
+                if (isOpener) {
+                    satisfactionValue = 1;
+                    renderStars();
+                }
             });
             closeReason.addEventListener("change", function () {
                 setVisible(closeOtherRow, closeReason.value === "other");
@@ -340,11 +362,15 @@
             });
             document.getElementById("confirm-close").addEventListener("click", function () {
                 clearError();
-                api("/api/branch/threads/" + state.selectedId + "/close/", "POST", {
+                var th = state.threads.find(function (t) { return t.id === state.selectedId; });
+                var payload = {
                     close_reason: closeReason.value,
                     close_reason_text: closeReasonText.value,
-                    satisfaction: satisfactionValue,
-                }).then(function () {
+                };
+                if (th && th.opened_by_id === CURRENT_USER_ID) {
+                    payload.satisfaction = satisfactionValue;
+                }
+                api("/api/branch/threads/" + state.selectedId + "/close/", "POST", payload).then(function () {
                     setVisible(closeDialog, false); closeReasonText.value = "";
                     return loadThreads();
                 }).catch(showError);

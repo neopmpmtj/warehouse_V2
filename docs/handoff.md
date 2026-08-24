@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 24 August 2026, 07:55 WEST.
+> **Read this first when resuming work.** Last updated: 24 August 2026, 09:50 WEST.
 
 ---
 
@@ -18,28 +18,45 @@
 | 5+ — Sub-families (`FamilyProduct` → `SubFamily`) | ✅ **Done** |
 | 5+ — Warehouse FIFO stock reservation (D32) | ✅ **Done** |
 | 5+ — Request threads (catalogue-gap requests) | ✅ **Done** (reviewed 24 Aug) |
-| 5+ — Request threads review fixes (M1–M5, L1–L6) | 🔵 **Next — do this FIRST** |
+| 5+ — Request threads review fixes (M1–M5, L1–L6) | ✅ **Done** |
 | 5+ — Company Voice (suggestion box) | ✅ **Done** |
-| 6 — Email automation | ⏸ Next (after review fixes) |
+| 6 — Email automation | 🔵 **Next** |
 | 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
 
-**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), and the request-threads feature (catalogue-gap requests) are complete.** **Next session: fix the request-threads review findings FIRST (see below), then Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), request threads, Company Voice, and the 24 Aug threads-review M/L fixes are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
 
-**Full suite green (479 tests).**
+**Full suite green (489 tests).**
 
 ---
 
 ## Next session — do this
 
-1. **🔴 FIX THE REQUEST-THREADS REVIEW FINDINGS FIRST — before any Phase 6 work.** Report: [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md) — **17 findings: 5 Medium (M1–M5), 6 Low (L1–L6), 6 Nit (N1–N6); no Critical/High**. Fix at minimum M1–M5 (M1/M2: one-line 400/type-coercion; M3: prefetch/N+1; M4: hide close/link dialogs in `selectThread` — wrong-thread close/link; M5: override-close satisfaction semantics), then L1–L6 as time allows. Re-run the full suite (**461 tests**) after each fix. Do **not** start Phase 6 until the review findings are fixed.
-2. **Then: Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
-3. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
-4. **Review backlogs** — sub-family stitch-in review is **closed and archived** ([`docs/archive/sub-family-review-2026-08-23-1345.md`](archive/sub-family-review-2026-08-23-1345.md)); 1303 and 2208 archives are **not** work queues. The **24 Aug threads review IS a live queue** (see item 1).
-5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`orders/migrations/0002_line_quantity_reserved.py`).
+1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
+2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
+3. **Review backlogs** — sub-family stitch-in review is **closed and archived**; 1303 and 2208 archives are **not** work queues. The 24 Aug threads review **M1–M5 and L1–L6 are applied**; leftover **N1–N6 nits** are optional (not a Phase 6 blocker). Report: [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md).
+4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`threads/migrations/0003_satisfaction_nullable.py`).
 
 ---
 
-## This session — Company Voice app ✅
+## This session (24 Aug 2026) — request-threads review fixes ✅
+
+- **Applied:** M1–M5 and L1–L6 from [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md). Nits N1–N6 left as-is (not blocking Phase 6).
+- **M1/M2:** non-string JSON and `?branch_id=abc` return **400** (not 500).
+- **M3:** list/detail prefetch `read_states` + `items`; `is_unread_for` uses the prefetch cache (query count does not grow with N).
+- **M4:** `selectThread` hides close/link dialogs so confirm cannot hit the wrong thread.
+- **M5:** override close stores `satisfaction=None` (opener-only rating); close dialog hides stars on override. Migration `threads/0003_satisfaction_nullable.py`.
+- **L1:** `link_items` rejects unknown ids; re-link skips a duplicate changelog row.
+- **L2:** GET detail no longer marks read; explicit POST `…/mark-read/` (list click). Page-load preview does not clear the unread badge.
+- **L3:** branch empty-state hides once threads exist.
+- **L4:** item search uses `@warehouse_threads_required` + `@require_GET` (anonymous **401**).
+- **L5:** `create_thread` requires the opener to be a member of the branch.
+- **L6:** satisfaction rejects bools and non-ints (`True`, `3.7`).
+- **Tests:** +10 → **489** total.
+- **Manuals:** [`08-request-threads.md`](user-manuals/08-request-threads.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md) §2.5.
+
+---
+
+## Earlier this session — Company Voice app ✅
 
 - **App:** `company_voice` — company-wide suggestion box at `/company-voice/` (all logged-in staff).
 - **Models:** `VoicePost` (optional tag, anonymous flag), `VoiceSubThread` (one per post), `VoiceComment`.
@@ -58,7 +75,7 @@
 - **M1–M5 (Medium):** non-string JSON → 500 (`services.py:97,129,133`); `?branch_id=abc` → 500 (`console_views.py:225`); N+1 list queries (dead prefetch, `models.py:108–116`); stale dialogs on thread switch → wrong-thread close/link (both templates); override close stamps the opener's satisfaction (`services.py:279–341`).
 - **L1–L6 (Low):** `link_items` silently accepts nonexistent item IDs; page-load auto-mark-read (GET side-effect); branch empty-state stays visible; lighter gate on `search_items_for_link`; `create_thread` no membership check; satisfaction coercion (`3.7→3`, `True→1`).
 - **N1–N6 (Nit):** dead code (`_bump`, `for_user_branches`, `read_attr`); pointless catalog call on warehouse page; mixed visibility patterns; no pagination; silent double-close; unrecognized `?status=` → empty set.
-- ⚠️ **All agents: fix M1–M5 (then L1–L6) before starting Phase 6.** The branch was merged to `main` on 24 Aug with this backlog live.
+- ⚠️ **M1–M5 and L1–L6 applied 24 Aug (afternoon).** Leftover **N1–N6 nits** are optional and do **not** block Phase 6.
 
 ---
 
@@ -295,10 +312,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 24 Aug 2026, 07:55 WEST)
+## Git (as of 24 August 2026, 09:50 WEST)
 
-- Branch: **`feature/branch-request-threads`** — request threads (catalogue-gap requests) + 24 Aug review report + doc updates; **merged to `main` and pushed 24 Aug**.
-- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, and the **live review backlog**.
+- Branch: **`cursor/threads-review-fixes-a734`** — request-threads review M1–M5 + L1–L6.
+- `main` has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, Company Voice, and the 24 Aug review report.
 - Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -309,7 +326,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput
 ```
 
-- Last full suite: **461 OK** with `--noinput` (includes warehouse FIFO reservation + request threads).
+- Last full suite: **489 OK** with `--noinput` (includes warehouse FIFO reservation + request threads + Company Voice + review-fix tests).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -357,7 +374,7 @@ python manage.py runserver
 | `README.md` | setup, URLs, seed, how to run |
 | `docs/PROJECT-PLAN.md` | **Living plan** — sequencing + status tracker + locked decisions; tick its tracker every session |
 | `docs/archive/code-review-full-2026-08-21-1303.md` | Follow-up review — **concluded & archived** (N1–N12 applied) |
-| `docs/reviews/threads-review-2026-08-24.md` | Request-threads review — **LIVE work queue: fix M1–M5, L1–L6 before Phase 6** |
+| `docs/reviews/threads-review-2026-08-24.md` | Request-threads review — **M1–M5 and L1–L6 applied**; leftover N1–N6 nits optional |
 | `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; L13 deferred) |
 | `docs/archive/code-review-full-2026-08-20-1928.md` | Prior full review — concluded |
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |
