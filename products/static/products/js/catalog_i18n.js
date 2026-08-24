@@ -76,3 +76,7 @@ const CATALOG_I18N = {
         errorGeneric: "Não foi possível concluir o pedido.",
     },
 };
+
+// Dashboard selector stores "pt"; the old Settings popover stored "pt-PT".
+CATALOG_I18N.pt = CATALOG_I18N["pt-PT"];
+

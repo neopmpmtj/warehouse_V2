@@ -64,7 +64,7 @@ The screen is one page with a top bar, two action buttons, then two tables.
 
 **A. Top bar**
 - Title: **Goods receipt & stock** (*Receção de mercadorias e stock*)
-- **Settings** gear (top-right) — signed in as *you@company*, language (English / Português), theme toggle, **Sign out**, **Help** (placeholder)
+- **Settings** gear (top-right) — signed in as *you@company*, **Sign out**, **Help** (placeholder). Language and theme are set on the staff dashboard (`/`).
 - Press **Escape** to close the Settings panel, or the **New receipt** / **Adjust stock** dialog (**Cancel**)
 
 **B. Toolbar**
@@ -212,8 +212,8 @@ Same as the other consoles:
 
 - **Dates:** DD/MM/YYYY, 24-hour time (e.g. `20/08/2026 14:05`).
 - **Timezone:** your local time (new users default to **Europe/Lisbon**).
-- **Language:** English / Português (Settings gear; remembered).
-- **Theme:** light / dark (Settings gear; remembered).
+- **Language:** English / Português — set on the staff dashboard (`/`) or branch catalog (`/branch/catalog/`); remembered in this browser.
+- **Theme:** light / dark — same bar as language; remembered.
 
 ---
 

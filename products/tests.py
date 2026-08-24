@@ -10,7 +10,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.contrib.messages import get_messages
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.urls import reverse
 
 from accounts.groups import (
@@ -3185,3 +3185,54 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.client.force_login(self.staff_user)
         response = self.client.get(reverse("manage_catalog_list") + "?family_id=abc")
         self.assertEqual(response.status_code, 400)
+
+
+class LanguageCodeContractTests(SimpleTestCase):
+    """Dashboard <select> stores cc-lang=pt; warehouse dicts were keyed pt-PT."""
+
+    def test_preferences_bar_option_is_pt(self):
+        html = (
+            settings.BASE_DIR / "products/templates/products/includes/preferences_bar.html"
+        ).read_text()
+        self.assertIn('id="pref-language"', html)
+        self.assertIn('value="pt"', html)
+        self.assertNotIn('value="pt-PT"', html)
+
+    def test_preferences_bar_normalizes_legacy_pt_PT(self):
+        source = (
+            settings.BASE_DIR / "products/static/products/js/preferences_bar.js"
+        ).read_text()
+        self.assertIn("function normalizeLang", source)
+        self.assertIn('startsWith("pt")', source)
+
+    def test_warehouse_i18n_dicts_resolve_pt_and_pt_PT(self):
+        files = [
+            (
+                settings.BASE_DIR / "products/static/products/js/console_i18n.js",
+                "CONSOLE_I18N",
+            ),
+            (
+                settings.BASE_DIR / "products/static/products/js/catalog_i18n.js",
+                "CATALOG_I18N",
+            ),
+            (
+                settings.BASE_DIR / "inventory/static/inventory/js/goods_receipts_i18n.js",
+                "GR_I18N",
+            ),
+            (
+                settings.BASE_DIR
+                / "procurement/static/procurement/js/purchase_orders_i18n.js",
+                "PO_I18N",
+            ),
+        ]
+        for path, global_name in files:
+            with self.subTest(file=path.name):
+                source = path.read_text()
+                self.assertIn(f'{global_name}.pt = {global_name}["pt-PT"]', source)
+                self.assertIn('"pt-PT":', source)
+
+    def test_company_voice_i18n_accepts_legacy_pt_PT(self):
+        source = (
+            settings.BASE_DIR / "company_voice/static/company_voice/js/feed_i18n.js"
+        ).read_text()
+        self.assertIn('window.COMPANY_VOICE_I18N["pt-PT"]', source)

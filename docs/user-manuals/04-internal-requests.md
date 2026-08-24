@@ -321,8 +321,8 @@ Same as the other consoles:
 
 - **Dates:** DD/MM/YYYY, 24-hour time (e.g. `20/08/2026 14:05`).
 - **Timezone:** your local time (new users default to **Europe/Lisbon**).
-- **Language:** English / Português (top-right; remembered).
-- **Theme:** light / dark (top-right; remembered).
+- **Language:** English / Português — set on the staff dashboard (`/`) or branch catalog (`/branch/catalog/`); remembered in this browser.
+- **Theme:** light / dark — same bar as language on those landing pages; remembered.
 
 ---
 

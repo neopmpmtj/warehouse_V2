@@ -167,7 +167,16 @@
                 },
             };
 
-            function lang() { try { return localStorage.getItem(LANG_KEY) || "en"; } catch (e) { return "en"; } }
+            I18N["pt-PT"] = I18N.pt;
+
+            function lang() {
+                try {
+                    var raw = localStorage.getItem(LANG_KEY) || "en";
+                    return raw.toLowerCase().indexOf("pt") === 0 ? "pt" : "en";
+                } catch (e) {
+                    return "en";
+                }
+            }
             function t(key) { var d = I18N[lang()] || I18N.en; return d[key] !== undefined ? d[key] : (I18N.en[key] || key); }
             function statusLabel(s) {
                 var key = s.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); });

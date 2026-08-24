@@ -3,6 +3,10 @@
    Reads/writes the same localStorage keys the consoles use (cc-lang /
    cc-theme), so a choice made here is already applied when the user
    navigates to any console page.
+
+   Language codes: the dashboard <select> stores "en" / "pt". Warehouse
+   console dictionaries were keyed as "pt-PT" (the old Settings popover
+   value). Normalize so both stored values apply.
 */
 (function () {
     const LANG_KEY = "cc-lang";
@@ -14,6 +18,7 @@
             themeDark: "Dark theme",
             themeLight: "Light theme",
             settings: "Settings",
+            settingsAria: "Settings",
             signedInAs: "Signed in as",
             signOut: "Sign out",
             help: "Help",
@@ -23,6 +28,7 @@
             themeDark: "Tema escuro",
             themeLight: "Tema claro",
             settings: "Definições",
+            settingsAria: "Definições",
             signedInAs: "Sessão iniciada como",
             signOut: "Terminar sessão",
             help: "Ajuda",
@@ -45,8 +51,15 @@
         }
     }
 
+    function normalizeLang(raw) {
+        if (raw && String(raw).toLowerCase().startsWith("pt")) {
+            return "pt";
+        }
+        return "en";
+    }
+
     function currentLang() {
-        return safeGet(LANG_KEY, "en");
+        return normalizeLang(safeGet(LANG_KEY, "en"));
     }
 
     function currentTheme() {
@@ -59,15 +72,17 @@
     }
 
     function applyStaticI18n() {
+        const lang = currentLang();
+        document.documentElement.lang = lang === "pt" ? "pt-PT" : "en";
         document.querySelectorAll("[data-i18n]").forEach((node) => {
             const key = node.getAttribute("data-i18n");
-            if (DICT[currentLang()] && DICT[currentLang()][key]) {
+            if (DICT[lang] && DICT[lang][key]) {
                 node.textContent = t(key);
             }
         });
         document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
             const key = node.getAttribute("data-i18n-aria");
-            if (DICT[currentLang()] && DICT[currentLang()][key]) {
+            if (DICT[lang] && DICT[lang][key]) {
                 node.setAttribute("aria-label", t(key));
             }
         });
@@ -83,11 +98,15 @@
     }
 
     function bind() {
+        const canonical = currentLang();
+        if (safeGet(LANG_KEY, "en") !== canonical) {
+            safeSet(LANG_KEY, canonical);
+        }
         const select = document.getElementById("pref-language");
         if (select) {
-            select.value = currentLang();
+            select.value = canonical;
             select.addEventListener("change", (event) => {
-                safeSet(LANG_KEY, event.target.value);
+                safeSet(LANG_KEY, normalizeLang(event.target.value));
                 applyStaticI18n();
                 applyTheme(currentTheme());
             });

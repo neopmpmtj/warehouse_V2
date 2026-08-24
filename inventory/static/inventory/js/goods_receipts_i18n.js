@@ -156,3 +156,7 @@ const GR_I18N = {
         "adjust_below_reserved": "Não é possível reduzir o stock abaixo da quantidade reservada para requisições aprovadas.",
     },
 };
+
+// Dashboard selector stores "pt"; the old Settings popover stored "pt-PT".
+GR_I18N.pt = GR_I18N["pt-PT"];
+
