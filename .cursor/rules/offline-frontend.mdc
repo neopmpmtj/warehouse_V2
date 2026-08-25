@@ -1,30 +1,29 @@
 ---
-description: Phase 6 offline catalogue — not implemented; files listed here do not exist
+description: Phase 6 offline catalogue — branch Service Worker + IndexedDB
 alwaysApply: false
 ---
 
-# Offline frontend (Phase 6 — not the active session)
+# Offline frontend (Phase 6 — branch phone UX)
 
-**Do not implement this until Phase 6 is the active session.** The Service Worker + IndexedDB catalogue was built once and **deleted**. Staff consoles (`/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`) are online-only.
+Branch pages under `/branch/…` use a Service Worker + IndexedDB layer. Warehouse `/manage/…` consoles stay **online-only**.
 
-There is no `db.js`, `product_list.js`, `register_sw.js`, `service_worker.js`, or `GET /api/products/` in the tree today.
-
-When Phase 6 re-adds offline catalogue (after Phase 5 branches):
-
-## Responsibilities (do not merge)
+## Files
 
 | File | Role |
 |------|------|
-| `db.js` | IndexedDB open, save, read catalogue |
-| `product_list.js` | Fetch API, fallback to cache, display table |
-| `register_sw.js` | Service Worker registration |
-| `service_worker.js` (template) | Cache app shell only — not API responses |
+| [`branches/static/branches/js/db.js`](branches/static/branches/js/db.js) | IndexedDB: `catalog_items`, `catalog_meta`, `pending_requests` |
+| [`branches/static/branches/js/branch_catalog.js`](branches/static/branches/js/branch_catalog.js) | Fetch API, save cache, offline fallback |
+| [`branches/static/branches/js/sync_queue.js`](branches/static/branches/js/sync_queue.js) | Replay offline requisição drafts to `POST /api/branch/requests/sync/` |
+| [`orders/static/orders/js/branch_requests.js`](orders/static/orders/js/branch_requests.js) | Branch requisição UI + offline draft queue |
+| [`branches/static/branches/js/register_sw.js`](branches/static/branches/js/register_sw.js) | Service Worker registration |
+| [`branches/templates/branches/service_worker.js`](branches/templates/branches/service_worker.js) | SW template — served at `/service-worker.js` |
 
 ## Rules
 
-- Service Worker served from `/service-worker.js` (root scope)
-- Do not cache `/api/` in the Service Worker — API failure triggers IndexedDB fallback
-- Bump `CACHE_NAME` version when app shell files change
-- Include all shell scripts in `APP_SHELL` (including `register_sw.js`)
-- IndexedDB stores downloaded catalogue only — not user-created products
+- Service Worker at `/service-worker.js` (root scope)
+- Do **not** cache `/api/` in the Service Worker — API failure triggers IndexedDB fallback in page JS
+- Bump `CACHE_NAME` in `service_worker.js` when app shell files change
+- Include shell scripts in `APP_SHELL` (including `register_sw.js`)
+- IndexedDB stores downloaded catalogue + pending offline drafts — not warehouse master data
 - PostgreSQL remains the source of truth
+- Bump `?v=` on every static reference in branch templates when JS/CSS changes

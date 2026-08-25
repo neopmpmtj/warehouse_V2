@@ -1,5 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
+import uuid
+
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -366,6 +368,71 @@ def create_internal_request(branch, user, notes=""):
         getattr(user, "email", None),
     )
     return request
+
+
+def _parse_client_uuid(value):
+    if value in (None, ""):
+        raise ValidationError("client_uuid is required.", code="client_uuid_required")
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, AttributeError, TypeError) as exc:
+        raise ValidationError("client_uuid must be a valid UUID.", code="invalid_client_uuid") from exc
+
+
+@transaction.atomic
+def sync_internal_request(branch, user, client_uuid, notes="", lines=None):
+    """Create a draft request idempotently from an offline client UUID."""
+    _ensure_branch_active(branch)
+    parsed_uuid = _parse_client_uuid(client_uuid)
+
+    existing = (
+        InternalRequest.objects.filter(client_uuid=parsed_uuid, branch=branch)
+        .prefetch_related("lines")
+        .first()
+    )
+    if existing is not None:
+        return existing, False
+
+    request = InternalRequest(
+        branch=branch,
+        created_by=user,
+        notes=(notes or "").strip(),
+        status=InternalRequest.Status.DRAFT,
+        client_uuid=parsed_uuid,
+    )
+    request.full_clean(exclude=None, validate_unique=False, validate_constraints=False)
+    request.save()
+
+    _log(
+        request,
+        user,
+        InternalRequestChangeLog.Action.CREATED,
+        {
+            "branch": {"id": branch.id, "name": branch.name},
+            "notes": request.notes,
+            "status": request.status,
+            "client_uuid": str(parsed_uuid),
+            "source": "offline_sync",
+        },
+    )
+
+    for line_data in lines or []:
+        add_line(
+            request,
+            item=line_data.get("item_id"),
+            quantity=line_data.get("quantity"),
+            user=user,
+        )
+
+    request = InternalRequest.objects.prefetch_related("lines").get(pk=request.pk)
+    logger.info(
+        "Synced internal request id=%s client_uuid=%s branch=%s user=%s",
+        request.id,
+        parsed_uuid,
+        branch.name,
+        getattr(user, "email", None),
+    )
+    return request, True
 
 
 @transaction.atomic

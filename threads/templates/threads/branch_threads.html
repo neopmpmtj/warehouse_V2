@@ -46,7 +46,8 @@
         .stars .star { color: #ddd; }
         .stars .star.on { color: #f5a623; }
     </style>
-    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
+    {% include "branches/includes/offline_assets.html" %}
 </head>
 <body>
     <header>
@@ -415,6 +416,6 @@
             loadThreads().catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=1"></script>
 </body>
 </html>

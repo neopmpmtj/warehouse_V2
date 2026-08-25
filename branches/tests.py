@@ -249,6 +249,16 @@ class ActiveBranchMiddlewareTests(TestCase):
         self.assertNotIn(SESSION_KEY, session)
 
 
+class ServiceWorkerTests(TestCase):
+    def test_service_worker_served_at_root(self):
+        response = self.client.get("/service-worker.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/javascript")
+        self.assertContains(response, "centcompras-branch-v1")
+        self.assertContains(response, "/api/")
+        self.assertContains(response, "CACHE_NAME")
+
+
 class BranchViewTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -328,6 +338,8 @@ class BranchViewTests(TestCase):
         self.assertContains(response, "Switch branch")
         self.assertContains(response, 'id="pref-language"')
         self.assertContains(response, 'id="pref-theme"')
+        self.assertContains(response, "branch_catalog.js")
+        self.assertContains(response, "register_sw.js")
         self.assertNotContains(response, 'id="language-select"')
         self.assertNotContains(response, 'id="theme-toggle"')
 

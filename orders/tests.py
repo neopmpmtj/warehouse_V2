@@ -1,4 +1,5 @@
 import json
+import uuid
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -248,6 +249,8 @@ class InternalRequestApiTests(TestCase):
         self.assertContains(r, 'id="settings-toggle"')
         self.assertContains(r, "Catalog")
         self.assertContains(r, "Switch branch")
+        self.assertContains(r, "branch_requests.js")
+        self.assertContains(r, "register_sw.js")
         self.assertNotContains(r, 'id="language-select"')
         self.assertNotContains(r, 'id="theme-toggle"')
 
@@ -266,6 +269,75 @@ class InternalRequestApiTests(TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertIn("already has a line", r.json()["error"])
         self.assertNotIn("[", r.json()["error"])
+
+
+class OfflineSyncTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.branch = create_branch("North")
+        self.operator = _make_branch_user("sync-op@example.com", self.branch, ROLE_OPERATOR)
+        self.item = _make_item("Widget", wholesale="5.00", code="W1")
+        self.client_uuid = str(uuid.uuid4())
+
+    def _login(self):
+        self.client.force_login(self.operator)
+        session = self.client.session
+        session[SESSION_KEY] = self.branch.id
+        session.save()
+
+    def _post_json(self, url, payload):
+        return self.client.post(url, data=json.dumps(payload), content_type="application/json")
+
+    def test_sync_creates_draft_request(self):
+        self._login()
+        r = self._post_json(
+            reverse("request_sync"),
+            {
+                "client_uuid": self.client_uuid,
+                "notes": "offline draft",
+                "lines": [{"item_id": self.item.id, "quantity": "2"}],
+            },
+        )
+        self.assertEqual(r.status_code, 201)
+        body = r.json()
+        self.assertFalse(body["idempotent"])
+        self.assertEqual(body["request"]["status"], "draft")
+        self.assertEqual(body["request"]["client_uuid"], self.client_uuid)
+        self.assertEqual(len(body["request"]["lines"]), 1)
+
+    def test_sync_is_idempotent(self):
+        self._login()
+        payload = {
+            "client_uuid": self.client_uuid,
+            "notes": "offline draft",
+            "lines": [{"item_id": self.item.id, "quantity": "2"}],
+        }
+        first = self._post_json(reverse("request_sync"), payload)
+        second = self._post_json(reverse("request_sync"), payload)
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 200)
+        self.assertTrue(second.json()["idempotent"])
+        self.assertEqual(first.json()["request"]["id"], second.json()["request"]["id"])
+        self.assertEqual(InternalRequest.objects.filter(client_uuid=self.client_uuid).count(), 1)
+
+    def test_sync_rejects_inactive_item(self):
+        inactive = _make_item("Dead", wholesale="5.00", code="DEAD", active=False)
+        self._login()
+        r = self._post_json(
+            reverse("request_sync"),
+            {
+                "client_uuid": str(uuid.uuid4()),
+                "lines": [{"item_id": inactive.id, "quantity": "1"}],
+            },
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("inactive item", r.json()["error"].lower())
+
+    def test_sync_requires_client_uuid(self):
+        self._login()
+        r = self._post_json(reverse("request_sync"), {"lines": []})
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["code"], "client_uuid_required")
 
 
 class WarehouseConsoleTests(TestCase):

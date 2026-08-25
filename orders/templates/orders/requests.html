@@ -27,12 +27,14 @@
         .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
         input, select { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
         .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: #b00020; margin-top: 10px; }
+        .banner-info { background: #e8f0fe; color: #0b57d0; }
         .status { text-transform: capitalize; font-weight: 600; }
         .selected { background: #eef4fe; }
     </style>
-    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
+    {% include "branches/includes/offline_assets.html" %}
 </head>
-<body>
+<body data-branch-id="{{ branch.id }}" data-can-approve="{{ can_approve|yesno:'true,false' }}">
     <header>
         <h1>{{ branch.name }} — Requisição interna</h1>
         <div class="header-actions">
@@ -45,6 +47,7 @@
     <main>
         <section class="panel">
             <h2>Requests</h2>
+            <p id="offline-banner" class="banner banner-info" hidden></p>
             <div class="row">
                 <button id="new-request" class="btn btn-primary">New request</button>
             </div>
@@ -76,181 +79,10 @@
         </section>
     </main>
 
-    <script>
-        (function () {
-            var CSRF = document.querySelector('meta[name="csrf-token"]').content;
-            var CAN_APPROVE = {{ can_approve|yesno:"true,false" }};
-            var state = { selectedId: null, requests: [], items: [] };
-
-            var requestBody = document.getElementById("request-body");
-            var lineBody = document.getElementById("line-body");
-            var lineForm = document.getElementById("line-form");
-            var lineItem = document.getElementById("line-item");
-            var actions = document.getElementById("actions");
-            var banner = document.getElementById("banner");
-            var detailTitle = document.getElementById("detail-title");
-            var detailMeta = document.getElementById("detail-meta");
-            var detailTotals = document.getElementById("detail-totals");
-
-            function el(tag, text, className) {
-                var node = document.createElement(tag);
-                if (text != null) node.textContent = text;
-                if (className) node.className = className;
-                return node;
-            }
-
-            function showError(msg) {
-                banner.textContent = msg || "Request failed.";
-                banner.hidden = false;
-            }
-
-            function clearError() { banner.hidden = true; }
-
-            function api(path, method, body) {
-                var opts = { method: method || "GET", headers: { "Accept": "application/json", "X-CSRFToken": CSRF } };
-                if (body !== undefined) {
-                    opts.headers["Content-Type"] = "application/json";
-                    opts.body = JSON.stringify(body);
-                }
-                return fetch(path, opts).then(function (resp) {
-                    return resp.json().then(function (data) {
-                        if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
-                        return data;
-                    });
-                });
-            }
-
-            function loadItems() {
-                return api("/api/branch/catalog/").then(function (data) {
-                    state.items = data.catalog || [];
-                    lineItem.textContent = "";
-                    state.items.forEach(function (item) {
-                        var opt = document.createElement("option");
-                        opt.value = item.id;
-                        opt.textContent = (item.internal_code || "") + " — " + item.description;
-                        lineItem.appendChild(opt);
-                    });
-                });
-            }
-
-            function renderList() {
-                requestBody.textContent = "";
-                state.requests.forEach(function (req) {
-                    var tr = document.createElement("tr");
-                    if (req.id === state.selectedId) tr.className = "selected";
-                    tr.appendChild(el("td", req.id));
-                    tr.appendChild(el("td", req.status, "status"));
-                    tr.appendChild(el("td", new Date(req.created_at).toLocaleString()));
-                    tr.addEventListener("click", function () { selectRequest(req.id); });
-                    requestBody.appendChild(tr);
-                });
-            }
-
-            function loadRequests() {
-                return api("/api/branch/requests/").then(function (data) {
-                    state.requests = data.requests || [];
-                    renderList();
-                });
-            }
-
-            function renderDetail(req) {
-                detailTitle.textContent = "Request #" + req.id;
-                detailMeta.textContent = "Status: " + req.status;
-                detailTotals.textContent = "Net " + req.totals.net + " · VAT " + req.totals.vat + " · Gross " + req.totals.gross;
-
-                lineBody.textContent = "";
-                req.lines.forEach(function (line) {
-                    var tr = document.createElement("tr");
-                    tr.appendChild(el("td", line.internal_code));
-                    tr.appendChild(el("td", line.description));
-                    tr.appendChild(el("td", line.quantity));
-                    tr.appendChild(el("td", line.unit_price));
-                    var td = document.createElement("td");
-                    if (req.status === "draft") {
-                        var btn = el("button", "Remove", "btn");
-                        btn.addEventListener("click", function () { removeLine(req.id, line.id); });
-                        td.appendChild(btn);
-                    }
-                    tr.appendChild(td);
-                    lineBody.appendChild(tr);
-                });
-
-                var isDraft = req.status === "draft";
-                lineForm.hidden = !isDraft;
-
-                actions.textContent = "";
-                if (isDraft) {
-                    addAction("Submit", function () { action(req.id, "submit"); }, true);
-                    addAction("Cancel", function () { action(req.id, "cancel"); });
-                } else if (req.status === "submitted" && CAN_APPROVE) {
-                    addAction("Approve", function () {
-                        if (confirm("Approve request #" + req.id + " for " + req.totals.gross + " gross?")) {
-                            action(req.id, "approve");
-                        }
-                    }, true);
-                    addAction("Reject", function () {
-                        var reason = prompt("Reason for rejection:");
-                        if (reason !== null) action(req.id, "reject", { reason: reason });
-                    });
-                } else if (req.status === "approved" && CAN_APPROVE) {
-                    addAction("Cancel", function () {
-                        var reason = prompt("Reason for cancellation:");
-                        if (reason !== null) action(req.id, "cancel", { reason: reason });
-                    });
-                }
-            }
-
-            function addAction(label, fn, primary) {
-                var btn = el("button", label, primary ? "btn btn-primary" : "btn");
-                btn.addEventListener("click", fn);
-                actions.appendChild(btn);
-            }
-
-            function selectRequest(id) {
-                state.selectedId = id;
-                clearError();
-                api("/api/branch/requests/" + id + "/").then(function (data) {
-                    renderDetail(data.request);
-                    renderList();
-                }).catch(showError);
-            }
-
-            function action(id, name, body) {
-                clearError();
-                api("/api/branch/requests/" + id + "/" + name + "/", "POST", body || {})
-                    .then(function () { return loadRequests(); })
-                    .then(function () { return selectRequest(id); })
-                    .catch(showError);
-            }
-
-            function addLine() {
-                var itemId = lineItem.value;
-                var qty = document.getElementById("line-qty").value;
-                if (!itemId || !qty) { showError("Choose an item and a quantity."); return; }
-                clearError();
-                api("/api/branch/requests/" + state.selectedId + "/lines/", "POST", { item_id: itemId, quantity: qty })
-                    .then(function () { return selectRequest(state.selectedId); })
-                    .catch(showError);
-            }
-
-            function removeLine(requestId, lineId) {
-                clearError();
-                api("/api/branch/requests/" + requestId + "/lines/" + lineId + "/remove/", "DELETE")
-                    .then(function () { return selectRequest(requestId); })
-                    .catch(showError);
-            }
-
-            document.getElementById("new-request").addEventListener("click", function () {
-                clearError();
-                api("/api/branch/requests/create/", "POST", {})
-                    .then(function (data) { return loadRequests().then(function () { selectRequest(data.request.id); }); })
-                    .catch(showError);
-            });
-            document.getElementById("add-line").addEventListener("click", addLine);
-
-            loadItems().then(loadRequests).catch(showError);
-        })();
-    </script>
-    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
+    <script src="{% static 'branches/js/db.js' %}?v=1"></script>
+    <script src="{% static 'branches/js/branch_offline.js' %}?v=1"></script>
+    <script src="{% static 'branches/js/sync_queue.js' %}?v=1"></script>
+    <script src="{% static 'orders/js/branch_requests.js' %}?v=1"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=1"></script>
 </body>
 </html>

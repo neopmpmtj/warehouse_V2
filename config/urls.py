@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.urls import include, path
 
+from branches.views import service_worker
+
 urlpatterns = [
+    path("service-worker.js", service_worker, name="service_worker"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("branch/", include("branches.web_urls")),

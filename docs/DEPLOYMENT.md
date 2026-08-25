@@ -162,6 +162,12 @@ certbot edits the nginx config to serve HTTPS and auto-renews. `prod.py`
 enforces `SECURE_SSL_REDIRECT`, HSTS, and secure cookies — all handled once
 certbot enables TLS.
 
+Branch offline (Phase 6) uses a Service Worker at `/service-worker.js` and
+IndexedDB in the browser. **Service Workers require HTTPS in production** (localhost
+/ `127.0.0.1` are exempt for development). After deploy, branch staff should open
+`https://centcompras.yourdomain.com/branch/catalog/` at least once while online so
+the app shell and catalogue cache download before going offline.
+
 ---
 
 ## 11. Every deploy (after pushing to main)

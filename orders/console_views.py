@@ -29,6 +29,7 @@ from .services import (
     reject,
     remove_line,
     submit,
+    sync_internal_request,
     update_branch_approval_limit,
     update_internal_request,
     update_line,
@@ -86,6 +87,7 @@ def _serialize_request(request):
             "gross": _decimal_string(gross),
         },
         "created_at": request.created_at.isoformat(),
+        "client_uuid": str(request.client_uuid) if request.client_uuid else None,
         "lines": [_serialize_line(line) for line in request.lines.all()],
     }
 
@@ -145,6 +147,31 @@ def request_create(request):
     except ValidationError as exc:
         return _validation_error_response(exc)
     return JsonResponse({"request": _serialize_request(req)}, status=201)
+
+
+@active_branch_required
+@require_POST
+def request_sync(request):
+    branch = request.active_branch
+    data = _parse_body(request)
+    try:
+        req, created = sync_internal_request(
+            branch,
+            request.user,
+            client_uuid=data.get("client_uuid"),
+            notes=data.get("notes", ""),
+            lines=data.get("lines"),
+        )
+    except ValidationError as exc:
+        return _validation_error_response(exc)
+    status = 201 if created else 200
+    return JsonResponse(
+        {
+            "request": _serialize_request(req),
+            "idempotent": not created,
+        },
+        status=status,
+    )
 
 
 @active_branch_required
