@@ -3,6 +3,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_GET
 
+from .navigation import branch_dashboard_cards, branch_page_context
 from .permissions import active_branch_required
 from .services import BRANCH_HOME_URL, get_active_memberships, set_active_branch
 
@@ -31,12 +32,25 @@ def branch_select(request):
 
 @active_branch_required
 @require_GET
+def branch_dashboard(request):
+    memberships = list(get_active_memberships(request.user))
+    context = branch_page_context(request)
+    context["cards"] = branch_dashboard_cards(include_picker=len(memberships) > 1)
+    return render(request, "branches/dashboard.html", context)
+
+
+@active_branch_required
+@require_GET
 def branch_catalog(request):
-    return render(
-        request,
-        "branches/catalog.html",
-        {"branch": request.active_branch},
+    context = branch_page_context(request)
+    context.update(
+        {
+            "page_title": "Catalog",
+            "page_title_key": "navBranchCatalog",
+            "active_nav": "catalog",
+        }
     )
+    return render(request, "branches/catalog.html", context)
 
 
 @cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)

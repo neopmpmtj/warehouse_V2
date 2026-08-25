@@ -8,13 +8,6 @@
     <title>Request threads — CentCompras</title>
     <style>
         :root { --border: #ddd; --muted: #666; --brand: #0b57d0; --warn: #b00020; }
-        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
-        header h1 { font-size: 1.2rem; margin: 0; }
-        header .user { color: var(--muted); font-size: .9rem; }
-        header a, header button { margin-left: 12px; color: var(--brand); text-decoration: none; }
-        header form { display: inline; }
-        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
         main { display: grid; grid-template-columns: 360px 1fr; gap: 20px; padding: 20px; }
         @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
         .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
@@ -47,17 +40,11 @@
         .stars .star.on { color: #f5a623; }
     </style>
     <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
     {% include "branches/includes/offline_assets.html" %}
 </head>
 <body>
-    <header>
-        <h1>{{ branch.name }} — <span data-i18n="title">Request threads</span></h1>
-        <div class="header-actions">
-            <a href="{% url 'branch_catalog' %}">Catalog</a>
-            <a href="{% url 'branch_select' %}">Switch branch</a>
-            {% include "products/includes/account_settings.html" %}
-        </div>
-    </header>
+    {% include "branches/includes/branch_page_header.html" %}
 
     <main>
         <section class="panel">
@@ -178,7 +165,7 @@
             }
 
             function applyI18n() {
-                document.querySelectorAll("[data-i18n]").forEach(function (el) {
+                document.querySelectorAll("main [data-i18n], .dialog [data-i18n]").forEach(function (el) {
                     el.textContent = t(el.getAttribute("data-i18n"));
                 });
             }
@@ -416,6 +403,7 @@
             loadThreads().catch(showError);
         })();
     </script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=5"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=1"></script>
 </body>
 </html>

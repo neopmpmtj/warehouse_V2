@@ -19,7 +19,7 @@ The Django admin at **`/admin/`** is **superuser-only**.
 | **Warehouse staff** (warehouse group) | ❌ | ✅ |
 | **Branch staff** (branch membership) | ❌ | ✅ (`/branch/…`) |
 
-Warehouse staff land on **`/`** after login. That dashboard lists every website console (items, catalog, purchase orders, approval limits, goods receipts, internal requests, branch approval limits) plus branch pages and the JSON APIs. On each **`/manage/…`** console page, the **CentCompras** label above the page title links back to **`/`** (dashboard). **Sign out** is a small link on the **Settings** title row (gear, top-right). **Help** is the blue **?** icon next to the gear (placeholder).
+Warehouse staff land on **`/`** after login. Branch-only staff land on **`/branch/`** (branch dashboard). That dashboard lists every branch tool (catalog, requisição, threads, receipts, Company Voice). On each **`/manage/…`** console page, the **CentCompras** label above the page title links back to **`/`** (warehouse dashboard). On branch pages, **CentCompras** links back to **`/branch/`**. **Sign out** is a small link on the **Settings** title row (gear, top-right). **Help** is the blue **?** icon next to the gear (placeholder).
 
 Two rules to remember:
 

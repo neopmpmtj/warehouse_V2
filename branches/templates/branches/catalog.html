@@ -4,39 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Branch catalog — CentCompras</title>
+    <title>{{ branch.name }} — Catalog — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            var lang = "en";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "en";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
+            if (String(lang).toLowerCase().indexOf("pt") === 0) {
+                lang = "pt-PT";
+            } else {
+                lang = "en";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
     <style>
-        :root { --border: #ddd; --muted: #666; --none: #b00020; --low: #b26a00; --ok: #1e7d32; }
-        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
-        header h1 { font-size: 1.2rem; margin: 0; }
-        header .user { color: var(--muted); font-size: .9rem; }
-        header a, header button { margin-left: 12px; color: #0b57d0; text-decoration: none; }
-        header form { display: inline; }
-        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
+        :root { --none: #b00020; --low: #b26a00; --ok: #1e7d32; }
         main { padding: 20px; }
         .banner { padding: 10px 14px; border-radius: 4px; background: #fdecea; color: #b00020; }
         .banner-info { background: #e8f0fe; color: #0b57d0; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
-        th { color: var(--muted); font-weight: 600; font-size: .85rem; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border, #ddd); }
+        th { color: var(--muted, #666); font-weight: 600; font-size: .85rem; }
         .avail-none { color: var(--none); font-weight: 600; }
         .avail-low { color: var(--low); font-weight: 600; }
         .avail-ok { color: var(--ok); font-weight: 600; }
-        .empty { color: var(--muted); }
+        .empty { color: var(--muted, #666); }
     </style>
     <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
     {% include "branches/includes/offline_assets.html" %}
 </head>
 <body data-branch-id="{{ branch.id }}">
-    <header>
-        <h1>{{ branch.name }} — Catalog</h1>
-        <div class="header-actions">
-            {% include "products/includes/preferences_bar.html" %}
-            <a href="{% url 'branch_select' %}">Switch branch</a>
-            {% include "products/includes/account_settings.html" %}
-        </div>
-    </header>
+    {% include "branches/includes/branch_page_header.html" %}
 
     <main>
         <p id="offline-banner" class="banner banner-info" hidden></p>

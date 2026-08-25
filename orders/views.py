@@ -3,6 +3,7 @@ from django.views.decorators.http import require_GET
 
 from accounts.capabilities import can_edit_approval_policy, inventory_permission_flags
 from branches.capabilities import branch_role, can_approve_request
+from branches.navigation import branch_page_context
 from branches.permissions import active_branch_required
 
 from .permissions import internal_request_queue_required
@@ -12,15 +13,17 @@ from .permissions import internal_request_queue_required
 @require_GET
 def request_console(request):
     branch = request.active_branch
-    return render(
-        request,
-        "orders/requests.html",
+    context = branch_page_context(request)
+    context.update(
         {
-            "branch": branch,
             "role": branch_role(request.user, branch),
             "can_approve": can_approve_request(request.user, branch),
-        },
+            "page_title": "Requisição interna",
+            "page_title_key": "cardRequisicao",
+            "active_nav": "requests",
+        }
     )
+    return render(request, "orders/requests.html", context)
 
 
 @internal_request_queue_required

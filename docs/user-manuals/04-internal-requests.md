@@ -32,17 +32,20 @@ Out of stock? The warehouse raises a **purchase order** to a supplier first — 
 
 | Who | Page | What for |
 |-----|------|----------|
-| Branch (any role) | `/branch/select/` | Choose your branch |
+| Branch (any role) | `/branch/` | Branch dashboard — cards to every branch tool |
+| Branch (any role) | `/branch/select/` | Choose your branch (only when you belong to several) |
 | Branch (any role) | `/branch/catalog/` | Read-only catalogue (cost hidden, stock hint) |
 | Branch (any role) | `/branch/requests/` | Raise & edit a requisição |
+| Branch (any role) | `/branch/threads/` | Request items not in the catalogue |
 | Branch (manager / admin) | `/branch/requests/` | Approve / reject |
 | Branch (any role) | `/branch/receipts/` | Confirm arrival against a dispatch |
+| Branch (any role) | `/company-voice/` | Company-wide suggestion box |
 | Warehouse | `/manage/internal-requests/` | Queue of approved requests + goods issue |
 | Warehouse admin | `/manage/branch-approval-limits/` | Branch manager approval caps |
 
 *(During development on your own machine: `http://127.0.0.1:8015/…`.)*
 
-> 📷 **[SCREENSHOT — branch home (catalogue) with top bar]**
+> 📷 **[SCREENSHOT — branch dashboard with card grid and top navigation]**
 
 ---
 
@@ -83,11 +86,15 @@ You may belong to **one branch, several branches, or none**. After signing in:
 
 | Your situation | What happens |
 |----------------|--------------|
-| **One branch** | You go straight to that branch (no picker). |
-| **Several branches** | You land on `/branch/select/` — pick one. |
+| **One branch** | You go straight to **`/branch/`** (branch dashboard). Your branch is selected automatically — no picker. |
+| **Several branches** | You land on `/branch/select/` — pick one, then continue to the dashboard. |
 | **No branch** | The picker says *"You have no active branch access."* Ask your administrator. |
 
-To switch later, click **Switch branch** on any branch page. **Sign out** is a small link on the **Settings** title row (gear, top-right); extra links such as **Catalog**, **Requests**, and **Switch branch** stay visible in the header. **Help** is the blue **?** icon next to the gear (placeholder).
+From the dashboard, open **Catalog**, **Requisição interna**, **Threads**, **Receipts**, or **Company Voice** from the cards. Every branch page also has the same links in the top bar (**Home**, **Catalog**, **Requests**, **Threads**, **Receipts**).
+
+**Switch branch** appears only when you belong to **more than one** branch. If you see only one branch in your life, that link is hidden — you cannot browse other branches.
+
+**Sign out** is a small link on the **Settings** title row (gear, top-right). **Help** is the blue **?** icon next to the gear (placeholder). **Language** and **theme** are on the dashboard (and every branch page that shows the preferences bar).
 
 > 📷 **[SCREENSHOT — branch picker with two branches listed]**
 
@@ -325,7 +332,7 @@ Same as the other consoles:
 
 - **Dates:** DD/MM/YYYY, 24-hour time (e.g. `20/08/2026 14:05`).
 - **Timezone:** your local time (new users default to **Europe/Lisbon**).
-- **Language:** English / Português — set on the staff dashboard (`/`) or branch catalog (`/branch/catalog/`); remembered in this browser.
+- **Language:** English / Português — set on the staff dashboard (`/`) or branch dashboard (`/branch/`); remembered in this browser.
 - **Theme:** light / dark — same bar as language on those landing pages; remembered.
 
 ---

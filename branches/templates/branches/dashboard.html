@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ branch.name }} — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            var lang = "en";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "en";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
+            if (String(lang).toLowerCase().indexOf("pt") === 0) {
+                lang = "pt-PT";
+            } else {
+                lang = "en";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'products/css/dashboard.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
+</head>
+<body>
+    {% include "branches/includes/branch_page_header.html" with page_title="Dashboard" page_title_key="branchDashTitle" active_nav="home" %}
+
+    <main class="branch-dash-main">
+        <section class="dash-section">
+            <h2 data-i18n="sectionBranchWork">Your branch</h2>
+            <div class="card-grid">
+                {% for card in cards %}
+                <a class="dash-card" href="{{ card.url }}">
+                    <span class="dash-card-title" data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                    <span class="dash-card-desc" data-i18n="{{ card.desc_key }}">{{ card.desc }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=5"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
+</body>
+</html>

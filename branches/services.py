@@ -11,7 +11,7 @@ logger = get_logger("centcompras.branches")
 
 SESSION_KEY = "active_branch_id"
 
-BRANCH_HOME_URL = "/branch/catalog/"
+BRANCH_HOME_URL = "/branch/"
 BRANCH_SELECT_URL = "/branch/select/"
 
 
