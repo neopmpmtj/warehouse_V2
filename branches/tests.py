@@ -126,10 +126,10 @@ class PostLoginRedirectTests(TestCase):
         assign_warehouse_group(user, GROUP_ADMINS)
         self.assertEqual(post_login_redirect(user), "/")
 
-    def test_branch_only_single_membership_goes_to_catalog(self):
+    def test_branch_only_single_membership_goes_to_dashboard(self):
         user = _make_user("single@example.com")
         assign_membership(user, self.north, ROLE_OPERATOR)
-        self.assertEqual(post_login_redirect(user), "/branch/catalog/")
+        self.assertEqual(post_login_redirect(user), "/branch/")
 
     def test_branch_only_multiple_memberships_goes_to_picker(self):
         user = _make_user("multi@example.com")
@@ -171,7 +171,7 @@ class PostLoginLandingTests(TestCase):
         user = _make_user("landing-single@example.com")
         assign_membership(user, self.north, ROLE_OPERATOR)
         request = self._request(user)
-        self.assertEqual(post_login_landing(request), "/branch/catalog/")
+        self.assertEqual(post_login_landing(request), "/branch/")
         self.assertEqual(request.session[SESSION_KEY], self.north.id)
 
     def test_multiple_memberships_do_not_select(self):
@@ -271,7 +271,7 @@ class BranchViewTests(TestCase):
         assign_membership(user, self.north, ROLE_OPERATOR)
         self._login(user)
         response = self.client.get(reverse("branch_select"))
-        self.assertRedirects(response, reverse("branch_catalog"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("branch_dashboard"), fetch_redirect_response=False)
         self.assertEqual(self.client.session[SESSION_KEY], self.north.id)
 
     def test_picker_multiple_memberships_lists_branches(self):
@@ -294,7 +294,7 @@ class BranchViewTests(TestCase):
             reverse("branch_select"),
             {"branch_id": self.south.id},
         )
-        self.assertRedirects(response, reverse("branch_catalog"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("branch_dashboard"), fetch_redirect_response=False)
         self.assertEqual(self.client.session[SESSION_KEY], self.south.id)
 
     def test_picker_post_ignores_foreign_branch(self):
@@ -305,6 +305,46 @@ class BranchViewTests(TestCase):
         self._login(user)
         response = self.client.post(reverse("branch_select"), {"branch_id": foreign.id})
         self.assertEqual(response.status_code, 200)  # re-renders picker, no crash
+
+    def test_dashboard_requires_active_branch(self):
+        user = _make_user("dash@example.com")
+        assign_membership(user, self.north, ROLE_OPERATOR)
+        self._login(user)
+        response = self.client.get(reverse("branch_dashboard"))
+        self.assertRedirects(response, reverse("branch_select"), fetch_redirect_response=False)
+
+    def test_dashboard_renders_cards(self):
+        user = _make_user("dash2@example.com")
+        assign_membership(user, self.north, ROLE_MANAGER)
+        self._login(user)
+        session = self.client.session
+        session[SESSION_KEY] = self.north.id
+        session.save()
+        response = self.client.get(reverse("branch_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.north.name)
+        self.assertContains(response, 'href="/branch/catalog/"')
+        self.assertContains(response, 'href="/branch/requests/"')
+        self.assertContains(response, 'href="/branch/threads/"')
+        self.assertContains(response, 'href="/branch/receipts/"')
+        self.assertContains(response, 'href="/company-voice/"')
+        self.assertContains(response, 'data-i18n="cardBranchCatalog"')
+        self.assertNotContains(response, 'href="/branch/select/"')
+        self.assertNotContains(response, "Switch branch")
+        self.assertContains(response, "Manager")
+
+    def test_dashboard_shows_picker_for_multi_membership(self):
+        user = _make_user("dash-multi@example.com")
+        assign_membership(user, self.north, ROLE_OPERATOR)
+        assign_membership(user, self.south, ROLE_OPERATOR)
+        self._login(user)
+        session = self.client.session
+        session[SESSION_KEY] = self.north.id
+        session.save()
+        response = self.client.get(reverse("branch_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/branch/select/"')
+        self.assertContains(response, "Switch branch")
 
     def test_catalog_requires_active_branch(self):
         user = _make_user("catalog@example.com")
@@ -325,7 +365,8 @@ class BranchViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.north.name)
         self.assertContains(response, 'id="settings-toggle"')
-        self.assertContains(response, "Switch branch")
+        self.assertNotContains(response, "Switch branch")
+        self.assertContains(response, 'href="/branch/requests/"')
         self.assertContains(response, 'id="pref-language"')
         self.assertContains(response, 'id="pref-theme"')
         self.assertNotContains(response, 'id="language-select"')
@@ -490,11 +531,11 @@ class LoginRedirectTests(TestCase):
             {"username": email, "password": password},
         )
 
-    def test_branch_only_single_membership_redirects_to_catalog(self):
+    def test_branch_only_single_membership_redirects_to_dashboard(self):
         user = _make_user("login-single@example.com")
         assign_membership(user, self.north, ROLE_OPERATOR)
         response = self._login(user.email)
-        self.assertRedirects(response, reverse("branch_catalog"), fetch_redirect_response=False)
+        self.assertRedirects(response, reverse("branch_dashboard"), fetch_redirect_response=False)
         self.assertEqual(self.client.session[SESSION_KEY], self.north.id)
 
     def test_branch_only_multiple_memberships_redirects_to_picker(self):

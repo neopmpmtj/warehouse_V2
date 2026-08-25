@@ -4,6 +4,7 @@ from django.views.decorators.http import require_GET
 
 from accounts.capabilities import can_edit_approval_policy
 from accounts.groups import warehouse_group_name
+from branches.navigation import branch_dashboard_cards
 from branches.services import get_active_memberships
 
 from .permissions import catalog_required
@@ -96,43 +97,8 @@ def staff_dashboard(request):
 
     branch_cards = []
     if has_branch:
-        branch_cards = [
-            {
-                "title_key": "cardBranchPicker",
-                "desc_key": "cardBranchPickerDesc",
-                "title": "Branch picker",
-                "desc": "Switch the active branch",
-                "url": "/branch/select/",
-            },
-            {
-                "title_key": "cardBranchCatalog",
-                "desc_key": "cardBranchCatalogDesc",
-                "title": "Branch catalog",
-                "desc": "Read-only catalogue (cost hidden)",
-                "url": "/branch/catalog/",
-            },
-            {
-                "title_key": "cardRequisicao",
-                "desc_key": "cardRequisicaoDesc",
-                "title": "Requisição interna",
-                "desc": "Request stock from the warehouse",
-                "url": "/branch/requests/",
-            },
-            {
-                "title_key": "cardBranchThreads",
-                "desc_key": "cardBranchThreadsDesc",
-                "title": "Branch threads",
-                "desc": "Request items not in the catalogue",
-                "url": "/branch/threads/",
-            },
-            {
-                "title_key": "cardBranchReceipts",
-                "desc_key": "cardBranchReceiptsDesc",
-                "title": "Branch receipts",
-                "desc": "Receive goods and view branch stock",
-                "url": "/branch/receipts/",
-            },
-        ]
+        memberships = list(get_active_memberships(user))
+        branch_cards = branch_dashboard_cards(include_picker=len(memberships) > 1)
 
     context = {
         "groups": groups,

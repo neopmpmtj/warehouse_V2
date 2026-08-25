@@ -3,6 +3,7 @@ from django.views.decorators.http import require_GET
 
 from accounts.capabilities import inventory_permission_flags
 from branches.capabilities import can_adjust_branch_stock, can_approve_request
+from branches.navigation import branch_page_context
 from branches.permissions import active_branch_required
 
 from .permissions import inventory_required
@@ -26,12 +27,14 @@ def goods_receipt_console(request):
 @require_GET
 def branch_receipt_console(request):
     branch = request.active_branch
-    return render(
-        request,
-        "inventory/branch_receipts.html",
+    context = branch_page_context(request)
+    context.update(
         {
-            "branch": branch,
             "can_short_close": can_approve_request(request.user, branch),
             "can_adjust": can_adjust_branch_stock(request.user, branch),
-        },
+            "page_title": "Receipts",
+            "page_title_key": "navBranchReceipts",
+            "active_nav": "receipts",
+        }
     )
+    return render(request, "inventory/branch_receipts.html", context)

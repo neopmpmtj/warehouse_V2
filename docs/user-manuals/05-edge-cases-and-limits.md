@@ -60,7 +60,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `No items match these filters.` | Search, family, or “below reorder only” hid every row | Clear filters (*All families*, untick the checkbox) |
 | `Could not load the catalog.` | Catalog API failed | Refresh; if it persists, ask an administrator |
 | `The request could not be completed.` | Request failed without a specific message | Refresh; try again |
-| `Catalogue view permission required` | Not a warehouse user (typical for branch-only logins) | Use `/branch/catalog/`, or ask head office for a warehouse group |
+| `Catalogue view permission required` | Not a warehouse user (typical for branch-only logins) | Use `/branch/` and branch pages, or ask head office for a warehouse group |
 
 **Below reorder** is `reorder_level > 0` **and** stock ≤ reorder. Reorder **0** never flags. Buying price = primary supplier’s cost, else cheapest among **active** suppliers (else —).
 

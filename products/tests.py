@@ -1372,11 +1372,12 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         response = self.client.get(reverse("staff_dashboard"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'href="/branch/select/"')
         self.assertContains(response, 'href="/branch/catalog/"')
         self.assertContains(response, 'href="/branch/requests/"')
         self.assertContains(response, 'href="/branch/threads/"')
         self.assertContains(response, 'href="/branch/receipts/"')
+        self.assertContains(response, 'href="/company-voice/"')
+        self.assertNotContains(response, 'href="/branch/select/"')
 
     def test_superuser_sees_permission_codenames_on_dashboard(self):
         user_model = get_user_model()
