@@ -30,10 +30,10 @@ fi
 sudo pg_ctlcluster "$PGVER" main start 2>/dev/null || true
 for _ in $(seq 1 30); do pg_isready -h 127.0.0.1 -q && break; sleep 1; done
 
-# 4. Application database (idempotent).
-if ! psql -h 127.0.0.1 -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='centcompras_db'" | grep -q 1; then
-    psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE centcompras_db"
-fi
+# 4. Application database + Django role (idempotent).
+# Django defaults to POSTGRES_USER=appuser; creating only the database leaves
+# migrate failing with: FATAL: role "appuser" does not exist.
+bash .cursor/pg_bootstrap.sh
 
 # 5. Python virtualenv + dependencies.
 if [ ! -d .venv ]; then

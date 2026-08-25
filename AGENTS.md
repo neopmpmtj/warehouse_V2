@@ -135,7 +135,7 @@ Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, n
 
 ## Cursor Cloud specific instructions
 
-Agents boot from a prebuilt snapshot. `.cursor/install.sh` installs PostgreSQL, the venv, and Python deps, then migrates and seeds. `.cursor/start.sh` starts PostgreSQL on every boot and re-runs migrate + `seed_dev_data` so the database matches the checked-out revision (install is not re-run on snapshot boots).
+Agents boot from a prebuilt snapshot. `.cursor/install.sh` installs PostgreSQL, the venv, and Python deps, creates `centcompras_db` **and** the Django default role `appuser`, then migrates and seeds. `.cursor/start.sh` starts PostgreSQL on every boot, re-ensures that role/database, and re-runs migrate + `seed_dev_data` so the database matches the checked-out revision (install is not re-run on snapshot boots).
 
 - App URL: `http://127.0.0.1:8000/` — Django `runserver` is the `django-runserver` terminal on port 8000. Use this host consistently (do not mix with `localhost`) if a later offline/PWA session tests service workers.
 - Seed logins: warehouse `warehouse.admin@centcompras.dev` and branch `branch.manager.north@centcompras.dev` (password `devpass123`; full list in `README.md`).

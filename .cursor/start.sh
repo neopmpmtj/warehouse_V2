@@ -11,6 +11,10 @@ sudo pg_ctlcluster "$PGVER" main start 2>/dev/null || true
 for _ in $(seq 1 30); do pg_isready -h 127.0.0.1 -q && break; sleep 1; done
 pg_isready -h 127.0.0.1
 
+# Recover roles/database if this pod restored a failed install snapshot
+# (Postgres running, centcompras_db present, appuser missing).
+bash .cursor/pg_bootstrap.sh
+
 if [ ! -f .env ]; then
     cp .env.example .env
 fi
