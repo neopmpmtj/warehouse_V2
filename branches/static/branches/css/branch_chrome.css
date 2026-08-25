@@ -1,0 +1,119 @@
+/* Shared branch page header + dashboard (landing) layout */
+
+:root {
+    --border: #ddd;
+    --muted: #666;
+    --brand: #0b57d0;
+}
+
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    color: #222;
+    background: var(--bg, #f4f6f8);
+}
+
+[data-theme="dark"] body {
+    background: var(--bg, #101418);
+    color: var(--text, #e8edf2);
+}
+
+.branch-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px 20px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface, #fff);
+}
+
+[data-theme="dark"] .branch-page-header {
+    background: var(--surface, #151a20);
+}
+
+.branch-page-heading h1 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.branch-eyebrow {
+    margin: 0 0 4px;
+    font-size: 0.82rem;
+}
+
+.eyebrow-link {
+    color: var(--brand);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.eyebrow-link:hover {
+    text-decoration: underline;
+}
+
+.branch-role-line {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.branch-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: center;
+    flex: 1 1 auto;
+}
+
+.branch-nav a {
+    color: var(--brand);
+    text-decoration: none;
+    font-size: 0.92rem;
+}
+
+.branch-nav a.is-active {
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-actions a,
+.header-actions button {
+    color: var(--brand);
+    text-decoration: none;
+}
+
+.header-actions form {
+    display: inline;
+}
+
+.header-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+}
+
+.branch-main {
+    padding: 20px;
+}
+
+.branch-dash-main {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1rem 1.5rem 3rem;
+}
+
+.branch-dash-main h1 {
+    margin: 0.25rem 0 1.25rem;
+    font-size: 1.6rem;
+}

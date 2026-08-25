@@ -1,0 +1,28 @@
+<header class="branch-page-header">
+    <div class="branch-page-heading">
+        <p class="branch-eyebrow">
+            <a href="{% url 'branch_dashboard' %}" class="eyebrow-link" data-i18n="branchEyebrow">CentCompras</a>
+        </p>
+        <h1>{{ branch.name }} — <span{% if page_title_key %} data-i18n="{{ page_title_key }}"{% endif %}>{{ page_title }}</span></h1>
+        {% if branch_role_label %}
+        <p class="branch-role-line">
+            <span data-i18n="branchRoleLabel">Role:</span>
+            <span>{{ branch_role_label }}</span>
+        </p>
+        {% endif %}
+    </div>
+    <nav class="branch-nav" aria-label="Branch pages">
+        <a href="{% url 'branch_dashboard' %}"{% if active_nav == "home" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchHome">Home</a>
+        <a href="{% url 'branch_catalog' %}"{% if active_nav == "catalog" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchCatalog">Catalog</a>
+        <a href="{% url 'request_console' %}"{% if active_nav == "requests" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchRequests">Requests</a>
+        <a href="{% url 'branch_thread_console' %}"{% if active_nav == "threads" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchThreads">Threads</a>
+        <a href="{% url 'branch_receipt_console' %}"{% if active_nav == "receipts" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchReceipts">Receipts</a>
+    </nav>
+    <div class="header-actions">
+        {% include "products/includes/preferences_bar.html" %}
+        {% if can_switch_branch %}
+        <a href="{% url 'branch_select' %}" data-i18n="switchBranch">Switch branch</a>
+        {% endif %}
+        {% include "products/includes/account_settings.html" %}
+    </div>
+</header>
