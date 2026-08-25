@@ -1,15 +1,15 @@
 ---
-description: Phase 7 offline catalogue — not implemented; files listed here do not exist
+description: Phase 6 offline catalogue — not implemented; files listed here do not exist
 alwaysApply: false
 ---
 
-# Offline frontend (Phase 7 — future)
+# Offline frontend (Phase 6 — not the active session)
 
-**Do not implement this now.** The Service Worker + IndexedDB catalogue was built once and **deleted**. Staff consoles (`/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`) are online-only.
+**Do not implement this until Phase 6 is the active session.** The Service Worker + IndexedDB catalogue was built once and **deleted**. Staff consoles (`/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`) are online-only.
 
 There is no `db.js`, `product_list.js`, `register_sw.js`, `service_worker.js`, or `GET /api/products/` in the tree today.
 
-When Phase 7 re-adds offline catalogue (after Phase 5 branches):
+When Phase 6 re-adds offline catalogue (after Phase 5 branches):
 
 ## Responsibilities (do not merge)
 

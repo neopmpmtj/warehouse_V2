@@ -1,48 +1,44 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>Branch approval limits — CentCompras</title>
-    <style>
-        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; }
-        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
-        header h1 { font-size: 1.2rem; margin: 0; }
-        header .user { color: var(--muted); font-size: .9rem; }
-        header a, header button { margin-left: 12px; color: var(--brand); text-decoration: none; }
-        header form { display: inline; }
-        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
-        main { padding: 20px; }
-        .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; max-width: 480px; }
-        .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
-        input { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
-        .btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
-        .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
-        .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: #b00020; margin-top: 10px; }
-        .ok { padding: 8px 12px; border-radius: 4px; background: #e6f4ea; color: #1e7d32; margin-top: 10px; }
-    </style>
-    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=2">
+    <script>
+        (function () {
+            var theme = "light";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+            } catch (e) {
+                /* ignore */
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=18">
 </head>
 <body>
-    <header>
-        <h1>Branch approval limits</h1>
-        <div class="header-actions">
-            <a href="{% url 'internal_request_queue_console' %}">Requests</a>
+    <header class="topbar">
+        <div class="topbar-title">
+            {% include "products/includes/console_eyebrow.html" %}
+            <h1>Branch approval limits</h1>
+        </div>
+        <div class="topbar-actions">
+            <a class="topbar-nav-link" href="{% url 'internal_request_queue_console' %}">Requests</a>
             {% include "products/includes/account_settings.html" %}
         </div>
     </header>
 
-    <main>
-        <section class="panel">
-            <h2>Manager caps (EUR gross)</h2>
-            <div class="row"><span style="width:140px;">Others:</span><input id="approval-limit" type="number" step="0.01" min="0"></div>
-            <div class="row"><span style="width:140px;">Self:</span><input id="self-approval-limit" type="number" step="0.01" min="0"></div>
-            <div class="row"><button id="save" class="btn btn-primary">Save</button></div>
-            <p id="banner" class="banner" hidden></p>
-            <p id="ok" class="ok" hidden>Saved.</p>
+    <main class="page">
+        <section class="console-panel console-panel-narrow">
+            <h2 class="panel-heading">Manager caps (EUR gross)</h2>
+            <div class="form-row"><span class="form-row-label">Others:</span><input id="approval-limit" type="number" step="0.01" min="0"></div>
+            <div class="form-row"><span class="form-row-label">Self:</span><input id="self-approval-limit" type="number" step="0.01" min="0"></div>
+            <div class="form-row"><button id="save" class="btn btn-primary">Save</button></div>
+            <p id="banner" class="banner-inline" hidden></p>
+            <p id="ok" class="banner-inline ok" hidden>Saved.</p>
         </section>
     </main>
 

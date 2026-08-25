@@ -318,10 +318,10 @@ These are deliberate deferrals — ask before assuming they exist:
 | Gap | Status |
 |-----|--------|
 | **Password reset** | No self-service reset; an administrator resets it |
-| **Login rate-limiting** | **Pre-production blocker** — not implemented (documented) |
+| **Login rate-limiting** | **Done** — 5 failures / 15 min (`accounts/throttle.py`; configurable) |
 | **Email** | `notify_supplier_on_approval` is a **stub** (logs only) |
-| **Offline / PWA** | Not built (Phase 7) |
-| **Google OAuth / public signup** | Not implemented in dev |
+| **Offline / PWA** | Not built (Phase 6 — after the 25 Aug chrome review) |
+| **Google OAuth / public signup** | Google login-only **is** implemented; public signup is not |
 | **Linked / auto purchase order** | Seam exists (nullable PO FK on request lines) but no automation |
 | **Branch-tiered prices** | Only the 3 global selling prices (retail/wholesale/special) |
 | **Categories / vector or LLM search / bulk import** | Not built |

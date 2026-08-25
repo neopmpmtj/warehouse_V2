@@ -91,6 +91,79 @@ header button.settings-toggle:hover {
     font-weight: 600;
 }
 
+.settings-popover-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.settings-signout-form {
+    display: inline;
+    margin: 0;
+}
+
+.settings-signout-link {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent, #0f766e);
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.settings-signout-link:hover {
+    color: var(--text, #1c2430);
+}
+
+.account-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.help-launcher {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.11rem;
+    margin: 0;
+    padding: 0.08rem 0.15rem;
+    border: none;
+    background: transparent;
+    color: var(--muted, #5b6776);
+    cursor: pointer;
+    font: inherit;
+}
+
+.help-launcher:hover .help-launcher-icon {
+    filter: brightness(1.08);
+}
+
+.help-launcher-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3875rem;
+    height: 1.3875rem;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #5eb3f0 0%, #5eb3f0 48%, #2f78c4 52%, #2f78c4 100%);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.help-launcher-label {
+    font-size: 0.525rem;
+    line-height: 1;
+    color: var(--muted, #5b6776);
+}
+
 .settings-popover .user-line {
     margin: 0;
     color: var(--muted, #5b6776);
@@ -102,12 +175,23 @@ header button.settings-toggle:hover {
     margin: 0;
 }
 
+.settings-popover .settings-signout-form {
+    display: inline;
+}
+
 header .settings-popover button.btn,
 .settings-popover button.btn {
     color: var(--text, #1c2430);
     margin-left: 0;
     width: 100%;
     text-align: left;
+}
+
+header .settings-popover .settings-signout-link,
+.settings-popover .settings-signout-link {
+    width: auto;
+    text-align: right;
+    color: var(--accent, #0f766e);
 }
 
 .settings-popover .control-inline,

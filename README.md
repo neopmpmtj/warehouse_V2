@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 24 August 2026, 11:20 WEST.*
+*Last updated: 25 August 2026, 11:40 WEST.*
 
-**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Request-threads review M1–M5 and L1–L6 are done.** **Company Voice is built.** **Company Voice review H1, M1–M9, L1–L8 are done.** **Next:** Phase 6 — email automation. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Request-threads review M1–M5 and L1–L6 are done.** **Company Voice is built.** **Company Voice review H1, M1–M9, L1–L8 are done.** Manage-console header polish + chrome review **H1–H3, M1, L1, L2** are done (uncommitted; suite **528 OK**). **Next:** Phase 6 offline. Email is **Phase 8**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §13 — **Phase 6: email automation** (wire notify stubs; templates EN + pt-PT).
+4. **Next:** Phase 6 offline catalogue (Service Worker + IndexedDB + request queue). Chrome polish is still **uncommitted** on `Cursor/fix-isusue-button-issue` — commit when asked.
 
 ---
 
@@ -97,7 +97,7 @@ Production will use Google OAuth (not implemented in dev).
 - `/manage/internal-requests/` — branch request queue + goods issue (partial OK, short-close)
 - `/manage/threads/` — request threads (catalogue-gap requests: all branches, reply, link items, override close)
 - `/manage/branch-approval-limits/` — branch manager caps (warehouse admins may edit)
-- Supplier email on PO approval is a **stub** (Phase 6)
+- Supplier email on PO approval is a **stub** (real send = Phase 8)
 
 ### URL layout
 
@@ -343,7 +343,8 @@ views (login required) → API + HTML
 
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
-- **Email automation** (Phase 6 — wire notify stubs to real email)
-- Shared chrome / branch phone UX / console polish; offline / PWA
-- Integration tests (unit suites are green, **528 tests**)
+- **Offline catalogue and sync** (Phase 6 — Service Worker, IndexedDB, offline order queue)
+- **Production deployment / OAuth polish / shared chrome** (Phase 7)
+- **Email automation** (Phase 8 — wire notify stubs to real email; stub exists today)
+- Integration tests (unit suites: **528 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

@@ -2,9 +2,9 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 24 August 2026, 11:20 WEST
-- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Request-threads review M1–M5 and L1–L6 complete** ✅. **Company Voice built** ✅. **Company Voice review H1, M1–M9, L1–L8 complete** ✅. **Next:** Phase 6 — email automation. Full suite **502 tests green**. See [`docs/handoff.md`](handoff.md).
-- **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Email and offline remain later phases.
+- **Last updated:** 25 August 2026, 11:40 WEST
+- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Request-threads review M1–M5 and L1–L6 complete** ✅. **Company Voice built** ✅. **Company Voice review H1, M1–M9, L1–L8 complete** ✅. **Manage console header polish + chrome review H1–H3, M1, L1, L2 complete** (uncommitted). **Next:** Phase 6 offline. Email is **Phase 8**. See [`docs/handoff.md`](handoff.md).
+- **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline is Phase 6; production polish Phase 7; email Phase 8.
 
 ## Status vocabulary
 
@@ -15,7 +15,7 @@
 | ⏸ **Deferred** | Deliberately postponed (dependency, or a "not now" decision); returns to Next once the reason clears |
 | ⏸ **Pending** | Waiting on a trigger/decision; often a stub/seam already exists |
 | ⏸ **Future** | Long-term "someday"; no near-term commitment |
-| `[x]` / `[ ]` | §15 status-tracker checklist *within* a phase (done / to-do) |
+| `[x]` / `[ ]` | §16 status-tracker checklist *within* a phase (done / to-do) |
 
 > **"Deferred" is a *decision*, not "not done yet".** It graduates to **Next** when its dependency clears — e.g. Phase 5 was deferred until Phases 0–4 completed.
 
@@ -106,7 +106,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D6 | Goods receipt ↔ PO | **many receipts per PO** (partial / split shipments) |
 | D7 | Approval workflow | `draft → submitted → approved/rejected → received → closed`, plus **`cancelled`** (approved PO with zero receipts; required reason) |
 | D8 | Rappel | simple per-line % now; shape later |
-| D9 | Email automation | deferred to a **pending phase**; model a stub seam now |
+| D9 | Email automation | deferred to **Phase 8** (late phase); model a stub seam now (`on_commit`) |
 | D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
@@ -124,7 +124,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D24 | PO line quantity bound | ≤ `1e9` (matches inventory) |
 | D25 | Timezone validation | `User.clean()` (IANA); middleware `finally: deactivate()` |
 | D26 | Dashboard permission list | Shown only to superusers / `DEBUG` |
-| D27 | Login rate limiting | **Pre-production blocker** — deferred (`django-axes` or proxy) |
+| D27 | Login rate limiting | **Done** — DB-backed `LoginFailure` throttle (`accounts/throttle.py`); 5 failures / 15 min (configurable) |
 | D28 | Money rounding | `ROUND_HALF_UP` (half away from zero) via `procurement.models.round_money` — unit costs to 4 dp first, then monetary amounts to 2 dp |
 | D29 | `internal_code` lifecycle (Phases 1–2 ✅) | Charset `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive; **immutable after first save** (set-if-empty once); console create = mandatory Genesis with `retail_price > 0` |
 | D30 | Server-side item drafts | **Deferred** — localStorage autosave first if needed |
@@ -144,7 +144,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (Aug 2026):** phases 0–5 complete; both 2208/1303 review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **request threads** done; **request-threads review M1–M5 and L1–L6** done; **Company Voice** built; **Company Voice review H1, M1–M9, L1–L8, N2, N3** done. Full suite **502 tests green**. Leftover nits are **recorded, not a work queue** (threads N1–N6; Company Voice N1). **Next:** Phase 6 (email). L13 (login rate limiting) remains production-only deferred.
+**Current (25 Aug 2026):** phases 0–5 complete; both 2208/1303 review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **request threads** done; **request-threads review M1–M5 and L1–L6** done; **Company Voice** built; **Company Voice review H1, M1–M9, L1–L8, N2, N3** done; **login rate limiting (L13 / D27)** done; **manage console header polish + chrome review H1–H3, M1, L1, L2** done (uncommitted; suite **528 OK**). **Next:** Phase 6 offline. Leftover nits are **recorded, not a work queue** (threads N1–N6; Company Voice N1; chrome L3–L8 / N1–N3). Email is Phase 8.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -170,8 +170,11 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 5+ | Request-threads review fixes (M1–M5, L1–L6) | ✅ **Done** | Request threads |
 | 5+ | Company Voice (suggestion box) | ✅ **Done** | Phase 5 |
 | 5+ | Company Voice review fixes (H1, M1–M9, L1–L8) | ✅ **Done** | Company Voice |
-| 6 | Email automation (supplier notifications) | 🔵 **Next** | Phase 2 (stub) |
-| 7 | Mobile / offline / PWA / OAuth / deployment | ⏸ Future | Phase 5 |
+| 5+ | Manage console header / settings UX polish | ✅ **Done** (uncommitted) | Aug 2026 |
+| 5+ | Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** | Header polish |
+| 6 | Offline catalogue + offline request queue + sync / PWA | 🔵 **Next** | Chrome review |
+| 7 | Production deployment / OAuth / shared chrome | ⏸ Future | Phase 5 |
+| 8 | Email automation (supplier notifications) | ⏸ **Late phase** | Phase 2 (stub) |
 
 ---
 
@@ -373,7 +376,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - ✅ `orders` app: internal request ("Requisição interna") — priced (wholesale snapshot at approve); branch approve caps mirror PO.
 - ✅ Warehouse: `GoodsIssue` + queue (approved requests only); partial issue + short-close; manual PO when out of stock (nullable PO FK on lines for later automation).
 - ✅ Branch receipt + branch stock ledger (`BranchReceipt` on `GoodsIssue`, `BranchStockMovement` + cached `BranchItemStock`).
-- **Not in Phase 5:** offline/sync (Phase 7), email notify (Phase 6), linked/auto PO (later slice). **Stock reservation (A4)** was deferred in Phase 5; it shipped later as **D32**.
+- **Not in Phase 5:** offline/sync (Phase 6), email notify (Phase 8), linked/auto PO (later slice). **Stock reservation (A4)** was deferred in Phase 5; it shipped later as **D32**.
 
 ### 12.1 Item `internal_code` — catalogue constraints ✅
 
@@ -394,23 +397,34 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 
 ---
 
-## 13. Phase 6 — Email automation (pending) ⏸
+## 13. Phase 6 — Offline catalogue and sync 🔵 Next
+
+- Offline catalogue cache (Service Worker + IndexedDB) — re-add after Phase 5 removal.
+- Offline order queue + idempotent sync (stable server UUIDs on requests/lines already exist for idempotency).
+- PWA manifest + HTTPS assumptions for branch phone UX.
+- Use one hostname consistently (`127.0.0.1` vs `localhost`) for service worker scope.
+
+**Not in Phase 6:** real email send (Phase 8); production OAuth rollout / shared chrome (Phase 7).
+
+---
+
+## 14. Phase 7 — Production / deployment / polish (future) ⏸
+
+- Google OAuth hardening + production deployment (`AUTH_MODE`, env secrets, `DJANGO_SECRET_KEY`).
+- Shared page chrome; branch phone UX polish beyond the offline shell.
+- Remaining console polish on `/` and `/branch/…` headers (dedicated sessions).
+
+---
+
+## 15. Phase 8 — Email automation (late phase) ⏸
 
 - Wire `notify_supplier_on_approval` to real email (SMTP / provider).
 - Templates EN + pt-PT; audit sent-notifications.
-- Deferred by D9. Request-threads and Company Voice M/L review queues no longer block this phase. Leftover nits are recorded in the 24 Aug review files — **not a work queue**.
+- Deferred by D9 — **one of the last product phases**; stub exists via `transaction.on_commit`. Does not block Phase 6 offline.
 
 ---
 
-## 14. Phase 7 — Mobile / offline / production (future) ⏸
-
-- Offline catalogue cache (Service Worker + IndexedDB) — re-add after Phase 5.
-- Offline order queue + idempotent sync.
-- PWA manifest, HTTPS, Google OAuth, deployment.
-
----
-
-## 15. Status tracker
+## 16. Status tracker
 
 > Tick `[x]` as tasks complete. Move `🔵 Current` in §7 forward each phase.
 
@@ -461,22 +475,26 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - [x] Request-threads review fixes — M1–M5 and L1–L6 — report `docs/reviews/threads-review-2026-08-24.md` (N1–N6 recorded leftovers, not a queue)
 - [x] Company Voice — `company_voice` app (suggestion box, `/company-voice/`) — built
 - [x] Company Voice review fixes — H1, M1–M9, L1–L8, N2, N3 — report `docs/reviews/company-voice-review-2026-08-24-1010.md` (N1 recorded leftover, not a queue)
-- [ ] Phase 6 — email; Phase 7 — mobile/offline/OAuth (deferred)
+- [x] Manage console header / settings UX polish — CentCompras eyebrow, Help outside gear, internal-requests + threads Cancel behaviour (25 Aug) — **uncommitted**
+- [x] Chrome review H1–H3 + M1 (+ L1, L2) — [`docs/reviews/code-review-full-2026-08-25-1125.md`](reviews/code-review-full-2026-08-25-1125.md)
+- [ ] Phase 6 — offline catalogue + offline request queue + sync / PWA — **Next**
+- [ ] Phase 7 — production deployment / OAuth / shared chrome
+- [ ] Phase 8 — email automation (stub exists)
 
 ---
 
-## 16. Out of scope (explicitly not now)
+## 17. Out of scope (explicitly not now)
 
-- Offline order queue / sync; PWA; mobile packaging.
-- Google OAuth, public signup, password reset.
+- Real email sending (Phase 8 — stub exists).
+- Production OAuth rollout and deployment hardening (Phase 7).
 - Categories, LLM/vector search, bulk import.
-- Real email sending (Phase 6 — stub exists).
 - Server-side item draft rows (deferred; see plan § advisory).
-- **24 Aug review nits** (not lost, not Next): threads N1–N6; Company Voice N1. Full text stays in [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md) and [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md). Pick up only in a dedicated polish session.
+- **24 Aug review nits** (not lost, not Next): threads N1–N6; Company Voice N1. Full text stays in [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md) and [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md).
+- **25 Aug chrome leftover** (not Next): L3–L8 / N1–N3 in [`docs/reviews/code-review-full-2026-08-25-1125.md`](reviews/code-review-full-2026-08-25-1125.md). **H1–H3, M1, L1, L2 applied.**
 
 ---
 
-## 17. Risks & notes
+## 18. Risks & notes
 
 1. **Cost-price ambiguity (O1)** — resolved: Option A (`primary` flag).
 2. **Docs drift** — live state is [`handoff.md`](handoff.md). Update user manuals when changing constraints (`.cursor/rules/user-manuals.mdc`).

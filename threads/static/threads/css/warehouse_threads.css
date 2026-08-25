@@ -1,0 +1,105 @@
+.badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: var(--surface-2);
+    color: var(--accent);
+    margin-left: 0.4rem;
+}
+
+.badge-branch {
+    background: var(--ok-bg);
+    color: var(--ok);
+}
+
+.badge-warehouse {
+    background: var(--surface-2);
+    color: var(--accent);
+}
+
+.badge-closed {
+    background: var(--surface-2);
+    color: var(--muted);
+}
+
+.badge-inactive {
+    background: var(--warn-bg);
+    color: var(--warn);
+}
+
+.msg {
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0;
+}
+
+.msg .meta {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.msg .body {
+    white-space: pre-wrap;
+}
+
+.status {
+    text-transform: capitalize;
+    font-weight: 600;
+}
+
+.dialog {
+    position: static;
+    transform: none;
+    width: auto;
+    display: block;
+    top: auto;
+    left: auto;
+    z-index: auto;
+    box-shadow: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.75rem;
+    background: var(--surface);
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.item-link {
+    display: inline-block;
+    margin: 2px 6px 2px 0;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--ok-bg);
+    color: var(--ok);
+    font-size: 0.8rem;
+}
+
+.stale {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.stars {
+    font-size: 1.4rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.stars .star {
+    color: var(--border);
+}
+
+.stars .star.on {
+    color: #f5a623;
+}
+
+.console-panel .row-actions textarea {
+    width: 100%;
+    min-height: 4.5rem;
+    box-sizing: border-box;
+}

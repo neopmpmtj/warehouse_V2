@@ -68,7 +68,7 @@ Clicking a row does nothing — there is no detail drawer.
 
 **A. Top bar**
 - Title: **Manager catalog** (*Catálogo do gestor*)
-- **Settings** gear (top-right) — signed in as *you@company*, **Sign out**, **Help** (placeholder). Press **Escape** to close the Settings panel. Language and theme are set on the staff dashboard (`/`).
+- **Settings** gear (top-right) — signed in as *you@company*, small **Sign out** link on the Settings title row. Press **Escape** to close the Settings panel. **Help** is the blue **?** icon next to the gear (placeholder). Language and theme are set on the staff dashboard (`/`).
 
 **B. Toolbar (filters)**
 

@@ -19,7 +19,7 @@ The Django admin at **`/admin/`** is **superuser-only**.
 | **Warehouse staff** (warehouse group) | ❌ | ✅ |
 | **Branch staff** (branch membership) | ❌ | ✅ (`/branch/…`) |
 
-Warehouse staff land on **`/`** after login. That dashboard lists every website console (items, catalog, purchase orders, approval limits, goods receipts, internal requests, branch approval limits) plus branch pages and the JSON APIs. **Sign out** is in the **Settings** gear (top-right). **Help** in that panel is a placeholder.
+Warehouse staff land on **`/`** after login. That dashboard lists every website console (items, catalog, purchase orders, approval limits, goods receipts, internal requests, branch approval limits) plus branch pages and the JSON APIs. On each **`/manage/…`** console page, the **CentCompras** label above the page title links back to **`/`** (dashboard). **Sign out** is a small link on the **Settings** title row (gear, top-right). **Help** is the blue **?** icon next to the gear (placeholder).
 
 Two rules to remember:
 
@@ -254,7 +254,7 @@ The **email** you enter becomes their login. In production this **must equal the
 ### 12.2 Signing in — dev vs production (Google OAuth)
 
 - **Development:** users sign in with **email + password** at `/accounts/login/`.
-- **Production (Phase 6–7):** users sign in with **Google OAuth** — their Google account, e.g. `xpt-user@gmail.com` — for **increased security** (strong Google authentication, no app-stored passwords).
+- **Production (Phase 7):** users sign in with **Google OAuth** — their Google account, e.g. `xpt-user@gmail.com` — for **increased security** (strong Google authentication, no app-stored passwords). Dev already has login-only Google OAuth; production rollout is Phase 7.
 
 ### 12.3 How OAuth and permissions interact
 

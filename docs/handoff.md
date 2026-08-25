@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 24 August 2026, 11:20 WEST.
+> **Read this first when resuming work.** Last updated: 25 August 2026, 11:40 WEST.
 
 ---
 
@@ -21,12 +21,49 @@
 | 5+ — Request threads review fixes (M1–M5, L1–L6) | ✅ **Done** |
 | 5+ — Company Voice (suggestion box) | ✅ **Done** (reviewed 24 Aug) |
 | 5+ — Company Voice review fixes (H1, M1–M9, L1–L8) | ✅ **Done** |
-| 6 — Email automation | 🔵 **Next** |
-| 7 — Mobile / offline / PWA / OAuth | ⏸ Future |
+| 5+ — Manage console header / settings UX polish | ✅ **Done** (uncommitted) |
+| 5+ — Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** |
+| 6 — Offline catalogue + offline request queue + sync / PWA | 🔵 **Next** |
+| 7 — Production / deployment / OAuth / shared chrome | ⏸ Future |
+| 8 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–5, item `internal_code` Phases 1–2, the sub-families catalogue slice, warehouse FIFO reservation (D32), request threads, Company Voice, the 24 Aug threads-review M/L fixes, and the Company Voice review H1/M/L fixes are complete.** **Next session: Phase 6 — email automation** ([`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13).
+**Phases 0–5 and the 24 Aug production-readiness / review-fix work are complete on `main`.** Manage-console header polish + chrome review **H1–H3, M1, L1, L2** are **in the uncommitted working tree** on `Cursor/fix-isusue-button-issue` (HEAD = `main` = `4411396`). Full suite **528 OK**. **Next session: Phase 6 offline.** Email automation is Phase 8.
 
-**Full suite green (528 tests).**
+**Tests:** working-tree suite **528 OK** (same count as `main`; the five header/threads failures are gone).
+
+## Next session — do this
+
+1. **Commit the chrome slice** if the user asks — still uncommitted on `Cursor/fix-isusue-button-issue`. Then **start Phase 6 offline catalogue** (service worker + IndexedDB + request queue). See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13 and [`.cursor/rules/offline-frontend.mdc`](../.cursor/rules/offline-frontend.mdc).
+2. **Do not treat as a work queue:** 24 Aug nits (threads N1–N6; Company Voice N1) and chrome leftover **L3–L8 / N1–N3** (Help a11y, typeless inputs, `.row`, D27/05 drift, unversioned JS, pre-existing `settingsAria`).
+3. **Do not start** Phase 8 email or Phase 7 shared chrome in passing.
+4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+
+## This session (25 Aug 2026) — chrome review H1–H3 + M1 (+ L1, L2) ✅
+
+- **H1** — restored Sign-out-before-Help regex (`data-i18n="signOut"[\s\S]*id="settings-help"`) in products / procurement / inventory header tests.
+- **H2** — warehouse threads page test asserts `CentCompras` / `eyebrow-link` / Help / Cancel, not `Dashboard`.
+- **H3** — `warehouse_threads.css` resets `.dialog` to `position: static` (Link/Close stay inline panels). Cache-buster `?v=2`.
+- **M1** — thread I18N maps (warehouse + branch, EN + pt-PT) include `settings` / `signedInAs` / `signOut` / `signOutOtherDevices` / `help`.
+- **L1** — `/manage/internal-requests/` **Cancel** calls `resetDetailView()` (no `reload()`). Manual 04 §7.1 updated.
+- **L2** — orders queue/caps + threads page tests assert eyebrow / Help / Cancel where those controls exist.
+- **Tests:** **528 OK**.
+
+## This session (25 Aug 2026) — chrome review (read-only) ✅
+
+- **Report:** [`docs/reviews/code-review-full-2026-08-25-1125.md`](reviews/code-review-full-2026-08-25-1125.md). Parent + parallel Grok 4.6 reviewer; notes compared. Codex/Opus unavailable (quota).
+- **Verdict at review time:** do not merge. No Critical. **3 High / 1 Medium / 8 Low / 3 Nit.** **H1–H3, M1, L1, L2 applied later the same day.**
+- **H1–H2** were empirically red (five tests). **H3** Link/Close inherited `console.css` `position:fixed` dialogs. **M1** thread `applyI18n()` showed key names (`help`, `signOut`) on `/manage/threads/` and `/branch/threads/`.
+- No application code was changed for the review itself.
+
+## This session (25 Aug 2026) — manage console UX polish (working tree)
+
+- **Internal requests** (`/manage/internal-requests/`): after Issue or Short close, `refreshAfterQueueChange()` clears the detail panel when the request leaves the queue; console topbar + `console_eyebrow` (CentCompras → dashboard). **Cancel** calls `resetDetailView()` (no reload).
+- **CentCompras eyebrow** — shared `products/templates/products/includes/console_eyebrow.html` on manage consoles that use the topbar pattern.
+- **Legacy manage pages aligned** — `internal-requests`, `branch-approval-limits`, `warehouse_threads` use `console.css` + eyebrow + `account_settings` include; `warehouse_threads.css` for thread-specific layout.
+- **Settings popover** — Sign out as a small link beside the Settings title (not a large button); Help moved outside the gear (blue **?** + label, right of the gear); cache-busters `console.css?v=18`, `settings_menu.css?v=4`.
+- **Request threads (warehouse)** — Cancel starts over (clears draft, deselects thread, disables auto-select until the user picks a row again).
+- **User manuals** — `01-items`, `02-purchase-orders`, `03-goods-receipts`, `04-internal-requests` (Cancel no longer reloads), `06-admin-reference`, `07-manager-catalog`, `08-request-threads`, `09-company-voice`.
+- **Git:** uncommitted on `Cursor/fix-isusue-button-issue`; tip equals `main` (`4411396`).
 
 ## This session (24 Aug PM) — production-readiness fixes ✅
 
@@ -49,15 +86,6 @@
 
 ---
 
-## Next session — do this
-
-1. **Phase 6 — email automation** — wire `notify_supplier_on_approval` (and any other stubs) to real email (SMTP/provider); templates EN + pt-PT; audit sent notifications. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13.
-2. **Do not start** offline, shared chrome, or server-side item drafts without a plan (drafts deferred per D30).
-3. **Do not treat as a work queue:** archived reviews (1303, 2208, sub-family stitch-in) and leftover **nits** from the 24 Aug reviews. Those findings are **recorded**, not Next. See [Recorded leftover nits](#recorded-leftover-nits-not-a-work-queue).
-4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (`company_voice/migrations/0002_edited_at_and_changelog.py`).
-
----
-
 ## Recorded leftover nits (not a work queue)
 
 The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not start a session to apply these** unless someone asks for a dedicated polish slice.
@@ -66,6 +94,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 |--------|----------------|---------------------------|
 | Request threads ([report](reviews/threads-review-2026-08-24.md)) | **N1–N6** — unused `_bump` / `for_user_branches` / `read_attr`; warehouse page catalog call; mixed `hidden` vs class; unbounded thread list; silent double-close; unknown `?status=` → empty set | M1–M5, L1–L6 |
 | Company Voice ([report](reviews/company-voice-review-2026-08-24-1010.md)) | **N1** — unbounded feed (already deferred in `09-company-voice.md` FAQ) | H1, M1–M9, L1–L8, **N2** (tag allow-list), **N3** (`filter().first()` on sub-thread) |
+| Manage chrome ([report](reviews/code-review-full-2026-08-25-1125.md)) | **N1–N3** — unused `eyebrow` keys; redundant Help aria; `settings_menu.css` skipped `?v=3`. **L3–L8** leftover (Help a11y, typeless inputs, `.row`, docs drift, unversioned JS, `settingsAria`) | **H1–H3, M1, L1, L2** |
 
 ---
 
@@ -264,7 +293,7 @@ Archived: [`docs/archive/code-review-full-2026-08-21-1303.md`](archive/code-revi
 | N10 | Low | Price `IntegrityError` always reported as duplicate | ✅ Done |
 | N11 | Low | Receipt qty silent 3 dp quantize | ✅ Done |
 
-All N1–N12 findings applied. (M7 and L13 were 2208 items, outside this review's scope — M7 is now done; L13 remains deferred.)
+All N1–N12 findings applied. (M7 pagination shipped later; **L13 login rate limiting shipped 24 Aug** — see D27.)
 
 ---
 
@@ -278,7 +307,7 @@ Archived: [`docs/archive/code-review-full-2026-08-20-2208.md`](archive/code-revi
 | P1 | M2, M3, M4, M9 | ✅ Done |
 | P2 | M5, M6, M8 | ✅ Done; M7 done later (pagination) |
 | P3 | M10 | ✅ Done (grades, approval limits, reasons, `on_commit` stub) |
-| P4 | M1 + L1–L14 | ✅ Done (L13 deferred); review **archived** |
+| P4 | M1 + L1–L14 | ✅ Done (**L13 shipped 24 Aug**); review **archived** |
 | — | M7 | ✅ Done (console pagination, 2026-08-21) |
 
 Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m2-m9_387eec3a.plan.md`, `fix_p2_m5_m6_m8_2372dbfd.plan.md`, `p4_m1_l1-l14_71ae16a5.plan.md`.
@@ -297,7 +326,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D6 | **Many receipts per PO** (partial shipments) |
 | D7 | PO status: `draft → submitted → approved/rejected → received → closed` |
 | D8 | Rappel = simple per-line % for now |
-| D9 | Email = stub (`notify_supplier_on_approval`), deferred to Phase 6 |
+| D9 | Email = stub (`notify_supplier_on_approval`), deferred to **Phase 8** (late phase; stub via `on_commit`) |
 | D10 | Branches **built** (Phase 5 ✅) — `Item` stays global (no `branch_id`); `branches` + `orders` + branch receipt/stock live |
 | D11 | `primary` = preferred supplier; auto-suggested later; always overridable |
 | D12 | **B-hard:** a PO line is **rejected** if the PO's supplier has no price for the item (no fallback to another supplier's price) |
@@ -307,7 +336,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D16 | **Inactive entities:** no PO create/submit/approve/add-line for inactive supplier or item; catalog (`active_only=True`) excludes inactive families; cannot assign items to an inactive family. Do **not** cascade-deactivate items when a family is deactivated |
 | D17 | Warehouse groups are **code-owned**: `sync_warehouse_groups()` still `permissions.set()` (extras in `/admin/` wiped on migrate). `assign_warehouse_group` is **exclusive** (one warehouse group per user) and **resets `warehouse_grade` to 1** |
 | D18 | **Warehouse grades:** operator 1–2, manager 1–3, admin unlimited. Operator 1 view-only; operator 2 / manager 1 mutate the closed circuit; manager 2+ approve. Operators never approve. Caps in `ApprovalLimit` (EUR **gross**); admin-only edit at `/manage/approval-limits/`. Seed defaults: manager 2 self 100 / others 5_000; manager 3 self 500 / others 50_000 |
-| D19 | **PO/stock reasons:** reject, manual close (remaining qty), and `adjust_stock` require a non-empty reason. Full receipt auto-close uses `"Fully received"`; `receive()` logs `"Goods received"`. Submit/approve/reopen reasons optional but wired. Email stub via `transaction.on_commit` (Phase 6 still pending) |
+| D19 | **PO/stock reasons:** reject, manual close (remaining qty), and `adjust_stock` require a non-empty reason. Full receipt auto-close uses `"Fully received"`; `receive()` logs `"Goods received"`. Submit/approve/reopen reasons optional but wired. Email stub via `transaction.on_commit` (real send = Phase 8) |
 | D20 | Selling prices & `reorder_level` must be **finite and ≥ 0** (0 allowed). Enforced in services (`_validate_non_negative`), `MinValueValidator(0)`, and DB `CheckConstraint`s |
 | D21 | **Family names are immutable** — create-only. `name` is not an updatable field; the family PATCH API does not rename |
 | D22 | `SupplierItemPrice` can only be created for an **active** supplier **and** item |
@@ -315,7 +344,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D24 | PO line quantity upper bound = `1e9` (matches inventory) |
 | D25 | `User.timezone` validated (IANA) in `clean()`; middleware `finally: deactivate()` so the timezone never leaks across requests |
 | D26 | Dashboard shows permission codenames only for superusers / `DEBUG` |
-| D27 | **Login rate limiting is a pre-production blocker** — deferred (`django-axes` or proxy); documented in `config/settings/base.py` |
+| D27 | **Login rate limiting** | **Done** — DB-backed `LoginFailure` throttle (`accounts/throttle.py`); 5 failures / 15 min (configurable `LOGIN_THROTTLE_MAX_FAILURES` / `LOGIN_THROTTLE_WINDOW_MINUTES`); password login + Google link-confirm |
 | D28 | **Money rounding:** `ROUND_HALF_UP` (half away from zero). Unit costs → 4 dp first, then monetary amounts (net / vat / gross) → 2 dp. Implemented via `procurement.models.round_money`; the future `orders` app must reuse it |
 | — | Dates DD/MM/YYYY (24h); per-user timezone (default `Europe/Lisbon`); EN + pt-PT |
 | D29 | **`internal_code` lifecycle (Phases 1–2 ✅)** | Charset: `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. **Locked after first save** (set-if-empty once for legacy). Console create = **mandatory Genesis** (atomic); requires internal code + description + unit + VAT + active family + **retail_price > 0** |
@@ -351,7 +380,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 - **Grades** — `User.warehouse_grade`; `accounts/capabilities.py` is the website source of truth (Django group perms are the coarse outer gate). Operators get add/change at group level; grade 1 is still view-only.
 - **Approval limits** — `ApprovalLimit` / `ApprovalLimitChangeLog`; admin page `/manage/approval-limits/`. `approve()` enforces SoD + caps (admin unlimited).
 - **Reasons** — required on `reject`, manual `close` (remaining qty), `adjust_stock`. Status changelog `reason` populated. Auto-close `"Fully received"`.
-- **Email stub** — `transaction.on_commit(notify_supplier_on_approval)`; Phase 6 product not built.
+- **Email stub** — `transaction.on_commit(notify_supplier_on_approval)`; real send is Phase 8 (not next).
 
 **P4 — M1 + L1–L14 (review complete)**
 
@@ -368,7 +397,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 - **L10** — removed `StockMovement.Type.INITIAL` and `SupplierItemPriceChangeLog` DEACTIVATED/REACTIVATED (`inventory/0003`, `products/0008`).
 - **L11** — removed unused `CHANGE_GOODS_RECEIPT`.
 - **L12** — commented production-settings block in `config/settings/prod.py`.
-- **L13** — deferred (rate limiting) — documented blocker.
+- **L13** — **done 24 Aug** (DB-backed throttle; see D27). Historical 2208 note left the item deferred.
 - **L14** — ledger-sum / concurrency / primary-race tests already present from H1/H3/M5.
 
 **Seed bug (verified, fixed in `seed_dev_data`)**
@@ -379,9 +408,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 24 August 2026, 11:20 WEST)
+## Git (as of 25 August 2026, 11:40 WEST)
 
-- **`main`** has Phase 5 Slices 1–6, internal_code Phases 1–2, Settings gear, sub-families, dashboard links, request threads, Company Voice, threads-review M/L, Company Voice review + H1/M/L/N2/N3, and this nits-parking note.
+- **`main`** at `4411396` — Phase 5 Slices 1–6, internal_code, Settings gear, sub-families, request threads, Company Voice, 24 Aug review M/L, production-readiness (logout-other, rate limit, PKCE).
+- **Branch `Cursor/fix-isusue-button-issue`:** same commit as `main`. Manage-console chrome polish + review H1–H3 / M1 / L1 / L2 are **uncommitted**. Suite green; commit when asked.
 - Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
 
 ---
@@ -392,7 +422,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput
 ```
 
-- Last full suite: **502 OK** with `--noinput` (includes warehouse FIFO reservation + request threads + Company Voice + review-fix tests).
+- Last full suite on **working tree:** **528 OK**. Same count as `main`; chrome header/threads failures are gone.
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -440,6 +470,7 @@ python manage.py runserver
 | `README.md` | setup, URLs, seed, how to run |
 | `docs/PROJECT-PLAN.md` | **Living plan** — sequencing + status tracker + locked decisions; tick its tracker every session |
 | `docs/archive/code-review-full-2026-08-21-1303.md` | Follow-up review — **concluded & archived** (N1–N12 applied) |
+| `docs/reviews/code-review-full-2026-08-25-1125.md` | Manage-console chrome review — **H1–H3, M1, L1, L2 applied**; leftover L3–L8 / N1–N3 recorded |
 | `docs/reviews/threads-review-2026-08-24.md` | Request-threads review — **M1–M5 and L1–L6 applied**; leftover N1–N6 **recorded, not a queue** |
 | `docs/reviews/company-voice-review-2026-08-24-1010.md` | Company Voice review — **H1, M1–M9, L1–L8, N2, N3 applied**; leftover N1 **recorded, not a queue** |
 | `docs/archive/code-review-full-2026-08-20-2208.md` | Full review — **concluded & archived** (P0–P4 done; L13 deferred) |
@@ -447,7 +478,8 @@ python manage.py runserver
 | `docs/archive/code-review-audit.md` | historical catalogue hardening |
 | `docs/archive/code-review-2026-08-20.md` | Phase 2 review — concluded |
 | `docs/archive/code-review-inventory-2026-08-20.md` | Phase 3 review — concluded |
-| `docs/user-manuals/` | staff user manuals (update when constraints change — see `.cursor/rules/user-manuals.mdc`) || `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | Item `internal_code` — **complete** |
+| `docs/user-manuals/` | staff user manuals (update when constraints change — see `.cursor/rules/user-manuals.mdc`) |
+| `.cursor/plans/internal_code_format_rules_7862515a.plan.md` | Item `internal_code` — **complete** |
 | `.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md` | Warehouse FIFO reservation (D32 / R1–R12) — **complete** |
 | `docs/archive/phase5-plan-260821-1756.md` | Phase 5 build spec (locks 1–10) — **archived** ✅ |
 | `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |

@@ -64,7 +64,7 @@ Today (summary only):
 - Apps: `accounts`, `products`, `procurement`, `inventory`, `logging_utils`. **No `branches/`.**
 - Warehouse groups manage `/manage/items/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`.
 - Stock is a ledger (`StockMovement`) plus cached `Item.quantity`. Selling prices are manual; cost is `SupplierItemPrice`.
-- CLI is `add_item`. Offline catalogue was **removed** (Phase 7 may re-add it).
+- CLI is `add_item`. Offline catalogue was **removed** (Phase 6 will re-add it).
 - Next product phase: **manager catalog** (Phase 4). Branches and orders are later.
 
 Seed logins: `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev`, `warehouse.operator@centcompras.dev` (password `devpass123`). `/admin/` is superuser only.
@@ -117,9 +117,9 @@ Many beginner confusions disappear once the direction and responsibility of each
 
 ---
 
-# 6. Phase 7 notes (offline — not implemented)
+# 6. Phase 6 notes (offline — not implemented)
 
-The original MVP had a Service Worker (app shell) and IndexedDB (read-only catalogue cache). That layer was **deleted**. If Phase 7 re-adds it:
+The original MVP had a Service Worker (app shell) and IndexedDB (read-only catalogue cache). That layer was **deleted**. If Phase 6 re-adds it:
 
 - PostgreSQL remains the source of truth. IndexedDB is a last-known catalogue copy, not a warehouse database.
 - `saveProducts` (or equivalent) means **cache the downloaded catalogue**, not insert items into PostgreSQL.

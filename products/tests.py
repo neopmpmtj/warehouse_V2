@@ -1248,6 +1248,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, self.staff_user.email)
         self.assertContains(response, reverse("logout"))
         self.assertContains(response, 'id="settings-help"')
+        self.assertContains(response, 'class="help-launcher"')
+        self.assertContains(response, 'class="settings-signout-link"')
         self.assertRegex(
             response.content.decode(),
             r'data-i18n="signOut"[\s\S]*id="settings-help"',
@@ -3117,6 +3119,8 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, self.staff_user.email)
         self.assertContains(response, reverse("logout"))
         self.assertContains(response, 'id="settings-help"')
+        self.assertContains(response, 'class="help-launcher"')
+        self.assertContains(response, 'class="settings-signout-link"')
         self.assertRegex(
             response.content.decode(),
             r'data-i18n="signOut"[\s\S]*id="settings-help"',

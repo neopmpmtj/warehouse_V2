@@ -157,4 +157,4 @@ Only **managers grade 2+** and **admins** can approve (within caps for managers)
 Net is before VAT; Gross is net + VAT — the amount you actually pay.
 
 **Q6. Dates and timezone?**
-Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). **Sign out** and **Help** (placeholder) live in the **Settings** gear (top-right). Press **Escape** to close Settings. **Language** (English / Português) and **theme** are set on the staff dashboard (`/`) and remembered in this browser.
+Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). **Sign out** is a small link on the Settings title row; **Help** is the blue **?** icon next to the gear (placeholder). Press **Escape** to close Settings. **Language** (English / Português) and **theme** are set on the staff dashboard (`/`) and remembered in this browser.

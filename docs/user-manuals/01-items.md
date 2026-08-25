@@ -38,7 +38,7 @@ If you mistype, you'll see *"Invalid email or password."*
 
 ### 1.2 Signing out
 
-Open the **Settings** gear (top-right of the console) and click **Sign out**. Signing out is always a button, never a link you can trigger by accident.
+Open the **Settings** gear (top-right of the console). **Sign out** is a small link on the same line as the **Settings** title (far right). **Help** sits beside the Settings gear as a blue **?** icon (outside the popover).
 
 ### 1.3 Language
 
@@ -47,7 +47,7 @@ The whole console works in two languages. Set **Language** on the staff dashboar
 - **English**
 - **Português**
 
-The choice is remembered in this browser and applies to every warehouse console, Company Voice, and request threads. Branch staff set the same control on the branch catalog (`/branch/catalog/`). The **Settings** gear is for signed-in email, **Sign out**, and **Help** only.
+The choice is remembered in this browser and applies to every warehouse console, Company Voice, and request threads. Branch staff set the same control on the branch catalog (`/branch/catalog/`). The **Settings** gear shows signed-in email, a small **Sign out** link, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear.
 
 ### 1.4 Light / dark theme
 
@@ -79,7 +79,7 @@ The console is one screen, split into three areas.
 **A. Top bar**
 - App name (**CentCompras**) and title (**Item console** / *Gestão de artigos*)
 - **Families**, **Sub-families**, and **Suppliers** — open the master-data drawers. On a narrow window they collapse under **Master data** (*Dados mestres*).
-- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", **Sign out**, and **Help** (placeholder). Language and theme live on the [staff dashboard](01-items.md#13-language) (`/`).
+- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", a small **Sign out** link on the Settings title row, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear (placeholder). Language and theme live on the [staff dashboard](01-items.md#13-language) (`/`).
 
 ![Settings popover](screenshots/08-settings-popover.png)
 

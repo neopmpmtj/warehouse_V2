@@ -17,12 +17,12 @@
             document.documentElement.setAttribute("data-theme", theme);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=12">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=18">
 </head>
 <body data-can-edit="{% if can_edit_approval_policy %}true{% else %}false{% endif %}">
     <header class="topbar">
         <div class="topbar-title">
-            <p class="eyebrow">CentCompras</p>
+            {% include "products/includes/console_eyebrow.html" %}
             <h1>Approval limits (EUR gross)</h1>
         </div>
         <div class="topbar-actions">

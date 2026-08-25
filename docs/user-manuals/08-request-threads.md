@@ -22,7 +22,7 @@
 | Warehouse (any group) | `/manage/threads/` | See **all** branches' threads, reply, link created items |
 | Warehouse admin | `/manage/threads/` | Force-close an abandoned / duplicate thread (override) |
 
-The header keeps **Catalog** / **Switch branch** (branch) or **Dashboard** (warehouse). **Sign out** is in the **Settings** gear (top-right). **Help** in that panel is a placeholder.
+The header matches other warehouse consoles: **CentCompras** (links to **`/`**), **Help** (blue **?** next to Settings), and **Settings** (small **Sign out** link on the title row). Branch threads keep **Catalog** / **Switch branch** in the header.
 
 ---
 
@@ -139,6 +139,7 @@ Warehouse staff see **all** branches' threads in one queue:
 - **Open (awaiting)** is the default view — threads awaiting the warehouse are listed **oldest first** so nothing rots. Closed threads are filtered out.
 - Filters: **status** (open / awaiting warehouse / awaiting branch / closed) and **branch**.
 - Threads from an **inactive branch** still appear, flagged as *inactive branch* — the conversation can still be finished, just no new work.
+- **Cancel** (shown when a thread is open in the detail pane) clears the draft reply, closes any open link/close dialogs, and deselects the thread so the detail pane is empty. Click a row in the queue to continue.
 
 ![Warehouse threads console](screenshots/12-warehouse-threads.png)
 

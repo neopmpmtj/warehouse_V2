@@ -14,10 +14,10 @@
 
 ## Other known later items (already tracked in PROJECT-PLAN / roadmap)
 
-Kept here as a single glanceable list; the authoritative sequencing stays in `PROJECT-PLAN.md` §7 / §14–15.
+Kept here as a single glanceable list; the authoritative sequencing stays in `PROJECT-PLAN.md` §7 / §16–18.
 
-- Offline / PWA / Service Worker / idempotent sync — Phase 7
-- Email automation (real send) — Phase 6
+- Offline / PWA / Service Worker / idempotent sync — Phase 6
+- Email automation (real send) — Phase 8
 - Google OAuth / public signup / password reset — production (later)
 - Linked / auto PO (full automation) — beyond Phase 5's manual shortfall path (C1/C2 are the Phase 5 seam)
 - Branch-tiered prices — D2 unchanged

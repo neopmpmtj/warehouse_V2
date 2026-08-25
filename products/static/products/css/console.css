@@ -75,6 +75,16 @@ body {
     text-transform: uppercase;
 }
 
+.eyebrow-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.eyebrow-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
 .topbar h1 {
     margin: 0.15rem 0 0;
     font-size: 1.35rem;
@@ -147,6 +157,79 @@ body {
     margin: 0;
     font-size: 0.85rem;
     font-weight: 600;
+}
+
+.settings-popover-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.settings-signout-form {
+    display: inline;
+    margin: 0;
+}
+
+.settings-signout-link {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.settings-signout-link:hover {
+    color: var(--text);
+}
+
+.account-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.help-launcher {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.11rem;
+    margin: 0;
+    padding: 0.08rem 0.15rem;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+}
+
+.help-launcher:hover .help-launcher-icon {
+    filter: brightness(1.08);
+}
+
+.help-launcher-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3875rem;
+    height: 1.3875rem;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #5eb3f0 0%, #5eb3f0 48%, #2f78c4 52%, #2f78c4 100%);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.help-launcher-label {
+    font-size: 0.525rem;
+    line-height: 1;
+    color: var(--muted);
 }
 
 .page {
@@ -618,4 +701,145 @@ body[data-can-change-item="false"] .col-check {
         min-width: 0;
         width: 100%;
     }
+}
+
+.hint {
+    margin: 0 0 0.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.topbar-nav-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.topbar-nav-link:hover {
+    text-decoration: underline;
+}
+
+.console-panel {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    background: var(--surface);
+}
+
+.console-panel-narrow {
+    max-width: 30rem;
+}
+
+.panel-heading {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+}
+
+.manage-split {
+    display: grid;
+    grid-template-columns: 21rem 1fr;
+    gap: 1.25rem;
+    padding: 1rem 1.25rem 2rem;
+}
+
+.manage-split-wide {
+    grid-template-columns: 24rem 1fr;
+}
+
+@media (max-width: 800px) {
+    .manage-split,
+    .manage-split-wide {
+        grid-template-columns: 1fr;
+    }
+}
+
+.console-panel table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.console-panel th,
+.console-panel td {
+    text-align: left;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.console-panel th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.row-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.qty-input {
+    width: 4.5rem;
+}
+
+.row-selected {
+    background: var(--selected);
+}
+
+.banner-inline {
+    margin: 0.75rem 0 0;
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.banner-inline.ok {
+    background: var(--ok-bg);
+    color: var(--ok);
+}
+
+.form-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+.form-row-label {
+    width: 9rem;
+    color: var(--muted);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.data-table th,
+.data-table td {
+    text-align: left;
+    padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 0.9rem;
 }

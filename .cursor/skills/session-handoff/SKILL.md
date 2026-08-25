@@ -87,7 +87,7 @@ Short summary:
 
 ## CentCompras conventions
 
-- **Next task priority:** `docs/handoff.md` wins over PROJECT-PLAN header if user specified interim work (e.g. plan Phase 2 before Phase 6 email)
+- **Next task priority:** `docs/handoff.md` wins over PROJECT-PLAN header if user specified interim work (e.g. plan Phase 2 before Phase 6 offline)
 - **Reviews:** 1303 and 2208 are archived — never reopen as backlog
 - **Tests:** use project venv; document exact count after run
 - **Timestamps:** full date + time in doc filenames only; handoff uses "DD Month YYYY, HH:MM WEST"

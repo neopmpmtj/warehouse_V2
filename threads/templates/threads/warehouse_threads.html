@@ -6,63 +6,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>Request threads — CentCompras</title>
-    <style>
-        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; --warn: #b00020; }
-        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; color: #222; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); }
-        header h1 { font-size: 1.2rem; margin: 0; }
-        header .user { color: var(--muted); font-size: .9rem; }
-        header a, header button { margin-left: 12px; color: var(--brand); text-decoration: none; }
-        header form { display: inline; }
-        header button { background: none; border: none; cursor: pointer; font: inherit; padding: 0; }
-        main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px; }
-        @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
-        .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
-        h2 { margin: 0 0 10px; font-size: 1rem; }
-        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
-        th { color: var(--muted); font-weight: 600; font-size: .8rem; }
-        .btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
-        .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
-        .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
-        input, select, textarea { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
-        textarea { width: 100%; min-height: 72px; box-sizing: border-box; }
-        .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: var(--warn); margin-top: 10px; }
-        .selected { background: #eef4fe; }
-        .unread { font-weight: 700; }
-        .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .75rem; background: #e8f0fe; color: var(--brand); margin-left: 6px; }
-        .badge-branch { background: #e6f4ea; color: #137333; }
-        .badge-warehouse { background: #e8f0fe; color: var(--brand); }
-        .badge-closed { background: #f1f3f4; color: var(--muted); }
-        .badge-inactive { background: #fef7e0; color: #b06000; }
-        .msg { border-bottom: 1px solid var(--border); padding: 8px 0; }
-        .msg .meta { color: var(--muted); font-size: .8rem; margin-bottom: 4px; }
-        .msg .body { white-space: pre-wrap; }
-        .status { text-transform: capitalize; font-weight: 600; }
-        .dialog { border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-top: 10px; background: #fff; }
-        .hidden { display: none; }
-        .muted { color: var(--muted); font-size: .8rem; }
-        .item-link { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: 999px; background: #e6f4ea; color: #137333; font-size: .8rem; }
-        .stale { color: var(--warn); font-weight: 600; }
-        .stars { font-size: 1.4rem; cursor: pointer; user-select: none; }
-        .stars .star { color: #ddd; }
-        .stars .star.on { color: #f5a623; }
-    </style>
-    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=2">
+    <script>
+        (function () {
+            var theme = "light";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+            } catch (e) {
+                /* ignore */
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=18">
+    <link rel="stylesheet" href="{% static 'threads/css/warehouse_threads.css' %}?v=2">
 </head>
 <body>
-    <header>
-        <h1 data-i18n="title">Request threads</h1>
-        <div class="header-actions">
-            <a href="{% url 'staff_dashboard' %}">Dashboard</a>
+    <header class="topbar">
+        <div class="topbar-title">
+            {% include "products/includes/console_eyebrow.html" %}
+            <h1 data-i18n="title">Request threads</h1>
+        </div>
+        <div class="topbar-actions">
             {% include "products/includes/account_settings.html" %}
         </div>
     </header>
 
-    <main>
-        <section class="panel">
-            <h2 data-i18n="queueTitle">All threads</h2>
-            <div class="row">
+    <main class="manage-split manage-split-wide">
+        <section class="console-panel">
+            <h2 class="panel-heading" data-i18n="queueTitle">All threads</h2>
+            <div class="row-actions">
                 <select id="filter-status">
                     <option value="open" data-i18n="filterOpen">Open (awaiting)</option>
                     <option value="awaiting_warehouse" data-i18n="filterAwaitingWarehouse">Awaiting warehouse</option>
@@ -80,24 +52,25 @@
             <p id="empty-list" class="muted hidden" data-i18n="emptyList">No threads match these filters.</p>
         </section>
 
-        <section class="panel">
-            <h2 id="detail-title" data-i18n="detailTitle">Thread</h2>
+        <section class="console-panel">
+            <h2 class="panel-heading" id="detail-title" data-i18n="detailTitle">Thread</h2>
             <p id="detail-meta" class="muted" style="margin:0 0 10px;"></p>
             <div id="item-links"></div>
             <div id="message-body"></div>
-            <div class="row">
+            <div class="row-actions">
                 <textarea id="reply-body" placeholder="Write a message…"></textarea>
             </div>
-            <div class="row">
+            <div class="row-actions">
                 <button id="reply-btn" class="btn btn-primary" data-i18n="reply">Reply</button>
                 <button id="link-items-btn" class="btn" data-i18n="linkItems">Link created item</button>
                 <button id="close-thread-btn" class="btn" data-i18n="closeThread">Close thread</button>
+                <button id="cancel-selection-btn" class="btn" type="button" data-i18n="cancel" hidden>Cancel</button>
             </div>
             <div id="link-dialog" class="dialog hidden">
                 <p data-i18n="linkHelp">Link the Item(s) created from this thread (traceability).</p>
                 <input id="link-item-search" placeholder="Search item…" style="width:100%;box-sizing:border-box;margin-bottom:8px;">
                 <div id="link-results"></div>
-                <div class="row">
+                <div class="row-actions">
                     <button id="cancel-link" class="btn" data-i18n="cancel">Cancel</button>
                 </div>
             </div>
@@ -107,19 +80,19 @@
                     <option value="request_satisfied" data-i18n="reasonSatisfied">Request Satisfied</option>
                     <option value="other" data-i18n="reasonOther">Other</option>
                 </select>
-                <div id="close-other-row" class="row hidden">
+                <div id="close-other-row" class="row-actions hidden">
                     <input id="close-reason-text" placeholder="Reason…" maxlength="255">
                 </div>
-                <div id="satisfaction-row" class="row">
+                <div id="satisfaction-row" class="row-actions">
                     <span data-i18n="satisfactionLabel">Satisfaction</span>
                     <span id="satisfaction-stars" class="stars"></span>
                 </div>
-                <div class="row">
+                <div class="row-actions">
                     <button id="confirm-close" class="btn btn-primary" data-i18n="confirmClose">Confirm close</button>
                     <button id="cancel-close" class="btn" data-i18n="cancel">Cancel</button>
                 </div>
             </div>
-            <p id="banner" class="banner hidden"></p>
+            <p id="banner" class="banner-inline hidden"></p>
         </section>
     </main>
 
@@ -128,7 +101,7 @@
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
             var CURRENT_USER_ID = {{ user.pk }};
             var LANG_KEY = "cc-lang";
-            var state = { selectedId: null, threads: [], branches: [] };
+            var state = { selectedId: null, threads: [], branches: [], allowAutoSelect: true };
 
             var I18N = {
                 en: {
@@ -147,6 +120,8 @@
                     none: "none", closedBy: "Closed by", inactiveBranch: "inactive branch",
                     linkHelp: "Link the Item(s) created from this thread (traceability).",
                     searchPlaceholder: "Search item…", stale: "awaiting", satisfactionLabel: "Satisfaction",
+                    settings: "Settings", signedInAs: "Signed in as", signOut: "Sign out",
+                    signOutOtherDevices: "Sign out other devices", help: "Help",
                 },
                 pt: {
                     title: "Fios de pedido", queueTitle: "Todos os fios", newThread: "Novo fio",
@@ -164,6 +139,8 @@
                     none: "nenhum", closedBy: "Fechado por", inactiveBranch: "filial inativa",
                     linkHelp: "Ligue o(s) artigo(s) criado(s) a partir deste fio (rastreabilidade).",
                     searchPlaceholder: "Pesquisar artigo…", stale: "a aguardar", satisfactionLabel: "Satisfação",
+                    settings: "Definições", signedInAs: "Sessão iniciada como", signOut: "Terminar sessão",
+                    signOutOtherDevices: "Terminar sessão noutros dispositivos", help: "Ajuda",
                 },
             };
 
@@ -200,6 +177,7 @@
             var replyBtn = document.getElementById("reply-btn");
             var linkItemsBtn = document.getElementById("link-items-btn");
             var closeThreadBtn = document.getElementById("close-thread-btn");
+            var cancelSelectionBtn = document.getElementById("cancel-selection-btn");
             var closeDialog = document.getElementById("close-dialog");
             var closeReason = document.getElementById("close-reason");
             var closeReasonText = document.getElementById("close-reason-text");
@@ -292,9 +270,24 @@
                         var still = state.threads.some(function (th) { return th.id === state.selectedId; });
                         if (!still) { state.selectedId = null; renderDetail(null); }
                     }
-                    if (!state.selectedId && state.threads.length) { selectThread(state.threads[0].id); }
+                    if (!state.selectedId && state.threads.length && state.allowAutoSelect) {
+                        selectThread(state.threads[0].id);
+                    }
                     if (!state.threads.length) { renderDetail(null); setVisible(emptyList, true); }
                 });
+            }
+
+            function startOver() {
+                state.selectedId = null;
+                state.allowAutoSelect = false;
+                replyBody.value = "";
+                setVisible(closeDialog, false);
+                setVisible(linkDialog, false);
+                linkResults.textContent = "";
+                closeReasonText.value = "";
+                clearError();
+                renderDetail(null);
+                renderList();
             }
 
             function renderList() {
@@ -302,7 +295,7 @@
                 setVisible(emptyList, state.threads.length === 0);
                 state.threads.forEach(function (th) {
                     var tr = document.createElement("tr");
-                    if (th.id === state.selectedId) tr.className = "selected";
+                    if (th.id === state.selectedId) tr.className = "row-selected";
                     tr.style.cursor = "pointer";
                     tr.addEventListener("click", function () { selectThread(th.id, { markRead: true }); });
                     var tdBranch = el("td", th.branch_name);
@@ -326,10 +319,13 @@
             function renderDetail(th) {
                 if (!th) {
                     messageBody.textContent = ""; itemLinks.textContent = ""; detailMeta.textContent = "";
+                    replyBody.value = "";
                     replyBtn.hidden = true; closeThreadBtn.hidden = true; linkItemsBtn.hidden = true;
+                    cancelSelectionBtn.hidden = true;
                     replyBody.disabled = true;
                     return;
                 }
+                cancelSelectionBtn.hidden = false;
                 detailMeta.textContent =
                     t("statusCol") + ": " + statusLabel(th.status) + " · " +
                     t("openedBy") + " " + th.opened_by_email + " · " +
@@ -370,6 +366,7 @@
 
             function selectThread(id, opts) {
                 opts = opts || {};
+                state.allowAutoSelect = true;
                 setVisible(closeDialog, false);
                 setVisible(linkDialog, false);
                 state.selectedId = id;
@@ -459,6 +456,7 @@
 
             filterStatus.addEventListener("change", function () { loadThreads().catch(showError); });
             filterBranch.addEventListener("change", function () { loadThreads().catch(showError); });
+            cancelSelectionBtn.addEventListener("click", startOver);
 
             loadBranches().then(loadThreads).catch(showError);
         })();
