@@ -12,8 +12,10 @@ if ! "${PSQL[@]}" -tAc "SELECT 1 FROM pg_database WHERE datname='centcompras_db'
 fi
 
 if ! "${PSQL[@]}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='appuser'" | grep -q 1; then
-    "${PSQL[@]}" -c "CREATE USER appuser WITH PASSWORD 'your_password_here'"
+    "${PSQL[@]}" -c "CREATE USER appuser WITH CREATEDB PASSWORD 'your_password_here'"
 fi
+# Django TestCase creates test_centcompras_db; CREATEDB is required for the suite.
+"${PSQL[@]}" -c "ALTER USER appuser WITH CREATEDB"
 
 "${PSQL[@]}" -c "ALTER DATABASE centcompras_db OWNER TO appuser"
 "${PSQL[@]}" -d centcompras_db -c "GRANT ALL ON SCHEMA public TO appuser"
