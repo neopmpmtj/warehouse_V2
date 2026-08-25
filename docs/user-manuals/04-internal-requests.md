@@ -389,3 +389,9 @@ Stock is already in motion. After the first goods issue the only way to finish e
 
 **Q14. How is branch stock different from warehouse stock?**
 Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it.
+
+**Q15. Can I build a requisição while offline?**
+Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically. **Submit**, **Approve**, **Reject**, and **Cancel** still require Wi-Fi.
+
+**Q16. The catalogue offline banner says availability may be outdated — why?**
+Offline mode shows the **last downloaded** catalogue. Warehouse stock and availability hints can change while you were disconnected. Connect to Wi-Fi to refresh.

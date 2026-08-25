@@ -148,6 +148,8 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `A reason is required to reject a request.` | Reject needs a reason | Type one |
 | `A reason is required to cancel an approved request.` | Cancel-approved needs a reason | Type one |
 | `A request with goods issues cannot be cancelled.` | Goods already shipped | Short-close instead (see §4) |
+| `client_uuid is required.` | Offline sync POST missing UUID | Retry from the branch requests page after reconnect |
+| `client_uuid must be a valid UUID.` | Malformed offline sync payload | Refresh the page and create a new offline draft |
 
 ### 2.5 Request threads (`/branch/threads/`, `/manage/threads/`)
 

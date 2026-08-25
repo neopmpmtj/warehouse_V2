@@ -5,6 +5,7 @@ from . import console_views
 urlpatterns = [
     path("branch/requests/", console_views.request_list, name="request_list"),
     path("branch/requests/create/", console_views.request_create, name="request_create"),
+    path("branch/requests/sync/", console_views.request_sync, name="request_sync"),
     path("branch/requests/<int:request_id>/", console_views.request_detail, name="request_detail"),
     path("branch/requests/<int:request_id>/update/", console_views.request_update, name="request_update"),
     path("branch/requests/<int:request_id>/lines/", console_views.request_add_line, name="request_add_line"),

@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select branch — CentCompras</title>
-    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
+    {% include "branches/includes/offline_assets.html" %}
 </head>
 <body>
     <header class="page-account-bar">
@@ -31,6 +32,6 @@
     {% else %}
         <p>You have no active branch access. Please contact your administrator.</p>
     {% endif %}
-    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=1"></script>
 </body>
 </html>

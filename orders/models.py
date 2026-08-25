@@ -64,6 +64,7 @@ class InternalRequest(models.Model):
     approved_gross = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     notes = models.TextField(blank=True)
     warehouse_notes = models.TextField(blank=True)
+    client_uuid = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

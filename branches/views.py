@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_GET
 
 from .navigation import branch_dashboard_cards, branch_page_context
@@ -50,3 +51,13 @@ def branch_catalog(request):
         }
     )
     return render(request, "branches/catalog.html", context)
+
+
+@cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
+@require_GET
+def service_worker(request):
+    return render(
+        request,
+        "branches/service_worker.js",
+        content_type="application/javascript",
+    )
