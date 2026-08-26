@@ -23,8 +23,11 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
 # Default False so gunicorn can start on HTTP until certbot enables 443.
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Cookie security follows HTTPS by default; override SECURE_COOKIES for the
+# IP-only / no-TLS staging phase (plain HTTP cannot store Secure cookies).
+SECURE_COOKIES = config("SECURE_COOKIES", default=SECURE_SSL_REDIRECT, cast=bool)
+SESSION_COOKIE_SECURE = SECURE_COOKIES
+CSRF_COOKIE_SECURE = SECURE_COOKIES
 SECURE_HSTS_SECONDS = 31536000 if SECURE_SSL_REDIRECT else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = bool(SECURE_SSL_REDIRECT)
 SECURE_HSTS_PRELOAD = False
