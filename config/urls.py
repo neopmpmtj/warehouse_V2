@@ -3,10 +3,12 @@ from django.urls import include, path
 
 from branches.views import service_worker
 from config.health import healthz
+from config.views import user_manual_file
 
 urlpatterns = [
     path("healthz", healthz, name="healthz"),
     path("service-worker.js", service_worker, name="service_worker"),
+    path("docs/user-manuals/<str:filename>", user_manual_file, name="user_manual_file"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("branch/", include("branches.web_urls")),
