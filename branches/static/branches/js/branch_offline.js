@@ -41,9 +41,30 @@ var BranchOffline = (function () {
         });
     }
 
+    function catalogCacheForBranch(data, branchId) {
+        var items = data && data.items ? data.items : [];
+        var meta = data && data.meta ? data.meta : null;
+        if (!meta || meta.branch_id == null || meta.branch_id === "") {
+            return { ok: true, items: items };
+        }
+        if (!branchId) {
+            return { ok: true, items: items };
+        }
+        if (String(meta.branch_id) === String(branchId)) {
+            return { ok: true, items: items };
+        }
+        return {
+            ok: false,
+            items: [],
+            message:
+                "Cached catalogue is for another branch. Connect to Wi-Fi to download this branch's catalogue.",
+        };
+    }
+
     return {
         isOnline: isOnline,
         bindOfflineBanner: bindOfflineBanner,
         newClientUuid: newClientUuid,
+        catalogCacheForBranch: catalogCacheForBranch,
     };
 }());

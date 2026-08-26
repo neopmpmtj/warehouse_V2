@@ -338,6 +338,67 @@ class OfflineSyncTests(TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertEqual(r.json()["code"], "client_uuid_required")
 
+    def test_sync_rejects_unknown_item(self):
+        self._login()
+        r = self._post_json(
+            reverse("request_sync"),
+            {
+                "client_uuid": str(uuid.uuid4()),
+                "lines": [{"item_id": 999999999, "quantity": "1"}],
+            },
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["code"], "unknown_item")
+
+    def test_sync_rejects_cross_branch_uuid(self):
+        other_branch = create_branch("South")
+        self._login()
+        payload = {
+            "client_uuid": self.client_uuid,
+            "notes": "offline draft",
+            "lines": [{"item_id": self.item.id, "quantity": "1"}],
+        }
+        first = self._post_json(reverse("request_sync"), payload)
+        self.assertEqual(first.status_code, 201)
+
+        south_user = _make_branch_user("south-sync@example.com", other_branch, ROLE_OPERATOR)
+        self.client.force_login(south_user)
+        session = self.client.session
+        session[SESSION_KEY] = other_branch.id
+        session.save()
+
+        second = self._post_json(reverse("request_sync"), payload)
+        self.assertEqual(second.status_code, 400)
+        self.assertEqual(second.json()["code"], "client_uuid_branch_mismatch")
+        self.assertEqual(InternalRequest.objects.filter(client_uuid=self.client_uuid).count(), 1)
+
+    def test_sync_rejects_invalid_client_uuid(self):
+        self._login()
+        r = self._post_json(
+            reverse("request_sync"),
+            {
+                "client_uuid": "not-a-uuid",
+                "lines": [{"item_id": self.item.id, "quantity": "1"}],
+            },
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["code"], "invalid_client_uuid")
+
+    def test_sync_rejects_duplicate_line_in_payload(self):
+        self._login()
+        r = self._post_json(
+            reverse("request_sync"),
+            {
+                "client_uuid": str(uuid.uuid4()),
+                "lines": [
+                    {"item_id": self.item.id, "quantity": "1"},
+                    {"item_id": self.item.id, "quantity": "2"},
+                ],
+            },
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("already has a line", r.json()["error"].lower())
+
 
 class WarehouseConsoleTests(TestCase):
     def setUp(self):

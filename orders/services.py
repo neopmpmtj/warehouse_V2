@@ -180,7 +180,10 @@ def _resolve_request(request):
 def _resolve_item(item):
     if isinstance(item, Item):
         return item
-    return Item.objects.get(pk=item)
+    try:
+        return Item.objects.get(pk=item)
+    except Item.DoesNotExist as exc:
+        raise ValidationError(f"Unknown item id {item}.", code="unknown_item") from exc
 
 
 def _lock_request(request):
@@ -386,11 +389,17 @@ def sync_internal_request(branch, user, client_uuid, notes="", lines=None):
     parsed_uuid = _parse_client_uuid(client_uuid)
 
     existing = (
-        InternalRequest.objects.filter(client_uuid=parsed_uuid, branch=branch)
+        InternalRequest.objects.filter(client_uuid=parsed_uuid)
+        .select_related("branch")
         .prefetch_related("lines")
         .first()
     )
     if existing is not None:
+        if existing.branch_id != branch.id:
+            raise ValidationError(
+                "client_uuid is already in use on another branch.",
+                code="client_uuid_branch_mismatch",
+            )
         return existing, False
 
     request = InternalRequest(

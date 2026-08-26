@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 26 August 2026, 10:19 WEST
-- **Current phase:** Phases 0–6 **complete** ✅. Phase 6 **reviewed 26 Aug** — P0 hardening **next**. Phase 7 after P0 (or in parallel if deferred). Email is **Phase 8**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 26 August 2026, 11:00 WEST
+- **Current phase:** Phases 0–6 **complete** ✅. Phase 6 offline review **P0/P1/P2 applied** ✅ (26 Aug). **Phase 7 next.** Email is **Phase 8**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline is Phase 6; production polish Phase 7; email Phase 8.
 
 ## Status vocabulary
@@ -144,7 +144,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (26 Aug 2026):** phases 0–6 complete; branch dashboard (#18) + Phase 6 offline (#19) on `main`; **Phase 6 offline review** [`phase6-offline-review-2026-08-26-1009.md`](reviews/phase6-offline-review-2026-08-26-1009.md) — **4 High / 6 Medium** (P0 fixes not applied). Suite **536 OK**. **Next:** P0 offline sync hardening, then Phase 7. Leftover nits **recorded, not a work queue**.
+**Current (26 Aug 2026):** phases 0–6 complete; Phase 6 offline review fixes **applied** (archived [`phase6-offline-review-2026-08-26-1009.md`](archive/phase6-offline-review-2026-08-26-1009.md)). Suite **540 OK**. **Next:** Phase 7. Leftover L/N nits **recorded, not a work queue**.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -174,8 +174,8 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 5+ | Manage console header / settings UX polish | ✅ **Done** | Aug 2026 |
 | 5+ | Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** | Header polish |
 | 6 | Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (#19; reviewed 26 Aug) | Phase 5 |
-| 6+ | Phase 6 offline review P0 hardening | 🔵 **Next** | Phase 6 review |
-| 7 | Production deployment / OAuth / shared chrome | ⏸ After P0 or parallel | Phase 6 |
+| 6+ | Phase 6 offline review fixes (P0/P1/P2) | ✅ **Done** | Phase 6 review |
+| 7 | Production deployment / OAuth / shared chrome | 🔵 **Next** | Phase 6 |
 | 8 | Email automation (supplier notifications) | ⏸ **Late phase** | Phase 2 (stub) |
 
 ---
@@ -407,14 +407,14 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 
 - **Service Worker** at `/service-worker.js` — precaches branch HTML + shared static; network-only for `/api/`, `/accounts/`, `/admin/`, `/manage/`.
 - **IndexedDB** (`branches/static/branches/js/db.js`): `catalog_items`, `catalog_meta`, `pending_requests`. Online catalogue fetch → cache; offline browse with last-updated banner.
-- **Offline requisição drafts:** `sync_queue.js` queues draft create/add-line; replays on reconnect via `POST /api/branch/requests/sync/` (idempotent `InternalRequest.client_uuid`).
+- **Offline requisição drafts:** `sync_queue.js` + `branch_bootstrap.js`; replay on reconnect via `POST /api/branch/requests/sync/` (idempotent `InternalRequest.client_uuid`). Auto-sync on all branch pages with `offline_scripts.html`.
 - **PWA:** `manifest.webmanifest`, icon, shared offline banner; HTTPS note in `docs/DEPLOYMENT.md`.
 - **Submit / approve / reject / cancel** remain online-only; threads and receipts out of scope.
 - Use one hostname consistently (`127.0.0.1` vs `localhost`) for service worker scope in dev.
 
 **Not in Phase 6:** real email send (Phase 8); full production OAuth rollout (Phase 7).
 
-**Review (26 Aug 2026):** [`docs/reviews/phase6-offline-review-2026-08-26-1009.md`](reviews/phase6-offline-review-2026-08-26-1009.md) — P0 hardening (branch guard, stale `syncing`, concurrent line loss, 500-class sync errors) **not yet applied**.
+**Review (26 Aug 2026):** [`docs/archive/phase6-offline-review-2026-08-26-1009.md`](archive/phase6-offline-review-2026-08-26-1009.md) — **concluded**; P0/P1/P2 applied. Optional follow-up: required `client_uuid` on online create (L4).
 
 ---
 
@@ -489,8 +489,8 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - [x] Manage console header / settings UX polish
 - [x] Chrome review H1–H3 + M1 (+ L1, L2) — [`docs/reviews/code-review-full-2026-08-25-1125.md`](reviews/code-review-full-2026-08-25-1125.md)
 - [x] Phase 6 — offline catalogue + offline request queue + sync / PWA (#19)
-- [ ] Phase 6 offline review P0 — branch/sync hardening — **Next** ([report](reviews/phase6-offline-review-2026-08-26-1009.md))
-- [ ] Phase 7 — production deployment / OAuth / shared chrome
+- [x] Phase 6 offline review fixes — P0/P1/P2 ([archive](archive/phase6-offline-review-2026-08-26-1009.md))
+- [ ] Phase 7 — production deployment / OAuth / shared chrome — **Next**
 - [ ] Phase 8 — email automation (stub exists)
 
 ---

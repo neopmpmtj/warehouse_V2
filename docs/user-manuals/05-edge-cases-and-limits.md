@@ -150,6 +150,9 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `A request with goods issues cannot be cancelled.` | Goods already shipped | Short-close instead (see §4) |
 | `client_uuid is required.` | Offline sync POST missing UUID | Retry from the branch requests page after reconnect |
 | `client_uuid must be a valid UUID.` | Malformed offline sync payload | Refresh the page and create a new offline draft |
+| `client_uuid is already in use on another branch.` | Offline draft UUID was synced on a different branch | Switch back to the branch where the draft was created, then open `/branch/requests/` |
+| `Unknown item id …` | Stale or invalid catalogue item in offline sync payload | Refresh the catalogue online, then recreate the offline draft |
+| `Cached catalogue is for another branch. Connect to Wi-Fi to download this branch's catalogue.` | Offline browse after switching branch without refreshing | Connect to Wi-Fi on the current branch to download its catalogue |
 
 ### 2.5 Request threads (`/branch/threads/`, `/manage/threads/`)
 

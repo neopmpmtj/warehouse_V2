@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 26 August 2026, 10:19 WEST.
+> **Read this first when resuming work.** Last updated: 26 August 2026, 11:00 WEST.
 
 ---
 
@@ -25,23 +25,57 @@
 | 5+ — Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** |
 | 5+ — Branch dashboard + shared branch navigation | ✅ **Done** |
 | 6 — Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (reviewed 26 Aug) |
-| 6+ — Phase 6 offline review fixes (P0 hardening) | 🔵 **Next** |
-| 7 — Production / deployment / OAuth / shared chrome | ⏸ After P0 or in parallel |
+| 6+ — Phase 6 offline review fixes (P0 / P1 / P2) | ✅ **Done** |
+| 7 — Production / deployment / OAuth / shared chrome | 🔵 **Next** |
 | 8 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete on `main` (HEAD `0b4fb9d`).** Phase 6 offline was **reviewed 26 Aug** — **4 High / 6 Medium** reliability gaps (wrong-branch sync, stuck queue, line loss, 500-class errors). **Next session: apply P0 fixes** from the review report before production offline rollout; Phase 7 remains after that. Email automation is Phase 8.
+**Phases 0–6 are complete.** Phase 6 offline **review fixes applied 26 Aug** (P0 sync hardening, P1 UX, P2 polish). Review concluded and archived. **Next:** Phase 7 production polish / OAuth / shared chrome. Email automation is Phase 8.
 
-**Tests:** suite **536 OK** (26 Aug handoff run).
+**Tests:** suite **540 OK** (26 Aug, after Phase 6 review fixes).
 
 ## Next session — do this
 
-1. **Apply Phase 6 offline review P0** — H1–H4 + M2 from [`docs/reviews/phase6-offline-review-2026-08-26-1009.md`](reviews/phase6-offline-review-2026-08-26-1009.md) (branch guard on sync queue, reset stale `syncing`, prevent concurrent line loss, cross-branch UUID → 400, unknown item → 400). Then P1 UX items if time.
-2. **Or start Phase 7** only if you explicitly defer offline hardening — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
-3. **Do not treat as a work queue:** review L/N items, 24 Aug nits (threads N1–N6; Company Voice N1), chrome leftover **L3–L8 / N1–N3**.
-4. **Do not start** Phase 8 email in passing.
-5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+1. **Start Phase 7** — production deployment, OAuth hardening, shared chrome — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
+2. **Do not treat as a work queue:** Phase 6 review leftover L/N (see archived report), 24 Aug nits (threads N1–N6; Company Voice N1), chrome leftover **L3–L8 / N1–N3**.
+3. **Do not start** Phase 8 email in passing.
+4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
 
-## This session (26 Aug 2026) — living-docs sync + Phase 6 offline review ✅
+## This session (26 Aug 2026) — Phase 6 offline review fixes ✅
+
+### P0 — sync hardening
+
+- **H1** — client queue skips wrong `branch_id`; server `client_uuid_branch_mismatch` (400).
+- **H2** — stale `syncing` (>60s) reset to `pending` before drain.
+- **H3** — block add-line while syncing; re-read IDB after sync; POST extra lines via add-line API.
+- **H4** — global `client_uuid` lookup before create.
+- **M2** — `unknown_item` ValidationError (400).
+
+### P1 — offline UX
+
+- **`branch_bootstrap.js`** + **`offline_scripts.html`** — global offline banner + auto-sync on all branch pages.
+- **M3** — `catalogCacheForBranch()` on catalogue + requisição offline reads.
+- **M5** — Wi-Fi empty states on receipts, threads; offline banner on dashboard.
+- **M6** — `offline_assets.html` on dashboard; `settings_menu.css?v=5`.
+
+### P2 — polish + docs
+
+- Manuals Q15–Q17; edge-case strings; plan “shipped vs planned” note.
+- SW `/manage/` bypass; `register_sw.js` `console.warn` on failure; CACHE `v5`.
+- Sync tests: `invalid_client_uuid`, duplicate line in payload (+ P0 cross-branch / unknown item).
+- Manual offline smoke test in archived review + below.
+- Review **concluded** → [`docs/archive/phase6-offline-review-2026-08-26-1009.md`](archive/phase6-offline-review-2026-08-26-1009.md).
+
+### Manual offline smoke test
+
+Use **`http://127.0.0.1:8000`** only (not mixed with `localhost`).
+
+1. Log in `branch.manager.north@centcompras.dev` / `devpass123`.
+2. Visit `/branch/catalog/` online (cache catalogue).
+3. DevTools → Offline → `/branch/requests/` → New request + add line → **pending sync**.
+4. Online → open `/branch/` or `/branch/catalog/` → draft uploads.
+5. Dual-branch user: draft at North does not sync on South; syncs after switching back.
+
+## This session (26 Aug 2026) — living-docs sync + Phase 6 offline review (read-only) ✅
 
 ### Living docs aligned to `main` (PRs #18–#19)
 
@@ -456,7 +490,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput
 ```
 
-- Last full suite on **`main`:** **536 OK** (26 Aug 2026 handoff run).
+- Last full suite: **540 OK** (26 Aug 2026, after Phase 6 review fixes).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -519,7 +553,8 @@ python manage.py runserver
 | `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |
 | `docs/archive/phase5-brainstorm-260821-1530.md` | Phase 5 brainstorm + locked decisions (A1–B8) — **archived** ✅ |
 | `docs/future-enhancements-260821-1833.md` | Future nice-to-haves (E items + later ideas) — parking lot |
-| `docs/reviews/phase6-offline-review-2026-08-26-1009.md` | Phase 6 offline review — **P0 fixes not applied** |
+| `docs/archive/phase6-offline-review-2026-08-26-1009.md` | Phase 6 offline review — **concluded**; P0/P1/P2 applied |
+| `docs/reviews/phase6-offline-review-2026-08-26-1009.md` | Pointer to archive |
 | `.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md` | Phase 6 offline — **complete** |
 | `docs/archive/warehouse-tenancy-setup.md` | **Archived** Branch/Membership sketch — superseded by brainstorm |
 | `products/products_docs/aux_instructions.md` | learning pace for agents (not live status) |

@@ -391,7 +391,10 @@ Stock is already in motion. After the first goods issue the only way to finish e
 Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it.
 
 **Q15. Can I build a requisição while offline?**
-Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically. **Submit**, **Approve**, **Reject**, and **Cancel** still require Wi-Fi.
+Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically when you open any branch page that loads the offline scripts (catalog, requisição, dashboard, etc.). **Submit**, **Approve**, **Reject**, and **Cancel** still require Wi-Fi.
 
 **Q16. The catalogue offline banner says availability may be outdated — why?**
-Offline mode shows the **last downloaded** catalogue. Warehouse stock and availability hints can change while you were disconnected. Connect to Wi-Fi to refresh.
+Offline mode shows the **last downloaded** catalogue for the **active branch**. Warehouse stock and availability hints can change while you were disconnected. If you switch branch while offline, the app warns that the cache belongs to another branch — connect to Wi-Fi on the current branch to download its catalogue.
+
+**Q17. I switched branch with a pending offline draft — why won't it sync?**
+Offline drafts are tied to the branch where you created them. If you switch to another branch, sync is **skipped** until you switch back and open `/branch/requests/` on that branch. Do not reuse the same offline draft UUID across branches — the server rejects it with `client_uuid is already in use on another branch.`

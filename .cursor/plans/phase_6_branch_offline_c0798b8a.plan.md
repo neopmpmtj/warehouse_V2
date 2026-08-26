@@ -321,3 +321,18 @@ sequenceDiagram
 ## Post-implementation
 
 Run `/session-handoff` after each slice. Fix stale PROJECT-PLAN §13 note about UUIDs already existing.
+
+---
+
+## Shipped vs plan (26 Aug 2026 — review fixes applied)
+
+The implementation **deviated** from Slice 2 §2.2–2.3 in deliberate ways; behaviour is correct and documented here so the plan is not mistaken for a backlog.
+
+| Plan (Slice 2) | Shipped | Notes |
+|----------------|---------|-------|
+| Replay `POST …/create/` + `POST …/lines/` with `client_uuid` on every op | Dedicated `POST /api/branch/requests/sync/` with `client_uuid` + `lines[]` | Single atomic create+lines; simpler queue (`pending_requests` not `pending_ops` FIFO) |
+| Required `client_uuid` on all online creates | `client_uuid` nullable on model; online create leaves null | **L4 optional follow-up** — not required for offline safety |
+| Line-level `client_uuid` idempotency | Request-level sync only; `client_line_uuid` in IDB unused server-side | Safe while sync stays atomic (see review **M4** footgun) |
+| `bindAutoSync` only on requisição page | `branch_bootstrap.js` on all branch pages with `offline_scripts.html` | P1 fix **M1** |
+
+Review report (concluded): [`docs/archive/phase6-offline-review-2026-08-26-1009.md`](../../docs/archive/phase6-offline-review-2026-08-26-1009.md) — P0/P1/P2 applied 26 Aug 2026.

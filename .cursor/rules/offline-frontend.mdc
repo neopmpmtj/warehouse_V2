@@ -13,6 +13,7 @@ Branch pages under `/branch/…` use a Service Worker + IndexedDB layer. Warehou
 |------|------|
 | [`branches/static/branches/js/db.js`](branches/static/branches/js/db.js) | IndexedDB: `catalog_items`, `catalog_meta`, `pending_requests` |
 | [`branches/static/branches/js/branch_catalog.js`](branches/static/branches/js/branch_catalog.js) | Fetch API, save cache, offline fallback |
+| [`branches/static/branches/js/branch_bootstrap.js`](branches/static/branches/js/branch_bootstrap.js) | Shared offline banner + auto-sync on all branch pages |
 | [`branches/static/branches/js/sync_queue.js`](branches/static/branches/js/sync_queue.js) | Replay offline requisição drafts to `POST /api/branch/requests/sync/` |
 | [`orders/static/orders/js/branch_requests.js`](orders/static/orders/js/branch_requests.js) | Branch requisição UI + offline draft queue |
 | [`branches/static/branches/js/register_sw.js`](branches/static/branches/js/register_sw.js) | Service Worker registration |
@@ -23,7 +24,8 @@ Branch pages under `/branch/…` use a Service Worker + IndexedDB layer. Warehou
 - Service Worker at `/service-worker.js` (root scope)
 - Do **not** cache `/api/` in the Service Worker — API failure triggers IndexedDB fallback in page JS
 - Bump `CACHE_NAME` in `service_worker.js` when app shell files change
-- Include shell scripts in `APP_SHELL` (including `register_sw.js`)
+- Include shell scripts in `APP_SHELL` (including `register_sw.js`, `branch_bootstrap.js`)
+- `isBypassed` must skip `/api/`, `/accounts/`, `/admin/`, and `/manage/`
 - IndexedDB stores downloaded catalogue + pending offline drafts — not warehouse master data
 - PostgreSQL remains the source of truth
 - Bump `?v=` on every static reference in branch templates when JS/CSS changes

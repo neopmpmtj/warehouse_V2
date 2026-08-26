@@ -21,6 +21,8 @@
         input, select, textarea { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
         textarea { width: 100%; min-height: 72px; box-sizing: border-box; }
         .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: var(--warn); margin-top: 10px; }
+        .banner-info { background: #e8f0fe; color: #0b57d0; }
+        .offline-empty { color: var(--muted); font-size: .9rem; margin: 8px 0 0; }
         .selected { background: #eef4fe; }
         .unread { font-weight: 700; }
         .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .75rem; background: #e8f0fe; color: var(--brand); margin-left: 6px; }
@@ -43,12 +45,14 @@
     <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
     {% include "branches/includes/offline_assets.html" %}
 </head>
-<body>
+<body data-branch-id="{{ branch.id }}">
     {% include "branches/includes/branch_page_header.html" %}
 
     <main>
         <section class="panel">
             <h2 data-i18n="threadsTitle">Threads</h2>
+            <p id="offline-banner" class="banner banner-info" hidden></p>
+            <p id="offline-empty" class="offline-empty hidden" data-i18n="offlineEmptyThreads">Connect to Wi-Fi to load threads.</p>
             <div class="row">
                 <button id="new-thread" class="btn btn-primary" data-i18n="newThread">New thread</button>
             </div>
@@ -104,6 +108,7 @@
         </div>
     </div>
 
+    {% include "branches/includes/offline_scripts.html" %}
     <script>
         (function () {
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
@@ -127,6 +132,7 @@
                     none: "none", closedBy: "Closed by", postedBy: "posted by", satisfactionLabel: "Satisfaction",
                     settings: "Settings", signedInAs: "Signed in as", signOut: "Sign out",
                     signOutOtherDevices: "Sign out other devices", help: "Help",
+                    offlineEmptyThreads: "Connect to Wi-Fi to load threads.",
                 },
                 pt: {
                     title: "Fios de pedido", threadsTitle: "Fios", newThread: "Novo fio",
@@ -143,6 +149,7 @@
                     none: "nenhum", closedBy: "Fechado por", postedBy: "enviada por", satisfactionLabel: "Satisfação",
                     settings: "Definições", signedInAs: "Sessão iniciada como", signOut: "Terminar sessão",
                     signOutOtherDevices: "Terminar sessão noutros dispositivos", help: "Ajuda",
+                    offlineEmptyThreads: "Ligue-se ao Wi-Fi para carregar os fios.",
                 },
             };
 
@@ -238,6 +245,16 @@
             }
 
             function loadThreads() {
+                if (typeof BranchOffline !== "undefined" && !BranchOffline.isOnline()) {
+                    state.threads = [];
+                    state.selectedId = null;
+                    threadBody.textContent = "";
+                    renderDetail(null);
+                    setVisible(emptyList, false);
+                    setVisible(document.getElementById("offline-empty"), true);
+                    return Promise.resolve();
+                }
+                setVisible(document.getElementById("offline-empty"), false);
                 return api("/api/branch/threads/").then(function (data) {
                     state.threads = data.threads || [];
                     renderList();

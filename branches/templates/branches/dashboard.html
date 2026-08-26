@@ -24,14 +24,16 @@
             document.documentElement.setAttribute("lang", lang);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
     <link rel="stylesheet" href="{% static 'products/css/dashboard.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
+    {% include "branches/includes/offline_assets.html" %}
 </head>
-<body>
+<body data-branch-id="{{ branch.id }}">
     {% include "branches/includes/branch_page_header.html" with page_title="Dashboard" page_title_key="branchDashTitle" active_nav="home" %}
 
     <main class="branch-dash-main">
+        <p id="offline-banner" class="banner banner-info" hidden style="margin:0 20px 12px;padding:10px 14px;border-radius:4px;background:#e8f0fe;color:#0b57d0;"></p>
         <section class="dash-section">
             <h2 data-i18n="sectionBranchWork">Your branch</h2>
             <div class="card-grid">
@@ -45,7 +47,8 @@
         </section>
     </main>
 
+    {% include "branches/includes/offline_scripts.html" %}
     <script src="{% static 'products/js/preferences_bar.js' %}?v=5"></script>
-    <script src="{% static 'products/js/console_settings_menu.js' %}"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=1"></script>
 </body>
 </html>

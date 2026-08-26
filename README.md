@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 26 August 2026, 10:19 WEST.*
+*Last updated: 26 August 2026, 11:00 WEST.*
 
-**Phases 0–6 are done.** **Phase 6 offline reviewed 26 Aug** — P0 sync hardening is **next** before production offline rollout; then Phase 7. Branch dashboard + offline stack on `main`; suite **536 OK**. Email is **Phase 8**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** Phase 6 offline review fixes **applied** (P0/P1/P2, 26 Aug). **Phase 7 next.** Suite **540 OK**. Email is **Phase 8**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** Phase 6 offline review **P0 fixes** ([report](docs/reviews/phase6-offline-review-2026-08-26-1009.md)), then Phase 7 production polish / OAuth / shared chrome.
+4. **Next:** Phase 7 production polish / OAuth / shared chrome — see [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §14.
 
 ---
 
@@ -73,7 +73,7 @@ No React, Vue, or similar frontend framework.
 
 > **Branches + requisição + goods issue + branch receipt are built (Phase 5 complete).** `Branch` + `BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (cost hidden, stock hint), `/branch/requests/` (requisição through `approved`, manager caps), warehouse goods issue (`/manage/internal-requests/`, `/manage/branch-approval-limits/`), and branch receipt + branch stock (`/branch/receipts/`). Locked decisions (archived): [`docs/archive/phase5-brainstorm-260821-1530.md`](docs/archive/phase5-brainstorm-260821-1530.md).
 >
-> **Branch dashboard + offline (Phase 6 complete).** Branch-only users land on `/branch/` (card grid + shared header nav). After one online visit, `/branch/catalog/` works offline from IndexedDB (last-updated banner). Offline requisição **drafts** queue locally and upload idempotently via `POST /api/branch/requests/sync/` when Wi-Fi returns; submit/approve still require network. Service Worker at `/service-worker.js`; PWA manifest. Use **`127.0.0.1`** consistently for SW dev (not mixed with `localhost`). Manual: [`04-internal-requests.md`](docs/user-manuals/04-internal-requests.md) §10 FAQ.
+> **Branch dashboard + offline (Phase 6 complete).** Branch-only users land on `/branch/` (card grid + shared header nav). After one online visit, `/branch/catalog/` works offline from IndexedDB (per-branch cache; last-updated banner). Offline requisição **drafts** queue locally and upload idempotently via `POST /api/branch/requests/sync/` when Wi-Fi returns (auto-sync on any branch page with offline scripts). Submit/approve still require network. Service Worker at `/service-worker.js`; PWA manifest. Use **`127.0.0.1`** consistently for SW dev. Manual: [`04-internal-requests.md`](docs/user-manuals/04-internal-requests.md) FAQ Q15–Q17.
 >
 > **Request threads are built.** `threads` app: a branch opens a written thread (subject + free text) when the needed item is **not in the catalogue**; warehouse engages; the item is created via the item console and linked to the thread; only the opener closes (branch manager/admin + warehouse admin may force-close). `/branch/threads/` (branch side) and `/manage/threads/` (all branches, filters, link-item, override close). Unread badges via `ThreadReadState`. Manual: [`08-request-threads.md`](docs/user-manuals/08-request-threads.md).
 
@@ -350,5 +350,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 
 - **Production deployment / OAuth polish / shared chrome** (Phase 7 — **Next**)
 - **Email automation** (Phase 8 — wire notify stubs to real email; stub exists today)
-- Integration tests (unit suites: **536 OK**)
+- Integration tests (unit suites: **540 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

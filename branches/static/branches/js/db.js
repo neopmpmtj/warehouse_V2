@@ -110,6 +110,21 @@ var BranchDB = (function () {
         });
     }
 
+    function getPendingRequest(clientUuid) {
+        return openDatabase().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var tx = db.transaction(PENDING_REQUESTS, "readonly");
+                var req = tx.objectStore(PENDING_REQUESTS).get(clientUuid);
+                req.onsuccess = function () {
+                    resolve(req.result || null);
+                };
+                req.onerror = function () {
+                    reject(req.error);
+                };
+            });
+        });
+    }
+
     function deletePendingRequest(clientUuid) {
         return openDatabase().then(function (db) {
             return new Promise(function (resolve, reject) {
@@ -147,6 +162,7 @@ var BranchDB = (function () {
         getCachedCatalog: getCachedCatalog,
         putPendingRequest: putPendingRequest,
         getPendingRequests: getPendingRequests,
+        getPendingRequest: getPendingRequest,
         deletePendingRequest: deletePendingRequest,
         updatePendingRequest: updatePendingRequest,
     };

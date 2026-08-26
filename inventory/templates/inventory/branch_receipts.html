@@ -21,18 +21,22 @@
         input { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
         .qty { width: 80px; }
         .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: #b00020; margin-top: 10px; }
+        .banner-info { background: #e8f0fe; color: #0b57d0; }
+        .offline-empty { color: var(--muted); font-size: .9rem; margin: 8px 0 0; }
         .selected { background: #eef4fe; }
     </style>
     <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
     <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
     {% include "branches/includes/offline_assets.html" %}
 </head>
-<body>
+<body data-branch-id="{{ branch.id }}">
     {% include "branches/includes/branch_page_header.html" %}
 
     <main>
         <section class="panel">
             <h2>Dispatches</h2>
+            <p id="offline-banner" class="banner banner-info" hidden></p>
+            <p id="offline-empty" class="offline-empty" hidden>Connect to Wi-Fi to load dispatches.</p>
             <table>
                 <thead><tr><th>#</th><th>Request</th><th>Status</th><th>Ref</th></tr></thead>
                 <tbody id="issue-body"></tbody>
@@ -59,6 +63,7 @@
         </section>
     </main>
 
+    {% include "branches/includes/offline_scripts.html" %}
     <script>
         (function () {
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
@@ -98,6 +103,17 @@
             }
 
             function load() {
+                var offlineEmpty = document.getElementById("offline-empty");
+                if (typeof BranchOffline !== "undefined" && !BranchOffline.isOnline()) {
+                    state.issues = [];
+                    state.selectedId = null;
+                    issueBody.textContent = "";
+                    lineBody.textContent = "";
+                    detailTitle.textContent = "Dispatch";
+                    if (offlineEmpty) offlineEmpty.hidden = false;
+                    return Promise.resolve();
+                }
+                if (offlineEmpty) offlineEmpty.hidden = true;
                 return api("/api/branch/receipts/issues/").then(function (d) {
                     state.issues = d.goods_issues || [];
                     renderList();

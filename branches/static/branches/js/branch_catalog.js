@@ -64,12 +64,18 @@
 
     function loadFromCache() {
         return BranchDB.getCachedCatalog().then(function (data) {
-            if (!data.items.length) {
+            var cache = BranchOffline.catalogCacheForBranch(data, branchId);
+            if (!cache.ok) {
+                showBanner(cache.message);
+                empty.hidden = true;
+                return;
+            }
+            if (!cache.items.length) {
                 showBanner("No cached catalogue. Connect to Wi-Fi to download.");
                 empty.hidden = true;
                 return;
             }
-            render(data.items);
+            render(cache.items);
             showBanner(
                 "Offline — showing last update from " +
                     formatLastUpdated(data.meta && data.meta.last_updated) +

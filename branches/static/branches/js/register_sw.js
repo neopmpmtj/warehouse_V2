@@ -5,8 +5,10 @@
         return;
     }
     window.addEventListener("load", function () {
-        navigator.serviceWorker.register("/service-worker.js").catch(function () {
-            /* registration failed — online-only fallback */
+        navigator.serviceWorker.register("/service-worker.js").catch(function (err) {
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("Service worker registration failed:", err);
+            }
         });
     });
 }());

@@ -66,9 +66,8 @@
         <p id="empty" class="empty" hidden>No items to show.</p>
     </main>
 
-    <script src="{% static 'branches/js/db.js' %}?v=1"></script>
-    <script src="{% static 'branches/js/branch_offline.js' %}?v=1"></script>
-    <script src="{% static 'branches/js/branch_catalog.js' %}?v=1"></script>
+    {% include "branches/includes/offline_scripts.html" %}
+    <script src="{% static 'branches/js/branch_catalog.js' %}?v=2"></script>
     <script src="{% static 'products/js/preferences_bar.js' %}?v=5"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=1"></script>
 </body>

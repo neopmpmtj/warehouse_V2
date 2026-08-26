@@ -69,7 +69,16 @@
     function loadItems() {
         if (!BranchOffline.isOnline()) {
             return BranchDB.getCachedCatalog().then(function (data) {
-                populateItemPicker(data.items);
+                var cache = BranchOffline.catalogCacheForBranch(
+                    data,
+                    document.body.getAttribute("data-branch-id")
+                );
+                if (!cache.ok) {
+                    populateItemPicker([]);
+                    showError(cache.message);
+                    return;
+                }
+                populateItemPicker(cache.items);
             });
         }
         return api("/api/branch/catalog/").then(function (data) {
@@ -292,6 +301,10 @@
                 showError("Pending request not found.");
                 return;
             }
+            if (pending.status === "syncing") {
+                showError("Sync in progress. Wait a moment before adding lines.");
+                return;
+            }
             pending.lines = pending.lines || [];
             if (
                 pending.lines.some(function (line) {
@@ -375,8 +388,7 @@
     });
     document.getElementById("add-line").addEventListener("click", addLine);
 
-    BranchOffline.bindOfflineBanner("offline-banner");
-    BranchSyncQueue.bindAutoSync(function () {
+    window.addEventListener("branch-sync-complete", function () {
         loadRequests().catch(showError);
     });
 
