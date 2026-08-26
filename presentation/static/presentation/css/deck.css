@@ -446,6 +446,22 @@ body.deck-fullscreen:hover {
     color: var(--muted);
 }
 
+.deck-lang-switch {
+    font-size: var(--small-size);
+    color: var(--accent-light);
+    text-decoration: none;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid var(--accent);
+    border-radius: 0.5rem;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+}
+
+.deck-lang-switch:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
 /* Help overlay */
 .help-overlay {
     position: fixed;

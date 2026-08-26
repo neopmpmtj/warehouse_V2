@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Apresentação: dados, circuitos e circularidade">
     <title>CentCompras — Apresentação</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=2">
 </head>
 <body>
     <div class="deck" role="application" aria-label="Apresentação CentCompras">
@@ -487,6 +487,7 @@
         <footer class="deck-controls">
             <button type="button" id="btn-prev" aria-label="Slide anterior">← Anterior</button>
             <span class="deck-counter" id="slide-counter" aria-live="polite">1 / {{ slide_count }}</span>
+            <a href="{{ other_lang_url }}" class="deck-lang-switch" hreflang="en" lang="en">{{ other_lang_label }}</a>
             <span class="deck-hint">← → Espaço · F ecrã inteiro · ? ajuda</span>
             <button type="button" id="btn-help" aria-label="Ajuda">?</button>
             <button type="button" id="btn-next" aria-label="Slide seguinte">Seguinte →</button>

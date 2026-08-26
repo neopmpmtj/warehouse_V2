@@ -1,7 +1,8 @@
 # CentCompras — Plano da apresentação (pt-PT)
 
 **Versão:** 1.0 · **Data:** 26 agosto 2026  
-**URL:** `/presentation/` · **Idioma:** Português (pt-PT) — inglês após revisão  
+**URL:** `/presentation/pt/` (atalho: `/presentation/`) · **Inglês:** `/presentation/en/`  
+**Idioma:** Português (pt-PT) · Plano EN: [`PLAN-en.md`](PLAN-en.md)  
 **Público:** Armazém central, gestores e operadores de filial, direção
 
 ---
@@ -116,10 +117,13 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 | Componente | Localização |
 |------------|-------------|
 | Plano (este ficheiro) | `docs/presentation/PLAN-pt-PT.md` |
+| Plano inglês | `docs/presentation/PLAN-en.md` |
 | App Django | `presentation/` |
-| Template | `presentation/templates/presentation/deck.html` |
+| Template PT | `presentation/templates/presentation/deck_pt.html` |
+| Template EN | `presentation/templates/presentation/deck_en.html` |
 | CSS / JS | `presentation/static/presentation/css/deck.css`, `js/deck.js` |
-| Rota | `config/urls.py` → `path("presentation/", include("presentation.web_urls"))` |
+| Rota PT | `/presentation/` ou `/presentation/pt/` |
+| Rota EN | `/presentation/en/` |
 
 ### Navegação do deck
 - Setas ← →, Espaço, Page Up/Down
@@ -134,11 +138,9 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 
 ---
 
-## Tradução EN (fase posterior)
+## Tradução EN
 
-Quando o conteúdo pt-PT estiver validado:
-- Duplicar estrutura para `PLAN-en.md` e parâmetro `?lang=en` ou rota `/presentation/en/`
-- Reutilizar CSS/JS; apenas conteúdo textual muda
+Versão inglesa disponível em **`/presentation/en/`** — ver [`PLAN-en.md`](PLAN-en.md). Templates separados (`deck_pt.html` / `deck_en.html`); CSS e JS partilhados.
 
 ---
 
