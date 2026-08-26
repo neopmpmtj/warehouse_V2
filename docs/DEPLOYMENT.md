@@ -3,6 +3,19 @@
 Step-by-step guide: develop on your local machine, push to GitHub, deploy to a
 DigitalOcean droplet (same setup as www.utter-it.com).
 
+> **Staging first?** The app is currently live on a Contabo VPS, IP-only,
+> no TLS, no Google OAuth — see
+> [`DEPLOYMENT-CONTABO-STAGING.md`](DEPLOYMENT-CONTABO-STAGING.md) for that
+> runbook. When the customer approves, promote to this production path
+> (DigitalOcean + backups + external DB + domain + HTTPS + Google OAuth).
+>
+> **Two prod gotchas already fixed on `main`:**
+> 1. `prod.py` used to hardcode `SESSION_COOKIE_SECURE`/`CSRF_COOKIE_SECURE`
+>    `= True`, which breaks login over plain HTTP. Now controlled by the
+>    `SECURE_COOKIES` env flag (defaults to `SECURE_SSL_REDIRECT`).
+> 2. `requirements.txt` must keep `whitenoise` (used by `base.py` middleware) —
+>    it was accidentally dropped by the PT-docs PR and fresh installs crashed.
+
 **Architecture after this refactor:**
 
 | Environment | Settings module | How chosen |
