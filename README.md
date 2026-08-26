@@ -18,13 +18,13 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 | User type | Example (after seed) | Can do today |
 |-----------|----------------------|--------------|
-| **Warehouse admin** | `warehouse.admin@centcompras.dev` | Full catalogue, POs (including approve any amount), goods receipts, stock adjust, `/manage/approval-limits/` (`warehouse_admins`). Cannot log into `/admin/`. |
-| **Warehouse manager** | `warehouse.manager@centcompras.dev` (grade 1); also `manager2` / `manager3` | Grade 1: add/edit catalogue and POs (submit, no approve). Grade 2+: approve within caps. No delete / no stock adjust. |
-| **Warehouse operator** | `warehouse.operator@centcompras.dev` (grade 1); also `operator2` | Grade 1: read-only. Grade 2: mutate closed circuit. Never approve. |
-| **Branch users** | `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…`, `branch.operator.south@…` / `branch.manager.south@…`, `branch.dual@…` | Branch dashboard (`/branch/`), read-only catalogue (cost hidden, stock hint; **offline browse** after one online visit), requisição interna (**offline drafts** sync on reconnect), request threads, branch receipts, Company Voice. |
+| **Warehouse admin** | `armazem.admin@centcompras.dev` | Full catalogue, POs (including approve any amount), goods receipts, stock adjust, `/manage/approval-limits/` (`warehouse_admins`). Cannot log into `/admin/`. |
+| **Warehouse manager** | `armazem.gestor@centcompras.dev` (grade 1); also `gestor2` / `gestor3` | Grade 1: add/edit catalogue and POs (submit, no approve). Grade 2+: approve within caps. No delete / no stock adjust. |
+| **Warehouse operator** | `armazem.operador@centcompras.dev` (grade 1); also `operador2` | Grade 1: read-only. Grade 2: mutate closed circuit. Never approve. |
+| **Branch users** | `filial.operador.norte@…` / `filial.gestor.norte@…` / `filial.admin.norte@…`, `filial.operador.sul@…` / `filial.gestor.sul@…`, `filial.dual@…` | Branch dashboard (`/branch/`), read-only catalogue (cost hidden, stock hint; **offline browse** after one online visit), requisição interna (**offline drafts** sync on reconnect), request threads, branch receipts, Company Voice. |
 | **Django superuser** | from `createsuperuser` | Site admin at `/admin/` only. The only users who may use Django admin. |
 
-After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed creates **branches** (North, South) and **branch users**, but does **not** create a superuser.
+After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed creates **branches** (Norte, Sul) and **branch users**, but does **not** create a superuser. English seed is archived as `scripts/seed_dev_data_en.sh.old` and `products/*_en.py.old`.
 
 **Procurement:** admins approve any PO; managers grade 2+ approve within EUR gross caps (self vs others); operators never approve. Reject / short-shipment close / stock adjust require a reason. **Stock:** admins may `adjust_stock`; operator 2 and managers/admins record goods receipts.
 
@@ -246,11 +246,11 @@ This creates (idempotent):
 
 | Item | Details |
 |------|---------|
-| **Warehouse users** | `warehouse.admin@…` / `warehouse.manager@…` / `manager2` / `manager3` / `warehouse.operator@…` / `operator2` (grades as seeded) |
+| **Warehouse users** | `armazem.admin@…` / `armazem.gestor@…` / `gestor2` / `gestor3` / `armazem.operador@…` / `operador2` (grades as seeded) |
 | **Families, suppliers, items, supplier prices** | sample catalogue via `products/services.py` |
 | **Password** | `devpass123` (override with `--password`) |
 
-It also creates **branches** (North, South) and **branch users**. It does **not** create a Django superuser. Options: `--skip-items`, `--skip-warehouse`, `--skip-branches`.
+It also creates **branches** (Norte, Sul) and **branch users**. It does **not** create a Django superuser. Options: `--skip-items`, `--skip-warehouse`, `--skip-branches`.
 
 Items can also be added in `/manage/items/` or:
 
@@ -261,7 +261,7 @@ python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16 --inter
 ### 6. Test the application
 
 1. Open `http://localhost:8000/` — redirected to login.
-2. Log in as `warehouse.admin@centcompras.dev` / `devpass123`.
+2. Log in as `armazem.admin@centcompras.dev` / `devpass123`.
 3. Open `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/`.
 
 Use **one hostname** consistently (`localhost` **or** `127.0.0.1`, not both).
@@ -298,7 +298,7 @@ python manage.py runserver
 
 First-time or reset DB: steps 1–4, then `./scripts/seed_dev_data.sh`.
 
-Practice logins: `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev` / `manager2` / `manager3`, `warehouse.operator@centcompras.dev` / `operator2` — password `devpass123`.
+Practice logins: `armazem.admin@centcompras.dev`, `armazem.gestor@centcompras.dev` / `gestor2` / `gestor3`, `armazem.operador@centcompras.dev` / `operador2` — password `devpass123`.
 
 Tests:
 

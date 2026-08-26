@@ -41,12 +41,12 @@ CHANGE_SUPPLIER_ITEM_PRICE = "products.change_supplieritemprice"
 APPROVE_PURCHASE_ORDER = "procurement.can_approve"
 
 WAREHOUSE_USERS = (
-    ("warehouse.admin@centcompras.dev", GROUP_ADMINS, 1),
-    ("warehouse.manager@centcompras.dev", GROUP_MANAGERS, 1),
-    ("warehouse.operator@centcompras.dev", GROUP_OPERATORS, 1),
-    ("warehouse.operator2@centcompras.dev", GROUP_OPERATORS, 2),
-    ("warehouse.manager2@centcompras.dev", GROUP_MANAGERS, 2),
-    ("warehouse.manager3@centcompras.dev", GROUP_MANAGERS, 3),
+    ("armazem.admin@centcompras.dev", GROUP_ADMINS, 1),
+    ("armazem.gestor@centcompras.dev", GROUP_MANAGERS, 1),
+    ("armazem.operador@centcompras.dev", GROUP_OPERATORS, 1),
+    ("armazem.operador2@centcompras.dev", GROUP_OPERATORS, 2),
+    ("armazem.gestor2@centcompras.dev", GROUP_MANAGERS, 2),
+    ("armazem.gestor3@centcompras.dev", GROUP_MANAGERS, 3),
 )
 
 GRADE_MAX_BY_GROUP = {

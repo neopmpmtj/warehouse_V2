@@ -2314,26 +2314,26 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
 class SeedDevDataCommandTests(TestCase):
     def test_seed_resolves_existing_family_when_case_differs(self):
-        create_family("cement")
+        create_family("cimento")
 
         call_command("seed_dev_data", verbosity=0)
 
         self.assertTrue(
             get_user_model().objects.filter(
-                email="warehouse.admin@centcompras.dev",
+                email="armazem.admin@centcompras.dev",
             ).exists()
         )
         item = Item.objects.get(internal_code="CEM-50")
-        self.assertEqual(item.family.name, "cement")
+        self.assertEqual(item.family.name, "cimento")
         self.assertEqual(
-            FamilyProduct.objects.filter(name__iexact="Cement").count(),
+            FamilyProduct.objects.filter(name__iexact="Cimento").count(),
             1,
         )
-        self.assertEqual(item.sub_family.name, "Bags")
+        self.assertEqual(item.sub_family.name, "Sacos")
 
     def test_second_seed_keeps_legacy_family_inactive(self):
         call_command("seed_dev_data", verbosity=0)
-        legacy = FamilyProduct.objects.get(name="Legacy stock")
+        legacy = FamilyProduct.objects.get(name="Stock legado")
         self.assertFalse(legacy.is_active)
 
         call_command("seed_dev_data", verbosity=0)

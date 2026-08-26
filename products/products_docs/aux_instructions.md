@@ -67,7 +67,7 @@ Today (summary only):
 - CLI is `add_item`. Offline catalogue was **removed** (Phase 6 will re-add it).
 - Next product phase: **manager catalog** (Phase 4). Branches and orders are later.
 
-Seed logins: `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompras.dev`, `warehouse.operator@centcompras.dev` (password `devpass123`). `/admin/` is superuser only.
+Seed logins: `armazem.admin@centcompras.dev`, `armazem.gestor@centcompras.dev`, `armazem.operador@centcompras.dev` (password `devpass123`). `/admin/` is superuser only.
 
 Architecture to preserve:
 

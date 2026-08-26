@@ -17,8 +17,8 @@ from playwright.sync_api import sync_playwright
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO_ROOT / "docs" / "user-manuals" / "pt" / "screenshots"
 
-WAREHOUSE_EMAIL = "warehouse.admin@centcompras.dev"
-BRANCH_EMAIL = "branch.manager.north@centcompras.dev"
+WAREHOUSE_EMAIL = "armazem.admin@centcompras.dev"
+BRANCH_EMAIL = "filial.gestor.norte@centcompras.dev"
 PASSWORD = "devpass123"
 
 

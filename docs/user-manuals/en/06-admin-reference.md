@@ -116,12 +116,12 @@ The approval caps themselves live at **`/manage/approval-limits/`** (warehouse a
 
 | Email | Group | Grade |
 |-------|-------|:---:|
-| `warehouse.admin@centcompras.dev` | admins | 1 |
-| `warehouse.manager@centcompras.dev` | managers | 1 |
-| `warehouse.manager2@centcompras.dev` | managers | 2 |
-| `warehouse.manager3@centcompras.dev` | managers | 3 |
-| `warehouse.operator@centcompras.dev` | operators | 1 |
-| `warehouse.operator2@centcompras.dev` | operators | 2 |
+| `armazem.admin@centcompras.dev` | admins | 1 |
+| `armazem.gestor@centcompras.dev` | managers | 1 |
+| `armazem.gestor2@centcompras.dev` | managers | 2 |
+| `armazem.gestor3@centcompras.dev` | managers | 3 |
+| `armazem.operador@centcompras.dev` | operators | 1 |
+| `armazem.operador2@centcompras.dev` | operators | 2 |
 
 ---
 
@@ -161,7 +161,7 @@ A **branch user** works on `/branch/…`. They have **no warehouse group**, and 
 - **Warehouse and branch are separate.** A user with both a warehouse group *and* a branch membership lands on the warehouse dashboard after login (warehouse wins) but can still reach `/branch/…` by URL.
 - **Head office creates branch users and memberships** in `/admin/` (lock 10). Branch staff never create logins, and never see `/admin/`.
 
-> 💡 *Seed reference:* North has `branch.operator.north`, `branch.manager.north`, `branch.admin.north`; South has `branch.operator.south`, `branch.manager.south`; `branch.dual` is a member of both (to exercise the picker). Password `devpass123`.
+> 💡 *Seed reference:* Norte has `filial.operador.norte`, `filial.gestor.norte`, `filial.admin.norte`; Sul has `filial.operador.sul`, `filial.gestor.sul`; `filial.dual` is a member of both (to exercise the picker). Password `devpass123`. English seed archived as `scripts/seed_dev_data_en.sh.old` and `products/*_en.py.old`.
 
 ---
 

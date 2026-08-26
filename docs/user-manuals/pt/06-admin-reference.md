@@ -116,12 +116,12 @@ Os tetos de aprovação em si estão em **`/manage/approval-limits/`** (administ
 
 | Email | Grupo | Grau |
 |-------|-------|:---:|
-| `warehouse.admin@centcompras.dev` | admins | 1 |
-| `warehouse.manager@centcompras.dev` | managers | 1 |
-| `warehouse.manager2@centcompras.dev` | managers | 2 |
-| `warehouse.manager3@centcompras.dev` | managers | 3 |
-| `warehouse.operator@centcompras.dev` | operators | 1 |
-| `warehouse.operator2@centcompras.dev` | operators | 2 |
+| `armazem.admin@centcompras.dev` | admins | 1 |
+| `armazem.gestor@centcompras.dev` | managers | 1 |
+| `armazem.gestor2@centcompras.dev` | managers | 2 |
+| `armazem.gestor3@centcompras.dev` | managers | 3 |
+| `armazem.operador@centcompras.dev` | operators | 1 |
+| `armazem.operador2@centcompras.dev` | operators | 2 |
 
 ---
 
@@ -161,7 +161,7 @@ Um **utilizador de filial** trabalha em `/branch/…`. **Não** tem grupo de arm
 - **Armazém e filial são separados.** Um utilizador com grupo de armazém *e* membro de filial chega ao painel do armazém após o início de sessão (o armazém ganha) mas ainda pode aceder a `/branch/…` por URL.
 - **A sede cria utilizadores e membros de filial** em `/admin/` (bloqueio 10). O pessoal de filial nunca cria logins e nunca vê `/admin/`.
 
-> 💡 *Referência do seed:* Norte tem `branch.operator.north`, `branch.manager.north`, `branch.admin.north`; Sul tem `branch.operator.south`, `branch.manager.south`; `branch.dual` é membro de ambas (para testar o seletor). Palavra-passe `devpass123`.
+> 💡 *Referência do seed:* Norte tem `filial.operador.norte`, `filial.gestor.norte`, `filial.admin.norte`; Sul tem `filial.operador.sul`, `filial.gestor.sul`; `filial.dual` é membro de ambas (para testar o seletor). Palavra-passe `devpass123`. Seed em inglês arquivado em `scripts/seed_dev_data_en.sh.old` e `products/*_en.py.old`.
 
 ---
 

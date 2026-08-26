@@ -24,7 +24,7 @@ Django 6.1 + PostgreSQL MVP for a **central warehouse** with **satellite branche
 | Branch admin / manager / operator | `BranchMembership.role` (Phase 5 done) | Read-only catalog + requisição interna + branch receipt (all done) |
 | Django superuser | `is_superuser` | May use the website console; **only** role that can log into `/admin/` | Site config in `/admin/` |
 
-Dev seed: `./scripts/seed_dev_data.sh` → warehouse users `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2`; branch users `branch.operator|manager|admin.north@…`, `branch.operator|manager.south@…`, `branch.dual@…` (both branches). Password `devpass123`.
+Dev seed: `./scripts/seed_dev_data.sh` → warehouse users `armazem.admin@centcompras.dev`, `armazem.gestor@…` / `gestor2` / `gestor3`, `armazem.operador@…` / `operador2`; branch users `filial.operador|gestor|admin.norte@…`, `filial.operador|gestor.sul@…`, `filial.dual@…` (both branches). Password `devpass123`. English seed archived as `*_en.*.old`.
 
 ## Current state (what exists)
 
@@ -139,7 +139,7 @@ Use one hostname consistently for offline testing (`localhost` or `127.0.0.1`, n
 Agents boot from a prebuilt snapshot. `.cursor/install.sh` installs PostgreSQL, the venv, and Python deps, creates `centcompras_db` **and** the Django default role `appuser`, then migrates and seeds. `.cursor/start.sh` starts PostgreSQL on every boot, re-ensures that role/database, and re-runs migrate + `seed_dev_data` so the database matches the checked-out revision (install is not re-run on snapshot boots).
 
 - App URL: `http://127.0.0.1:8000/` — Django `runserver` is the `django-runserver` terminal on port 8000. Use this host consistently (do not mix with `localhost`) if a later offline/PWA session tests service workers.
-- Seed logins: warehouse `warehouse.admin@centcompras.dev` and branch `branch.manager.north@centcompras.dev` (password `devpass123`; full list in `README.md`).
+- Seed logins: warehouse `armazem.admin@centcompras.dev` and branch `filial.gestor.norte@centcompras.dev` (password `devpass123`; full list in `README.md`).
 - UI checks: log in, then exercise the page under change. Warehouse consoles are `/manage/…`; branch pages are `/branch/…`; Company Voice is `/company-voice/`.
 - Tests: `.venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput`
 

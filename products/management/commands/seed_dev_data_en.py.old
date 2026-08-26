@@ -1,3 +1,11 @@
+# English seed snapshot (archived). WAREHOUSE_USERS at archive time:
+# ("warehouse.admin@centcompras.dev", GROUP_ADMINS, 1),
+# ("warehouse.manager@centcompras.dev", GROUP_MANAGERS, 1),
+# ("warehouse.operator@centcompras.dev", GROUP_OPERATORS, 1),
+# ("warehouse.operator2@centcompras.dev", GROUP_OPERATORS, 2),
+# ("warehouse.manager2@centcompras.dev", GROUP_MANAGERS, 2),
+# ("warehouse.manager3@centcompras.dev", GROUP_MANAGERS, 3),
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -53,25 +61,25 @@ DEFAULT_PASSWORD = "devpass123"
 
 BRANCH_SEED = [
     (
-        "Norte",
+        "North",
         [
-            ("filial.operador.norte@centcompras.dev", BranchMembership.Role.OPERATOR),
-            ("filial.gestor.norte@centcompras.dev", BranchMembership.Role.MANAGER),
-            ("filial.admin.norte@centcompras.dev", BranchMembership.Role.ADMIN),
+            ("branch.operator.north@centcompras.dev", BranchMembership.Role.OPERATOR),
+            ("branch.manager.north@centcompras.dev", BranchMembership.Role.MANAGER),
+            ("branch.admin.north@centcompras.dev", BranchMembership.Role.ADMIN),
         ],
     ),
     (
-        "Sul",
+        "South",
         [
-            ("filial.operador.sul@centcompras.dev", BranchMembership.Role.OPERATOR),
-            ("filial.gestor.sul@centcompras.dev", BranchMembership.Role.MANAGER),
+            ("branch.operator.south@centcompras.dev", BranchMembership.Role.OPERATOR),
+            ("branch.manager.south@centcompras.dev", BranchMembership.Role.MANAGER),
         ],
     ),
 ]
 
 DUAL_BRANCH_MEMBERSHIPS = [
-    ("Norte", "filial.dual@centcompras.dev", BranchMembership.Role.OPERATOR),
-    ("Sul", "filial.dual@centcompras.dev", BranchMembership.Role.OPERATOR),
+    ("North", "branch.dual@centcompras.dev", BranchMembership.Role.OPERATOR),
+    ("South", "branch.dual@centcompras.dev", BranchMembership.Role.OPERATOR),
 ]
 
 
@@ -149,7 +157,7 @@ class Command(BaseCommand):
 
     def _seed_sample_requests(self, user_model):
         """Idempotently seed one draft + one approved requisição for fulfilment practice."""
-        branch = Branch.objects.filter(name__iexact="Norte").first()
+        branch = Branch.objects.filter(name__iexact="North").first()
         if branch is None:
             return
         item = Item.objects.filter(
@@ -158,21 +166,21 @@ class Command(BaseCommand):
         if item is None:
             return
         operator = user_model.objects.filter(
-            email="filial.operador.norte@centcompras.dev"
+            email="branch.operator.north@centcompras.dev"
         ).first()
         manager = user_model.objects.filter(
-            email="filial.gestor.norte@centcompras.dev"
+            email="branch.manager.north@centcompras.dev"
         ).first()
         if operator is None or manager is None:
             return
 
         if not InternalRequest.objects.filter(branch=branch, status="draft").exists():
-            req = order_services.create_internal_request(branch, operator, notes="Requisição rascunho de exemplo")
+            req = order_services.create_internal_request(branch, operator, notes="Sample draft requisição")
             order_services.add_line(req, item, "2", operator)
             self.stdout.write(self.style.SUCCESS(f"Sample draft requisição: #{req.id}"))
 
         if not InternalRequest.objects.filter(branch=branch, status="approved").exists():
-            req = order_services.create_internal_request(branch, operator, notes="Requisição aprovada de exemplo")
+            req = order_services.create_internal_request(branch, operator, notes="Sample approved requisição")
             order_services.add_line(req, item, "5", operator)
             req = order_services.submit(req, operator)
             order_services.approve(req, manager)
@@ -180,15 +188,15 @@ class Command(BaseCommand):
 
     def _seed_sample_threads(self, user_model):
         """Idempotently seed one open request thread (catalogue-gap request)."""
-        branch = Branch.objects.filter(name__iexact="Norte").first()
+        branch = Branch.objects.filter(name__iexact="North").first()
         if branch is None:
             return
         operator = user_model.objects.filter(
-            email="filial.operador.norte@centcompras.dev"
+            email="branch.operator.north@centcompras.dev"
         ).first()
         if operator is None:
             return
-        subject = "Exemplo: válvula de latão 25 mm (não está no catálogo)"
+        subject = "Sample thread: need a 25mm brass valve (not in catalogue)"
         from threads.models import ItemRequestThread
 
         if not ItemRequestThread.objects.filter(branch=branch, subject=subject).exists():
@@ -196,8 +204,8 @@ class Command(BaseCommand):
                 branch,
                 operator,
                 subject,
-                "Precisamos de uma válvula de latão de 25 mm para a nova linha de rega. "
-                "Ainda não está no catálogo — confirme se conseguem fornecer.",
+                "We need a 25mm brass valve for the new irrigation line. "
+                "It is not in the catalogue yet — please confirm you can source it.",
             )
             self.stdout.write(self.style.SUCCESS(f"Sample request thread: #{thread.id}"))
 
@@ -206,16 +214,16 @@ class Command(BaseCommand):
         from company_voice.models import VoicePost
 
         manager = user_model.objects.filter(
-            email="armazem.gestor@centcompras.dev"
+            email="warehouse.manager@centcompras.dev"
         ).first()
         branch_manager = user_model.objects.filter(
-            email="filial.gestor.norte@centcompras.dev"
+            email="branch.manager.north@centcompras.dev"
         ).first()
         if manager is None or branch_manager is None:
             return
 
         praise_body = (
-            "Exemplo: o novo fluxo de reservas facilita muito ver o que está retido para as filiais."
+            "Sample: the new reservation workflow makes it much easier to see what is held for branches."
         )
         if not VoicePost.objects.filter(body=praise_body).exists():
             post = create_voice_post(
@@ -227,11 +235,11 @@ class Command(BaseCommand):
             add_voice_comment(
                 branch_manager,
                 post,
-                "Concordo — a indicação de stock disponível no catálogo da filial também ajuda.",
+                "Agreed — the available stock hint on the branch catalog is helpful too.",
             )
             self.stdout.write(self.style.SUCCESS(f"Sample Company Voice post: #{post.id}"))
 
-        concern_body = "Exemplo de preocupação anónima (seed) — continuem a melhorar a UX de receção na filial."
+        concern_body = "Sample anonymous concern (seed) — please keep improving branch receipt UX."
         if not VoicePost.objects.filter(body=concern_body).exists():
             anon_post = create_voice_post(
                 branch_manager,

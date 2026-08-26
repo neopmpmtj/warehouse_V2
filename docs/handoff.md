@@ -101,7 +101,7 @@ Applied [`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review
 
 Use **`http://127.0.0.1:8000`** only (not mixed with `localhost`).
 
-1. Log in `branch.manager.north@centcompras.dev` / `devpass123`.
+1. Log in `filial.gestor.norte@centcompras.dev` / `devpass123`.
 2. Visit `/branch/catalog/` online (cache catalogue).
 3. DevTools → Offline → `/branch/requests/` → New request + add line → **pending sync**.
 4. Online → open `/branch/` or `/branch/catalog/` → draft uploads.
@@ -558,7 +558,7 @@ python manage.py runserver
 .venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput
 ```
 
-- **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded). **Branch:** `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…` (North), `branch.operator.south@…` / `branch.manager.south@…` (South), and `branch.dual@…` (both branches).
+- **Logins** (all `devpass123`): `armazem.admin@centcompras.dev`, `armazem.gestor@…` / `gestor2` / `gestor3`, `armazem.operador@…` / `operador2` (grades 1–3 as seeded). **Branch:** `filial.operador.norte@…` / `filial.gestor.norte@…` / `filial.admin.norte@…` (Norte), `filial.operador.sul@…` / `filial.gestor.sul@…` (Sul), and `filial.dual@…` (both branches).
 - **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/company-voice/` Company Voice (all staff) · `/branch/` branch dashboard · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden; offline cache) · `/branch/requests/` requisição interna (offline drafts) · `/branch/threads/` request threads (branch side) · `/branch/receipts/` branch receipts · `/service-worker.js` branch SW · `/healthz` liveness · `/admin/` superuser only.
 
 ---
