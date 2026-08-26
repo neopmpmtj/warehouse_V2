@@ -26,7 +26,7 @@ When you change **application behaviour**, **validation constraints**, **error m
 - **Workflow changes:** steps users take in the console (not just code paths).
 - **FAQ:** add or extend a question when staff are likely to hit the constraint.
 
-Keep prose aligned with existing manual tone (warehouse staff, EN; mirror key constraints in pt-PT console strings where relevant).
+Keep prose aligned with existing manual tone (warehouse staff, EN; mirror key constraints in pt-PT console strings where relevant). When updating EN manuals, update the matching `docs/user-manuals/pt/` translation in the same session when behaviour changes.
 
 ## Out of scope
 

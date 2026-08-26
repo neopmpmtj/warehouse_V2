@@ -1,8 +1,7 @@
-# pt-PT user manuals
+# Manuais do utilizador (pt-PT)
 
-Portuguese (pt-PT) translations of the user manuals go here.
-Manuals follow the same naming as EN: `NN-name.md` (+ optional `.pdf`).
-Help button in the app serves `/docs/user-manuals/<lang>/<file>`, so once a
-`NN-name.md` exists here it is automatically linked for pt-PT users.
+Traduções em português europeu dos manuais em `../en/`.
 
-(Empty until translations are created.)
+- Ficheiros: `NN-name.md` (+ `.pdf` gerado por `scripts/build_manual_pdfs.py --lang pt`)
+- Capturas de ecrã: `screenshots/` (geradas por `scripts/capture_manual_screenshots.py`)
+- O botão **Ajuda** na aplicação abre o PDF pt quando `cc-lang` é `pt` (com recurso ao inglês se faltar).

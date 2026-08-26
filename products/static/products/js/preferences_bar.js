@@ -221,6 +221,7 @@
                 safeSet(LANG_KEY, normalizeLang(event.target.value));
                 applyStaticI18n();
                 applyTheme(currentTheme());
+                document.dispatchEvent(new CustomEvent("cc-lang-changed"));
             });
         }
         const button = document.getElementById("pref-theme");
