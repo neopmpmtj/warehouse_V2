@@ -15,7 +15,7 @@ Do this in one pass:
 4. Update `README.md` (last updated, next task pointer, test count if changed).
 5. Update `AGENTS.md` session handoff block (Done / Not done / Next).
 6. If an active `.cursor/plans/*.plan.md` applies: tick completed todos, note next step.
-7. If behaviour/constraints/errors changed: update `docs/user-manuals/` per `.cursor/rules/user-manuals.mdc`.
+7. If behaviour/constraints/errors changed: update `docs/user-manuals/en/` per `.cursor/rules/user-manuals.mdc`.
 8. Run the full test suite: `.venv/bin/python manage.py test products accounts procurement inventory branches orders --noinput`
 9. Do not commit unless I ask.
 

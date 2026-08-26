@@ -35,12 +35,12 @@
         </div>
     </div>
     <a
-        href="{% url 'user_manual_file' help_manual_slug|default:'01-items'|add:'.pdf' %}"
+        href="{% url 'user_manual_file' 'en' help_manual_slug|default:'01-items'|add:'.pdf' %}"
         id="settings-help"
         class="help-launcher"
         aria-label="Help"
         data-i18n-aria="help"
-        data-help-md="{% url 'user_manual_file' help_manual_slug|default:'01-items'|add:'.md' %}"
+        data-help-slug="{{ help_manual_slug|default:'01-items' }}"
     >
         <span class="help-launcher-icon" aria-hidden="true">?</span>
         <span class="help-launcher-label" data-i18n="help">Help</span>

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Build PDFs for all CentCompras user manuals (docs/user-manuals/*.md -> *.pdf).
+"""Build PDFs for all CentCompras user manuals (docs/user-manuals/<lang>/*.md -> *.pdf).
 
-Uses python-markdown + WeasyPrint. Outputs one PDF per manual, same basename,
-next to the .md source (docs/user-manuals/). Emoji that DejaVu cannot render
-are mapped to plain text markers so the PDF has no tofu boxes. Internal
-"xx-name.md" links are rewritten to "xx-name.pdf" so cross-manual links work
-inside the PDF viewer (relative to the served /docs/user-manuals/ URL).
+Scans both language folders (en/, pt/) and writes one PDF per manual, same
+basename, next to the .md source. Emoji that DejaVu cannot render are mapped
+to plain text markers so the PDF has no tofu boxes. Internal "xx-name.md"
+links are rewritten to "xx-name.pdf" so cross-manual links work inside the
+PDF viewer (relative to the served /docs/user-manuals/<lang>/ URL).
 
-Usage:  python3 scripts/build_manual_pdfs.py [--out DIR]
+Usage:  python3 scripts/build_manual_pdfs.py [--lang en|pt]
 """
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ log = logging.getLogger("build_manual_pdfs")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MANUALS_DIR = REPO_ROOT / "docs" / "user-manuals"
+LANGS = ("en", "pt")
 
 # Emoji -> plain text (DejaVu has no colour emoji glyphs; keep PDFs clean).
 EMOJI_MAP = {
@@ -104,15 +105,19 @@ def build_one(md_path: Path, out_path: Path) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build user-manual PDFs.")
-    parser.add_argument("--out", type=Path, default=MANUALS_DIR, help="Output dir (default: docs/user-manuals)")
+    parser.add_argument("--lang", choices=LANGS, default=None, help="Build only one language (en/pt); default: both")
     parser.add_argument("--only", default=None, help="Build only one manual basename, e.g. 01-items")
     args = parser.parse_args()
 
-    out_dir: Path = args.out
-    out_dir.mkdir(parents=True, exist_ok=True)
-    manuals = sorted(MANUALS_DIR.glob("[0-9][0-9]-*.md"))
+    langs = (args.lang,) if args.lang else LANGS
+    manuals = []
+    for lang in langs:
+        lang_dir = MANUALS_DIR / lang
+        if not lang_dir.is_dir():
+            continue
+        manuals.extend(sorted(lang_dir.glob("[0-9][0-9]-*.md")))
     if not manuals:
-        log.error("no manuals found in %s", MANUALS_DIR)
+        log.error("no manuals found under %s/%s", MANUALS_DIR, "/".join(langs))
         return 1
 
     total_pages = 0
@@ -120,7 +125,7 @@ def main() -> int:
     for md in manuals:
         if args.only and md.stem != args.only:
             continue
-        out = out_dir / (md.stem + ".pdf")
+        out = md.with_suffix(".pdf")
         try:
             total_pages += build_one(md, out)
         except Exception as exc:  # noqa: BLE001 - report and continue

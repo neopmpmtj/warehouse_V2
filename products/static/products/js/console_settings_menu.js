@@ -34,42 +34,62 @@
         });
     }
 
+    function currentHelpLang() {
+        let lang = "en";
+        try {
+            lang = localStorage.getItem("cc-lang") || "en";
+        } catch (_) {
+            /* ignore */
+        }
+        if (String(lang).toLowerCase().startsWith("pt")) {
+            return "pt";
+        }
+        return "en";
+    }
+
+    function manualUrl(lang, slug, ext) {
+        return "/docs/user-manuals/" + lang + "/" + slug + "." + ext;
+    }
+
     function bindHelpLauncher() {
         const help = document.getElementById("settings-help");
         if (!help) {
             return;
         }
-        const pdfUrl = help.getAttribute("href");
-        const mdUrl = help.getAttribute("data-help-md");
-        if (!pdfUrl || !mdUrl) {
-            return;
-        }
+        const slug = help.getAttribute("data-help-slug") || "01-items";
         help.addEventListener("click", (event) => {
             event.preventDefault();
-            openHelp(pdfUrl, mdUrl);
+            openHelp(slug);
         });
     }
 
-    async function openHelp(pdfUrl, mdUrl) {
-        // 1) Try the .pdf first — open it in the browser when present.
-        try {
-            const res = await fetch(pdfUrl, { method: "HEAD", credentials: "same-origin" });
-            if (res.ok) {
-                window.open(pdfUrl, "_blank", "noopener");
-                return;
+    async function openHelp(slug) {
+        const lang = currentHelpLang();
+        // 1) Try the .pdf in the current language, then English — open in the browser when present.
+        for (const candidate of [lang, "en"]) {
+            const pdfUrl = manualUrl(candidate, slug, "pdf");
+            try {
+                const res = await fetch(pdfUrl, { method: "HEAD", credentials: "same-origin" });
+                if (res.ok) {
+                    window.open(pdfUrl, "_blank", "noopener");
+                    return;
+                }
+            } catch (_) {
+                /* fall through to next candidate */
             }
-        } catch (_) {
-            /* fall through to .md */
         }
-        // 2) PDF missing/unreachable — show the .md in a popover instead.
-        try {
-            const res = await fetch(mdUrl, { credentials: "same-origin" });
-            if (res.ok) {
-                showHelpPopover(await res.text());
-                return;
+        // 2) PDF missing/unreachable — show the .md in a popover (current lang, then English).
+        for (const candidate of [lang, "en"]) {
+            const mdUrl = manualUrl(candidate, slug, "md");
+            try {
+                const res = await fetch(mdUrl, { credentials: "same-origin" });
+                if (res.ok) {
+                    showHelpPopover(await res.text());
+                    return;
+                }
+            } catch (_) {
+                /* fall through to next candidate */
             }
-        } catch (_) {
-            /* fall through */
         }
         showHelpPopover(null);
     }

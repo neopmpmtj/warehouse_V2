@@ -52,7 +52,7 @@ Sync **living documents** at end of session so the next chat can start from `doc
 Follow `.cursor/rules/user-manuals.mdc` when this session changed:
 
 - Validation constraints, error messages, state machines, or console workflow
-- Update domain manual + `docs/user-manuals/05-edge-cases-and-limits.md` §2/§3/§4 as needed
+- Update domain manual + `docs/user-manuals/en/05-edge-cases-and-limits.md` §2/§3/§4 as needed
 
 Skip manual updates for refactors with no user-visible change.
 

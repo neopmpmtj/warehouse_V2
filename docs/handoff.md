@@ -126,7 +126,7 @@ Use **`http://127.0.0.1:8000`** only (not mixed with `localhost`).
 
 - Branch-only users land on **`/branch/`** (card grid: catalog, requisição, threads, receipts, Company Voice) instead of the catalog alone.
 - Shared header navigation on all branch pages (`branch_chrome.css`, `branch_page_header.html`); **Switch branch** only for multi-membership users.
-- Manuals: [`04-internal-requests.md`](user-manuals/04-internal-requests.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md).
+- Manuals: [`04-internal-requests.md`](user-manuals/en/04-internal-requests.md), [`05-edge-cases-and-limits.md`](user-manuals/en/05-edge-cases-and-limits.md).
 
 ### Phase 6 offline catalogue + draft sync + PWA (#19)
 
@@ -213,7 +213,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 - **M9:** **Refresh** button on `/company-voice/`.
 - **L1–L8:** boolean `is_anonymous`; double-submit lock; client edit-window expiry; i18n `code` map; quote-escaping; `tag: null` clears; `cc-lang` + `{% static %}` + Escape-to-cancel; pt-PT **Anónimo**.
 - **Tests:** +13 → **502** total.
-- **Manuals:** [`09-company-voice.md`](user-manuals/09-company-voice.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md) §2.6, [`06-admin-reference.md`](user-manuals/06-admin-reference.md).
+- **Manuals:** [`09-company-voice.md`](user-manuals/en/09-company-voice.md), [`05-edge-cases-and-limits.md`](user-manuals/en/05-edge-cases-and-limits.md) §2.6, [`06-admin-reference.md`](user-manuals/en/06-admin-reference.md).
 
 ---
 
@@ -242,7 +242,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 - **L5:** `create_thread` requires the opener to be a member of the branch.
 - **L6:** satisfaction rejects bools and non-ints (`True`, `3.7`).
 - **Tests:** +10 → **489** total.
-- **Manuals:** [`08-request-threads.md`](user-manuals/08-request-threads.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md) §2.5.
+- **Manuals:** [`08-request-threads.md`](user-manuals/en/08-request-threads.md), [`05-edge-cases-and-limits.md`](user-manuals/en/05-edge-cases-and-limits.md) §2.5.
 
 ---
 
@@ -253,7 +253,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 - **Rules:** 15-minute edit window; creator-only soft delete; parent delete cascades to sub-thread + comments; `[Deleted by author]` placeholder.
 - **UI:** Single scrollable feed; inline reply panel; EN + pt-PT i18n.
 - **Tests:** `company_voice.tests` (+18) → **479** total.
-- **Manual:** [`09-company-voice.md`](user-manuals/09-company-voice.md).
+- **Manual:** [`09-company-voice.md`](user-manuals/en/09-company-voice.md).
 
 ---
 
@@ -287,7 +287,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 - **Surfaces:** `/branch/threads/` (list + create + reply + close) and `/manage/threads/` (all branches incl. inactive-branch flagged, status/branch filters, oldest-awaiting-first, link-item search, admin force-close). Dashboard links added. i18n EN + pt-PT.
 - **Seed:** one sample thread (North, awaiting warehouse) in `seed_dev_data`.
 - **Tests:** `threads.tests` — state flips, opener-only close, override matrix (incl. deactivated opener), reason rules, other-branch 404, post-vs-close, capability gating, explicit side, unread → **459** total.
-- **Manual:** [`08-request-threads.md`](user-manuals/08-request-threads.md).
+- **Manual:** [`08-request-threads.md`](user-manuals/en/08-request-threads.md).
 - Plan: [`.cursor/plans/branch_request_threads_0d6a50a7.plan.md`](../.cursor/plans/branch_request_threads_0d6a50a7.plan.md) (complete; do not treat as a work queue).
 
 ### Warehouse FIFO stock reservation (D32) ✅
@@ -297,7 +297,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 - **Services:** `inventory.services` allocate/release/reallocate helpers; wired from `approve` / `cancel`, `issue_goods`, `short_close_issue`, `receive_goods`, `adjust_stock`. Errors: `InsufficientReservationError`, `AdjustBelowReservedError`.
 - **Surfaces:** manager catalog on-hand / reserved / available (below-reorder uses available); item drawer read-only on-hand/available; warehouse queue reserved/backorder/available; issue qty defaults to reserved; branch catalog hint from available.
 - **Tests:** `inventory.tests.StockReservationTests` + `ConcurrentApproveTests` (+ catalog/branch hint cases) → **438** total.
-- **Manuals:** [`01-items.md`](user-manuals/01-items.md), [`03-goods-receipts.md`](user-manuals/03-goods-receipts.md), [`04-internal-requests.md`](user-manuals/04-internal-requests.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md), [`07-manager-catalog.md`](user-manuals/07-manager-catalog.md).
+- **Manuals:** [`01-items.md`](user-manuals/en/01-items.md), [`03-goods-receipts.md`](user-manuals/en/03-goods-receipts.md), [`04-internal-requests.md`](user-manuals/en/04-internal-requests.md), [`05-edge-cases-and-limits.md`](user-manuals/en/05-edge-cases-and-limits.md), [`07-manager-catalog.md`](user-manuals/en/07-manager-catalog.md).
 - Plan: [`.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md`](../.cursor/plans/stock_reservation_fifo_c7e19b04.plan.md) (complete; do not treat as a work queue).
 
 ---
@@ -320,7 +320,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 - **Admin:** `SubFamilyAdmin`, changelog read-only, `ItemAdminForm` validation.
 - **Seed / CLI:** sample sub-families in `seed_catalog_data.py`; `seed_dev_data` idempotent create; `add_item --sub-family`.
 - **Tests:** service + API + catalog filter + branch payload (+19 tests → **421** at slice land; **424** after stitch-in review fixes).
-- **Manuals:** [`01-items.md`](user-manuals/01-items.md) §7.1, [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md), [`07-manager-catalog.md`](user-manuals/07-manager-catalog.md).
+- **Manuals:** [`01-items.md`](user-manuals/en/01-items.md) §7.1, [`05-edge-cases-and-limits.md`](user-manuals/en/05-edge-cases-and-limits.md), [`07-manager-catalog.md`](user-manuals/en/07-manager-catalog.md).
 - Plan: [`.cursor/plans/sub-family_catalogue_slice_afc2e074.plan.md`](../.cursor/plans/sub-family_catalogue_slice_afc2e074.plan.md) (do not edit the plan file).
 
 ---
@@ -338,7 +338,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 - Shared [`products/static/products/js/console_settings_menu.js`](../products/static/products/js/console_settings_menu.js); `data-i18n-aria` so i18n cannot wipe the SVG.
 - `/` and `/branch/…` unchanged.
 - Plan: [`.cursor/plans/manage_header_settings_popover_a1c3e7f2.plan.md`](../.cursor/plans/manage_header_settings_popover_a1c3e7f2.plan.md).
-- Manuals: [`01-items.md`](user-manuals/01-items.md), [`02-purchase-orders.md`](user-manuals/02-purchase-orders.md), [`03-goods-receipts.md`](user-manuals/03-goods-receipts.md), [`07-manager-catalog.md`](user-manuals/07-manager-catalog.md).
+- Manuals: [`01-items.md`](user-manuals/en/01-items.md), [`02-purchase-orders.md`](user-manuals/en/02-purchase-orders.md), [`03-goods-receipts.md`](user-manuals/en/03-goods-receipts.md), [`07-manager-catalog.md`](user-manuals/en/07-manager-catalog.md).
 
 ---
 
@@ -356,7 +356,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 - **`create_and_activate_item`** — atomic console POST (create + Genesis); no orphan inactive rows on cancel.
 - Console UI: Genesis **pre-submit** confirmation; internal code required on new item, read-only on edit; i18n for new error codes.
 - **`add_item` CLI**: `--internal-code` required; `--retail-price`; genesis validation on `--activate`.
-- User manuals: [`01-items.md`](user-manuals/01-items.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md).
+- User manuals: [`01-items.md`](user-manuals/en/01-items.md), [`05-edge-cases-and-limits.md`](user-manuals/en/05-edge-cases-and-limits.md).
 - Plan complete: [`.cursor/plans/internal_code_format_rules_7862515a.plan.md`](../.cursor/plans/internal_code_format_rules_7862515a.plan.md).
 
 ### Requisição / receipt bug fixes ✅
@@ -367,7 +367,7 @@ The 24 Aug reviews kept their Nit findings so they are not discarded. **Do not s
 | Branch receipts false “Goods issue not found” after full receive/short-close | `branch_receipts.html`: clear detail panel when dispatch drops off the open list |
 | Warehouse short-close on `approved` with zero dispatch left request stuck in `shipped` | `short_close_issue`: `approved` → **closed**; `fulfilling` → **shipped**; added `approved → closed` transition |
 
-Docs: [`04-internal-requests.md`](user-manuals/04-internal-requests.md) §7.2, [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md) §4.2.
+Docs: [`04-internal-requests.md`](user-manuals/en/04-internal-requests.md) §7.2, [`05-edge-cases-and-limits.md`](user-manuals/en/05-edge-cases-and-limits.md) §4.2.
 
 ### Developer tooling ✅
 
