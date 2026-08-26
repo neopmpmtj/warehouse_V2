@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 26 August 2026, 10:00 WEST.*
+*Last updated: 26 August 2026, 10:19 WEST.*
 
-**Phases 0–6 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Company Voice is built.** **Branch dashboard + shared branch navigation** are done. **Phase 6 offline** (Service Worker, IndexedDB catalogue cache, offline requisição draft queue + idempotent sync, PWA manifest) is done — suite **533 OK**. **Next:** Phase 7 production polish / OAuth / shared chrome. Email is **Phase 8**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** **Phase 6 offline reviewed 26 Aug** — P0 sync hardening is **next** before production offline rollout; then Phase 7. Branch dashboard + offline stack on `main`; suite **536 OK**. Email is **Phase 8**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** Phase 7 — production deployment hardening, Google OAuth rollout, shared page chrome beyond the branch shell.
+4. **Next:** Phase 6 offline review **P0 fixes** ([report](docs/reviews/phase6-offline-review-2026-08-26-1009.md)), then Phase 7 production polish / OAuth / shared chrome.
 
 ---
 
@@ -350,5 +350,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 
 - **Production deployment / OAuth polish / shared chrome** (Phase 7 — **Next**)
 - **Email automation** (Phase 8 — wire notify stubs to real email; stub exists today)
-- Integration tests (unit suites: **533 OK**)
+- Integration tests (unit suites: **536 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

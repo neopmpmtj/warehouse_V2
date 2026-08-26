@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## Project
 
-Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. Phases 0–5 are done: catalogue + pricing + purchase orders + goods receipt + manager catalog + branches/requisição/goods issue/branch receipt. Chrome review **H1–H3 + M1** applied. **Next:** Phase 6 offline. Phase 7 production polish; Phase 8 email (late).
+Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. Phases 0–6 are done: catalogue + pricing + purchase orders + goods receipt + manager catalog + branches/requisição/goods issue/branch receipt + **offline catalogue/draft sync/PWA**. Chrome review **H1–H3 + M1** applied. **Next:** Phase 6 offline review **P0 hardening**, then Phase 7 production polish; Phase 8 email (late).
 
 ## What exists today
 
@@ -20,7 +20,7 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - `orders` — internal request (requisição interna) — **built** (Phase 5 ✅); warehouse FIFO reservation at approve (D32)
 - `threads` — catalogue-gap request threads — **built** (review M/L applied)
 - `company_voice` — company-wide suggestion box `/company-voice/` — **built**; review H1/M/L applied (`docs/reviews/company-voice-review-2026-08-24-1010.md`)
-- Offline catalogue — **removed** (Phase 6 will re-add it)
+- Offline catalogue — **built** (Phase 6 ✅); P0 review fixes pending
 
 ## Non-negotiables
 
@@ -30,7 +30,7 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - Plain Django + plain JavaScript — no React/Vue
 - Incremental phases — no large application dumps
 - Do not implement the tenancy-doc `Order` stub (`item_name`)
-- Do not start email or shared chrome in passing. **Next is Phase 6 offline.** Do not start Phase 6 unless that session is requested.
+- Do not start email or shared chrome in passing. **Next is Phase 6 offline P0 hardening** (then Phase 7). Do not start Phase 7 unless that session is requested or P0 is deferred.
 - Do not restyle `/` or polish the staff console unless that session is requested
 
 ## References

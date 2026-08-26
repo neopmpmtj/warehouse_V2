@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 26 August 2026, 10:00 WEST.
+> **Read this first when resuming work.** Last updated: 26 August 2026, 10:19 WEST.
 
 ---
 
@@ -24,22 +24,37 @@
 | 5+ — Manage console header / settings UX polish | ✅ **Done** |
 | 5+ — Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** |
 | 5+ — Branch dashboard + shared branch navigation | ✅ **Done** |
-| 6 — Offline catalogue + offline request queue + sync / PWA | ✅ **Done** |
-| 7 — Production / deployment / OAuth / shared chrome | 🔵 **Next** |
+| 6 — Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (reviewed 26 Aug) |
+| 6+ — Phase 6 offline review fixes (P0 hardening) | 🔵 **Next** |
+| 7 — Production / deployment / OAuth / shared chrome | ⏸ After P0 or in parallel |
 | 8 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete on `main` (HEAD `0b4fb9d`).** Full suite **533 OK**. **Next session: Phase 7** — production deployment hardening, Google OAuth rollout, shared page chrome. Email automation is Phase 8.
+**Phases 0–6 are complete on `main` (HEAD `0b4fb9d`).** Phase 6 offline was **reviewed 26 Aug** — **4 High / 6 Medium** reliability gaps (wrong-branch sync, stuck queue, line loss, 500-class errors). **Next session: apply P0 fixes** from the review report before production offline rollout; Phase 7 remains after that. Email automation is Phase 8.
 
-**Tests:** suite **533 OK** (Phase 6 + branch dashboard landed in PRs #18–#19).
+**Tests:** suite **536 OK** (26 Aug handoff run).
 
 ## Next session — do this
 
-1. **Start Phase 7** — production deployment / OAuth hardening / shared chrome. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
-2. **Do not treat as a work queue:** 24 Aug nits (threads N1–N6; Company Voice N1) and chrome leftover **L3–L8 / N1–N3** (Help a11y, typeless inputs, `.row`, D27/05 drift, unversioned JS, pre-existing `settingsAria`).
-3. **Do not start** Phase 8 email in passing.
-4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (e.g. after `orders/0003_internalrequest_client_uuid`).
+1. **Apply Phase 6 offline review P0** — H1–H4 + M2 from [`docs/reviews/phase6-offline-review-2026-08-26-1009.md`](reviews/phase6-offline-review-2026-08-26-1009.md) (branch guard on sync queue, reset stale `syncing`, prevent concurrent line loss, cross-branch UUID → 400, unknown item → 400). Then P1 UX items if time.
+2. **Or start Phase 7** only if you explicitly defer offline hardening — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
+3. **Do not treat as a work queue:** review L/N items, 24 Aug nits (threads N1–N6; Company Voice N1), chrome leftover **L3–L8 / N1–N3**.
+4. **Do not start** Phase 8 email in passing.
+5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
 
-## This session (25–26 Aug 2026) — Phase 6 offline + branch dashboard ✅
+## This session (26 Aug 2026) — living-docs sync + Phase 6 offline review ✅
+
+### Living docs aligned to `main` (PRs #18–#19)
+
+- **README**, **handoff**, **PROJECT-PLAN**, **future-enhancements** updated: Phases 0–6 ✅, branch dashboard, offline stack, test baseline; Phase 7 next at plan level.
+- **Phase 6 plan** todos marked complete ([`.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md`](../.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md)).
+
+### Phase 6 offline review (read-only) ✅
+
+- **Method:** parent consistency/failure-point pass + Bugbot subagent; findings merged.
+- **Report:** [`docs/reviews/phase6-offline-review-2026-08-26-1009.md`](reviews/phase6-offline-review-2026-08-26-1009.md).
+- **Verdict:** **ISSUES FOUND** — no Critical; **4 High, 6 Medium, 7 Low, 5 Nit**. Happy path OK; edge cases (dual-branch, crash mid-sync, concurrent line add, stale cache) need P0 fixes before production offline.
+- **Action plan:** P0 sync hardening PR → P1 offline UX consistency → P2 polish (in report).
+- **No application code changed** in this session.
 
 ### Branch dashboard (#18)
 
@@ -441,7 +456,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput
 ```
 
-- Last full suite on **`main`:** **533 OK**.
+- Last full suite on **`main`:** **536 OK** (26 Aug 2026 handoff run).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -504,6 +519,7 @@ python manage.py runserver
 | `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |
 | `docs/archive/phase5-brainstorm-260821-1530.md` | Phase 5 brainstorm + locked decisions (A1–B8) — **archived** ✅ |
 | `docs/future-enhancements-260821-1833.md` | Future nice-to-haves (E items + later ideas) — parking lot |
+| `docs/reviews/phase6-offline-review-2026-08-26-1009.md` | Phase 6 offline review — **P0 fixes not applied** |
 | `.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md` | Phase 6 offline — **complete** |
 | `docs/archive/warehouse-tenancy-setup.md` | **Archived** Branch/Membership sketch — superseded by brainstorm |
 | `products/products_docs/aux_instructions.md` | learning pace for agents (not live status) |
