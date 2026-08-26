@@ -4,31 +4,31 @@ overview: "Plan Phase 6 offline support for branch phone users: Service Worker a
 todos:
   - id: slice1-sw-shell
     content: "Slice 1: Add root Service Worker + register_sw.js; precache branch app shell (exclude /api/ and /manage/)"
-    status: pending
+    status: completed
   - id: slice1-idb-catalog
     content: "Slice 1: Add db.js (full schema v1) + branch_catalog.js; offline catalogue with last-updated banner"
-    status: pending
+    status: completed
   - id: slice1-extract-js
     content: "Slice 1: Extract branch inline JS to static files; bump ?v= on all branch templates"
-    status: pending
+    status: completed
   - id: slice1-tests-manual
     content: "Slice 1: Django test for /service-worker.js; manual offline catalog test on 127.0.0.1; node --check"
-    status: pending
+    status: completed
   - id: slice2-uuid-schema
     content: "Slice 2: Add required client_uuid on InternalRequest + InternalRequestLine; idempotent create/add_line in services"
-    status: pending
+    status: completed
   - id: slice2-offline-drafts
     content: "Slice 2: pending_ops IndexedDB queue; replay same APIs on online event (no separate sync endpoint)"
-    status: pending
+    status: completed
   - id: slice2-dev-reset
     content: "Slice 2: Document dev reset — drop DB, migrate, ./scripts/seed_dev_data.sh; update seed if needed"
-    status: pending
+    status: completed
   - id: slice2-manuals-tests
     content: "Slice 2: orders.tests for idempotent UUID create/lines; update 04-internal-requests.md + 05-edge-cases"
-    status: pending
+    status: completed
   - id: slice3-pwa
     content: "Slice 3: web manifest, icons, shared offline banner, DEPLOYMENT HTTPS note"
-    status: pending
+    status: completed
 isProject: false
 ---
 

@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 25 August 2026, 11:40 WEST.
+> **Read this first when resuming work.** Last updated: 26 August 2026, 10:00 WEST.
 
 ---
 
@@ -21,22 +21,42 @@
 | 5+ — Request threads review fixes (M1–M5, L1–L6) | ✅ **Done** |
 | 5+ — Company Voice (suggestion box) | ✅ **Done** (reviewed 24 Aug) |
 | 5+ — Company Voice review fixes (H1, M1–M9, L1–L8) | ✅ **Done** |
-| 5+ — Manage console header / settings UX polish | ✅ **Done** (uncommitted) |
+| 5+ — Manage console header / settings UX polish | ✅ **Done** |
 | 5+ — Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** |
-| 6 — Offline catalogue + offline request queue + sync / PWA | 🔵 **Next** |
-| 7 — Production / deployment / OAuth / shared chrome | ⏸ Future |
+| 5+ — Branch dashboard + shared branch navigation | ✅ **Done** |
+| 6 — Offline catalogue + offline request queue + sync / PWA | ✅ **Done** |
+| 7 — Production / deployment / OAuth / shared chrome | 🔵 **Next** |
 | 8 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–5 and the 24 Aug production-readiness / review-fix work are complete on `main`.** Manage-console header polish + chrome review **H1–H3, M1, L1, L2** are **in the uncommitted working tree** on `Cursor/fix-isusue-button-issue` (HEAD = `main` = `4411396`). Full suite **528 OK**. **Next session: Phase 6 offline.** Email automation is Phase 8.
+**Phases 0–6 are complete on `main` (HEAD `0b4fb9d`).** Full suite **533 OK**. **Next session: Phase 7** — production deployment hardening, Google OAuth rollout, shared page chrome. Email automation is Phase 8.
 
-**Tests:** working-tree suite **528 OK** (same count as `main`; the five header/threads failures are gone).
+**Tests:** suite **533 OK** (Phase 6 + branch dashboard landed in PRs #18–#19).
 
 ## Next session — do this
 
-1. **Commit the chrome slice** if the user asks — still uncommitted on `Cursor/fix-isusue-button-issue`. Then **start Phase 6 offline catalogue** (service worker + IndexedDB + request queue). See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §13 and [`.cursor/rules/offline-frontend.mdc`](../.cursor/rules/offline-frontend.mdc).
+1. **Start Phase 7** — production deployment / OAuth hardening / shared chrome. See [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
 2. **Do not treat as a work queue:** 24 Aug nits (threads N1–N6; Company Voice N1) and chrome leftover **L3–L8 / N1–N3** (Help a11y, typeless inputs, `.row`, D27/05 drift, unversioned JS, pre-existing `settingsAria`).
-3. **Do not start** Phase 8 email or Phase 7 shared chrome in passing.
-4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+3. **Do not start** Phase 8 email in passing.
+4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes (e.g. after `orders/0003_internalrequest_client_uuid`).
+
+## This session (25–26 Aug 2026) — Phase 6 offline + branch dashboard ✅
+
+### Branch dashboard (#18)
+
+- Branch-only users land on **`/branch/`** (card grid: catalog, requisição, threads, receipts, Company Voice) instead of the catalog alone.
+- Shared header navigation on all branch pages (`branch_chrome.css`, `branch_page_header.html`); **Switch branch** only for multi-membership users.
+- Manuals: [`04-internal-requests.md`](user-manuals/04-internal-requests.md), [`05-edge-cases-and-limits.md`](user-manuals/05-edge-cases-and-limits.md).
+
+### Phase 6 offline catalogue + draft sync + PWA (#19)
+
+- **Service Worker** at `/service-worker.js` — precaches branch app shell; **never** caches `/api/`, `/accounts/`, `/admin/`, `/manage/`.
+- **IndexedDB** (`db.js`): `catalog_items`, `catalog_meta`, `pending_requests`; catalogue snapshot on online fetch; offline browse with **last-updated banner**.
+- **Offline requisição drafts:** queue in IndexedDB; replay on `online` via `sync_queue.js` → `POST /api/branch/requests/sync/` (idempotent `client_uuid`).
+- **`InternalRequest.client_uuid`** — migration `orders/0003_internalrequest_client_uuid.py`; `sync_internal_request()` in services.
+- **PWA:** `manifest.webmanifest`, icon, shared offline banner (`branch_offline.js`); HTTPS note in [`DEPLOYMENT.md`](DEPLOYMENT.md).
+- Extracted **`branch_catalog.js`**, **`branch_requests.js`**; `?v=` bumped on branch templates.
+- **Tests:** +5 → **533** total (`branches.tests` SW route; `orders.tests` sync idempotency).
+- Plan: [`.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md`](../.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md) — **complete**.
 
 ## This session (25 Aug 2026) — chrome review H1–H3 + M1 (+ L1, L2) ✅
 
@@ -408,11 +428,10 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 
 ---
 
-## Git (as of 25 August 2026, 11:40 WEST)
+## Git (as of 26 August 2026, 10:00 WEST)
 
-- **`main`** at `4411396` — Phase 5 Slices 1–6, internal_code, Settings gear, sub-families, request threads, Company Voice, 24 Aug review M/L, production-readiness (logout-other, rate limit, PKCE).
-- **Branch `Cursor/fix-isusue-button-issue`:** same commit as `main`. Manage-console chrome polish + review H1–H3 / M1 / L1 / L2 are **uncommitted**. Suite green; commit when asked.
-- Working tree may have local `.venv` noise — do **not** commit `.venv` deletions.
+- **`main`** at `0b4fb9d` — Phase 6 offline (#19) + branch dashboard (#18) merged; prior work includes Phase 5, threads, Company Voice, chrome review H1–H3 / M1 / L1 / L2, production-readiness.
+- Working tree may have local `.env.example` edits — do **not** commit secrets.
 
 ---
 
@@ -422,7 +441,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput
 ```
 
-- Last full suite on **working tree:** **528 OK**. Same count as `main`; chrome header/threads failures are gone.
+- Last full suite on **`main`:** **533 OK**.
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -459,7 +478,7 @@ python manage.py runserver
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded). **Branch:** `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…` (North), `branch.operator.south@…` / `branch.manager.south@…` (South), and `branch.dual@…` (both branches).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/company-voice/` Company Voice (all staff) · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden) · `/branch/requests/` requisição interna · `/branch/threads/` request threads (branch side) · `/admin/` superuser only.
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/company-voice/` Company Voice (all staff) · `/branch/` branch dashboard · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden; offline cache) · `/branch/requests/` requisição interna (offline drafts) · `/branch/threads/` request threads (branch side) · `/branch/receipts/` branch receipts · `/service-worker.js` branch SW · `/admin/` superuser only.
 
 ---
 
@@ -484,7 +503,8 @@ python manage.py runserver
 | `docs/archive/phase5-plan-260821-1756.md` | Phase 5 build spec (locks 1–10) — **archived** ✅ |
 | `docs/archive/phase5-roadmap-260821-1618.md` | Phase 5 roadmap — **archived** ✅ |
 | `docs/archive/phase5-brainstorm-260821-1530.md` | Phase 5 brainstorm + locked decisions (A1–B8) — **archived** ✅ |
-| `docs/future-enhancements-260821-1833.md` | Future nice-to-haves (E items + later ideas) — parking lot, not Phase 5 |
+| `docs/future-enhancements-260821-1833.md` | Future nice-to-haves (E items + later ideas) — parking lot |
+| `.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md` | Phase 6 offline — **complete** |
 | `docs/archive/warehouse-tenancy-setup.md` | **Archived** Branch/Membership sketch — superseded by brainstorm |
 | `products/products_docs/aux_instructions.md` | learning pace for agents (not live status) |
 | `.cursor/rules/` | agent rules — must match this handoff |

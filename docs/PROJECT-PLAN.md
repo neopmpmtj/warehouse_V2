@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 25 August 2026, 11:40 WEST
-- **Current phase:** Phase 5 **complete** ✅. Item `internal_code` **Phases 1–2 complete** ✅. **Sub-families catalogue slice complete** ✅. **Warehouse FIFO stock reservation (D32) complete** ✅. **Request threads (catalogue-gap requests) complete** ✅. **Request-threads review M1–M5 and L1–L6 complete** ✅. **Company Voice built** ✅. **Company Voice review H1, M1–M9, L1–L8 complete** ✅. **Manage console header polish + chrome review H1–H3, M1, L1, L2 complete** (uncommitted). **Next:** Phase 6 offline. Email is **Phase 8**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 26 August 2026, 10:00 WEST
+- **Current phase:** Phases 0–6 **complete** ✅. **Next:** Phase 7 production deployment / OAuth / shared chrome. Email is **Phase 8**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline is Phase 6; production polish Phase 7; email Phase 8.
 
 ## Status vocabulary
@@ -144,7 +144,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (25 Aug 2026):** phases 0–5 complete; both 2208/1303 review backlogs cleared and archived; M7 pagination done; **item `internal_code` Phases 1–2** done; **sub-families catalogue slice** done; **warehouse FIFO reservation (D32)** done; **request threads** done; **request-threads review M1–M5 and L1–L6** done; **Company Voice** built; **Company Voice review H1, M1–M9, L1–L8, N2, N3** done; **login rate limiting (L13 / D27)** done; **manage console header polish + chrome review H1–H3, M1, L1, L2** done (uncommitted; suite **528 OK**). **Next:** Phase 6 offline. Leftover nits are **recorded, not a work queue** (threads N1–N6; Company Voice N1; chrome L3–L8 / N1–N3). Email is Phase 8.
+**Current (26 Aug 2026):** phases 0–6 complete; both 2208/1303 review backlogs cleared and archived; **branch dashboard + shared branch nav** done (#18); **Phase 6 offline** done (#19) — Service Worker, IndexedDB catalogue cache, offline requisição draft queue + idempotent sync (`client_uuid`), PWA manifest; suite **533 OK**. **Next:** Phase 7. Leftover nits are **recorded, not a work queue** (threads N1–N6; Company Voice N1; chrome L3–L8 / N1–N3). Email is Phase 8.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -170,10 +170,11 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 5+ | Request-threads review fixes (M1–M5, L1–L6) | ✅ **Done** | Request threads |
 | 5+ | Company Voice (suggestion box) | ✅ **Done** | Phase 5 |
 | 5+ | Company Voice review fixes (H1, M1–M9, L1–L8) | ✅ **Done** | Company Voice |
-| 5+ | Manage console header / settings UX polish | ✅ **Done** (uncommitted) | Aug 2026 |
+| 5+ | Branch dashboard + shared branch navigation | ✅ **Done** (#18) | Phase 5 |
+| 5+ | Manage console header / settings UX polish | ✅ **Done** | Aug 2026 |
 | 5+ | Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** | Header polish |
-| 6 | Offline catalogue + offline request queue + sync / PWA | 🔵 **Next** | Chrome review |
-| 7 | Production deployment / OAuth / shared chrome | ⏸ Future | Phase 5 |
+| 6 | Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (#19) | Phase 5 |
+| 7 | Production deployment / OAuth / shared chrome | 🔵 **Next** | Phase 6 |
 | 8 | Email automation (supplier notifications) | ⏸ **Late phase** | Phase 2 (stub) |
 
 ---
@@ -397,14 +398,20 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 
 ---
 
-## 13. Phase 6 — Offline catalogue and sync 🔵 Next
+## 13. Phase 6 — Offline catalogue and sync ✅
 
-- Offline catalogue cache (Service Worker + IndexedDB) — re-add after Phase 5 removal.
-- Offline order queue + idempotent sync (stable server UUIDs on requests/lines already exist for idempotency).
-- PWA manifest + HTTPS assumptions for branch phone UX.
-- Use one hostname consistently (`127.0.0.1` vs `localhost`) for service worker scope.
+**Status:** complete (PR #19, Aug 2026). Plan: [`.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md`](../.cursor/plans/phase_6_branch_offline_c0798b8a.plan.md).
 
-**Not in Phase 6:** real email send (Phase 8); production OAuth rollout / shared chrome (Phase 7).
+### Implementation (as built)
+
+- **Service Worker** at `/service-worker.js` — precaches branch HTML + shared static; network-only for `/api/`, `/accounts/`, `/admin/`, `/manage/`.
+- **IndexedDB** (`branches/static/branches/js/db.js`): `catalog_items`, `catalog_meta`, `pending_requests`. Online catalogue fetch → cache; offline browse with last-updated banner.
+- **Offline requisição drafts:** `sync_queue.js` queues draft create/add-line; replays on reconnect via `POST /api/branch/requests/sync/` (idempotent `InternalRequest.client_uuid`).
+- **PWA:** `manifest.webmanifest`, icon, shared offline banner; HTTPS note in `docs/DEPLOYMENT.md`.
+- **Submit / approve / reject / cancel** remain online-only; threads and receipts out of scope.
+- Use one hostname consistently (`127.0.0.1` vs `localhost`) for service worker scope in dev.
+
+**Not in Phase 6:** real email send (Phase 8); full production OAuth rollout (Phase 7).
 
 ---
 
@@ -475,10 +482,11 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - [x] Request-threads review fixes — M1–M5 and L1–L6 — report `docs/reviews/threads-review-2026-08-24.md` (N1–N6 recorded leftovers, not a queue)
 - [x] Company Voice — `company_voice` app (suggestion box, `/company-voice/`) — built
 - [x] Company Voice review fixes — H1, M1–M9, L1–L8, N2, N3 — report `docs/reviews/company-voice-review-2026-08-24-1010.md` (N1 recorded leftover, not a queue)
-- [x] Manage console header / settings UX polish — CentCompras eyebrow, Help outside gear, internal-requests + threads Cancel behaviour (25 Aug) — **uncommitted**
+- [x] Branch dashboard + shared branch navigation (#18)
+- [x] Manage console header / settings UX polish
 - [x] Chrome review H1–H3 + M1 (+ L1, L2) — [`docs/reviews/code-review-full-2026-08-25-1125.md`](reviews/code-review-full-2026-08-25-1125.md)
-- [ ] Phase 6 — offline catalogue + offline request queue + sync / PWA — **Next**
-- [ ] Phase 7 — production deployment / OAuth / shared chrome
+- [x] Phase 6 — offline catalogue + offline request queue + sync / PWA (#19)
+- [ ] Phase 7 — production deployment / OAuth / shared chrome — **Next**
 - [ ] Phase 8 — email automation (stub exists)
 
 ---

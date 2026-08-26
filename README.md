@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 25 August 2026, 11:40 WEST.*
+*Last updated: 26 August 2026, 10:00 WEST.*
 
-**Phases 0–5 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Request-threads review M1–M5 and L1–L6 are done.** **Company Voice is built.** **Company Voice review H1, M1–M9, L1–L8 are done.** Manage-console header polish + chrome review **H1–H3, M1, L1, L2** are done (uncommitted; suite **528 OK**). **Next:** Phase 6 offline. Email is **Phase 8**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** Item `internal_code` **Phases 1–2 are done.** **Sub-families catalogue slice is done.** **Warehouse FIFO stock reservation (D32) is done.** **Request threads (catalogue-gap requests) are done.** **Company Voice is built.** **Branch dashboard + shared branch navigation** are done. **Phase 6 offline** (Service Worker, IndexedDB catalogue cache, offline requisição draft queue + idempotent sync, PWA manifest) is done — suite **533 OK**. **Next:** Phase 7 production polish / OAuth / shared chrome. Email is **Phase 8**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -21,7 +21,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 | **Warehouse admin** | `warehouse.admin@centcompras.dev` | Full catalogue, POs (including approve any amount), goods receipts, stock adjust, `/manage/approval-limits/` (`warehouse_admins`). Cannot log into `/admin/`. |
 | **Warehouse manager** | `warehouse.manager@centcompras.dev` (grade 1); also `manager2` / `manager3` | Grade 1: add/edit catalogue and POs (submit, no approve). Grade 2+: approve within caps. No delete / no stock adjust. |
 | **Warehouse operator** | `warehouse.operator@centcompras.dev` (grade 1); also `operator2` | Grade 1: read-only. Grade 2: mutate closed circuit. Never approve. |
-| **Branch users** | `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…`, `branch.operator.south@…` / `branch.manager.south@…`, `branch.dual@…` | Branch picker, read-only catalogue (cost hidden, stock hint), requisição interna, and request threads (catalogue-gap requests). |
+| **Branch users** | `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…`, `branch.operator.south@…` / `branch.manager.south@…`, `branch.dual@…` | Branch dashboard (`/branch/`), read-only catalogue (cost hidden, stock hint; **offline browse** after one online visit), requisição interna (**offline drafts** sync on reconnect), request threads, branch receipts, Company Voice. |
 | **Django superuser** | from `createsuperuser` | Site admin at `/admin/` only. The only users who may use Django admin. |
 
 After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed creates **branches** (North, South) and **branch users**, but does **not** create a superuser.
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** Phase 6 offline catalogue (Service Worker + IndexedDB + request queue). Chrome polish is still **uncommitted** on `Cursor/fix-isusue-button-issue` — commit when asked.
+4. **Next:** Phase 7 — production deployment hardening, Google OAuth rollout, shared page chrome beyond the branch shell.
 
 ---
 
@@ -54,7 +54,7 @@ Warehouse staff work at `/manage/items/`, `/manage/catalog/`, `/manage/purchase-
 | Backend | Python, Django 6.1 |
 | Database | PostgreSQL (`centcompras_db`) |
 | Frontend | Plain HTML, plain JavaScript |
-| Offline | (future — not implemented; previously removed) |
+| Offline | Service Worker + IndexedDB on branch pages (`/branch/…`); PostgreSQL remains source of truth |
 | Logging | `logging_utils` — console + rotating files in `logs/` |
 
 No React, Vue, or similar frontend framework.
@@ -72,6 +72,8 @@ No React, Vue, or similar frontend framework.
 - Consoles and APIs require login; APIs return 401 when unauthenticated
 
 > **Branches + requisição + goods issue + branch receipt are built (Phase 5 complete).** `Branch` + `BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (cost hidden, stock hint), `/branch/requests/` (requisição through `approved`, manager caps), warehouse goods issue (`/manage/internal-requests/`, `/manage/branch-approval-limits/`), and branch receipt + branch stock (`/branch/receipts/`). Locked decisions (archived): [`docs/archive/phase5-brainstorm-260821-1530.md`](docs/archive/phase5-brainstorm-260821-1530.md).
+>
+> **Branch dashboard + offline (Phase 6 complete).** Branch-only users land on `/branch/` (card grid + shared header nav). After one online visit, `/branch/catalog/` works offline from IndexedDB (last-updated banner). Offline requisição **drafts** queue locally and upload idempotently via `POST /api/branch/requests/sync/` when Wi-Fi returns; submit/approve still require network. Service Worker at `/service-worker.js`; PWA manifest. Use **`127.0.0.1`** consistently for SW dev (not mixed with `localhost`). Manual: [`04-internal-requests.md`](docs/user-manuals/04-internal-requests.md) §10 FAQ.
 >
 > **Request threads are built.** `threads` app: a branch opens a written thread (subject + free text) when the needed item is **not in the catalogue**; warehouse engages; the item is created via the item console and linked to the thread; only the opener closes (branch manager/admin + warehouse admin may force-close). `/branch/threads/` (branch side) and `/manage/threads/` (all branches, filters, link-item, override close). Unread badges via `ThreadReadState`. Manual: [`08-request-threads.md`](docs/user-manuals/08-request-threads.md).
 
@@ -128,17 +130,20 @@ Production will use Google OAuth (not implemented in dev).
 | `/api/manage/stock-adjustments/` | Manual stock adjustment (POST; `can_adjust_stock`) |
 | `/accounts/login/` | Email + password login |
 | `/accounts/logout/` | Log out |
+| `/branch/` | Branch dashboard (landing page; card grid to all branch tools) |
 | `/branch/select/` | Branch picker (0 / 1 / N memberships) |
-| `/branch/catalog/` | Branch catalog (read-only; cost hidden, stock hint) |
+| `/branch/catalog/` | Branch catalog (read-only; cost hidden, stock hint; offline cache) |
+| `/service-worker.js` | Branch app-shell Service Worker (API bypass) |
 | `/api/branch/catalog/` | Branch catalog JSON API (cost hidden, stock hint) |
 | `/branch/requests/` | Requisição interna (branch list + editor) |
 | `/branch/threads/` | Request threads (catalogue-gap requests, branch side) |
 | `/api/branch/requests/` | Requisição interna JSON API (draft → approved) |
+| `/api/branch/requests/sync/` | Idempotent offline draft upload (`client_uuid` + lines) |
 | `/branch/receipts/` | Branch receipts (confirm dispatches, branch stock) |
 | `/api/branch/receipts/` | Branch receipts JSON API (receive / short-close / adjust) |
 | `/admin/` | Django admin (**superuser only**) |
 
-There is no `GET /api/products/` and no `/service-worker.js`.
+There is no `GET /api/products/`.
 
 ---
 
@@ -298,10 +303,10 @@ Practice logins: `warehouse.admin@centcompras.dev`, `warehouse.manager@centcompr
 Tests:
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement inventory branches orders threads
+.venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice
 ```
 
-Migrations: `accounts/0001–0003`, `products/0001–0008`, `procurement/0001–0005`, `inventory/0001–0003`, `orders/0001–0002`, `threads/0001`. Run `migrate` after pull if schema changed.
+Migrations: `accounts/0001–0005`, `products/0001–0009`, `procurement/0001–0005`, `inventory/0001–0003`, `orders/0001–0003` (incl. `client_uuid`), `threads/0001–0003`, `company_voice/0001–0002`. Run `migrate` after pull if schema changed.
 
 ---
 
@@ -343,8 +348,7 @@ views (login required) → API + HTML
 
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
-- **Offline catalogue and sync** (Phase 6 — Service Worker, IndexedDB, offline order queue)
-- **Production deployment / OAuth polish / shared chrome** (Phase 7)
+- **Production deployment / OAuth polish / shared chrome** (Phase 7 — **Next**)
 - **Email automation** (Phase 8 — wire notify stubs to real email; stub exists today)
-- Integration tests (unit suites: **528 OK**)
+- Integration tests (unit suites: **533 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)
