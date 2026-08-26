@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 26 August 2026, 11:00 WEST.*
+*Last updated: 26 August 2026, 11:15 WEST.*
 
-**Phases 0–6 are done.** Phase 6 offline review fixes **applied** (P0/P1/P2, 26 Aug). **Phase 7 next.** Suite **540 OK**. Email is **Phase 8**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** Phase 6 offline review fixes **applied** (P0/P1/P2, 26 Aug). **Phase 7 next** (production deployment readiness). OAuth + shared chrome = Phase 8; email = Phase 9. Suite **540 OK**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** Phase 7 production polish / OAuth / shared chrome — see [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §14.
+4. **Next:** Phase 7 production deployment readiness — see [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Phase 8 = OAuth + shared chrome; Phase 9 = email.
 
 ---
 
@@ -99,7 +99,7 @@ Production will use Google OAuth (not implemented in dev).
 - `/manage/internal-requests/` — branch request queue + goods issue (partial OK, short-close)
 - `/manage/threads/` — request threads (catalogue-gap requests: all branches, reply, link items, override close)
 - `/manage/branch-approval-limits/` — branch manager caps (warehouse admins may edit)
-- Supplier email on PO approval is a **stub** (real send = Phase 8)
+- Supplier email on PO approval is a **stub** (real send = Phase 9)
 
 ### URL layout
 
@@ -348,7 +348,8 @@ views (login required) → API + HTML
 
 Canonical list of “next / later” is the phase table in [`docs/handoff.md`](docs/handoff.md). In short:
 
-- **Production deployment / OAuth polish / shared chrome** (Phase 7 — **Next**)
-- **Email automation** (Phase 8 — wire notify stubs to real email; stub exists today)
+- **Production deployment readiness** (Phase 7 — **Next**) — [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- **Google OAuth production rollout + shared chrome** (Phase 8)
+- **Email automation** (Phase 9 — wire notify stubs to real email; stub exists today)
 - Integration tests (unit suites: **540 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

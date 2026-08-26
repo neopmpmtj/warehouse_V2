@@ -1,7 +1,7 @@
 # CentCompras — Future enhancements (nice-to-have)
 
 > **Created:** 21 August 2026, 18:33 WEST.  
-> **Last reviewed:** 26 August 2026, 10:00 WEST.  
+> **Last reviewed:** 26 August 2026, 11:15 WEST.  
 > **Status:** parking lot — not scheduled. Promote an item into a phase plan before building it.  
 > Source: Phase 5 plan review pass (set E) plus later ideas that surfaced in the same review.
 
@@ -20,11 +20,13 @@
 | Offline / PWA / Service Worker / idempotent sync | **Phase 6 ✅** (Aug 2026, PR #19) — branch catalogue cache, offline requisição drafts, `client_uuid` sync |
 | Branch dashboard + shared branch header nav | **Aug 2026 ✅** (PR #18) — `/branch/` landing page |
 
-## Other known later items (authoritative sequencing in PROJECT-PLAN §7 / §16–18)
+## Other known later items (authoritative sequencing in PROJECT-PLAN §7 / §14–16)
 
-- Email automation (real send) — Phase 8
-- Google OAuth production rollout / password reset — Phase 7
+- **Production deployment readiness** — Phase 7 (**Next**); [`DEPLOYMENT.md`](DEPLOYMENT.md)
+- **Google OAuth production rollout** — Phase 8 (dev login exists; prod cutover + `AUTH_MODE`)
+- **Shared chrome / restyle `/`** (warehouse staff dashboard) — Phase 8; ideas in PROJECT-PLAN §15.2
+- Email automation (real send) — Phase 9
 - Linked / auto PO (full automation) — beyond Phase 5's manual shortfall path (C1/C2 are the Phase 5 seam)
 - Branch-tiered prices — D2 unchanged
-- Shared chrome / restyle `/` (warehouse staff dashboard) — Phase 7
+- Password reset — consider with Phase 8 OAuth
 - Per-branch approval caps — lock 2 (global table only for MVP)

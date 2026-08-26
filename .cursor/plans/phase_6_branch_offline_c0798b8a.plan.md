@@ -314,7 +314,7 @@ sequenceDiagram
 
 - Offline threads / receipts / submit / approve
 - Warehouse offline
-- Phase 7 chrome, Phase 8 email
+- Phase 7 deploy, Phase 8 chrome, Phase 9 email
 
 ---
 

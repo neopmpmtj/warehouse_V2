@@ -2,9 +2,9 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 26 August 2026, 11:00 WEST
-- **Current phase:** Phases 0–6 **complete** ✅. Phase 6 offline review **P0/P1/P2 applied** ✅ (26 Aug). **Phase 7 next.** Email is **Phase 8**. See [`docs/handoff.md`](handoff.md).
-- **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline is Phase 6; production polish Phase 7; email Phase 8.
+- **Last updated:** 26 August 2026, 11:15 WEST
+- **Current phase:** Phases 0–6 **complete** ✅. **Phase 7 next** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
+- **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
 ## Status vocabulary
 
@@ -106,7 +106,8 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D6 | Goods receipt ↔ PO | **many receipts per PO** (partial / split shipments) |
 | D7 | Approval workflow | `draft → submitted → approved/rejected → received → closed`, plus **`cancelled`** (approved PO with zero receipts; required reason) |
 | D8 | Rappel | simple per-line % now; shape later |
-| D9 | Email automation | deferred to **Phase 8** (late phase); model a stub seam now (`on_commit`) |
+| D9 | Email automation | deferred to **Phase 9** (late phase); model a stub seam now (`on_commit`) |
+| D35 | Phase sequencing after offline | **Phase 6** = offline (done). **Phase 7** = production deployment readiness only. **Phase 8** = OAuth production + shared chrome. **Phase 9** = email. Do not bundle deploy with OAuth/chrome. |
 | D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
@@ -144,7 +145,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (26 Aug 2026):** phases 0–6 complete; Phase 6 offline review fixes **applied** (archived [`phase6-offline-review-2026-08-26-1009.md`](archive/phase6-offline-review-2026-08-26-1009.md)). Suite **540 OK**. **Next:** Phase 7. Leftover L/N nits **recorded, not a work queue**.
+**Current (26 Aug 2026):** phases 0–6 complete; Phase 6 offline review fixes **applied**. Suite **540 OK**. **Next:** Phase 7 (production deployment readiness). OAuth + shared chrome deferred to Phase 8; email to Phase 9.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -175,8 +176,9 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 5+ | Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** | Header polish |
 | 6 | Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (#19; reviewed 26 Aug) | Phase 5 |
 | 6+ | Phase 6 offline review fixes (P0/P1/P2) | ✅ **Done** | Phase 6 review |
-| 7 | Production deployment / OAuth / shared chrome | 🔵 **Next** | Phase 6 |
-| 8 | Email automation (supplier notifications) | ⏸ **Late phase** | Phase 2 (stub) |
+| 7 | Production deployment readiness | 🔵 **Next** | Phase 6 |
+| 8 | Google OAuth production rollout + shared chrome | ⏸ After Phase 7 | Phase 7 |
+| 9 | Email automation (supplier notifications) | ⏸ **Late phase** | Phase 2 (stub) |
 
 ---
 
@@ -378,7 +380,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - ✅ `orders` app: internal request ("Requisição interna") — priced (wholesale snapshot at approve); branch approve caps mirror PO.
 - ✅ Warehouse: `GoodsIssue` + queue (approved requests only); partial issue + short-close; manual PO when out of stock (nullable PO FK on lines for later automation).
 - ✅ Branch receipt + branch stock ledger (`BranchReceipt` on `GoodsIssue`, `BranchStockMovement` + cached `BranchItemStock`).
-- **Not in Phase 5:** offline/sync (Phase 6), email notify (Phase 8), linked/auto PO (later slice). **Stock reservation (A4)** was deferred in Phase 5; it shipped later as **D32**.
+- **Not in Phase 5:** offline/sync (Phase 6), email notify (Phase 9), linked/auto PO (later slice). **Stock reservation (A4)** was deferred in Phase 5; it shipped later as **D32**.
 
 ### 12.1 Item `internal_code` — catalogue constraints ✅
 
@@ -412,29 +414,98 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - **Submit / approve / reject / cancel** remain online-only; threads and receipts out of scope.
 - Use one hostname consistently (`127.0.0.1` vs `localhost`) for service worker scope in dev.
 
-**Not in Phase 6:** real email send (Phase 8); full production OAuth rollout (Phase 7).
+**Not in Phase 6:** real email send (Phase 9); production OAuth rollout + shared chrome (Phase 8); VPS deploy hardening (Phase 7).
 
 **Review (26 Aug 2026):** [`docs/archive/phase6-offline-review-2026-08-26-1009.md`](archive/phase6-offline-review-2026-08-26-1009.md) — **concluded**; P0/P1/P2 applied. Optional follow-up: required `client_uuid` on online create (L4).
 
 ---
 
-## 14. Phase 7 — Production / deployment / polish (future) ⏸
+## 14. Phase 7 — Production deployment readiness ⏸
 
-- Google OAuth hardening + production deployment (`AUTH_MODE`, env secrets, `DJANGO_SECRET_KEY`).
-- Shared page chrome; branch phone UX polish beyond the offline shell.
-- Remaining console polish on `/` and `/branch/…` headers (dedicated sessions).
+**Status:** **Next** after Phase 6. Authoritative runbook: [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
+
+**Goal:** run CentCompras safely on a production VPS — no new product features, no UI chrome redesign.
+
+**In scope:**
+
+- `config.settings.prod`, `DJANGO_SECRET_KEY`, `.env` secrets on the server
+- PostgreSQL production database (`DATABASE_URL`), migrations, backups discipline
+- Gunicorn + systemd (or equivalent), `collectstatic`, HTTPS / reverse proxy
+- `ALLOWED_HOSTS`, `DEBUG=False`, secure cookies / CSRF for production host
+- Branch PWA / Service Worker over HTTPS (see DEPLOYMENT.md)
+- Smoke test checklist post-deploy (login, branch picker, one warehouse console, one branch page)
+
+**Explicitly not Phase 7** (see §15–§16):
+
+- Google OAuth production rollout (`AUTH_MODE`, Web client, redirect URIs) — **Phase 8**
+- Shared page chrome, restyle `/`, cross-role navigation — **Phase 8**
+- Real supplier email send — **Phase 9**
+
+Dev already has password login + optional Google (`AUTH_MODE=both`); Phase 7 does not require switching to `google_only`.
 
 ---
 
-## 15. Phase 8 — Email automation (late phase) ⏸
+## 15. Phase 8 — OAuth production rollout + shared chrome ⏸
+
+**Status:** after Phase 7. **Product/UX phase** — templates, CSS, navigation; optional OAuth hardening for production cutover.
+
+### 15.1 Google OAuth (production)
+
+- Production Web application client in Google Cloud Console
+- `GOOGLE_*` env vars on VPS; `AUTH_MODE` path to `google_only` when ready
+- PKCE + redirect URI alignment with [`docs/DEPLOYMENT.md`](DEPLOYMENT.md) § Google OAuth
+- Password login disabled only when deliberately chosen (not a deploy blocker)
+
+### 15.2 Shared chrome (ideas — contribute before build)
+
+Unify the **persistent shell** (header, nav, account controls) across warehouse, branch, and Company Voice. Today: shared **includes** (`branch_page_header`, `account_settings`, `console_eyebrow`) but each page is still mostly standalone HTML.
+
+**Navigation**
+
+- Should warehouse `/` show the same top nav as `/manage/catalog/` (Items, Catalog, POs, Receipts, Requests, Threads)?
+- Should branch nav include Company Voice (today: dashboard cards only)?
+- Breadcrumbs vs flat nav on deep pages?
+
+**Roles**
+
+- Dual-role users (warehouse + branch): banner “warehouse mode” vs “branch mode”, or a single app switcher?
+- Should branch operators ever see warehouse links? (Likely no.)
+
+**Mobile / branch**
+
+- Bottom tab bar vs top nav on small screens?
+- Where the offline banner lives in the permanent shell (bootstrap exists; chrome phase owns placement).
+
+**Warehouse `/` dashboard**
+
+- Card grid only, or card grid + persistent sidebar?
+- Pending work counts on cards (submitted POs, approved requisições)?
+
+**Company Voice**
+
+- Same header as warehouse dashboard, or minimal “back to CentCompras” only?
+
+**Brand / i18n**
+
+- One EN/pt-PT strategy for all chrome strings.
+- Logo vs text-only “CentCompras” eyebrow.
+
+**Non-goals**
+
+- No full redesign of table/forms inside consoles — chrome is the frame, not every drawer.
+- Chrome review leftovers **L3–L8 / N1–N3** ([`docs/reviews/code-review-full-2026-08-25-1125.md`](reviews/code-review-full-2026-08-25-1125.md)) — address during this phase, not a separate queue.
+
+---
+
+## 16. Phase 9 — Email automation (late phase) ⏸
 
 - Wire `notify_supplier_on_approval` to real email (SMTP / provider).
 - Templates EN + pt-PT; audit sent-notifications.
-- Deferred by D9 — **one of the last product phases**; stub exists via `transaction.on_commit`. Does not block Phase 6 offline.
+- Deferred by D9 — **one of the last product phases**; stub exists via `transaction.on_commit`. Does not block Phase 7 deploy.
 
 ---
 
-## 16. Status tracker
+## 17. Status tracker
 
 > Tick `[x]` as tasks complete. Move `🔵 Current` in §7 forward each phase.
 
@@ -490,15 +561,17 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 - [x] Chrome review H1–H3 + M1 (+ L1, L2) — [`docs/reviews/code-review-full-2026-08-25-1125.md`](reviews/code-review-full-2026-08-25-1125.md)
 - [x] Phase 6 — offline catalogue + offline request queue + sync / PWA (#19)
 - [x] Phase 6 offline review fixes — P0/P1/P2 ([archive](archive/phase6-offline-review-2026-08-26-1009.md))
-- [ ] Phase 7 — production deployment / OAuth / shared chrome — **Next**
-- [ ] Phase 8 — email automation (stub exists)
+- [ ] Phase 7 — production deployment readiness — **Next** ([`DEPLOYMENT.md`](DEPLOYMENT.md))
+- [ ] Phase 8 — Google OAuth production rollout + shared chrome
+- [ ] Phase 9 — email automation (stub exists)
 
 ---
 
-## 17. Out of scope (explicitly not now)
+## 18. Out of scope (explicitly not now)
 
-- Real email sending (Phase 8 — stub exists).
-- Production OAuth rollout and deployment hardening (Phase 7).
+- Real email sending (Phase 9 — stub exists).
+- Production OAuth rollout and shared chrome (Phase 8).
+- VPS / deploy hardening (Phase 7 — **Next**).
 - Categories, LLM/vector search, bulk import.
 - Server-side item draft rows (deferred; see plan § advisory).
 - **24 Aug review nits** (not lost, not Next): threads N1–N6; Company Voice N1. Full text stays in [`docs/reviews/threads-review-2026-08-24.md`](reviews/threads-review-2026-08-24.md) and [`docs/reviews/company-voice-review-2026-08-24-1010.md`](reviews/company-voice-review-2026-08-24-1010.md).
@@ -506,7 +579,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 
 ---
 
-## 18. Risks & notes
+## 19. Risks & notes
 
 1. **Cost-price ambiguity (O1)** — resolved: Option A (`primary` flag).
 2. **Docs drift** — live state is [`handoff.md`](handoff.md). Update user manuals when changing constraints (`.cursor/rules/user-manuals.mdc`).

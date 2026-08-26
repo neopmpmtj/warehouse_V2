@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 26 August 2026, 11:00 WEST.
+> **Read this first when resuming work.** Last updated: 26 August 2026, 11:15 WEST.
 
 ---
 
@@ -26,19 +26,39 @@
 | 5+ — Branch dashboard + shared branch navigation | ✅ **Done** |
 | 6 — Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (reviewed 26 Aug) |
 | 6+ — Phase 6 offline review fixes (P0 / P1 / P2) | ✅ **Done** |
-| 7 — Production / deployment / OAuth / shared chrome | 🔵 **Next** |
-| 8 — Email automation (supplier notifications) | ⏸ **Late phase** |
+| 7 — Production deployment readiness | 🔵 **Next** |
+| 8 — Google OAuth production rollout + shared chrome | ⏸ After Phase 7 |
+| 9 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete.** Phase 6 offline **review fixes applied 26 Aug** (P0 sync hardening, P1 UX, P2 polish). Review concluded and archived. **Next:** Phase 7 production polish / OAuth / shared chrome. Email automation is Phase 8.
+**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). **Next:** **Phase 7** — production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8** (ideas in PROJECT-PLAN §15). Email = **Phase 9**.
 
 **Tests:** suite **540 OK** (26 Aug, after Phase 6 review fixes).
 
 ## Next session — do this
 
-1. **Start Phase 7** — production deployment, OAuth hardening, shared chrome — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
-2. **Do not treat as a work queue:** Phase 6 review leftover L/N (see archived report), 24 Aug nits (threads N1–N6; Company Voice N1), chrome leftover **L3–L8 / N1–N3**.
-3. **Do not start** Phase 8 email in passing.
-4. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+1. **Start Phase 7 — production deployment readiness** — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). **Do not** bundle OAuth or shared chrome in this phase.
+2. **Phase 8 (later)** — OAuth production rollout + shared chrome; contribute ideas to PROJECT-PLAN §15.2 before build.
+3. **Do not treat as a work queue:** Phase 6 review leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8).
+4. **Do not start** Phase 9 email in passing.
+5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+
+## Phase numbering (locked)
+
+| # | Name | Status |
+|---|------|--------|
+| 6 | Offline catalogue + sync + PWA | ✅ Done |
+| 7 | **Production deployment readiness** | 🔵 Next |
+| 8 | OAuth production + shared chrome | ⏸ |
+| 9 | Email automation | ⏸ |
+
+*Phase 6 is **not** production deploy — that is Phase 7.*
+
+## This session (26 Aug 2026) — phase plan split ✅
+
+- **Phase 6** numbering unchanged: offline catalogue + sync + PWA (complete).
+- **Phase 7** = production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)) — no OAuth, no shared chrome.
+- **Phase 8** = Google OAuth production rollout + shared chrome; pitch ideas captured in PROJECT-PLAN §15.2 for your input.
+- **Phase 9** = email automation (was Phase 8). Decision **D35** in PROJECT-PLAN.
 
 ## This session (26 Aug 2026) — Phase 6 offline review fixes ✅
 
@@ -395,7 +415,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D6 | **Many receipts per PO** (partial shipments) |
 | D7 | PO status: `draft → submitted → approved/rejected → received → closed` |
 | D8 | Rappel = simple per-line % for now |
-| D9 | Email = stub (`notify_supplier_on_approval`), deferred to **Phase 8** (late phase; stub via `on_commit`) |
+| D9 | Email = stub (`notify_supplier_on_approval`), deferred to **Phase 9** (late phase; stub via `on_commit`) |
 | D10 | Branches **built** (Phase 5 ✅) — `Item` stays global (no `branch_id`); `branches` + `orders` + branch receipt/stock live |
 | D11 | `primary` = preferred supplier; auto-suggested later; always overridable |
 | D12 | **B-hard:** a PO line is **rejected** if the PO's supplier has no price for the item (no fallback to another supplier's price) |
@@ -405,7 +425,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D16 | **Inactive entities:** no PO create/submit/approve/add-line for inactive supplier or item; catalog (`active_only=True`) excludes inactive families; cannot assign items to an inactive family. Do **not** cascade-deactivate items when a family is deactivated |
 | D17 | Warehouse groups are **code-owned**: `sync_warehouse_groups()` still `permissions.set()` (extras in `/admin/` wiped on migrate). `assign_warehouse_group` is **exclusive** (one warehouse group per user) and **resets `warehouse_grade` to 1** |
 | D18 | **Warehouse grades:** operator 1–2, manager 1–3, admin unlimited. Operator 1 view-only; operator 2 / manager 1 mutate the closed circuit; manager 2+ approve. Operators never approve. Caps in `ApprovalLimit` (EUR **gross**); admin-only edit at `/manage/approval-limits/`. Seed defaults: manager 2 self 100 / others 5_000; manager 3 self 500 / others 50_000 |
-| D19 | **PO/stock reasons:** reject, manual close (remaining qty), and `adjust_stock` require a non-empty reason. Full receipt auto-close uses `"Fully received"`; `receive()` logs `"Goods received"`. Submit/approve/reopen reasons optional but wired. Email stub via `transaction.on_commit` (real send = Phase 8) |
+| D19 | **PO/stock reasons:** reject, manual close (remaining qty), and `adjust_stock` require a non-empty reason. Full receipt auto-close uses `"Fully received"`; `receive()` logs `"Goods received"`. Submit/approve/reopen reasons optional but wired. Email stub via `transaction.on_commit` (real send = Phase 9) |
 | D20 | Selling prices & `reorder_level` must be **finite and ≥ 0** (0 allowed). Enforced in services (`_validate_non_negative`), `MinValueValidator(0)`, and DB `CheckConstraint`s |
 | D21 | **Family names are immutable** — create-only. `name` is not an updatable field; the family PATCH API does not rename |
 | D22 | `SupplierItemPrice` can only be created for an **active** supplier **and** item |
@@ -449,7 +469,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 - **Grades** — `User.warehouse_grade`; `accounts/capabilities.py` is the website source of truth (Django group perms are the coarse outer gate). Operators get add/change at group level; grade 1 is still view-only.
 - **Approval limits** — `ApprovalLimit` / `ApprovalLimitChangeLog`; admin page `/manage/approval-limits/`. `approve()` enforces SoD + caps (admin unlimited).
 - **Reasons** — required on `reject`, manual `close` (remaining qty), `adjust_stock`. Status changelog `reason` populated. Auto-close `"Fully received"`.
-- **Email stub** — `transaction.on_commit(notify_supplier_on_approval)`; real send is Phase 8 (not next).
+- **Email stub** — `transaction.on_commit(notify_supplier_on_approval)`; real send is Phase 9 (not next).
 
 **P4 — M1 + L1–L14 (review complete)**
 
