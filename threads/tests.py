@@ -435,6 +435,23 @@ class ThreadReviewFixTests(TestCase):
         self.thread.refresh_from_db()
         self.assertNotEqual(self.thread.status, ItemRequestThread.Status.CLOSED)
 
+    def test_invalid_json_body_returns_400(self):
+        client = self._login(self.opener, self.north)
+        resp = client.post(
+            "/api/branch/threads/create/",
+            data="{",
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()["code"], "invalid_json")
+        resp = client.post(
+            "/api/branch/threads/create/",
+            data="[]",
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()["code"], "invalid_json")
+
     def test_invalid_branch_id_filter_returns_400(self):
         client = self._login(self.wh_admin)
         resp = client.get("/api/manage/threads/?branch_id=abc")

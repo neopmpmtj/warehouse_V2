@@ -17,12 +17,15 @@ Branch pages under `/branch/…` use a Service Worker + IndexedDB layer. Warehou
 | [`branches/static/branches/js/sync_queue.js`](branches/static/branches/js/sync_queue.js) | Replay offline requisição drafts to `POST /api/branch/requests/sync/` |
 | [`orders/static/orders/js/branch_requests.js`](orders/static/orders/js/branch_requests.js) | Branch requisição UI + offline draft queue |
 | [`branches/static/branches/js/register_sw.js`](branches/static/branches/js/register_sw.js) | Service Worker registration |
+| [`branches/static/branches/js/offline_logout.js`](branches/static/branches/js/offline_logout.js) | Clears IndexedDB on Sign out |
 | [`branches/templates/branches/service_worker.js`](branches/templates/branches/service_worker.js) | SW template — served at `/service-worker.js` |
 
 ## Rules
 
 - Service Worker at `/service-worker.js` (root scope)
 - Do **not** cache `/api/` in the Service Worker — API failure triggers IndexedDB fallback in page JS
+- `/branch/` **HTML** is **network-first** (fresh page when online; cache only if the network fails). Do not serve stale `data-branch-id` / identity while online.
+- Cache-first is for `/static/` (and precached APP_SHELL assets) only
 - Bump `CACHE_NAME` in `service_worker.js` when app shell files change
 - Include shell scripts in `APP_SHELL` (including `register_sw.js`, `branch_bootstrap.js`)
 - `isBypassed` must skip `/api/`, `/accounts/`, `/admin/`, and `/manage/`

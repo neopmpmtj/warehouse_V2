@@ -2,7 +2,7 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 26 August 2026, 11:15 WEST
+- **Last updated:** 26 August 2026, 12:50 WEST
 - **Current phase:** Phases 0–6 **complete** ✅. **Phase 7 next** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
@@ -145,7 +145,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (26 Aug 2026):** phases 0–6 complete; Phase 6 offline review fixes **applied**. Suite **540 OK**. **Next:** Phase 7 (production deployment readiness). OAuth + shared chrome deferred to Phase 8; email to Phase 9.
+**Current (26 Aug 2026):** phases 0–6 complete; 1205 production-readiness review **applied**. Suite **548 OK**. **Next:** Phase 7 (production deployment readiness). OAuth + shared chrome deferred to Phase 8; email to Phase 9.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -407,7 +407,7 @@ When a requisição is **approved**, the warehouse holds `min(remaining, unreser
 
 ### Implementation (as built)
 
-- **Service Worker** at `/service-worker.js` — precaches branch HTML + shared static; network-only for `/api/`, `/accounts/`, `/admin/`, `/manage/`.
+- **Service Worker** at `/service-worker.js` — precaches shared static; **network-first** for `/branch/` HTML (cache only if offline); network-only for `/api/`, `/accounts/`, `/admin/`, `/manage/`.
 - **IndexedDB** (`branches/static/branches/js/db.js`): `catalog_items`, `catalog_meta`, `pending_requests`. Online catalogue fetch → cache; offline browse with last-updated banner.
 - **Offline requisição drafts:** `sync_queue.js` + `branch_bootstrap.js`; replay on reconnect via `POST /api/branch/requests/sync/` (idempotent `InternalRequest.client_uuid`). Auto-sync on all branch pages with `offline_scripts.html`.
 - **PWA:** `manifest.webmanifest`, icon, shared offline banner; HTTPS note in `docs/DEPLOYMENT.md`.

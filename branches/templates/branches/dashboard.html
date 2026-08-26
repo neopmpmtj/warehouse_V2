@@ -29,7 +29,7 @@
     <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
     {% include "branches/includes/offline_assets.html" %}
 </head>
-<body data-branch-id="{{ branch.id }}">
+<body data-branch-id="{{ branch.id }}" data-user-id="{{ user.id }}">
     {% include "branches/includes/branch_page_header.html" with page_title="Dashboard" page_title_key="branchDashTitle" active_nav="home" %}
 
     <main class="branch-dash-main">

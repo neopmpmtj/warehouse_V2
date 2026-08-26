@@ -38,6 +38,7 @@ def record_failure(username, ip=""):
     """Record one failed login / link-confirm attempt."""
     if not username:
         return
+    LoginFailure.objects.filter(created_at__lt=_window_start()).delete()
     LoginFailure.objects.create(username=username, ip=ip or None)
 
 

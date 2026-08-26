@@ -25,6 +25,8 @@ from .services import (
 
 logger = get_logger("centcompras.threads")
 
+LIST_CAP = 200
+
 
 def _json_error(message, status=400, code=None):
     payload = {"error": message}
@@ -128,7 +130,7 @@ def _thread_list_payload(queryset, user):
     threads = list(
         queryset.select_related("branch", "opened_by", "closed_by").prefetch_related(
             "read_states", "items"
-        )
+        )[:LIST_CAP]
     )
     return {
         "threads": [_serialize_thread(t, user) for t in threads],
@@ -151,8 +153,8 @@ def branch_thread_list(request):
 @active_branch_required
 @require_POST
 def branch_thread_create(request):
-    payload = _parse_json(request)
     try:
+        payload = _parse_json(request)
         thread = create_thread(
             request.active_branch,
             request.user,
@@ -193,8 +195,8 @@ def branch_thread_detail(request, thread_id):
 @require_POST
 def branch_thread_post(request, thread_id):
     thread = _get_thread_or_404(thread_id, request.active_branch)
-    payload = _parse_json(request)
     try:
+        payload = _parse_json(request)
         message = post_message(
             thread,
             request.user,
@@ -210,8 +212,8 @@ def branch_thread_post(request, thread_id):
 @require_POST
 def branch_thread_close(request, thread_id):
     thread = _get_thread_or_404(thread_id, request.active_branch)
-    payload = _parse_json(request)
     try:
+        payload = _parse_json(request)
         thread = close_thread(
             thread,
             request.user,
@@ -293,8 +295,8 @@ def warehouse_thread_detail(request, thread_id):
 @require_POST
 def warehouse_thread_post(request, thread_id):
     thread = _get_thread_or_404(thread_id)
-    payload = _parse_json(request)
     try:
+        payload = _parse_json(request)
         message = post_message(
             thread,
             request.user,
@@ -310,11 +312,11 @@ def warehouse_thread_post(request, thread_id):
 @require_POST
 def warehouse_thread_link_items(request, thread_id):
     thread = _get_thread_or_404(thread_id)
-    payload = _parse_json(request)
-    item_ids = payload.get("item_ids", [])
-    if not isinstance(item_ids, list):
-        return _json_error("item_ids must be a list.", code="invalid_item_ids")
     try:
+        payload = _parse_json(request)
+        item_ids = payload.get("item_ids", [])
+        if not isinstance(item_ids, list):
+            return _json_error("item_ids must be a list.", code="invalid_item_ids")
         thread = link_items(thread, request.user, item_ids)
     except ValidationError as exc:
         return _validation_error_response(exc)
@@ -325,8 +327,8 @@ def warehouse_thread_link_items(request, thread_id):
 @require_POST
 def warehouse_thread_close(request, thread_id):
     thread = _get_thread_or_404(thread_id)
-    payload = _parse_json(request)
     try:
+        payload = _parse_json(request)
         thread = close_thread(
             thread,
             request.user,

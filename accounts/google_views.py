@@ -116,6 +116,13 @@ class GoogleCallbackView(View):
                 )
                 return redirect("login")
 
+            if not user.is_active:
+                messages.error(
+                    request,
+                    _("This account is inactive. Ask an administrator to reactivate it."),
+                )
+                return redirect("login")
+
             if user.has_usable_password() and not user.is_google_account:
                 # Existing password user proving ownership once before linking.
                 request.session["google_link_data"] = {
@@ -178,6 +185,14 @@ class GoogleLinkConfirmView(View):
         if user is None:
             request.session.pop("google_link_data", None)
             messages.error(request, _("Account not found. Please try again."))
+            return redirect("login")
+
+        if not user.is_active:
+            request.session.pop("google_link_data", None)
+            messages.error(
+                request,
+                _("This account is inactive. Ask an administrator to reactivate it."),
+            )
             return redirect("login")
 
         password = request.POST.get("password", "")

@@ -357,6 +357,7 @@
         var entry = {
             client_uuid: BranchOffline.newClientUuid(),
             branch_id: document.body.getAttribute("data-branch-id"),
+            user_id: document.body.getAttribute("data-user-id"),
             status: "pending",
             created_at: new Date().toISOString(),
             notes: "",

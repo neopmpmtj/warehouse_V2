@@ -157,6 +157,21 @@ var BranchDB = (function () {
         });
     }
 
+    function clearAll() {
+        return new Promise(function (resolve) {
+            var request = indexedDB.deleteDatabase(DB_NAME);
+            request.onsuccess = function () {
+                resolve();
+            };
+            request.onerror = function () {
+                resolve();
+            };
+            request.onblocked = function () {
+                resolve();
+            };
+        });
+    }
+
     return {
         saveCatalog: saveCatalog,
         getCachedCatalog: getCachedCatalog,
@@ -165,5 +180,6 @@ var BranchDB = (function () {
         getPendingRequest: getPendingRequest,
         deletePendingRequest: deletePendingRequest,
         updatePendingRequest: updatePendingRequest,
+        clearAll: clearAll,
     };
 }());

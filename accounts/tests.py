@@ -1,3 +1,4 @@
+from datetime import timedelta
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -259,6 +260,21 @@ class LoginViewTests(TestCase):
         self.assertIn("_auth_user_id", self.client.session)
 
 
+    def test_record_failure_prunes_old_rows(self):
+        from accounts.models import LoginFailure
+        from accounts.throttle import record_failure
+
+        old = LoginFailure.objects.create(username="stale@example.com")
+        LoginFailure.objects.filter(pk=old.pk).update(
+            created_at=timezone.now() - timedelta(hours=2)
+        )
+        record_failure("fresh@example.com")
+        self.assertFalse(LoginFailure.objects.filter(pk=old.pk).exists())
+        self.assertTrue(
+            LoginFailure.objects.filter(username="fresh@example.com").exists()
+        )
+
+
 class SessionManagementTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
@@ -298,6 +314,17 @@ class SessionManagementTests(TestCase):
         client.force_login(self.user)
         response = client.get(reverse("logout_other_devices"))
         self.assertEqual(response.status_code, 405)
+
+
+    def test_logout_other_devices_rejects_external_next(self):
+        client = Client()
+        client.force_login(self.user)
+        response = client.post(
+            reverse("logout_other_devices"),
+            {"next": "https://evil.example/phish"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/")
 
 
 class DjangoAdminAccessTests(TestCase):
@@ -571,3 +598,26 @@ class GoogleOAuthTests(TestCase):
         response = self.client.get(reverse("google_callback"), {"code": "code1", "state": "wrong-state"})
         self.assertRedirects(response, reverse("login"))
         self.assertNotIn("_auth_user_id", self.client.session)
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    @mock.patch("accounts.google_views.get_google_user_info", return_value={"email": "google@example.com", "email_verified": True})
+    @mock.patch("accounts.google_views.exchange_code_for_tokens", return_value={"access_token": "tok"})
+    def test_callback_inactive_user_not_logged_in(self, mock_exchange, mock_info):
+        self.user.is_google_account = True
+        self.user.is_active = False
+        self.user.save(update_fields=["is_google_account", "is_active"])
+        session = self.client.session
+        session["oauth_state"] = "state123"
+        session.save()
+        response = self.client.get(
+            reverse("google_callback"), {"code": "code1", "state": "state123"}
+        )
+        self.assertRedirects(response, reverse("login"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+
+class HealthzTests(TestCase):
+    def test_healthz_ok(self):
+        response = Client().get("/healthz")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})

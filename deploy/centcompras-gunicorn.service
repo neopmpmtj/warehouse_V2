@@ -14,6 +14,8 @@ ExecStart=/srv/centcompras/warehouse_V2/.venv/bin/gunicorn config.wsgi:applicati
     --bind 127.0.0.1:8000 \
     --workers 3 \
     --timeout 120 \
+    --max-requests 2000 \
+    --max-requests-jitter 200 \
     --access-logfile /srv/centcompras/logs/gunicorn-access.log \
     --error-logfile /srv/centcompras/logs/gunicorn-error.log
 Restart=always

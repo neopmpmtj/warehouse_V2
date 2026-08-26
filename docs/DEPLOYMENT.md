@@ -105,7 +105,12 @@ DEBUG=False
 ALLOWED_HOSTS=centcompras.yourdomain.com
 CSRF_TRUSTED_ORIGINS=https://centcompras.yourdomain.com
 DATABASE_URL=postgresql://centcompras:STRONG_PASSWORD_HERE@localhost:5432/centcompras_db
+# Leave False until certbot is serving 443, then set True and restart gunicorn.
+SECURE_SSL_REDIRECT=False
 ```
+
+`DATABASE_URL` is **required** in production — gunicorn will refuse to start without it.
+Do not copy a localhost `GOOGLE_OAUTH_REDIRECT_URI` into prod if `GOOGLE_CLIENT_ID` is set.
 
 ---
 
@@ -134,8 +139,11 @@ sudo systemctl status centcompras-gunicorn   # active (running)
 
 The unit file points `WorkingDirectory` / `EnvironmentFile` at
 `/srv/centcompras/warehouse_V2` and runs gunicorn on `127.0.0.1:8000` with
-`DJANGO_SETTINGS_MODULE=config.settings.prod`. Logs go to
-`/srv/centcompras/logs/gunicorn-*.log`.
+`DJANGO_SETTINGS_MODULE=config.settings.prod`. Workers recycle after
+`--max-requests 2000`. Logs go to `/srv/centcompras/logs/gunicorn-*.log`.
+
+**Do not** set `SECURE_SSL_REDIRECT=True` until step 10 (certbot) has 443
+working — otherwise HTTP browsers 301 to HTTPS and nothing is listening.
 
 ---
 
@@ -158,15 +166,28 @@ sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d centcompras.yourdomain.com
 ```
 
-certbot edits the nginx config to serve HTTPS and auto-renews. `prod.py`
-enforces `SECURE_SSL_REDIRECT`, HSTS, and secure cookies — all handled once
-certbot enables TLS.
+certbot edits the nginx config to serve HTTPS and auto-renews. After 443 works,
+set `SECURE_SSL_REDIRECT=True` in `.env` and restart gunicorn. `prod.py` then
+enforces SSL redirect, HSTS (1 year, includeSubDomains; **preload is off** until
+you submit the domain to the HSTS preload list), and secure cookies.
+
+The sample nginx site rate-limits `/accounts/login/` and `/accounts/google/`
+(`limit_req`). It always overwrites `X-Forwarded-Host` with `$host`. Copy those
+`proxy_set_header` lines into the certbot 443 server block if they are missing.
+
+`GET /healthz` returns `{"status":"ok"}` when PostgreSQL accepts connections
+(no login required). Use it for LB / systemd checks:
+
+```bash
+curl -sS http://127.0.0.1:8000/healthz
+```
 
 Branch offline (Phase 6) uses a Service Worker at `/service-worker.js` and
 IndexedDB in the browser. **Service Workers require HTTPS in production** (localhost
 / `127.0.0.1` are exempt for development). After deploy, branch staff should open
 `https://centcompras.yourdomain.com/branch/catalog/` at least once while online so
-the app shell and catalogue cache download before going offline.
+the app shell and catalogue cache download before going offline. Sign out clears
+the offline draft queue on that browser.
 
 ---
 
@@ -209,6 +230,7 @@ Login-only Google Sign-In (openid/email/profile — no Calendar/Drive/Gmail).
 
 ```bash
 curl -sI https://centcompras.yourdomain.com/            # 200, login page
+curl -sS https://centcompras.yourdomain.com/healthz     # {"status":"ok"}
 curl -sI https://centcompras.yourdomain.com/static/css/settings_menu.css   # 200 (static served by nginx)
 sudo journalctl -u centcompras-gunicorn -n 50           # app logs
 sudo tail -f /srv/centcompras/logs/gunicorn-error.log   # gunicorn errors

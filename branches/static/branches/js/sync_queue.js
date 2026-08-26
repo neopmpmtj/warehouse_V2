@@ -12,12 +12,24 @@ var BranchSyncQueue = (function () {
         return document.body.getAttribute("data-branch-id");
     }
 
+    function getCurrentUserId() {
+        return document.body.getAttribute("data-user-id");
+    }
+
     function isWrongBranch(entry) {
         var current = getCurrentBranchId();
         if (!current || entry.branch_id == null || entry.branch_id === "") {
             return false;
         }
         return String(entry.branch_id) !== String(current);
+    }
+
+    function isWrongUser(entry) {
+        var current = getCurrentUserId();
+        if (!current || entry.user_id == null || entry.user_id === "") {
+            return true;
+        }
+        return String(entry.user_id) !== String(current);
     }
 
     function isStaleSyncing(entry) {
@@ -171,7 +183,7 @@ var BranchSyncQueue = (function () {
                 var chain = Promise.resolve();
                 pending.forEach(function (entry) {
                     chain = chain.then(function () {
-                        if (isWrongBranch(entry)) {
+                        if (isWrongBranch(entry) || isWrongUser(entry)) {
                             skipped += 1;
                             return;
                         }

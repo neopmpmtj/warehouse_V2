@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 26 August 2026, 11:15 WEST.
+> **Read this first when resuming work.** Last updated: 26 August 2026, 12:50 WEST.
 
 ---
 
@@ -26,21 +26,33 @@
 | 5+ — Branch dashboard + shared branch navigation | ✅ **Done** |
 | 6 — Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (reviewed 26 Aug) |
 | 6+ — Phase 6 offline review fixes (P0 / P1 / P2) | ✅ **Done** |
+| 6+ — Full-tree production-readiness review fixes (26 Aug 1205) | ✅ **Done** |
 | 7 — Production deployment readiness | 🔵 **Next** |
 | 8 — Google OAuth production rollout + shared chrome | ⏸ After Phase 7 |
 | 9 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). **Next:** **Phase 7** — production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8** (ideas in PROJECT-PLAN §15). Email = **Phase 9**.
+**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Next:** **Phase 7** — production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8** (ideas in PROJECT-PLAN §15). Email = **Phase 9**.
 
-**Tests:** suite **540 OK** (26 Aug, after Phase 6 review fixes).
+**Tests:** suite **548 OK** (26 Aug, after 1205 review fixes).
 
 ## Next session — do this
 
-1. **Start Phase 7 — production deployment readiness** — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). **Do not** bundle OAuth or shared chrome in this phase.
+1. **Start Phase 7 — production deployment readiness** — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). Follow the updated TLS order (`SECURE_SSL_REDIRECT=False` until certbot). **Do not** bundle OAuth or shared chrome in this phase.
 2. **Phase 8 (later)** — OAuth production rollout + shared chrome; contribute ideas to PROJECT-PLAN §15.2 before build.
-3. **Do not treat as a work queue:** Phase 6 review leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8).
+3. **Do not treat as a work queue:** Phase 6 leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8). The 1205 review is **applied**.
 4. **Do not start** Phase 9 email in passing.
 5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+
+## This session (26 Aug 2026) — full-tree review fixes (1205) ✅
+
+Applied [`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md) P0/P1/P2 (read-only review was earlier the same day).
+
+- **H1** — Service Worker `/branch/` HTML is **network-first** (CACHE `v6`); stale identity no longer wins while online.
+- **H2** — Offline drafts store `user_id`; drain skips other users / unattributed rows; Sign out deletes IndexedDB `centcompras_branch`.
+- **M1–M8** — sync `IntegrityError` upsert; JSON 400 on orders/threads; Google refuses inactive users; prod requires `DATABASE_URL`; `SECURE_SSL_REDIRECT` env-gated (default false); throttle prunes old rows; `USE_X_FORWARDED_HOST=False`; warehouse request + thread lists capped at 200.
+- **L1–L6 / N1** — gunicorn `--max-requests`; `GET /healthz`; session iterator; safe logout `next`; prod INFO logs; prod Google redirect must not be localhost; SECRET_KEY fail-fast via decouple.
+- Manuals: `04` Q18; `05` JSON 400 strings. `DEPLOYMENT.md` TLS order + nginx headers + `/healthz`.
+- **Tests:** **548 OK**.
 
 ## Phase numbering (locked)
 
@@ -118,7 +130,7 @@ Use **`http://127.0.0.1:8000`** only (not mixed with `localhost`).
 
 ### Phase 6 offline catalogue + draft sync + PWA (#19)
 
-- **Service Worker** at `/service-worker.js` — precaches branch app shell; **never** caches `/api/`, `/accounts/`, `/admin/`, `/manage/`.
+- **Service Worker** at `/service-worker.js` — precaches branch app shell static; **network-first** for `/branch/` HTML; **never** caches `/api/`, `/accounts/`, `/admin/`, `/manage/`.
 - **IndexedDB** (`db.js`): `catalog_items`, `catalog_meta`, `pending_requests`; catalogue snapshot on online fetch; offline browse with **last-updated banner**.
 - **Offline requisição drafts:** queue in IndexedDB; replay on `online` via `sync_queue.js` → `POST /api/branch/requests/sync/` (idempotent `client_uuid`).
 - **`InternalRequest.client_uuid`** — migration `orders/0003_internalrequest_client_uuid.py`; `sync_internal_request()` in services.
@@ -510,7 +522,7 @@ Fix: `family = update_family(...)`; `refresh_from_db()` before the activity pass
 .venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice --noinput
 ```
 
-- Last full suite: **540 OK** (26 Aug 2026, after Phase 6 review fixes).
+- Last full suite: **548 OK** (26 Aug 2026, after 1205 production-readiness review fixes).
 - Fast hasher when `TESTING`. Quiet logging in tests.
 - `--keepdb` can go stale after `TransactionTestCase` (missing `VatRate` / similar). Recreate **without** `--keepdb` if the suite blows up on missing tables/rows.
 
@@ -547,7 +559,7 @@ python manage.py runserver
 ```
 
 - **Logins** (all `devpass123`): `warehouse.admin@centcompras.dev`, `warehouse.manager@…` / `manager2` / `manager3`, `warehouse.operator@…` / `operator2` (grades 1–3 as seeded). **Branch:** `branch.operator.north@…` / `branch.manager.north@…` / `branch.admin.north@…` (North), `branch.operator.south@…` / `branch.manager.south@…` (South), and `branch.dual@…` (both branches).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/company-voice/` Company Voice (all staff) · `/branch/` branch dashboard · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden; offline cache) · `/branch/requests/` requisição interna (offline drafts) · `/branch/threads/` request threads (branch side) · `/branch/receipts/` branch receipts · `/service-worker.js` branch SW · `/admin/` superuser only.
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/company-voice/` Company Voice (all staff) · `/branch/` branch dashboard · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden; offline cache) · `/branch/requests/` requisição interna (offline drafts) · `/branch/threads/` request threads (branch side) · `/branch/receipts/` branch receipts · `/service-worker.js` branch SW · `/healthz` liveness · `/admin/` superuser only.
 
 ---
 

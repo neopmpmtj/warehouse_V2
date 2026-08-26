@@ -1,10 +1,12 @@
 import json
+import threading
 import uuid
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import Client, TestCase
+from django.db import connection
+from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
 from accounts.groups import (
@@ -36,6 +38,7 @@ from .services import (
     create_internal_request,
     reject,
     submit,
+    sync_internal_request,
 )
 
 
@@ -398,6 +401,65 @@ class OfflineSyncTests(TestCase):
         )
         self.assertEqual(r.status_code, 400)
         self.assertIn("already has a line", r.json()["error"].lower())
+
+    def test_sync_rejects_invalid_json(self):
+        self._login()
+        r = self.client.post(
+            reverse("request_sync"),
+            data="{",
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["code"], "invalid_json")
+
+    def test_sync_rejects_non_object_json(self):
+        self._login()
+        r = self.client.post(
+            reverse("request_sync"),
+            data="[]",
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["code"], "invalid_json")
+
+
+class ConcurrentSyncTests(TransactionTestCase):
+    def test_concurrent_sync_same_uuid_does_not_raise(self):
+        branch = create_branch("North Conc Sync")
+        operator = _make_branch_user("conc-sync@example.com", branch, ROLE_OPERATOR)
+        VatRate.objects.get_or_create(
+            code="VAT16",
+            defaults={"label": "VAT 16%", "rate": Decimal("0.16")},
+        )
+        item = _make_item("Conc Sync Widget", wholesale="5.00", code="CSW1")
+        client_uuid = str(uuid.uuid4())
+        outcomes = []
+
+        def worker():
+            try:
+                _req, created = sync_internal_request(
+                    branch,
+                    operator,
+                    client_uuid,
+                    notes="race",
+                    lines=[{"item_id": item.id, "quantity": "1"}],
+                )
+                outcomes.append(("ok", created))
+            except Exception as exc:
+                outcomes.append(("err", type(exc).__name__))
+            finally:
+                connection.close()
+
+        threads = [threading.Thread(target=worker), threading.Thread(target=worker)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        self.assertEqual([row[0] for row in outcomes], ["ok", "ok"])
+        created_flags = sorted(row[1] for row in outcomes)
+        self.assertEqual(created_flags, [False, True])
+        self.assertEqual(InternalRequest.objects.filter(client_uuid=client_uuid).count(), 1)
 
 
 class WarehouseConsoleTests(TestCase):

@@ -151,6 +151,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `client_uuid is required.` | Offline sync POST missing UUID | Retry from the branch requests page after reconnect |
 | `client_uuid must be a valid UUID.` | Malformed offline sync payload | Refresh the page and create a new offline draft |
 | `client_uuid is already in use on another branch.` | Offline draft UUID was synced on a different branch | Switch back to the branch where the draft was created, then open `/branch/requests/` |
+| `Request body must be valid JSON.` / `Request body must be a JSON object.` | Malformed or non-object sync/create body | Retry from the branch requests page; do not POST arrays |
 | `Unknown item id …` | Stale or invalid catalogue item in offline sync payload | Refresh the catalogue online, then recreate the offline draft |
 | `Cached catalogue is for another branch. Connect to Wi-Fi to download this branch's catalogue.` | Offline browse after switching branch without refreshing | Connect to Wi-Fi on the current branch to download its catalogue |
 
@@ -159,6 +160,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | Message | Why | What to do |
 |---------|-----|------------|
 | `A subject is required.` / `Subject must be a string.` | Empty or non-text subject | Type a short title |
+| `Request body must be valid JSON.` / `Request body must be a JSON object.` | Malformed create/reply/close body | Use the website form |
 | `A message is required.` / `Message must be a string.` | Empty or non-text first message / reply | Type the message |
 | `This thread is closed. No further messages can be posted.` | Reply after close | Open a new thread |
 | `Only the person who opened the thread can close it.` | You are not the opener and cannot override | Ask the opener, or a branch manager/admin / warehouse admin |

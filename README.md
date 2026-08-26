@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 26 August 2026, 11:15 WEST.*
+*Last updated: 26 August 2026, 12:50 WEST.*
 
-**Phases 0–6 are done.** Phase 6 offline review fixes **applied** (P0/P1/P2, 26 Aug). **Phase 7 next** (production deployment readiness). OAuth + shared chrome = Phase 8; email = Phase 9. Suite **540 OK**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** Full-tree production-readiness review **applied** (26 Aug 1205). **Phase 7 next** (production deployment readiness). OAuth + shared chrome = Phase 8; email = Phase 9. Suite **548 OK**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -351,5 +351,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Production deployment readiness** (Phase 7 — **Next**) — [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - **Google OAuth production rollout + shared chrome** (Phase 8)
 - **Email automation** (Phase 9 — wire notify stubs to real email; stub exists today)
-- Integration tests (unit suites: **540 OK**)
+- Integration tests (unit suites: **548 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

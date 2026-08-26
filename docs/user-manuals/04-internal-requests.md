@@ -398,3 +398,6 @@ Offline mode shows the **last downloaded** catalogue for the **active branch**. 
 
 **Q17. I switched branch with a pending offline draft — why won't it sync?**
 Offline drafts are tied to the branch where you created them. If you switch to another branch, sync is **skipped** until you switch back and open `/branch/requests/` on that branch. Do not reuse the same offline draft UUID across branches — the server rejects it with `client_uuid is already in use on another branch.`
+
+**Q18. Shared tablet: will the next person upload my offline draft?**
+No, if you **Sign out**. Sign out clears this browser's offline draft queue. Drafts are also tied to your user id: another person who signs in on the same tablet will not auto-sync your leftover rows. Always sign out at the end of a shift.

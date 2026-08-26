@@ -103,11 +103,21 @@ def _serialize_history(log):
     }
 
 
+LIST_CAP = 200
+
+
 def _parse_body(request):
     try:
-        return json.loads(request.body or b"{}")
+        payload = json.loads(request.body or b"{}")
     except (json.JSONDecodeError, UnicodeDecodeError):
         raise ValidationError("Request body must be valid JSON.", code="invalid_json")
+    if not isinstance(payload, dict):
+        raise ValidationError("Request body must be a JSON object.", code="invalid_json")
+    return payload
+
+
+def _cap_list(queryset, cap=LIST_CAP):
+    return list(queryset[:cap])
 
 
 def _get_request_or_404(request_id, branch):
@@ -141,8 +151,8 @@ def request_list(request):
 @require_POST
 def request_create(request):
     branch = request.active_branch
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         req = create_internal_request(branch, request.user, notes=data.get("notes", ""))
     except ValidationError as exc:
         return _validation_error_response(exc)
@@ -153,8 +163,8 @@ def request_create(request):
 @require_POST
 def request_sync(request):
     branch = request.active_branch
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         req, created = sync_internal_request(
             branch,
             request.user,
@@ -185,8 +195,8 @@ def request_detail(request, request_id):
 @require_http_methods(["PATCH"])
 def request_update(request, request_id):
     req = _get_request_or_404(request_id, request.active_branch)
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         req = update_internal_request(req, request.user, notes=data.get("notes"))
     except ValidationError as exc:
         return _validation_error_response(exc)
@@ -197,8 +207,8 @@ def request_update(request, request_id):
 @require_POST
 def request_add_line(request, request_id):
     req = _get_request_or_404(request_id, request.active_branch)
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         line = add_line(
             req,
             item=data.get("item_id"),
@@ -215,8 +225,8 @@ def request_add_line(request, request_id):
 def request_update_line(request, request_id, line_id):
     req = _get_request_or_404(request_id, request.active_branch)
     line = _get_line_or_404(req, line_id)
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         line = update_line(line, request.user, quantity=data.get("quantity"))
     except ValidationError as exc:
         return _validation_error_response(exc)
@@ -252,8 +262,8 @@ def request_approve(request, request_id):
     if not can_approve_request(request.user, request.active_branch):
         return _json_error("Approval is restricted to managers and admins.", status=403, code="approval_denied")
     req = _get_request_or_404(request_id, request.active_branch)
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         req = approve(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
         return _validation_error_response(exc)
@@ -266,8 +276,8 @@ def request_reject(request, request_id):
     if not can_approve_request(request.user, request.active_branch):
         return _json_error("Rejection is restricted to managers and admins.", status=403, code="approval_denied")
     req = _get_request_or_404(request_id, request.active_branch)
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         req = reject(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
         return _validation_error_response(exc)
@@ -278,8 +288,8 @@ def request_reject(request, request_id):
 @require_POST
 def request_cancel(request, request_id):
     req = _get_request_or_404(request_id, request.active_branch)
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         req = cancel(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
         return _validation_error_response(exc)
@@ -359,7 +369,7 @@ def warehouse_request_list(request):
         except ValidationError:
             return _json_error("Invalid branch_id.", status=400)
         queryset = queryset.for_branch(branch_id)
-    requests = list(queryset)
+    requests = _cap_list(queryset.order_by("id"))
     summaries = get_issue_summaries(requests)
     return JsonResponse(
         {
@@ -440,8 +450,8 @@ def branch_approval_limit_list(request):
             status=403,
             code="approval_policy_forbidden",
         )
-    data = _parse_body(request)
     try:
+        data = _parse_body(request)
         limit_id = data.get("id")
         if limit_id is not None:
             limit = BranchApprovalLimit.objects.get(pk=limit_id)

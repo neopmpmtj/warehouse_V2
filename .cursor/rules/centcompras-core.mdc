@@ -20,7 +20,7 @@ Central warehouse + satellite branches. Django 6.1, PostgreSQL, plain HTML/JS. P
 - `orders` — internal request (requisição interna) — **built** (Phase 5 ✅); warehouse FIFO reservation at approve (D32)
 - `threads` — catalogue-gap request threads — **built** (review M/L applied)
 - `company_voice` — company-wide suggestion box `/company-voice/` — **built**; review H1/M/L applied (`docs/reviews/company-voice-review-2026-08-24-1010.md`)
-- Offline catalogue — **built** (Phase 6 ✅); review fixes applied
+- Offline catalogue — **built** (Phase 6 ✅); review fixes applied; 26 Aug 1205 production-readiness review **applied**
 
 ## Non-negotiables
 

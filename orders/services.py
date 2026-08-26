@@ -410,7 +410,25 @@ def sync_internal_request(branch, user, client_uuid, notes="", lines=None):
         client_uuid=parsed_uuid,
     )
     request.full_clean(exclude=None, validate_unique=False, validate_constraints=False)
-    request.save()
+    try:
+        with transaction.atomic():
+            request.save()
+    except IntegrityError:
+        existing = (
+            InternalRequest.objects.select_for_update()
+            .filter(client_uuid=parsed_uuid)
+            .select_related("branch")
+            .prefetch_related("lines")
+            .first()
+        )
+        if existing is None:
+            raise
+        if existing.branch_id != branch.id:
+            raise ValidationError(
+                "client_uuid is already in use on another branch.",
+                code="client_uuid_branch_mismatch",
+            )
+        return existing, False
 
     _log(
         request,

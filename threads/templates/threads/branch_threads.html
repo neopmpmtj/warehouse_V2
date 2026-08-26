@@ -45,7 +45,7 @@
     <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
     {% include "branches/includes/offline_assets.html" %}
 </head>
-<body data-branch-id="{{ branch.id }}">
+<body data-branch-id="{{ branch.id }}" data-user-id="{{ user.id }}">
     {% include "branches/includes/branch_page_header.html" %}
 
     <main>
