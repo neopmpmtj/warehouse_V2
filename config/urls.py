@@ -27,4 +27,5 @@ urlpatterns = [
     path("", include("threads.warehouse_web_urls")),
     path("api/", include("company_voice.urls")),
     path("", include("company_voice.web_urls")),
+    path("presentation/", include("presentation.web_urls")),
 ]
