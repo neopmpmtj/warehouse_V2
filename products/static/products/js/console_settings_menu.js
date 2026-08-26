@@ -34,6 +34,19 @@
         });
     }
 
+    const HELP_I18N = {
+        en: {
+            help: "Help",
+            close: "Close",
+            manualUnavailable: "Manual not available.",
+        },
+        pt: {
+            help: "Ajuda",
+            close: "Fechar",
+            manualUnavailable: "Manual indisponível.",
+        },
+    };
+
     function currentHelpLang() {
         let lang = "en";
         try {
@@ -45,6 +58,20 @@
             return "pt";
         }
         return "en";
+    }
+
+    function helpT(key) {
+        const lang = currentHelpLang();
+        return (HELP_I18N[lang] && HELP_I18N[lang][key]) || HELP_I18N.en[key] || key;
+    }
+
+    function updateHelpHref() {
+        const help = document.getElementById("settings-help");
+        if (!help) {
+            return;
+        }
+        const slug = help.getAttribute("data-help-slug") || "01-items";
+        help.setAttribute("href", manualUrl(currentHelpLang(), slug, "pdf"));
     }
 
     function manualUrl(lang, slug, ext) {
@@ -112,18 +139,18 @@
         head.className = "help-popover-head";
         const title = document.createElement("span");
         title.className = "help-popover-title";
-        title.textContent = "Help";
+        title.textContent = helpT("help");
         const close = document.createElement("button");
         close.type = "button";
         close.className = "help-popover-close";
-        close.setAttribute("aria-label", "Close");
+        close.setAttribute("aria-label", helpT("close"));
         close.textContent = "×";
         head.appendChild(title);
         head.appendChild(close);
 
         const body = document.createElement("pre");
         body.className = "help-popover-body";
-        body.textContent = mdText ?? "Manual not available.";
+        body.textContent = mdText ?? helpT("manualUnavailable");
 
         panel.appendChild(head);
         panel.appendChild(body);
@@ -151,6 +178,13 @@
     function bindAll() {
         bindSettingsMenu();
         bindHelpLauncher();
+        updateHelpHref();
+        window.addEventListener("storage", (event) => {
+            if (event.key === "cc-lang") {
+                updateHelpHref();
+            }
+        });
+        document.addEventListener("cc-lang-changed", updateHelpHref);
     }
 
     if (document.readyState === "loading") {

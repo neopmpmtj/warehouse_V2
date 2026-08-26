@@ -218,6 +218,7 @@ function setLanguage(lang) {
     renderSupplierTable();
     refreshDrawerLabels();
     refreshEntityHistoryLabels();
+    document.dispatchEvent(new CustomEvent("cc-lang-changed"));
 }
 
 let bannerTimer = null;
