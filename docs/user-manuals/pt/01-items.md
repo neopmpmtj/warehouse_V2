@@ -125,7 +125,7 @@ Escolha uma sub-família na lista **Sub-família** (*Todas as sub-famílias* = t
 Escolha uma unidade (*peça, kg, g, m, m², m³, l*) para ver só artigos medidos dessa forma.
 
 ### 4.6 Ordenação
-Clique em qualquer cabeçalho de coluna para ordenar — clique de novo para inverter. Colunas ordenáveis: **Código, Descrição, Família, Sub-família, Unidade, Reposição, IVA, Estado**.
+Clique em qualquer cabeçalho de coluna para ordenar — clique de novo para inverter. A tabela abre ordenada por **Descrição** (ascendente). Colunas ordenáveis: **Código, Descrição, Família, Sub-família, Unidade, Reposição, IVA, Estado**.
 
 ### 4.7 Contagem de resultados
 Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos correspondem.

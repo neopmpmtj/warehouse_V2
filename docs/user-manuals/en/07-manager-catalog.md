@@ -84,7 +84,7 @@ Clicking a row does nothing — there is no detail drawer.
 
 Filters combine. Search, family, sub-family, and **Below reorder only** run in the browser on the loaded list — you do not need to click Search. **Include inactive** reloads from the server.
 
-**C. Table columns** — click any column header to sort (click again to reverse). Default order is item id.
+**C. Table columns** — click any column header to sort (click again to reverse). Default order is **Description** (ascending).
 
 | Column | Meaning |
 |--------|---------|

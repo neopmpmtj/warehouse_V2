@@ -30,7 +30,7 @@ const state = {
     vat_rates: [],
     selectedIds: new Set(),
     editingId: null,
-    sortKey: null,
+    sortKey: "description",
     sortDir: "asc",
     page: 1,
     pageSize: 50,

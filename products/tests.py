@@ -3427,7 +3427,7 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="catalog-include-inactive"')
         self.assertContains(response, "th-sortable")
         self.assertContains(response, 'data-sort="internal_code"')
-        self.assertContains(response, "catalog.js?v=6")
+        self.assertContains(response, "catalog.js?v=7")
         self.assertContains(response, "catalog_i18n.js?v=8")
 
 

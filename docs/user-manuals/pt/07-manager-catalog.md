@@ -84,7 +84,7 @@ Clicar numa linha não faz nada — não há gaveta de detalhe.
 
 Os filtros combinam-se. Pesquisa, família, sub-família e **Só abaixo do ponto de encomenda** correm no browser sobre a lista carregada — não precisa de clicar em Pesquisar. **Incluir inativos** recarrega a partir do servidor.
 
-**C. Colunas da tabela** — clique em qualquer cabeçalho para ordenar (clique de novo para inverter). A ordem por defeito é o id do artigo.
+**C. Colunas da tabela** — clique em qualquer cabeçalho para ordenar (clique de novo para inverter). A ordem por defeito é **Descrição** (ascendente).
 
 | Coluna | Significado |
 |--------|---------|

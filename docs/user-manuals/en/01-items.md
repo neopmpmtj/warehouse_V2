@@ -125,7 +125,7 @@ Choose a sub-family from the **Sub-family** dropdown (*Todas as sub-famílias* =
 Choose a unit (*piece, kg, g, m, m², m³, l*) to see only items measured that way.
 
 ### 4.6 Sorting
-Click any column header to sort by it — click again to reverse. Sortable columns: **Code, Description, Family, Sub-family, Unit, Reorder, VAT, Status**.
+Click any column header to sort by it — click again to reverse. The table loads sorted by **Description** (ascending). Sortable columns: **Code, Description, Family, Sub-family, Unit, Reorder, VAT, Status**.
 
 ### 4.7 Result count
 Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos*) so you always know how many match.

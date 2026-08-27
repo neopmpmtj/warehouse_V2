@@ -39,7 +39,7 @@ const state = {
     subFamilyId: "",
     belowReorderOnly: false,
     includeInactive: false,
-    sortKey: null,
+    sortKey: "description",
     sortDir: "asc",
 };
 
