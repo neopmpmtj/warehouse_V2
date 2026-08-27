@@ -2436,6 +2436,9 @@ class SeedDevDataCommandTests(TestCase):
         self.assertIn(Decimal("8.50"), costs)
         self.assertIn(Decimal("9.45"), costs)
         self.assertGreaterEqual(len(timeline), 4)
+        start, end = resolve_cost_trend_window("last_6_months")
+        payload = get_item_primary_cost_series(item, start=start, end=end)
+        self.assertFalse(payload["summary"]["primary_switched_in_range"])
 
 
 class CostTrendSeriesTests(ItemTestCaseMixin, TestCase):
@@ -2467,6 +2470,105 @@ class CostTrendSeriesTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(costs[0], Decimal("5.00"))
         self.assertEqual(costs[-1], Decimal("12.00"))
         self.assertEqual(len(costs), 3)
+
+    def test_build_timeline_records_same_cost_primary_switch(self):
+        supplier_b = self.create_test_supplier(name="Trend Supplier B")
+        sip_b = create_supplier_item_price(
+            supplier_b,
+            self.item,
+            Decimal("5.00"),
+            primary=False,
+            user=self.user,
+        )
+        update_supplier_item_price(sip_b, user=self.user, primary=True)
+        timeline = build_item_primary_cost_timeline(self.item)
+        self.assertEqual(len(timeline), 2)
+        self.assertEqual(timeline[0]["supplier_id"], self.sip.supplier_id)
+        self.assertEqual(timeline[1]["supplier_id"], supplier_b.id)
+        self.assertEqual(timeline[0]["cost"], Decimal("5.00"))
+        self.assertEqual(timeline[1]["cost"], Decimal("5.00"))
+
+    def test_primary_switched_false_for_cost_only_updates(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        update_supplier_item_price(
+            self.sip, user=self.user, cost_price=Decimal("11.00")
+        )
+        start = timezone.now() - timedelta(days=1)
+        end = timezone.now() + timedelta(hours=1)
+        payload = get_item_primary_cost_series(self.item, start=start, end=end)
+        self.assertFalse(payload["summary"]["primary_switched_in_range"])
+
+    def test_primary_switched_false_for_secondary_supplier_create(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        supplier_b = self.create_test_supplier(name="Trend Secondary")
+        create_supplier_item_price(
+            supplier_b,
+            self.item,
+            Decimal("6.00"),
+            primary=False,
+            user=self.user,
+        )
+        start = timezone.now() - timedelta(days=1)
+        end = timezone.now() + timedelta(hours=1)
+        payload = get_item_primary_cost_series(self.item, start=start, end=end)
+        self.assertFalse(payload["summary"]["primary_switched_in_range"])
+
+    def test_primary_switched_true_when_promoting_secondary(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        supplier_b = self.create_test_supplier(name="Trend Promoted")
+        sip_b = create_supplier_item_price(
+            supplier_b,
+            self.item,
+            Decimal("6.00"),
+            primary=False,
+            user=self.user,
+        )
+        update_supplier_item_price(sip_b, user=self.user, primary=True)
+        start = timezone.now() - timedelta(days=1)
+        end = timezone.now() + timedelta(hours=1)
+        payload = get_item_primary_cost_series(self.item, start=start, end=end)
+        self.assertTrue(payload["summary"]["primary_switched_in_range"])
+
+    def test_get_item_primary_cost_series_carry_in_across_primary_switch(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from .models import SupplierItemPriceChangeLog
+
+        supplier_b = self.create_test_supplier(name="CarryIn Supplier B")
+        sip_b = create_supplier_item_price(
+            supplier_b,
+            self.item,
+            Decimal("5.00"),
+            primary=False,
+            user=self.user,
+        )
+        genesis_log = self.sip.change_logs.order_by("created_at").first()
+        SupplierItemPriceChangeLog.objects.filter(pk=genesis_log.pk).update(
+            created_at=timezone.now() - timedelta(days=10)
+        )
+        update_supplier_item_price(sip_b, user=self.user, primary=True)
+        switch_time = timezone.now() - timedelta(hours=1)
+        SupplierItemPriceChangeLog.objects.filter(
+            supplier_item_price__item=self.item,
+            created_at__gte=timezone.now() - timedelta(minutes=5),
+        ).update(created_at=switch_time)
+        start = timezone.now() - timedelta(days=1)
+        end = timezone.now() + timedelta(hours=1)
+        payload = get_item_primary_cost_series(self.item, start=start, end=end)
+        supplier_names = [point["supplier_name"] for point in payload["points"]]
+        self.assertEqual(supplier_names[0], self.sip.supplier.name)
+        self.assertIn(supplier_b.name, supplier_names[1:])
 
     def test_resolve_cost_trend_window_rejects_unknown_period(self):
         with self.assertRaises(ValidationError) as ctx:
@@ -2519,6 +2621,39 @@ class CostTrendSeriesTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="cost-chart"')
         self.assertContains(response, 'id="cost-period"')
         self.assertContains(response, 'id="cost-item"')
+
+    def test_branch_only_user_cannot_access_cost_series(self):
+        from branches.capabilities import ROLE_OPERATOR
+        from branches.models import Branch
+        from branches.services import assign_membership
+
+        branch_user = get_user_model().objects.create_user(
+            email="branch-cost@example.com",
+            password="test-pass-123",
+        )
+        branch = Branch.objects.create(name="Cost Trends Branch")
+        assign_membership(branch_user, branch, ROLE_OPERATOR)
+        self.client.force_login(branch_user)
+        response = self.client.get(
+            reverse("manage_item_cost_series", args=[self.item.id]),
+            {"period": "last_30_days"},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_branch_only_user_cannot_access_cost_trends_page(self):
+        from branches.capabilities import ROLE_OPERATOR
+        from branches.models import Branch
+        from branches.services import assign_membership
+
+        branch_user = get_user_model().objects.create_user(
+            email="branch-cost-page@example.com",
+            password="test-pass-123",
+        )
+        branch = Branch.objects.create(name="Cost Trends Page Branch")
+        assign_membership(branch_user, branch, ROLE_OPERATOR)
+        self.client.force_login(branch_user)
+        response = self.client.get(reverse("cost_trends_console"))
+        self.assertEqual(response.status_code, 403)
 
 
 class BulkLifecycleAtomicityTests(ItemTestCaseMixin, TestCase):
