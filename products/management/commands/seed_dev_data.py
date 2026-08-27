@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
 from decimal import Decimal
 
 from accounts.groups import (
@@ -18,6 +20,7 @@ from products.models import (
     SubFamily,
     Supplier,
     SupplierItemPrice,
+    SupplierItemPriceChangeLog,
     VatRate,
 )
 from products.seed_catalog_data import (
@@ -27,14 +30,15 @@ from products.seed_catalog_data import (
     SUB_FAMILIES,
     SUPPLIERS,
     SUPPLIER_ITEM_PRICES,
+    genesis_primary_for_item,
 )
 from products.services import (
+    create_and_activate_item,
     create_family,
     create_item,
     create_sub_family,
     create_supplier,
     create_supplier_item_price,
-    reactivate_item,
     update_family,
     update_item,
     update_supplier,
@@ -73,6 +77,15 @@ DUAL_BRANCH_MEMBERSHIPS = [
     ("Norte", "filial.dual@centcompras.dev", BranchMembership.Role.OPERATOR),
     ("Sul", "filial.dual@centcompras.dev", BranchMembership.Role.OPERATOR),
 ]
+
+COST_TRENDS_DEMO_CODE = "CEM-50"
+COST_TRENDS_DEMO_COSTS = (
+    Decimal("8.50"),
+    Decimal("8.75"),
+    Decimal("9.10"),
+    Decimal("9.45"),
+)
+COST_TRENDS_DEMO_DAYS_AGO = (120, 90, 60, 30)
 
 
 def _demo_selling_prices(internal_code):
@@ -146,6 +159,118 @@ class Command(BaseCommand):
             )
         )
         return user
+
+    def _ensure_genesis_primary(
+        self,
+        warehouse_user,
+        item,
+        internal_code,
+        family_name,
+        suppliers_by_name,
+    ):
+        if SupplierItemPrice.objects.filter(item=item, primary=True).exists():
+            return
+        supplier_name, cost_price = genesis_primary_for_item(
+            internal_code,
+            family_name,
+        )
+        supplier = suppliers_by_name.get(supplier_name.casefold())
+        if supplier is None:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Skipping primary for {internal_code}: supplier "
+                    f"'{supplier_name}' not found"
+                )
+            )
+            return
+        existing = SupplierItemPrice.objects.filter(
+            supplier=supplier,
+            item=item,
+        ).first()
+        if existing:
+            update_supplier_item_price(
+                existing,
+                user=warehouse_user,
+                cost_price=cost_price,
+                primary=True,
+            )
+            return
+        create_supplier_item_price(
+            supplier=supplier,
+            item=item,
+            cost_price=cost_price,
+            primary=True,
+            user=warehouse_user,
+        )
+
+    def _cost_logs_for_sip(self, sip):
+        logs = []
+        for log in sip.change_logs.order_by("created_at", "id"):
+            if log.action == SupplierItemPriceChangeLog.Action.CREATED:
+                logs.append(log)
+            elif log.changes.get("cost_price"):
+                logs.append(log)
+        return logs
+
+    def _backdate_cost_trends_logs(self, logs):
+        now = timezone.now()
+        for log, days in zip(logs, COST_TRENDS_DEMO_DAYS_AGO):
+            SupplierItemPriceChangeLog.objects.filter(pk=log.pk).update(
+                created_at=now - timedelta(days=days)
+            )
+
+    def _seed_cost_trends_demo(self, warehouse_user, items_by_code):
+        """Backdated primary cost steps on CEM-50 for the cost-trends demo chart."""
+        item = items_by_code.get(COST_TRENDS_DEMO_CODE.casefold())
+        if item is None:
+            return
+        sip = (
+            SupplierItemPrice.objects.filter(item=item, primary=True)
+            .select_related("supplier")
+            .first()
+        )
+        if sip is None:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Skipping cost trends demo: no primary price for {COST_TRENDS_DEMO_CODE}"
+                )
+            )
+            return
+
+        target_final = COST_TRENDS_DEMO_COSTS[-1]
+        cost_logs = self._cost_logs_for_sip(sip)
+        if len(cost_logs) >= len(COST_TRENDS_DEMO_COSTS) and sip.cost_price == target_final:
+            self._backdate_cost_trends_logs(cost_logs[-len(COST_TRENDS_DEMO_COSTS) :])
+            self.stdout.write(
+                f"Cost trends demo: backdated {COST_TRENDS_DEMO_CODE} price history"
+            )
+            return
+
+        try:
+            start_idx = COST_TRENDS_DEMO_COSTS.index(sip.cost_price)
+        except ValueError:
+            start_idx = -1
+        for cost in COST_TRENDS_DEMO_COSTS[start_idx + 1 :]:
+            update_supplier_item_price(
+                sip,
+                user=warehouse_user,
+                cost_price=cost,
+            )
+            sip.refresh_from_db()
+
+        cost_logs = self._cost_logs_for_sip(sip)
+        if len(cost_logs) < len(COST_TRENDS_DEMO_COSTS):
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Cost trends demo: expected {len(COST_TRENDS_DEMO_COSTS)} "
+                    f"cost logs on {COST_TRENDS_DEMO_CODE}, found {len(cost_logs)}"
+                )
+            )
+            return
+        self._backdate_cost_trends_logs(cost_logs[-len(COST_TRENDS_DEMO_COSTS) :])
+        self.stdout.write(
+            f"Cost trends demo: seeded {COST_TRENDS_DEMO_CODE} price history"
+        )
 
     def _seed_sample_requests(self, user_model):
         """Idempotently seed one draft + one approved requisição for fulfilment practice."""
@@ -393,6 +518,11 @@ class Command(BaseCommand):
                     self.style.SUCCESS(f"Created supplier: {supplier.name}")
                 )
 
+            suppliers_by_name = {
+                supplier.name.casefold(): supplier
+                for supplier in Supplier.objects.all()
+            }
+
             for row in ITEMS:
                 (
                     internal_code,
@@ -430,27 +560,64 @@ class Command(BaseCommand):
                         existing,
                         **update_fields,
                     )
+                    if is_active:
+                        self._ensure_genesis_primary(
+                            warehouse_user,
+                            existing,
+                            internal_code,
+                            family_name,
+                            suppliers_by_name,
+                        )
                     self.stdout.write(
                         f"Exists item: {existing.internal_code} — {existing.description}"
                     )
                     continue
 
-                item = create_item(
-                    user=warehouse_user,
-                    family=family,
-                    description=description,
-                    unit_of_measure=unit,
-                    vat_rate=vat_rate,
-                    internal_code=internal_code,
-                    reorder_level=reorder_level,
-                    retail_price=retail,
-                    wholesale_price=wholesale,
-                    special_price=special,
-                    sub_family=sub_family,
-                    reason="seed_dev_data",
-                )
                 if is_active:
-                    reactivate_item(warehouse_user, item, reason="Genesis")
+                    supplier_name, cost_price = genesis_primary_for_item(
+                        internal_code,
+                        family_name,
+                    )
+                    supplier = suppliers_by_name.get(supplier_name.casefold())
+                    if supplier is None:
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"Skipping {internal_code}: supplier "
+                                f"'{supplier_name}' not found"
+                            )
+                        )
+                        continue
+                    item = create_and_activate_item(
+                        warehouse_user,
+                        family=family,
+                        description=description,
+                        unit_of_measure=unit,
+                        vat_rate=vat_rate,
+                        supplier=supplier,
+                        cost_price=cost_price,
+                        internal_code=internal_code,
+                        reorder_level=reorder_level,
+                        retail_price=retail,
+                        wholesale_price=wholesale,
+                        special_price=special,
+                        sub_family=sub_family,
+                        reason="Genesis",
+                    )
+                else:
+                    item = create_item(
+                        user=warehouse_user,
+                        family=family,
+                        description=description,
+                        unit_of_measure=unit,
+                        vat_rate=vat_rate,
+                        internal_code=internal_code,
+                        reorder_level=reorder_level,
+                        retail_price=retail,
+                        wholesale_price=wholesale,
+                        special_price=special,
+                        sub_family=sub_family,
+                        reason="seed_dev_data",
+                    )
                 self.stdout.write(
                     self.style.SUCCESS(
                         f"Created item: {item.internal_code} — {item.description}"
@@ -466,10 +633,6 @@ class Command(BaseCommand):
                         f"Family activity: {family.name} -> {family_data['is_active']}"
                     )
 
-            suppliers_by_name = {
-                supplier.name.casefold(): supplier
-                for supplier in Supplier.objects.all()
-            }
             items_by_code = {
                 item.internal_code.casefold(): item
                 for item in Item.objects.all()
@@ -490,11 +653,13 @@ class Command(BaseCommand):
                     supplier=supplier, item=item
                 ).first()
                 if existing_sip:
+                    update_fields = {"cost_price": cost_price}
+                    if primary or not existing_sip.primary:
+                        update_fields["primary"] = primary
                     update_supplier_item_price(
                         existing_sip,
                         user=warehouse_user,
-                        cost_price=cost_price,
-                        primary=primary,
+                        **update_fields,
                     )
                 else:
                     create_supplier_item_price(
@@ -507,6 +672,8 @@ class Command(BaseCommand):
                 self.stdout.write(
                     f"Supplier price: {supplier.name} -> {item.internal_code} @ {cost_price}"
                 )
+
+            self._seed_cost_trends_demo(warehouse_user, items_by_code)
 
         ensure_default_approval_limits()
         ensure_default_branch_approval_limits()

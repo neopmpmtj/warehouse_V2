@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost trends — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            var lang = "en";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "en";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
+            if (String(lang).toLowerCase().indexOf("pt") === 0) {
+                lang = "pt-PT";
+            } else {
+                lang = "en";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=18">
+    <link rel="stylesheet" href="{% static 'products/css/cost_trends.css' %}?v=1">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-title">
+            {% include "products/includes/console_eyebrow.html" %}
+            <h1 data-i18n="title">Cost trends</h1>
+            <p class="cost-trends-subtitle" data-i18n="subtitle">Reference purchase cost (primary supplier)</p>
+        </div>
+        <div class="topbar-actions">
+            {% include "products/includes/account_settings.html" %}
+        </div>
+    </header>
+
+    <main class="page">
+        <section class="cost-trends-toolbar" aria-label="Filters">
+            <label>
+                <span data-i18n="periodLabel">Period</span>
+                <select id="cost-period" aria-label="Period">
+                    <option value="calendar_year" data-i18n="period_calendar_year">Calendar year (1 Jan – 31 Dec)</option>
+                    <option value="last_6_months" data-i18n="period_last_6_months" selected>Last 6 months</option>
+                    <option value="last_3_months" data-i18n="period_last_3_months">Last 3 months</option>
+                    <option value="last_30_days" data-i18n="period_last_30_days">Last 30 days</option>
+                    <option value="last_7_days" data-i18n="period_last_7_days">Last 7 days</option>
+                    <option value="last_1_day" data-i18n="period_last_1_day">Last 24 hours</option>
+                </select>
+            </label>
+            <label>
+                <span data-i18n="itemLabel">Item</span>
+                <select id="cost-item" aria-label="Item"></select>
+            </label>
+        </section>
+
+        <p id="banner" class="banner" hidden></p>
+
+        <div class="cost-trends-summary" id="cost-summary">
+            <span><span data-i18n="startCost">Start cost</span>: <strong id="summary-start">—</strong></span>
+            <span><span data-i18n="endCost">End cost</span>: <strong id="summary-end">—</strong></span>
+            <span><span data-i18n="changePct">Change</span>: <strong id="summary-pct">—</strong></span>
+        </div>
+
+        <section class="cost-trends-chart-card" aria-label="Cost chart">
+            <div class="cost-trends-chart-wrap">
+                <canvas id="cost-chart" role="img" aria-label="Primary buying cost chart"></canvas>
+            </div>
+            <p id="primary-switch-note" class="cost-trends-note" hidden data-i18n="primarySwitchNote">
+                Primary supplier changed in this period — steps may reflect sourcing, not only market movement.
+            </p>
+        </section>
+    </main>
+
+    <script src="{% static 'products/js/cost_trends_i18n.js' %}?v=1"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
+    <script src="{% static 'products/js/cost_trends.js' %}?v=1"></script>
+</body>
+</html>

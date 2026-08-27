@@ -104,31 +104,50 @@ SUPPLIERS = (
     },
 )
 
-# supplier_name, internal_code, cost_price, primary
+# supplier_name, internal_code, cost_price, primary (secondary rows only — primary at Genesis)
 SUPPLIER_ITEM_PRICES = (
-    ("Cimentos Nacionais", "CEM-50", "8.50", True),
-    ("Cimentos Nacionais", "CEM-25", "4.95", False),
-    ("Cimentos Nacionais", "CEM-40", "9.80", False),
     ("ConstruSupply Lda", "CEM-50", "8.75", False),
-    ("ConstruSupply Lda", "PIPE-20", "3.10", True),
     ("ConstruSupply Lda", "STEEL-8", "2.40", False),
-    ("Materiais do Porto SA", "SAND-1KG", "0.90", True),
     ("Materiais do Porto SA", "GRAVEL-10", "1.20", False),
     ("Comércio Ibérico de Aço", "STEEL-6", "1.85", False),
-    ("Comércio Ibérico de Aço", "STEEL-10", "2.90", True),
-    ("Madeiras do Norte", "TIMBER-2X4", "2.15", True),
     ("Madeiras do Norte", "TIMBER-PLY", "12.50", False),
-    ("ElectroPorto", "CABLE-2.5", "28.00", True),
     ("ElectroPorto", "SOCKET", "1.40", False),
-    ("AquaFlow Canalização", "VALVE-15", "2.60", True),
     ("AquaFlow Canalização", "TAP-CHROME", "18.90", False),
-    ("ColorWorks Tintas", "PAINT-WHITE", "16.40", True),
     ("ColorWorks Tintas", "PAINT-RED", "8.20", False),
-    ("SafeGuard Equipamentos", "GLOVES-L", "1.95", True),
     ("SafeGuard Equipamentos", "HELMET", "4.60", False),
-    ("FixAll Fixações", "BOLT-M8", "0.55", True),
     ("FixAll Fixações", "SCREW-50", "1.15", False),
 )
+
+# Default primary supplier per family for Genesis (active items)
+FAMILY_PRIMARY_SUPPLIER = {
+    "Cimento": "Cimentos Nacionais",
+    "Agregados": "Materiais do Porto SA",
+    "Tubos": "ConstruSupply Lda",
+    "Aço": "Comércio Ibérico de Aço",
+    "Madeira": "Madeiras do Norte",
+    "Ferramentas": "ConstruSupply Lda",
+    "Material elétrico": "ElectroPorto",
+    "Canalização": "AquaFlow Canalização",
+    "Tintas": "ColorWorks Tintas",
+    "Segurança": "SafeGuard Equipamentos",
+    "Fixações": "FixAll Fixações",
+    "Diversos": "ConstruSupply Lda",
+    "Stock legado": "ConstruSupply Lda",
+}
+
+# internal_code -> (supplier_name, cost_price) overrides for Genesis primary
+ITEM_PRIMARY_SUPPLIER = {
+    "CEM-50": ("Cimentos Nacionais", "8.50"),
+    "PIPE-20": ("ConstruSupply Lda", "3.10"),
+    "SAND-1KG": ("Materiais do Porto SA", "0.90"),
+    "STEEL-10": ("Comércio Ibérico de Aço", "2.90"),
+    "TIMBER-2X4": ("Madeiras do Norte", "2.15"),
+    "CABLE-2.5": ("ElectroPorto", "28.00"),
+    "VALVE-15": ("AquaFlow Canalização", "2.60"),
+    "PAINT-WHITE": ("ColorWorks Tintas", "16.40"),
+    "GLOVES-L": ("SafeGuard Equipamentos", "1.95"),
+    "BOLT-M8": ("FixAll Fixações", "0.55"),
+}
 
 # internal_code, description, family, unit, reorder_level, is_active, vat_rate_code
 ITEMS = (
@@ -194,3 +213,19 @@ ITEMS = (
     ("LEG-002", "Artigo legado B", "Stock legado", "piece", "0", True, "VAT_EXEMPT"),
     ("LEG-003", "Artigo legado C", "Stock legado", "kg", "0", True, "VAT_EXEMPT"),
 )
+
+
+def genesis_primary_for_item(internal_code, family_name):
+    """Return (supplier_name, cost_price str) for active item Genesis seeding."""
+    from decimal import Decimal
+
+    key = (internal_code or "").upper()
+    override = ITEM_PRIMARY_SUPPLIER.get(key)
+    if override is not None:
+        return override
+    supplier = FAMILY_PRIMARY_SUPPLIER[family_name]
+    total = sum(ord(ch) for ch in internal_code)
+    cost = (Decimal("1") + Decimal(total % 499) / Decimal("100")).quantize(
+        Decimal("0.01")
+    )
+    return supplier, str(cost)

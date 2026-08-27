@@ -52,11 +52,13 @@ Manager catalog (/manage/catalog/)  →  read the joined picture
 
 | This page **does** | This page **does not** |
 |--------------------|------------------------|
-| Show **active** items in **active** families | Show deactivated items, or items whose family is inactive |
-| Show the **cached** on-hand quantity | Let you type a quantity (stock is a ledger — see [goods receipt](03-goods-receipts.md)) |
-| Show buying + three selling prices | Let you change prices (use the [item console](01-items.md)) |
-| Flag items at or below reorder | Raise a purchase order (use [purchase orders](02-purchase-orders.md)) |
-| List suppliers that have a price for the item | Open a drawer or history |
+| Show **active** items in **active** families by default | Let you edit items, prices, or stock |
+| Show deactivated items and items under inactive families when **Include inactive** is ticked | Open a drawer or history |
+| Show the **cached** on-hand quantity | Raise a purchase order (use [purchase orders](02-purchase-orders.md)) |
+| Show buying + three selling prices | |
+| Flag items at or below reorder | |
+| List suppliers that have a price for the item (primary listed first, marked ★) | |
+| Sort any column by clicking its header | |
 
 Clicking a row does nothing — there is no detail drawer.
 
@@ -78,10 +80,11 @@ Clicking a row does nothing — there is no detail drawer.
 | Family | *All families* | *Todas as famílias* | Restrict to one family |
 | Sub-family | *All sub-families* | *Todas as sub-famílias* | Restrict to one sub-family (list scoped to the family filter when set) |
 | Checkbox | **Below reorder only** | **Só abaixo do ponto de encomenda** | Hide items that are OK |
+| Checkbox | **Include inactive** | **Incluir inativos** | Reload the list with deactivated items and items whose family is inactive (off by default) |
 
-Filters combine. They run in the browser on the loaded list — you do not need to click Search.
+Filters combine. Search, family, sub-family, and **Below reorder only** run in the browser on the loaded list — you do not need to click Search. **Include inactive** reloads from the server.
 
-**C. Table columns**
+**C. Table columns** — click any column header to sort (click again to reverse). Default order is item id.
 
 | Column | Meaning |
 |--------|---------|
@@ -96,10 +99,10 @@ Filters combine. They run in the browser on the loaded list — you do not need 
 | **Reorder** | Reorder level set on the item |
 | **Buying** | Cost we pay — see §5 |
 | **Retail / Wholesale / Special** | The three **manual** selling prices |
-| **Suppliers** | Suppliers that have a price for this item; the **primary** is marked ★ |
-| **Status** | **Below reorder** (warning pill) or **OK** |
+| **Suppliers** | Active suppliers that have a price for this item; the **primary** is listed **first** and marked ★ |
+| **Status** | **Inactive** (muted pill) for deactivated items; otherwise **Below reorder** (warning pill) or **OK** |
 
-Rows at or below reorder are highlighted with a warning tint **and** a Status pill. The tint follows the theme: pale amber on light, dark amber on dark, so the row text stays readable.
+Rows at or below reorder are highlighted with a warning tint **and** a Status pill (unless the item is inactive). Deactivated items and items under an inactive family use muted row text. The tint follows the theme: pale amber on light, dark amber on dark, so the row text stays readable.
 
 ---
 
@@ -128,7 +131,7 @@ The **Buying** column is one number per item:
 2. Otherwise the **cheapest** cost among **active** suppliers is shown.
 3. If no active supplier has a price, Buying is **—**.
 
-The **Suppliers** column lists names (comma-separated). Deactivated suppliers are omitted. **—** means no active supplier price yet — add one in the item console before you can raise a purchase order for that supplier.
+The **Suppliers** column lists names (comma-separated). The **primary** supplier is always **first**, then the rest alphabetically. Deactivated suppliers are omitted. **—** means no active supplier price yet — add one in the item console before you can raise a purchase order for that supplier.
 
 Prices here are **not** a frozen PO snapshot; they follow the live supplier list. Approved purchase-order totals stay frozen on the PO — see [purchase orders](02-purchase-orders.md) §8.
 
@@ -139,12 +142,12 @@ Prices here are **not** a frozen PO snapshot; they follow the live supplier list
 | Message (exact, EN) | Why | What to do |
 |---------------------|-----|------------|
 | `No items to show.` | There are no active items in active families | Create/activate items in the [item console](01-items.md) |
-| `No items match these filters.` | Search, family, sub-family, or “below reorder only” hid every row | Clear search, set family/sub-family to *All*, untick the checkbox |
+| `No items match these filters.` | Search, family, sub-family, or “below reorder only” hid every row | Clear search, set family/sub-family to *All*, untick the checkboxes |
 | `Could not load the catalog.` | The catalog API failed | Refresh the page; if it persists, ask an administrator |
 | `The request could not be completed.` | A request failed without a specific message | Refresh; try again |
 | `Catalogue view permission required` | You are not a warehouse user (typical for branch-only logins) | Use `/branch/catalog/` instead, or ask head office for a warehouse group |
 
-The family dropdown can include **inactive** families (it reuses the families list). The table never lists items under an inactive family, so picking one of those families yields *No items match these filters.*
+The family dropdown can include **inactive** families (it reuses the families list). By default the table never lists items under an inactive family — tick **Include inactive** to load them. Picking an inactive family without that box ticked yields *No items match these filters.*
 
 ---
 
@@ -184,7 +187,7 @@ That supplier is the item’s **primary** (preferred). Its cost is the Buying fi
 Deliberate. Warehouse staff see on-hand, reserved, and available here. Branch staff see only **In stock / Low / None** on `/branch/catalog/` (from **available**, not raw on-hand) — see [Branches & Requisição interna](04-internal-requests.md) §3.
 
 **Q5. I deactivated an item and it vanished from this list — is it deleted?**
-No. Deactivated items (and items whose family is inactive) are excluded from this view. Reactivate in the item console to bring them back.
+No. Deactivated items (and items whose family is inactive) are excluded from the default view. Tick **Include inactive** to see them again, or reactivate in the item console.
 
 **Q6. On hand is 0 but Status says OK — is that a bug?**
 Not if **Reorder** is 0. A zero reorder level means “do not flag”. Set a reorder level greater than 0 on the item if you want the warning. Status uses **available**, so 10 on hand with 10 reserved also flags as below reorder when reorder > 0.
@@ -200,3 +203,13 @@ No — codes are unique (case-insensitive) and stored **uppercase**. That rule i
 
 **Q10. Why are some rows tinted amber?**
 Those items are **Below reorder**. Status **OK** keeps the normal table background. The tint follows the theme (pale amber in light, dark amber in dark) so the text stays readable.
+
+---
+
+## 6. Cost trends (demo chart)
+
+**URL:** `/manage/cost-trends/` — linked from the dashboard **Visualizations** section (**Cost trends** card).
+
+Read-only chart of **reference purchase cost** (primary supplier’s catalogue cost) over time, replayed from supplier price change logs. Use the **Period** filter (calendar year, last 6/3 months, 30 days, 7 days, 24 hours) and **Item** picker. The summary row shows start cost, end cost, and percentage change over the selected window — intended as the basis for a future inflation chart.
+
+If the primary supplier changed inside the period, the note under the chart warns that steps may reflect sourcing change, not only market movement.

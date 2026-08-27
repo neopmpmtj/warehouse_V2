@@ -43,6 +43,10 @@
                 <input type="checkbox" id="catalog-below-reorder">
                 <span data-i18n="belowReorderOnly">Below reorder only</span>
             </label>
+            <label class="control-inline">
+                <input type="checkbox" id="catalog-include-inactive">
+                <span data-i18n="includeInactive">Include inactive</span>
+            </label>
             <div class="toolbar-spacer"></div>
         </section>
 
@@ -52,21 +56,96 @@
             <table class="grid">
                 <thead>
                     <tr>
-                        <th data-i18n="colCode">Code</th>
-                        <th data-i18n="colDescription">Description</th>
-                        <th data-i18n="colFamily">Family</th>
-                        <th data-i18n="colSubFamily">Sub-family</th>
-                        <th data-i18n="colUnit">Unit</th>
-                        <th data-i18n="colStock">On hand</th>
-                        <th data-i18n="colReserved">Reserved</th>
-                        <th data-i18n="colAvailable">Available</th>
-                        <th data-i18n="colReorder">Reorder</th>
-                        <th data-i18n="colBuying">Buying</th>
-                        <th data-i18n="colRetail">Retail</th>
-                        <th data-i18n="colWholesale">Wholesale</th>
-                        <th data-i18n="colSpecial">Special</th>
-                        <th data-i18n="colSuppliers">Suppliers</th>
-                        <th data-i18n="colStatus">Status</th>
+                        <th class="th-sortable" data-sort="internal_code" data-i18n-col="colCode" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colCode">Code</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="description" data-i18n-col="colDescription" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colDescription">Description</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="family" data-i18n-col="colFamily" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colFamily">Family</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="sub_family" data-i18n-col="colSubFamily" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colSubFamily">Sub-family</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="unit_of_measure" data-i18n-col="colUnit" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colUnit">Unit</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="quantity" data-i18n-col="colStock" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colStock">On hand</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="reserved" data-i18n-col="colReserved" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colReserved">Reserved</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="available" data-i18n-col="colAvailable" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colAvailable">Available</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="reorder_level" data-i18n-col="colReorder" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colReorder">Reorder</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="buying_price" data-i18n-col="colBuying" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colBuying">Buying</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="retail_price" data-i18n-col="colRetail" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colRetail">Retail</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="wholesale_price" data-i18n-col="colWholesale" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colWholesale">Wholesale</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="special_price" data-i18n-col="colSpecial" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colSpecial">Special</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="suppliers" data-i18n-col="colSuppliers" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colSuppliers">Suppliers</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
+                        <th class="th-sortable" data-sort="status" data-i18n-col="colStatus" aria-sort="none">
+                            <button type="button" class="sort-btn">
+                                <span data-i18n="colStatus">Status</span>
+                                <span class="sort-indicator" aria-hidden="true"></span>
+                            </button>
+                        </th>
                     </tr>
                 </thead>
                 <tbody id="catalog-body"></tbody>
@@ -75,9 +154,9 @@
         <p id="catalog-empty" class="empty-note" hidden data-i18n="empty">No items to show.</p>
     </main>
 
-    <script src="{% static 'products/js/catalog_i18n.js' %}?v=7"></script>
+    <script src="{% static 'products/js/catalog_i18n.js' %}?v=8"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
     <script src="{% static 'products/js/console_escape_close.js' %}?v=1"></script>
-    <script src="{% static 'products/js/catalog.js' %}?v=5"></script>
+    <script src="{% static 'products/js/catalog.js' %}?v=6"></script>
 </body>
 </html>

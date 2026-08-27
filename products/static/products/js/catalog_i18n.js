@@ -14,6 +14,7 @@ const CATALOG_I18N = {
         allFamilies: "All families",
         allSubFamilies: "All sub-families",
         belowReorderOnly: "Below reorder only",
+        includeInactive: "Include inactive",
         colCode: "Code",
         colDescription: "Description",
         colFamily: "Family",
@@ -31,6 +32,11 @@ const CATALOG_I18N = {
         colStatus: "Status",
         statusBelowReorder: "Below reorder",
         statusOk: "OK",
+        statusInactive: "Inactive",
+        inactive: "inactive",
+        sortBy: "Sort by {column}",
+        sortActiveAsc: "{column}, sorted ascending",
+        sortActiveDesc: "{column}, sorted descending",
         noBuyingPrice: "—",
         noSuppliers: "—",
         empty: "No items to show.",
@@ -53,6 +59,7 @@ const CATALOG_I18N = {
         allFamilies: "Todas as famílias",
         allSubFamilies: "Todas as sub-famílias",
         belowReorderOnly: "Só abaixo do ponto de encomenda",
+        includeInactive: "Incluir inativos",
         colCode: "Código",
         colDescription: "Descrição",
         colFamily: "Família",
@@ -70,6 +77,11 @@ const CATALOG_I18N = {
         colStatus: "Estado",
         statusBelowReorder: "Abaixo do ponto de encomenda",
         statusOk: "OK",
+        statusInactive: "Inativo",
+        inactive: "inativo",
+        sortBy: "Ordenar por {column}",
+        sortActiveAsc: "{column}, ordem ascendente",
+        sortActiveDesc: "{column}, ordem descendente",
         noBuyingPrice: "—",
         noSuppliers: "—",
         empty: "Sem artigos para mostrar.",
@@ -81,4 +93,3 @@ const CATALOG_I18N = {
 
 // Dashboard selector stores "pt"; the old Settings popover stored "pt-PT".
 CATALOG_I18N.pt = CATALOG_I18N["pt-PT"];
-

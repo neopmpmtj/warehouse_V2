@@ -157,6 +157,8 @@ function setItemFormEditable(editable, isNew, item) {
         "field-retail-price",
         "field-wholesale-price",
         "field-special-price",
+        "field-supplier",
+        "field-cost-price",
         "field-reason",
     ].forEach((id) => {
         const field = document.getElementById(id);
@@ -543,6 +545,16 @@ function fillFormLookups() {
             label: vatRate.label,
         }))
     );
+    fillSelect(
+        document.getElementById("field-supplier"),
+        (state.suppliers || [])
+            .filter((supplier) => supplier.is_active)
+            .map((supplier) => ({
+                value: String(supplier.id),
+                label: supplier.name,
+            })),
+        t("chooseSupplier"),
+    );
     fillSubFamilyField();
 }
 
@@ -778,6 +790,14 @@ function refreshDrawerLabels() {
     document.getElementById("item-save").hidden = !canSave;
     document.getElementById("reason-field").hidden = !canSave;
     document.getElementById("new-family-inline").hidden = !perms.addFamily;
+    const genesisSupplierFields = document.getElementById("genesis-supplier-fields");
+    if (genesisSupplierFields) {
+        genesisSupplierFields.hidden = !isNew;
+    }
+    const itemSupplierPrices = document.getElementById("item-supplier-prices");
+    if (itemSupplierPrices) {
+        itemSupplierPrices.hidden = isNew;
+    }
     setItemFormEditable(canSave, isNew, item);
     const lifeButton = document.getElementById("drawer-lifecycle");
     if (isNew || !perms.changeItem) {
@@ -1682,6 +1702,8 @@ function formPayload(isPatch) {
     };
     if (!isPatch) {
         payload.internal_code = document.getElementById("field-internal-code").value;
+        payload.supplier_id = Number(document.getElementById("field-supplier").value);
+        payload.cost_price = document.getElementById("field-cost-price").value;
     } else {
         const itemId = document.getElementById("field-id").value;
         const item = state.items.find((entry) => String(entry.id) === itemId);
@@ -2152,6 +2174,7 @@ async function openDrawer(item, selectFamilyId) {
         document.getElementById("field-retail-price").value = "0";
         document.getElementById("field-wholesale-price").value = "0";
         document.getElementById("field-special-price").value = "0";
+        document.getElementById("field-cost-price").value = "";
         document.getElementById("stock-figure").hidden = true;
         itemSupplierPriceRequestId += 1;
         renderItemSupplierPrices([]);
@@ -2164,6 +2187,10 @@ async function openDrawer(item, selectFamilyId) {
         }
         if (state.vat_rates.length) {
             document.getElementById("field-vat-rate").value = String(state.vat_rates[0].id);
+        }
+        const activeSupplier = (state.suppliers || []).find((supplier) => supplier.is_active);
+        if (activeSupplier) {
+            document.getElementById("field-supplier").value = String(activeSupplier.id);
         }
         fillSubFamilyField({ reset: true });
         refreshDrawerLabels();
@@ -2236,6 +2263,18 @@ async function saveItem(event) {
             );
             if (!(retailPrice > 0)) {
                 showBanner(t("retail_price_genesis_required"), true);
+                return;
+            }
+            const supplierId = document.getElementById("field-supplier").value;
+            if (!supplierId) {
+                showBanner(t("supplier_genesis_required"), true);
+                return;
+            }
+            const costPrice = Number.parseFloat(
+                document.getElementById("field-cost-price").value || "0",
+            );
+            if (!(costPrice > 0)) {
+                showBanner(t("cost_price_genesis_required"), true);
                 return;
             }
             const reason = await askLifecycleReason("genesis");
@@ -2500,6 +2539,8 @@ async function loadCatalog() {
     sortSubFamilies();
     state.units = data.units;
     state.vat_rates = data.vat_rates || [];
+    state.suppliers = data.suppliers || [];
+    sortSuppliers();
     fillFilterOptions();
     fillFormLookups();
     renderTable();

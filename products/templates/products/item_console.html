@@ -214,6 +214,16 @@
                 <span data-i18n="specialPrice">Special price</span>
                 <input type="number" id="field-special-price" step="0.01" min="0">
             </label>
+            <div id="genesis-supplier-fields">
+                <label>
+                    <span data-i18n="supplier">Supplier</span>
+                    <select id="field-supplier" required></select>
+                </label>
+                <label>
+                    <span data-i18n="costPrice">Cost price</span>
+                    <input type="number" id="field-cost-price" step="0.01" min="0.01">
+                </label>
+            </div>
             <label id="reason-field">
                 <span data-i18n="reason">Reason (optional)</span>
                 <input type="text" id="field-reason" maxlength="255" data-i18n-placeholder="reasonHint" placeholder="Why is this changing?">
@@ -448,9 +458,9 @@
         </div>
     </div>
 
-    <script src="{% static 'products/js/console_i18n.js' %}?v=20"></script>
+    <script src="{% static 'products/js/console_i18n.js' %}?v=21"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
     <script src="{% static 'products/js/console_escape_close.js' %}?v=2"></script>
-    <script src="{% static 'products/js/console.js' %}?v=21"></script>
+    <script src="{% static 'products/js/console.js' %}?v=22"></script>
 </body>
 </html>

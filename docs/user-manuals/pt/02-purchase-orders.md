@@ -145,7 +145,7 @@ Cada ação é registada — quem fez e quando: criação, linha adicionada/atua
 O fornecedor desta encomenda não tem preço para esse artigo (ver §4). Adicione o preço na Gestão de artigos primeiro, ou escolha outro fornecedor.
 
 **P2. O que significa "Principal" num preço de fornecedor?**
-Marca o fornecedor como o fornecedor *preferido* para esse artigo. Na encomenda de compra, o custo vem do preço do fornecedor **desta encomenda** — nunca de outro fornecedor.
+Marca o fornecedor como o fornecedor *preferido* para esse artigo. **Artigos novos:** a Génese exige fornecedor e preço de custo — essa primeira linha fica **Principal**. Se mais tarde marcar outro preço de fornecedor como principal, o anterior é automaticamente desmarcado (só um principal por artigo). Na encomenda de compra, o custo vem do preço do fornecedor **desta encomenda** — nunca de outro fornecedor.
 
 **P3. Porque não posso editar uma linha?**
 As linhas só são editáveis enquanto a encomenda é **Rascunho**. Depois de **Submeter** ficam bloqueadas.

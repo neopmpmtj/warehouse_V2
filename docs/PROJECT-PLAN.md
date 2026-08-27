@@ -108,6 +108,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D8 | Rappel | simple per-line % now; shape later |
 | D9 | Email automation | deferred to **Phase 9** (late phase); model a stub seam now (`on_commit`) |
 | D35 | Phase sequencing after offline | **Phase 6** = offline (done). **Phase 7** = production deployment readiness only. **Phase 8** = OAuth production + shared chrome. **Phase 9** = email. Do not bundle deploy with OAuth/chrome. |
+| D36 | Genesis primary supplier | New catalogue items (Genesis / `create_and_activate_item`) require an **active supplier** and **cost price > 0**; first `SupplierItemPrice` is always `primary=True`. One primary per item (D14) unchanged; promotion/demotion via `_clear_other_primaries` + audit. |
 | D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |

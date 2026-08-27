@@ -15,4 +15,9 @@ urlpatterns = [
         console_views.catalog_console,
         name="catalog_console",
     ),
+    path(
+        "manage/cost-trends/",
+        console_views.cost_trends_console,
+        name="cost_trends_console",
+    ),
 ]

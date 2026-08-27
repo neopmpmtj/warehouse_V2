@@ -137,7 +137,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 ### 5.1 Creating a new item
 
 1. Click **New item** (*Novo artigo*).
-2. Fill the form (fields below). **Internal code** and **retail price greater than zero** are required before Genesis.
+2. Fill the form (fields below). **Internal code**, **retail price greater than zero**, **supplier**, and **cost price greater than zero** are required before Genesis.
 3. Click **Save** (*Guardar*).
 4. Confirm **Genesis** in the dialog — the item is created and activated in one step.
 
@@ -158,6 +158,8 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 | **Reorder level** | Yes | The level that later triggers reordering. |
 | **On hand / Available** | (read-only, edit only) | Physical warehouse stock and what is still free to promise after reservations. Not editable here. |
 | **Retail price** | Yes (> 0) | Selling price for Genesis (see §6). Must be **greater than zero** on create. |
+| **Supplier** | Yes (new items) | Active supplier for this item. Saved as the **primary** buying-price row at Genesis. |
+| **Cost price** | Yes (> 0, new items) | What you pay that supplier for this item. Must be **greater than zero** on create. |
 | **Wholesale price** | No | Selling price (see §6). |
 | **Special price** | No | Selling price (see §6). |
 | **Reason** | No | A note explaining why you're changing this (stored in history). |
@@ -321,7 +323,7 @@ That's the European convention used across the app. `05/08/2026` means **5 Augus
 No. Times adapt to each viewer's local timezone automatically. The system stores UTC and converts on display.
 
 **Q5. I created an item but it says "Inactive" — why?**
-New items are created **active** when you confirm **Genesis** on save. If you cancel the Genesis dialog, nothing is saved. To add an inactive row for testing, use Django admin (superuser) or the `add_item` CLI without `--activate` (with `--activate`, pass `--retail-price` greater than 0).
+New items are created **active** when you confirm **Genesis** on save. If you cancel the Genesis dialog, nothing is saved. To add an inactive row for testing, use Django admin (superuser) or the `add_item` CLI without `--activate` (with `--activate`, pass `--retail-price`, `--supplier`, and `--cost-price` — all required).
 
 **Q6. I can't see the edit button / checkboxes — why?**
 Your role is **operator** (read-only), or you don't have edit permission. Check §2. Ask your administrator if you think your role is wrong.

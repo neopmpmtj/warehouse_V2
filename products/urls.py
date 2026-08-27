@@ -95,6 +95,11 @@ urlpatterns = [
         name="manage_item_history",
     ),
     path(
+        "manage/items/<int:item_id>/cost-series/",
+        console_views.manage_item_cost_series,
+        name="manage_item_cost_series",
+    ),
+    path(
         "manage/catalog/",
         console_views.manage_catalog_list,
         name="manage_catalog_list",

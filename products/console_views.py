@@ -31,11 +31,13 @@ from .services import (
     InvalidInternalCodeError,
     InternalCodeImmutableError,
     ItemGenesisNotReadyError,
+    CostPriceGenesisRequiredError,
     DuplicateSupplierItemPriceError,
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
     InactiveFamilyError,
     InactiveSubFamilyError,
+    InactiveSupplierError,
     InvalidCostPriceError,
     InvalidSupplierEmailError,
     ReactivateReasonRequiredError,
@@ -55,6 +57,7 @@ from .services import (
     get_families,
     get_family_history,
     get_item_history,
+    get_item_primary_cost_series,
     get_items,
     get_catalog,
     get_sub_families,
@@ -65,6 +68,7 @@ from .services import (
     get_suppliers,
     get_vat_rates,
     reactivate_item,
+    resolve_cost_trend_window,
     update_family,
     update_item,
     update_sub_family,
@@ -289,6 +293,10 @@ def _console_payload(request):
         ],
         "units": _unit_choices(),
         "vat_rates": [_serialize_vat_rate(vr) for vr in get_vat_rates()],
+        "suppliers": [
+            _serialize_supplier(supplier)
+            for supplier in get_suppliers(active_only=True)
+        ],
         "permissions": catalog_permissions(request.user),
         "items": [_serialize_item(item) for item in items],
     }
@@ -426,12 +434,19 @@ def manage_item_list(request):
         vat_rate_id = payload.get("vat_rate_id")
         if vat_rate_id is None:
             raise ValidationError("vat_rate_id is required.")
+        supplier_id = payload.get("supplier_id")
+        if supplier_id is None:
+            raise ValidationError("supplier_id is required.")
+        if "cost_price" not in payload:
+            raise ValidationError("cost_price is required.")
         item = create_and_activate_item(
             request.user,
             family=_parse_int_id(family_id, "family_id"),
             description=description,
             unit_of_measure=_parse_unit(payload),
             vat_rate=_parse_int_id(vat_rate_id, "vat_rate_id"),
+            supplier=_parse_int_id(supplier_id, "supplier_id"),
+            cost_price=_parse_decimal(payload, "cost_price"),
             internal_code=str(payload.get("internal_code", "")),
             reorder_level=_parse_decimal(payload, "reorder_level")
             if "reorder_level" in payload
@@ -456,8 +471,10 @@ def manage_item_list(request):
         DuplicateInternalCodeError,
         InvalidInternalCodeError,
         ItemGenesisNotReadyError,
+        CostPriceGenesisRequiredError,
         InactiveFamilyError,
         InactiveSubFamilyError,
+        InactiveSupplierError,
         SubFamilyFamilyMismatchError,
     ) as exc:
         return _json_error(exc.messages[0], code=exc.code)
@@ -1146,6 +1163,21 @@ def manage_supplier_item_price_history(request, sip_id):
     )
 
 
+def _catalog_suppliers_for_item(item):
+    rows = [
+        {
+            "id": price.supplier_id,
+            "name": price.supplier.name,
+            "cost_price": _decimal_string(price.cost_price),
+            "primary": price.primary,
+        }
+        for price in item.supplier_prices.all()
+        if price.supplier.is_active
+    ]
+    rows.sort(key=lambda row: (not row["primary"], row["name"].casefold()))
+    return rows
+
+
 def _serialize_catalog_item(item):
     buying_price = catalog_buying_price(item)
     payload = {
@@ -1165,16 +1197,7 @@ def _serialize_catalog_item(item):
         "wholesale_price": _decimal_string(item.wholesale_price),
         "special_price": _decimal_string(item.special_price),
         "buying_price": _decimal_string(buying_price) if buying_price is not None else None,
-        "suppliers": [
-            {
-                "id": price.supplier_id,
-                "name": price.supplier.name,
-                "cost_price": _decimal_string(price.cost_price),
-                "primary": price.primary,
-            }
-            for price in item.supplier_prices.all()
-            if price.supplier.is_active
-        ],
+        "suppliers": _catalog_suppliers_for_item(item),
     }
     payload.update(_stock_fields(item))
     return payload
@@ -1191,9 +1214,10 @@ def catalog_console(request):
 def manage_catalog_list(request):
     family_id = request.GET.get("family_id")
     sub_family_id = request.GET.get("sub_family_id")
+    include_inactive = request.GET.get("include_inactive") == "1"
     try:
         queryset = get_catalog(
-            active_only=True,
+            active_only=not include_inactive,
             family=family_id or None,
             sub_family=sub_family_id or None,
         )
@@ -1202,3 +1226,35 @@ def manage_catalog_list(request):
     return JsonResponse(
         {"catalog": [_serialize_catalog_item(item) for item in queryset]}
     )
+
+
+@catalog_required
+@require_GET
+def cost_trends_console(request):
+    return render(request, "products/cost_trends.html")
+
+
+@catalog_required
+@require_GET
+def manage_item_cost_series(request, item_id):
+    try:
+        item = Item.objects.get(pk=item_id)
+    except Item.DoesNotExist:
+        return _json_error("Item not found.", status=404)
+
+    period = (request.GET.get("period") or "last_30_days").strip()
+    tz_name = getattr(request.user, "timezone", None) or "UTC"
+    try:
+        start, end = resolve_cost_trend_window(period, tz_name=tz_name)
+    except ValidationError as exc:
+        message = exc.messages[0] if exc.messages else str(exc)
+        code = getattr(exc, "code", None)
+        return _json_error(message, code=code, status=400)
+
+    payload = get_item_primary_cost_series(
+        item,
+        start=start,
+        end=end,
+        period=period,
+    )
+    return JsonResponse(payload)

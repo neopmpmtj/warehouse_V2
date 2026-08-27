@@ -84,6 +84,21 @@
         </section>
         {% endif %}
 
+        {% if visualization_cards %}
+        <section class="dash-section">
+            <h2 data-i18n="sectionVisualizations">Visualizations</h2>
+            <p class="dash-note" data-i18n="visualizationsNote">Charts and trends for analysis — not day-to-day operations.</p>
+            <div class="card-grid">
+                {% for card in visualization_cards %}
+                <a class="dash-card" href="{{ card.url }}">
+                    <span class="dash-card-title" data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                    <span class="dash-card-desc" data-i18n="{{ card.desc_key }}">{{ card.desc }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
         <details class="dev-ref">
             <summary data-i18n="devReference">Developer reference — permissions, auth &amp; APIs</summary>
 
@@ -223,7 +238,7 @@
         </details>
     </main>
 
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=6"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=7"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>
 </html>

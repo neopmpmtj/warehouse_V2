@@ -30,7 +30,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Este código interno já está em uso.` | Os códigos internos são únicos, **sem distinção de maiúsculas/minúsculas** | Use outro código |
 | `O código interno só pode conter letras, algarismos, pontos, hífens e sublinhados.` | O código contém um **espaço** ou um **carácter não permitido** (só `A–Z`, `a–z`, `0–9`, `.`, `-`, `_` são permitidos) | Corrija o código (ex.: `CEM-50`, `CABLE-2.5`) |
 | `O código interno não pode ser alterado depois de o artigo ser guardado.` | Tentou renomear um código num artigo existente | Os códigos ficam bloqueados após o primeiro guardar (códigos vazios antigos podem ser definidos uma vez) |
-| `O artigo não pode ser ativado (Génese): faltam campos obrigatórios ou o preço de retalho tem de ser superior a zero.` | A primeira ativação (Génese) exige código interno, descrição, unidade, IVA, família ativa e **preço de retalho > 0** (guardar na consola, ação em lote **Reativar** no Django admin, ou `add_item --activate`) | Complete os campos antes de ativar |
+| `O artigo não pode ser ativado (Génese): faltam campos obrigatórios ou o preço de retalho tem de ser superior a zero.` | A primeira ativação (Génese) exige código interno, descrição, unidade, IVA, família ativa, **preço de retalho > 0**, **fornecedor** e **preço de custo > 0** (guardar na consola, ação em lote **Reativar** no Django admin, ou `add_item --activate`) | Complete os campos antes de ativar |
 | `Já existe uma família com este nome.` | Os nomes de família são únicos, sem distinção de maiúsculas/minúsculas | Use outro nome |
 | `Já existe um fornecedor com este nome.` | Os nomes de fornecedor são únicos, sem distinção de maiúsculas/minúsculas | Use outro nome |
 | `O nome da família é obrigatório.` / `O nome do fornecedor é obrigatório.` / `Description is required.` (A descrição é obrigatória.) | Campo obrigatório vazio | Preencha-o |
@@ -45,24 +45,28 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `…selling price must be zero or greater.` (…o preço de venda tem de ser zero ou superior.) | Os preços não podem ser negativos | Indique 0 (significa "sem preço") ou um número positivo |
 | `…reorder level must be zero or greater.` (…o nível de reposição tem de ser zero ou superior.) | O nível de reposição não pode ser negativo | Indique 0 ou um número positivo |
 | `--retail-price must be greater than 0 when using --activate.` (`--retail-price` tem de ser superior a 0 ao usar `--activate`.) | A CLI `add_item` foi executada com `--activate` mas o preço de retalho falta ou é zero | Passe `--retail-price` com valor superior a 0 |
+| `--supplier is required when using --activate.` | `add_item --activate` sem `--supplier` | Passe `--supplier` com o nome de um fornecedor ativo |
+| `--cost-price is required when using --activate.` / `--cost-price must be greater than 0 when using --activate.` | `add_item --activate` sem preço de compra, ou custo zero | Passe `--cost-price` superior a 0 |
+| `Cost price must be greater than zero for Genesis.` | Génese na consola ou `create_and_activate_item` com preço de custo ≤ 0 | Introduza preço de custo superior a zero |
+| `supplier_id is required.` / `cost_price is required.` | POST **Novo artigo** na consola sem fornecedor ou custo | Escolha fornecedor e preço de custo antes da Génese |
 
 **Os nomes de família são imutáveis** — a consola não tem "renomear". Se o nome estiver errado, desative e crie uma família nova (os artigos mantêm a família antiga; não pode acrescentar artigos novos a uma família inativa).
 
 **Os nomes de sub-família e a família-mãe são imutáveis** após criar — o mesmo padrão das famílias. Desative e crie uma sub-família nova se a etiqueta estiver errada.
 
-**Artigos novos:** confirme **Génese** ao guardar — criar e ativar são atómicos (sem órfão inativo se cancelar). O **código interno** é obrigatório e bloqueado após guardar.
+**Artigos novos:** confirme **Génese** ao guardar — criar, ativar e o **preço de fornecedor principal** são atómicos (sem órfão inativo se cancelar). **Código interno**, **fornecedor** e **preço de custo > 0** são obrigatórios na criação (código bloqueado após guardar; fornecedor/custo ficam na linha de preço — pode adicionar mais fornecedores depois no painel de fornecedores).
 
 **Catálogo do gestor (`/manage/catalog/`)** — stock + preços só de leitura para o pessoal do armazém. Ver [Catálogo do gestor](07-manager-catalog.md).
 
 | Mensagem (exata) | Porque aparece | O que fazer |
 |-----------------|----------------|------------|
 | `Sem artigos para mostrar.` | Não há artigos ativos em famílias ativas | Crie ou reative artigos na gestão de artigos |
-| `Nenhum artigo corresponde a estes filtros.` | A pesquisa, família ou "só abaixo do ponto de encomenda" ocultaram todas as linhas | Limpe os filtros (*Todas as famílias*, desmarque a caixa) |
+| `Nenhum artigo corresponde a estes filtros.` | A pesquisa, família ou "só abaixo do ponto de encomenda" ocultaram todas as linhas | Limpe os filtros (*Todas as famílias*, desmarque as caixas) |
 | `Não foi possível carregar o catálogo.` | A API do catálogo falhou | Atualize; se persistir, peça ajuda a um administrador |
 | `Não foi possível concluir o pedido.` | O pedido falhou sem mensagem específica | Atualize; tente de novo |
 | `Catalogue view permission required` (É necessária permissão de vista do catálogo) | Não é utilizador de armazém (típico para inícios de sessão só de filial) | Use `/branch/` e páginas da filial, ou peça à sede um grupo de armazém |
 
-**Abaixo do ponto de encomenda** é `reorder_level > 0` **e** stock ≤ ponto de encomenda. Ponto de encomenda **0** nunca sinaliza. Preço de compra = custo do fornecedor principal; senão o mais barato entre fornecedores **ativos** (senão —).
+**Abaixo do ponto de encomenda** é `reorder_level > 0` **e** disponível ≤ ponto de encomenda. Ponto de encomenda **0** nunca sinaliza. Preço de compra = custo do fornecedor principal; senão o mais barato entre fornecedores **ativos** (senão —). **Incluir inativos** (`?include_inactive=1` na API) recarrega artigos desativados e artigos sob família inativa; a vista por defeito é só ativos. A coluna **Fornecedores** lista o principal em primeiro (★), depois os restantes por ordem alfabética. Os cabeçalhos das colunas são ordenáveis no browser.
 
 ### 2.2 Encomendas de compra (`/manage/purchase-orders/`)
 

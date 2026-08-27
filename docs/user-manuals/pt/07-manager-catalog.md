@@ -52,11 +52,13 @@ Catálogo do gestor (/manage/catalog/)  →  ler o quadro conjunto
 
 | Esta página **faz** | Esta página **não faz** |
 |--------------------|------------------------|
-| Mostrar artigos **ativos** em famílias **ativas** | Mostrar artigos desativados ou artigos cuja família está inativa |
-| Mostrar a quantidade **em cache** em armazém | Deixar escrever uma quantidade (o stock é um livro-razão — ver [receção de mercadorias](03-goods-receipts.md)) |
-| Mostrar compra + três preços de venda | Deixar alterar preços (use a [gestão de artigos](01-items.md)) |
-| Sinalizar artigos no ou abaixo do ponto de encomenda | Criar encomenda de compra (use [encomendas de compra](02-purchase-orders.md)) |
-| Listar fornecedores com preço para o artigo | Abrir gaveta ou histórico |
+| Mostrar artigos **ativos** em famílias **ativas** por defeito | Deixar editar artigos, preços ou stock |
+| Mostrar artigos desativados e artigos cuja família está inativa quando **Incluir inativos** está marcado | Abrir gaveta ou histórico |
+| Mostrar a quantidade **em cache** em armazém | Criar encomenda de compra (use [encomendas de compra](02-purchase-orders.md)) |
+| Mostrar compra + três preços de venda | |
+| Sinalizar artigos no ou abaixo do ponto de encomenda | |
+| Listar fornecedores com preço para o artigo (principal em primeiro, marcado com ★) | |
+| Ordenar qualquer coluna ao clicar no cabeçalho | |
 
 Clicar numa linha não faz nada — não há gaveta de detalhe.
 
@@ -78,10 +80,11 @@ Clicar numa linha não faz nada — não há gaveta de detalhe.
 | Família | *All families* | *Todas as famílias* | Restringe a uma família |
 | Sub-família | *All sub-families* | *Todas as sub-famílias* | Restringe a uma sub-família (lista limitada ao filtro de família quando definido) |
 | Caixa de verificação | **Below reorder only** | **Só abaixo do ponto de encomenda** | Oculta artigos OK |
+| Caixa de verificação | **Include inactive** | **Incluir inativos** | Recarrega a lista com artigos desativados e artigos cuja família está inativa (desligado por defeito) |
 
-Os filtros combinam-se. Correm no browser sobre a lista carregada — não precisa de clicar em Pesquisar.
+Os filtros combinam-se. Pesquisa, família, sub-família e **Só abaixo do ponto de encomenda** correm no browser sobre a lista carregada — não precisa de clicar em Pesquisar. **Incluir inativos** recarrega a partir do servidor.
 
-**C. Colunas da tabela**
+**C. Colunas da tabela** — clique em qualquer cabeçalho para ordenar (clique de novo para inverter). A ordem por defeito é o id do artigo.
 
 | Coluna | Significado |
 |--------|---------|
@@ -96,10 +99,10 @@ Os filtros combinam-se. Correm no browser sobre a lista carregada — não preci
 | **Encomenda** | Ponto de encomenda definido no artigo |
 | **Compra** | Custo que pagamos — ver §5 |
 | **Retalho / Grossista / Especial** | Os três preços de venda **manuais** |
-| **Fornecedores** | Fornecedores com preço para este artigo; o **principal** está marcado com ★ |
-| **Estado** | **Abaixo do ponto de encomenda** (pílula de aviso) ou **OK** |
+| **Fornecedores** | Fornecedores ativos com preço para este artigo; o **principal** aparece **em primeiro** e está marcado com ★ |
+| **Estado** | **Inativo** (pílula discreta) para artigos desativados; caso contrário **Abaixo do ponto de encomenda** (pílula de aviso) ou **OK** |
 
-As linhas no ou abaixo do ponto de encomenda ficam realçadas com um tom de aviso **e** uma pílula de Estado. O tom segue o tema: âmbar claro no claro, âmbar escuro no escuro, para o texto da linha se manter legível.
+As linhas no ou abaixo do ponto de encomenda ficam realçadas com um tom de aviso **e** uma pílula de Estado (salvo se o artigo estiver inativo). Artigos desativados e artigos sob família inativa usam texto de linha discreto. O tom segue o tema: âmbar claro no claro, âmbar escuro no escuro, para o texto da linha se manter legível.
 
 ---
 
@@ -128,7 +131,7 @@ A coluna **Compra** é um número por artigo:
 2. Caso contrário mostra-se o custo **mais barato** entre fornecedores **ativos**.
 3. Se nenhum fornecedor ativo tiver preço, Compra é **—**.
 
-A coluna **Fornecedores** lista nomes (separados por vírgula). Fornecedores desativados são omitidos. **—** significa que ainda não há preço de fornecedor ativo — adicione um na gestão de artigos antes de poder criar encomenda de compra para esse fornecedor.
+A coluna **Fornecedores** lista nomes (separados por vírgula). O fornecedor **principal** aparece sempre **em primeiro**, depois os restantes por ordem alfabética. Fornecedores desativados são omitidos. **—** significa que ainda não há preço de fornecedor ativo — adicione um na gestão de artigos antes de poder criar encomenda de compra para esse fornecedor.
 
 Os preços aqui **não** são um instantâneo congelado de encomenda; seguem a lista viva de fornecedores. Os totais aprovados da encomenda de compra mantêm-se congelados na encomenda — ver [encomendas de compra](02-purchase-orders.md) §8.
 
@@ -191,7 +194,7 @@ Esse fornecedor é o **principal** (preferido) do artigo. O custo dele é o valo
 De propósito. O pessoal do armazém vê em armazém, reservado e disponível aqui. O pessoal de filial vê só **Em stock / Baixo / Nenhum** em `/branch/catalog/` (a partir do **disponível**, não do em armazém bruto) — ver [Filiais e Requisição interna](04-internal-requests.md) §3.
 
 **P5. Desativei um artigo e desapareceu desta lista — foi eliminado?**
-Não. Artigos desativados (e artigos cuja família está inativa) ficam de fora desta vista. Reative na gestão de artigos para voltar a aparecer.
+Não. Artigos desativados (e artigos cuja família está inativa) ficam de fora da vista por defeito. Marque **Incluir inativos** para os ver de novo, ou reative na gestão de artigos.
 
 **P6. Em armazém é 0 mas o Estado diz OK — é um bug?**
 Não se **Encomenda** for 0. Ponto de encomenda zero significa «não sinalizar». Defina ponto de encomenda maior que 0 no artigo se quiser o aviso. O estado usa **disponível**, por isso 10 em armazém com 10 reservados também sinaliza abaixo do ponto de encomenda quando encomenda > 0.
@@ -207,3 +210,13 @@ Não — os códigos são únicos (sem distinção de maiúsculas/minúsculas) e
 
 **P10. Porque estão algumas linhas com tom âmbar?**
 Esses artigos estão **Abaixo do ponto de encomenda**. Estado **OK** mantém o fundo normal da tabela. O tom segue o tema (âmbar claro no claro, âmbar escuro no escuro) para o texto se manter legível.
+
+---
+
+## 6. Evolução de custos (gráfico demo)
+
+**URL:** `/manage/cost-trends/` — cartão **Evolução de custos** na secção **Visualizações** do painel.
+
+Gráfico só de leitura do **custo de compra de referência** (custo de catálogo do fornecedor principal) ao longo do tempo, reconstruído a partir dos registos de alteração de preços de fornecedor. Use o filtro **Período** (ano civil, últimos 6/3 meses, 30 dias, 7 dias, 24 horas) e o seletor **Artigo**. A linha de resumo mostra custo inicial, custo final e variação percentual na janela escolhida — base prevista para um futuro gráfico de inflação.
+
+Se o fornecedor principal mudou dentro do período, a nota por baixo do gráfico avisa que os degraus podem reflectir mudança de abastecimento, não só mercado.

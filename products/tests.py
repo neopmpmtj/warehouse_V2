@@ -37,6 +37,7 @@ from products.models import (
 from products.permissions import can_view_catalog
 from products.services import (
     DeactivateReasonRequiredError,
+    CostPriceGenesisRequiredError,
     DescriptionRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
@@ -64,6 +65,7 @@ from products.services import (
     _save_supplier,
     bulk_deactivate_items,
     bulk_reactivate_items,
+    build_item_primary_cost_timeline,
     catalog_below_reorder,
     catalog_buying_price,
     create_family,
@@ -76,6 +78,7 @@ from products.services import (
     get_catalog,
     get_families,
     get_item_buying_price,
+    get_item_primary_cost_series,
     get_items,
     get_sub_families,
     get_sub_family_history,
@@ -84,6 +87,7 @@ from products.services import (
     get_supplier_item_prices,
     get_suppliers,
     reactivate_item,
+    resolve_cost_trend_window,
     update_family,
     update_item,
     update_sub_family,
@@ -103,11 +107,17 @@ class ItemTestCaseMixin:
     def create_test_family(self, name="Test Family"):
         return create_family(name)
 
+    def create_test_supplier(self, name=None):
+        if name is None:
+            name = f"Test Supplier {uuid.uuid4().hex[:8]}"
+        return create_supplier(name=name)
+
     def create_test_item(self, user, family=None, active=True, **kwargs):
         if family is None:
             family = self.family
         if "vat_rate" not in kwargs:
             kwargs["vat_rate"] = VatRate.objects.get(code="VAT16")
+        with_primary_supplier = kwargs.pop("with_primary_supplier", True)
         defaults = {
             "family": family,
             "description": "Test item",
@@ -116,13 +126,47 @@ class ItemTestCaseMixin:
         defaults.update(kwargs)
         if not defaults.get("internal_code"):
             defaults["internal_code"] = f"T-{uuid.uuid4().hex[:8].upper()}"
-        if "retail_price" not in kwargs:
+        if "retail_price" not in defaults:
             defaults["retail_price"] = "1.00"
-        item = create_item(user, **defaults)
         if active:
+            if with_primary_supplier:
+                supplier = defaults.pop("supplier", None)
+                cost_price = defaults.pop("cost_price", "5.00")
+                if supplier is None:
+                    supplier = getattr(self, "supplier", None) or self.create_test_supplier()
+                item = create_and_activate_item(
+                    user,
+                    supplier=supplier,
+                    cost_price=cost_price,
+                    **defaults,
+                )
+                item.refresh_from_db()
+                return item
+            item = create_item(user, **defaults)
             reactivate_item(user, item, reason="Genesis")
             item.refresh_from_db()
+            return item
+        defaults.pop("supplier", None)
+        defaults.pop("cost_price", None)
+        item = create_item(user, **defaults)
         return item
+
+    def genesis_create_payload(self, **overrides):
+        supplier = getattr(self, "supplier", None) or self.create_test_supplier()
+        family = getattr(self, "family", None) or self.create_test_family()
+        vat_rate = getattr(self, "vat_rate", None) or VatRate.objects.get(code="VAT16")
+        payload = {
+            "family_id": family.id,
+            "description": "Genesis item",
+            "unit_of_measure": Item.UnitOfMeasure.PIECE,
+            "internal_code": "GEN-API-1",
+            "retail_price": "10.00",
+            "vat_rate_id": vat_rate.id,
+            "supplier_id": supplier.id,
+            "cost_price": "5.00",
+        }
+        payload.update(overrides)
+        return payload
 
 
 class ItemServiceTests(ItemTestCaseMixin, TestCase):
@@ -133,6 +177,7 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
         )
         self.family = self.create_test_family()
         self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.supplier = self.create_test_supplier()
 
     def test_create_item_writes_audit_log(self):
         item = create_item(
@@ -418,6 +463,8 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
             description="Genesis item",
             unit_of_measure=Item.UnitOfMeasure.PIECE,
             vat_rate=self.vat_rate,
+            supplier=self.supplier,
+            cost_price="8.50",
             internal_code="GEN-1",
             retail_price="12.50",
         )
@@ -427,6 +474,9 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
             item.change_logs.filter(action=ItemChangeLog.Action.REACTIVATED).count(),
             1,
         )
+        primary = SupplierItemPrice.objects.get(item=item, primary=True)
+        self.assertEqual(primary.supplier_id, self.supplier.pk)
+        self.assertEqual(primary.cost_price, Decimal("8.50"))
 
     def test_create_and_activate_item_rolls_back_on_genesis_failure(self):
         with self.assertRaises(ItemGenesisNotReadyError):
@@ -436,11 +486,29 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
                 description="No retail",
                 unit_of_measure=Item.UnitOfMeasure.PIECE,
                 vat_rate=self.vat_rate,
+                supplier=self.supplier,
+                cost_price="5.00",
                 internal_code="GEN-2",
                 retail_price="0",
             )
 
         self.assertFalse(Item.objects.filter(internal_code="GEN-2").exists())
+
+    def test_create_and_activate_item_requires_positive_cost(self):
+        with self.assertRaises(CostPriceGenesisRequiredError):
+            create_and_activate_item(
+                self.user,
+                family=self.family,
+                description="No cost",
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+                supplier=self.supplier,
+                cost_price="0",
+                internal_code="GEN-4",
+                retail_price="12.50",
+            )
+
+        self.assertFalse(Item.objects.filter(internal_code="GEN-4").exists())
 
     def test_deactivate_and_reactivate_write_audit_logs(self):
         item = self.create_test_item(self.user, description="Lifecycle item")
@@ -717,6 +785,8 @@ class SubFamilyServiceTests(TestCase):
             description="Bagged cement",
             unit_of_measure=Item.UnitOfMeasure.KG,
             vat_rate=vat_rate,
+            supplier=create_supplier(name="SubFamily Supplier"),
+            cost_price="6.00",
             internal_code="CEM-BAG",
             retail_price="12.00",
             sub_family=sub_family,
@@ -773,12 +843,15 @@ class SubFamilyServiceTests(TestCase):
         )
         sub_family = create_sub_family("Bags", self.family)
         vat_rate = VatRate.objects.get(code="VAT16")
+        supplier = create_supplier(name="Bag Supplier")
         item = create_and_activate_item(
             user,
             family=self.family,
             description="Bagged",
             unit_of_measure=Item.UnitOfMeasure.KG,
             vat_rate=vat_rate,
+            supplier=supplier,
+            cost_price="4.00",
             internal_code="BAG-1",
             retail_price="5.00",
             sub_family=sub_family,
@@ -925,6 +998,7 @@ class ItemAdminAccessTests(TestCase):
 class AddItemCommandTests(TestCase):
     def setUp(self):
         self.family = create_family("CLI family")
+        self.supplier = create_supplier(name="CLI Supplier")
 
     def test_add_item_activate_zero_retail_raises_without_creating_row(self):
         with self.assertRaises(CommandError) as raised:
@@ -935,6 +1009,8 @@ class AddItemCommandTests(TestCase):
                 vat_rate="VAT16",
                 internal_code="CLI-ORPHAN",
                 retail_price="0",
+                supplier=self.supplier.name,
+                cost_price="5.00",
                 activate=True,
             )
 
@@ -949,6 +1025,8 @@ class AddItemCommandTests(TestCase):
             vat_rate="VAT16",
             internal_code="CLI-ACTIVE",
             retail_price="12.50",
+            supplier=self.supplier.name,
+            cost_price="8.50",
             activate=True,
             verbosity=0,
         )
@@ -956,6 +1034,9 @@ class AddItemCommandTests(TestCase):
         item = Item.objects.get(internal_code="CLI-ACTIVE")
         self.assertTrue(item.is_active)
         self.assertEqual(item.retail_price, Decimal("12.50"))
+        self.assertTrue(
+            SupplierItemPrice.objects.filter(item=item, primary=True).exists()
+        )
 
     def test_add_item_with_sub_family(self):
         sub_family = create_sub_family("Bags", self.family)
@@ -1220,6 +1301,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.client = Client()
         self.family = self.create_test_family()
         self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.supplier = self.create_test_supplier()
 
     def test_staff_can_open_console(self):
         self.client.force_login(self.staff_user)
@@ -1301,9 +1383,11 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'class="dash-card"')
         self.assertContains(response, 'data-i18n="cardItemConsole"')
         self.assertContains(response, 'data-i18n="sectionWarehouse"')
+        self.assertContains(response, 'data-i18n="sectionVisualizations"')
         # Warehouse cards (all groups)
         self.assertContains(response, 'href="/manage/items/"')
         self.assertContains(response, 'href="/manage/catalog/"')
+        self.assertContains(response, 'href="/manage/cost-trends/"')
         self.assertContains(response, 'href="/manage/purchase-orders/"')
         self.assertContains(response, 'href="/manage/goods-receipts/"')
         self.assertContains(response, 'href="/manage/internal-requests/"')
@@ -1351,6 +1435,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
             # Regular warehouse cards
             self.assertContains(response, 'href="/manage/items/"')
             self.assertContains(response, 'href="/manage/catalog/"')
+            self.assertContains(response, 'href="/manage/cost-trends/"')
             self.assertContains(response, 'href="/manage/purchase-orders/"')
             self.assertContains(response, 'href="/manage/goods-receipts/"')
             self.assertContains(response, 'href="/manage/internal-requests/"')
@@ -1555,7 +1640,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         item_ids = [item["id"] for item in payload["items"]]
         self.assertEqual(sorted(item_ids), sorted([active.id, inactive.id]))
         self.assertIn("families", payload)
-        self.assertNotIn("suppliers", payload)
+        self.assertIn("suppliers", payload)
 
     def test_manage_api_supports_pagination(self):
         for index in range(5):
@@ -1585,16 +1670,14 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         create_response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": self.family.id,
-                "description": "Console cement",
-                "unit_of_measure": Item.UnitOfMeasure.KG,
-                "internal_code": "CON-1",
-                "reorder_level": "4",
-                "retail_price": "10.00",
-                "vat_rate_id": self.vat_rate.id,
-                "reason": "Added from console",
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                description="Console cement",
+                unit_of_measure=Item.UnitOfMeasure.KG,
+                internal_code="CON-1",
+                reorder_level="4",
+                retail_price="10.00",
+                reason="Added from console",
+            )),
             content_type="application/json",
         )
 
@@ -1605,6 +1688,9 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(item.description, "Console cement")
         self.assertNotIn("stock", created)
         self.assertNotIn("suppliers", created)
+        self.assertTrue(
+            SupplierItemPrice.objects.filter(item=item, primary=True).exists()
+        )
         self.assertEqual(
             item.change_logs.get(action=ItemChangeLog.Action.CREATED).reason,
             "Added from console",
@@ -1632,13 +1718,11 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": self.family.id,
-                "description": "Bad code item",
-                "unit_of_measure": Item.UnitOfMeasure.KG,
-                "internal_code": "BAD CODE",
-                "vat_rate_id": self.vat_rate.id,
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                description="Bad code item",
+                unit_of_measure=Item.UnitOfMeasure.KG,
+                internal_code="BAD CODE",
+            )),
             content_type="application/json",
         )
 
@@ -1652,14 +1736,11 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": self.family.id,
-                "description": "Lowercase code item",
-                "unit_of_measure": Item.UnitOfMeasure.KG,
-                "internal_code": "con-lc",
-                "retail_price": "10.00",
-                "vat_rate_id": self.vat_rate.id,
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                description="Lowercase code item",
+                unit_of_measure=Item.UnitOfMeasure.KG,
+                internal_code="con-lc",
+            )),
             content_type="application/json",
         )
 
@@ -1674,13 +1755,11 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": self.family.id,
-                "description": "No code item",
-                "unit_of_measure": Item.UnitOfMeasure.KG,
-                "retail_price": "10.00",
-                "vat_rate_id": self.vat_rate.id,
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                description="No code item",
+                unit_of_measure=Item.UnitOfMeasure.KG,
+                internal_code="",
+            )),
             content_type="application/json",
         )
 
@@ -1694,14 +1773,12 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": self.family.id,
-                "description": "Zero retail item",
-                "unit_of_measure": Item.UnitOfMeasure.KG,
-                "internal_code": "ZERO-1",
-                "retail_price": "0",
-                "vat_rate_id": self.vat_rate.id,
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                description="Zero retail item",
+                unit_of_measure=Item.UnitOfMeasure.KG,
+                internal_code="ZERO-1",
+                retail_price="0",
+            )),
             content_type="application/json",
         )
 
@@ -1843,12 +1920,10 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": True,
-                "description": "Bad family id",
-                "unit_of_measure": Item.UnitOfMeasure.PIECE,
-                "vat_rate_id": self.vat_rate.id,
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                family_id=True,
+                description="Bad family id",
+            )),
             content_type="application/json",
         )
 
@@ -2011,14 +2086,12 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         item_response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": family_id,
-                "description": "Family-first item",
-                "unit_of_measure": Item.UnitOfMeasure.PIECE,
-                "internal_code": "FAM-1",
-                "retail_price": "5.00",
-                "vat_rate_id": self.vat_rate.id,
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                family_id=family_id,
+                description="Family-first item",
+                internal_code="FAM-1",
+                retail_price="5.00",
+            )),
             content_type="application/json",
         )
 
@@ -2122,15 +2195,12 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": self.family.id,
-                "sub_family_id": sub_family.id,
-                "description": "Mismatch",
-                "unit_of_measure": Item.UnitOfMeasure.PIECE,
-                "internal_code": "MIS-1",
-                "retail_price": "5.00",
-                "vat_rate_id": self.vat_rate.id,
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                sub_family_id=sub_family.id,
+                description="Mismatch",
+                internal_code="MIS-1",
+                retail_price="5.00",
+            )),
             content_type="application/json",
         )
 
@@ -2221,7 +2291,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         payload = create_response.json()["supplier"]
         self.assertEqual(payload["name"], "BuildSupply Ltd")
         self.assertTrue(payload["is_active"])
-        self.assertNotIn("suppliers", self.client.get(reverse("manage_item_list")).json())
+        self.assertNotIn("items", self.client.get(reverse("manage_supplier_list")).json())
 
         update_response = self.client.patch(
             reverse("manage_supplier_detail", args=[payload["id"]]),
@@ -2343,6 +2413,112 @@ class SeedDevDataCommandTests(TestCase):
             "LEG-001",
             {item.internal_code for item in get_catalog()},
         )
+
+    def test_seed_gives_every_active_item_one_primary_supplier(self):
+        call_command("seed_dev_data", verbosity=0)
+
+        active_items = Item.objects.filter(is_active=True)
+        self.assertGreater(active_items.count(), 0)
+        for item in active_items:
+            primaries = SupplierItemPrice.objects.filter(item=item, primary=True)
+            self.assertEqual(
+                primaries.count(),
+                1,
+                msg=f"{item.internal_code} should have exactly one primary supplier",
+            )
+            self.assertGreater(primaries.get().cost_price, 0)
+
+    def test_seed_cost_trends_demo_on_cem50(self):
+        call_command("seed_dev_data", verbosity=0)
+        item = Item.objects.get(internal_code="CEM-50")
+        timeline = build_item_primary_cost_timeline(item)
+        costs = [point["cost"] for point in timeline]
+        self.assertIn(Decimal("8.50"), costs)
+        self.assertIn(Decimal("9.45"), costs)
+        self.assertGreaterEqual(len(timeline), 4)
+
+
+class CostTrendSeriesTests(ItemTestCaseMixin, TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="cost-trends@example.com",
+            password="test-pass-123",
+        )
+        assign_warehouse_group(self.user, GROUP_ADMINS)
+        self.client = Client()
+        self.family = self.create_test_family()
+        self.supplier = self.create_test_supplier()
+        self.item = self.create_test_item(
+            self.user,
+            internal_code="TREND-1",
+            description="Trend item",
+        )
+        self.sip = SupplierItemPrice.objects.get(item=self.item, primary=True)
+
+    def test_build_timeline_records_cost_steps(self):
+        update_supplier_item_price(
+            self.sip, user=self.user, cost_price=Decimal("11.00")
+        )
+        update_supplier_item_price(
+            self.sip, user=self.user, cost_price=Decimal("12.00")
+        )
+        timeline = build_item_primary_cost_timeline(self.item)
+        costs = [point["cost"] for point in timeline]
+        self.assertEqual(costs[0], Decimal("5.00"))
+        self.assertEqual(costs[-1], Decimal("12.00"))
+        self.assertEqual(len(costs), 3)
+
+    def test_resolve_cost_trend_window_rejects_unknown_period(self):
+        with self.assertRaises(ValidationError) as ctx:
+            resolve_cost_trend_window("last_year")
+        self.assertEqual(ctx.exception.code, "invalid_period")
+
+    def test_get_item_primary_cost_series_summary(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        update_supplier_item_price(
+            self.sip, user=self.user, cost_price=Decimal("11.00")
+        )
+        start = timezone.now() - timedelta(days=1)
+        end = timezone.now() + timedelta(hours=1)
+        payload = get_item_primary_cost_series(
+            self.item,
+            start=start,
+            end=end,
+            period="last_1_day",
+        )
+        self.assertEqual(payload["summary"]["start_cost"], "5.00")
+        self.assertEqual(payload["summary"]["end_cost"], "11.00")
+        self.assertEqual(payload["summary"]["change_pct"], "120.00")
+
+    def test_cost_series_api_requires_login(self):
+        response = self.client.get(
+            reverse("manage_item_cost_series", args=[self.item.id]),
+            {"period": "last_30_days"},
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_cost_series_api_returns_points(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("manage_item_cost_series", args=[self.item.id]),
+            {"period": "last_30_days"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["item"]["internal_code"], "TREND-1")
+        self.assertIn("points", data)
+        self.assertIn("summary", data)
+
+    def test_cost_trends_page_renders(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("cost_trends_console"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="cost-chart"')
+        self.assertContains(response, 'id="cost-period"')
+        self.assertContains(response, 'id="cost-item"')
 
 
 class BulkLifecycleAtomicityTests(ItemTestCaseMixin, TestCase):
@@ -2631,6 +2807,7 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
             self.user,
             description="Cement 50kg",
             internal_code="CEM-50",
+            with_primary_supplier=False,
         )
         self.supplier = create_supplier(name="BuildSupply Ltd")
 
@@ -2877,6 +3054,7 @@ class SupplierItemPriceConsoleTests(ItemTestCaseMixin, TestCase):
             self.staff_user,
             description="Cement 50kg",
             internal_code="CEM-50",
+            with_primary_supplier=False,
         )
         self.supplier = create_supplier(name="BuildSupply Ltd")
 
@@ -2972,16 +3150,13 @@ class SupplierItemPriceConsoleTests(ItemTestCaseMixin, TestCase):
 
         response = self.client.post(
             reverse("manage_item_list"),
-            data=json.dumps({
-                "family_id": self.family.id,
-                "description": "Priced item",
-                "unit_of_measure": "piece",
-                "internal_code": "PRICE-1",
-                "vat_rate_id": self.vat_rate.id,
-                "retail_price": "99.99",
-                "wholesale_price": "75.00",
-                "special_price": "60.00",
-            }),
+            data=json.dumps(self.genesis_create_payload(
+                description="Priced item",
+                internal_code="PRICE-1",
+                retail_price="99.99",
+                wholesale_price="75.00",
+                special_price="60.00",
+            )),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
@@ -3001,6 +3176,7 @@ class CatalogServiceTests(ItemTestCaseMixin, TestCase):
             description="Cement 50kg",
             internal_code="CEM-50",
             reorder_level="10",
+            with_primary_supplier=False,
         )
         self.supplier = create_supplier(name="BuildSupply Ltd")
 
@@ -3066,6 +3242,26 @@ class CatalogServiceTests(ItemTestCaseMixin, TestCase):
         update_family(self.family, is_active=False)
         self.assertEqual(list(get_catalog()), [])
 
+    def test_get_catalog_active_only_false_includes_deactivated_item(self):
+        create_supplier_item_price(
+            self.supplier, self.item, "8.50", primary=True, user=self.user
+        )
+        deactivate_item(self.user, self.item, reason="Removed from catalogue")
+        self.assertEqual(list(get_catalog()), [])
+        items = list(get_catalog(active_only=False))
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].pk, self.item.pk)
+        self.assertFalse(items[0].is_active)
+
+    def test_get_catalog_active_only_false_includes_inactive_family_items(self):
+        create_supplier_item_price(
+            self.supplier, self.item, "8.50", primary=True, user=self.user
+        )
+        update_family(self.family, is_active=False)
+        items = list(get_catalog(active_only=False))
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].pk, self.item.pk)
+
     def test_create_item_rejects_inactive_family(self):
         inactive = create_family("Legacy", is_active=False)
         with self.assertRaises(InactiveFamilyError):
@@ -3097,6 +3293,7 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
             description="Cement 50kg",
             internal_code="CEM-50",
             reorder_level="10",
+            with_primary_supplier=False,
         )
         self.supplier = create_supplier(name="BuildSupply Ltd")
         create_supplier_item_price(
@@ -3194,6 +3391,44 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.client.force_login(self.staff_user)
         response = self.client.get(reverse("manage_catalog_list") + "?family_id=abc")
         self.assertEqual(response.status_code, 400)
+
+    def test_catalog_api_excludes_inactive_items_by_default(self):
+        deactivate_item(self.staff_user, self.item, reason="Removed from catalogue")
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse("manage_catalog_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["catalog"], [])
+
+    def test_catalog_api_include_inactive_returns_deactivated_items(self):
+        deactivate_item(self.staff_user, self.item, reason="Removed from catalogue")
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse("manage_catalog_list") + "?include_inactive=1")
+        self.assertEqual(response.status_code, 200)
+        catalog = response.json()["catalog"]
+        self.assertEqual(len(catalog), 1)
+        self.assertEqual(catalog[0]["internal_code"], "CEM-50")
+        self.assertFalse(catalog[0]["is_active"])
+
+    def test_catalog_api_suppliers_primary_first(self):
+        other = create_supplier(name="AAA Supplies")
+        create_supplier_item_price(
+            other, self.item, "9.00", primary=False, user=self.staff_user
+        )
+        self.client.force_login(self.staff_user)
+        row = self.client.get(reverse("manage_catalog_list")).json()["catalog"][0]
+        self.assertEqual(len(row["suppliers"]), 2)
+        self.assertTrue(row["suppliers"][0]["primary"])
+        self.assertEqual(row["suppliers"][0]["name"], self.supplier.name)
+
+    def test_catalog_console_has_include_inactive_and_sortable_headers(self):
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse("catalog_console"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="catalog-include-inactive"')
+        self.assertContains(response, "th-sortable")
+        self.assertContains(response, 'data-sort="internal_code"')
+        self.assertContains(response, "catalog.js?v=6")
+        self.assertContains(response, "catalog_i18n.js?v=8")
 
 
 class LanguageCodeContractTests(SimpleTestCase):
@@ -3321,5 +3556,7 @@ process.stdout.write(JSON.stringify(ctx.__export));
             settings.BASE_DIR / "products/static/products/js/preferences_bar.js"
         ).read_text()
         self.assertIn("cardItemConsole:", source)
+        self.assertIn("cardCostTrends:", source)
+        self.assertIn("sectionVisualizations:", source)
         self.assertIn("Gestão de artigos", source)
         self.assertIn("sectionWarehouse:", source)

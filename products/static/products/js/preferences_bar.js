@@ -36,6 +36,8 @@
                 "Manage the catalogue: items, families, sub-families, suppliers, prices",
             cardManagerCatalog: "Manager catalog",
             cardManagerCatalogDesc: "Stock + price view across the whole catalogue",
+            cardCostTrends: "Cost trends",
+            cardCostTrendsDesc: "Reference purchase cost over time (demo chart)",
             cardPurchaseOrders: "Purchase orders",
             cardPurchaseOrdersDesc:
                 "Create, approve, receive and manage purchase orders",
@@ -52,6 +54,9 @@
             cardBranchLimitsDesc: "Branch manager caps (admins only)",
             cardDjangoAdmin: "Django admin",
             cardDjangoAdminDesc: "Site administration (superuser only)",
+            sectionVisualizations: "Visualizations",
+            visualizationsNote:
+                "Charts and trends for analysis — not day-to-day operations.",
             sectionBranch: "Branch pages",
             branchNote:
                 "These need a branch membership. Warehouse-only logins are sent to the picker or refused.",
@@ -100,6 +105,8 @@
                 "Gerir o catálogo: artigos, famílias, sub-famílias, fornecedores, preços",
             cardManagerCatalog: "Catálogo do gestor",
             cardManagerCatalogDesc: "Vista de stock e preços de todo o catálogo",
+            cardCostTrends: "Evolução de custos",
+            cardCostTrendsDesc: "Custo de compra de referência ao longo do tempo (gráfico demo)",
             cardPurchaseOrders: "Encomendas de compra",
             cardPurchaseOrdersDesc:
                 "Criar, aprovar, receber e gerir encomendas de compra",
@@ -117,6 +124,9 @@
             cardBranchLimitsDesc: "Tetos dos gestores de filial (só administradores)",
             cardDjangoAdmin: "Administração Django",
             cardDjangoAdminDesc: "Administração do sítio (só superutilizador)",
+            sectionVisualizations: "Visualizações",
+            visualizationsNote:
+                "Gráficos e tendências para análise — não operações do dia a dia.",
             sectionBranch: "Páginas da filial",
             branchNote:
                 "Requerem uma adesão à filial. Inícios de sessão só de armazém são enviados ao seletor ou recusados.",

@@ -100,6 +100,18 @@ def staff_dashboard(request):
         memberships = list(get_active_memberships(user))
         branch_cards = branch_dashboard_cards(include_picker=len(memberships) > 1)
 
+    visualization_cards = []
+    if is_warehouse:
+        visualization_cards = [
+            {
+                "title_key": "cardCostTrends",
+                "desc_key": "cardCostTrendsDesc",
+                "title": "Cost trends",
+                "desc": "Reference purchase cost over time (demo chart)",
+                "url": "/manage/cost-trends/",
+            },
+        ]
+
     context = {
         "groups": groups,
         "is_warehouse": is_warehouse,
@@ -107,6 +119,7 @@ def staff_dashboard(request):
         "has_branch": has_branch,
         "warehouse_cards": warehouse_cards,
         "branch_cards": branch_cards,
+        "visualization_cards": visualization_cards,
     }
     if user.is_superuser or settings.DEBUG:
         context["permissions"] = sorted(user.get_all_permissions())

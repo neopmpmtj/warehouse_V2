@@ -2,7 +2,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.management.base import BaseCommand, CommandError
 
-from products.models import FamilyProduct, Item, SubFamily, VatRate
+from products.models import FamilyProduct, Item, SubFamily, Supplier, VatRate
 from products.services import (
     ItemGenesisNotReadyError,
     create_and_activate_item,
@@ -56,6 +56,17 @@ class Command(BaseCommand):
             dest="reorder_level",
             default="0",
             help="Reorder level (default: 0)",
+        )
+        parser.add_argument(
+            "--supplier",
+            default="",
+            help="Supplier name for Genesis primary (required when --activate)",
+        )
+        parser.add_argument(
+            "--cost-price",
+            dest="cost_price",
+            default="",
+            help="Buying cost for Genesis primary (required > 0 when --activate)",
         )
         parser.add_argument(
             "--activate",
@@ -113,14 +124,42 @@ class Command(BaseCommand):
         }
 
         if options["activate"]:
+            supplier_name = (options.get("supplier") or "").strip()
+            if not supplier_name:
+                raise CommandError(
+                    "--supplier is required when using --activate."
+                )
+            supplier = Supplier.objects.filter(name__iexact=supplier_name).first()
+            if supplier is None:
+                available = ", ".join(
+                    Supplier.objects.filter(is_active=True)
+                    .order_by("name")
+                    .values_list("name", flat=True)
+                )
+                raise CommandError(
+                    f"Supplier '{supplier_name}' not found. Active: {available}"
+                )
+            cost_price_raw = (options.get("cost_price") or "").strip()
+            if not cost_price_raw:
+                raise CommandError(
+                    "--cost-price is required when using --activate."
+                )
             try:
                 retail_price = Decimal(str(options["retail_price"]))
+                cost_price = Decimal(str(cost_price_raw))
             except (InvalidOperation, TypeError):
                 retail_price = Decimal("0")
+                cost_price = Decimal("0")
             if retail_price <= 0:
                 raise CommandError(
                     "--retail-price must be greater than 0 when using --activate."
                 )
+            if cost_price <= 0:
+                raise CommandError(
+                    "--cost-price must be greater than 0 when using --activate."
+                )
+            item_kwargs["supplier"] = supplier
+            item_kwargs["cost_price"] = cost_price_raw
             try:
                 item = create_and_activate_item(**item_kwargs)
             except ItemGenesisNotReadyError as exc:

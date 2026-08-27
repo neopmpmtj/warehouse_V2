@@ -137,7 +137,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 ### 5.1 Criar um novo artigo
 
 1. Clique em **Novo artigo**.
-2. Preencha o formulário (campos abaixo). **Código interno** e **preço de retalho superior a zero** são obrigatórios antes da Génese.
+2. Preencha o formulário (campos abaixo). **Código interno**, **preço de retalho superior a zero**, **fornecedor** e **preço de custo superior a zero** são obrigatórios antes da Génese.
 3. Clique em **Guardar**.
 4. Confirme **Génese** no diálogo — o artigo é criado e ativado num único passo.
 
@@ -158,6 +158,8 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 | **Nível de reposição** | Sim | O nível que mais tarde dispara a reposição. |
 | **Em armazém / Disponível** | (só leitura, na edição) | Stock físico de armazém e o que ainda está livre para prometer após reservas. Não editável aqui. |
 | **Preço de retalho** | Sim (> 0) | Preço de venda para a Génese (ver §6). Tem de ser **superior a zero** na criação. |
+| **Fornecedor** | Sim (artigos novos) | Fornecedor ativo para este artigo. Guardado como linha **principal** de preço de compra na Génese. |
+| **Preço de custo** | Sim (> 0, artigos novos) | O que paga a esse fornecedor por este artigo. Tem de ser **superior a zero** na criação. |
 | **Preço de grossista** | Não | Preço de venda (ver §6). |
 | **Preço especial** | Não | Preço de venda (ver §6). |
 | **Motivo** | Não | Uma nota que explique por que está alterando isto (guardada no histórico). |
@@ -321,7 +323,7 @@ Os preços de venda (retalho / grossista / especial) são o que *vendemos por* �
 Não. As horas adaptam-se automaticamente ao fuso horário local de cada utilizador. O sistema guarda UTC e converte na apresentação.
 
 **P5. Criei um artigo mas diz "Inativo" — porquê?**
-Os novos artigos são criados **ativos** quando confirma **Génese** ao guardar. Se cancela o diálogo de Génese, nada é guardado. Para adicionar uma linha inativa para testes, use o admin Django (superutilizador) ou a CLI `add_item` sem `--activate` (com `--activate`, passe `--retail-price` superior a 0).
+Os novos artigos são criados **ativos** quando confirma **Génese** ao guardar. Se cancela o diálogo de Génese, nada é guardado. Para adicionar uma linha inativa para testes, use o admin Django (superutilizador) ou a CLI `add_item` sem `--activate` (com `--activate`, passe `--retail-price`, `--supplier` e `--cost-price` — todos obrigatórios).
 
 **P6. Não vejo o botão editar / caixas de seleção — porquê?**
 O seu papel é **operador** (só leitura) ou não tem permissão de edição. Consulte §2. Peça ao administrador se acha que o papel está errado.

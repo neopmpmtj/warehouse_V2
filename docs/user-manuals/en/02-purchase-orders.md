@@ -145,7 +145,7 @@ Every action is recorded — who did it and when: created, line added/updated/re
 The supplier on this order has no price for that item (see §4). Add the price in the item console first, or pick a different supplier.
 
 **Q2. What does "Primary" mean on a supplier price?**
-It marks the supplier as the *preferred* supplier for that item. On a purchase order, the cost comes from **this order's supplier's** price — never another supplier's.
+It marks the supplier as the *preferred* supplier for that item. **New items:** Genesis requires a supplier and cost price — that first row is saved as **Primary**. If you later mark another supplier price as primary, the previous one is automatically unchecked (one primary per item). On a purchase order, the cost comes from **this order's supplier's** price — never another supplier's.
 
 **Q3. Why can't I edit a line?**
 Lines are editable only while the order is a **Draft**. After **Submit** they're locked.

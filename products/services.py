@@ -1,5 +1,8 @@
+import calendar
 import re
+from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal, InvalidOperation
+from zoneinfo import ZoneInfo
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -22,6 +25,8 @@ from .models import (
 )
 
 logger = get_logger("centcompras.products")
+
+_GENESIS_UNSET = object()
 
 ITEM_UPDATABLE_FIELDS = (
     "family",
@@ -70,6 +75,14 @@ class ItemGenesisNotReadyError(ValidationError):
         super().__init__(
             f"Item cannot be activated (Genesis): missing {labels}.",
             code="item_genesis_not_ready",
+        )
+
+
+class CostPriceGenesisRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Cost price must be greater than zero for Genesis.",
+            code="cost_price_genesis_required",
         )
 
 
@@ -278,7 +291,19 @@ def _item_needs_genesis_qualification(item):
     ).exists()
 
 
-def validate_item_genesis_ready(item):
+def _validate_genesis_cost_price(cost_price):
+    cost_price = _validate_cost_price(cost_price)
+    if cost_price <= 0:
+        raise CostPriceGenesisRequiredError()
+    return cost_price
+
+
+def validate_item_genesis_ready(
+    item,
+    *,
+    supplier=_GENESIS_UNSET,
+    cost_price=_GENESIS_UNSET,
+):
     missing = []
     internal_code = _normalize_internal_code(item.internal_code)
     if not internal_code:
@@ -309,6 +334,27 @@ def validate_item_genesis_ready(item):
         retail_price = Decimal("0")
     if retail_price <= 0:
         missing.append("retail price greater than 0")
+    if supplier is not _GENESIS_UNSET:
+        if supplier is None:
+            missing.append("supplier")
+        else:
+            try:
+                resolved_supplier = _resolve_supplier(supplier)
+                _ensure_supplier_active(resolved_supplier)
+            except InactiveSupplierError:
+                missing.append("active supplier")
+            except Supplier.DoesNotExist:
+                missing.append("supplier")
+    if cost_price is not _GENESIS_UNSET:
+        if cost_price is None:
+            missing.append("cost price greater than 0")
+        else:
+            try:
+                parsed_cost = _validate_cost_price(cost_price)
+                if parsed_cost <= 0:
+                    missing.append("cost price greater than 0")
+            except InvalidCostPriceError:
+                missing.append("cost price greater than 0")
     if missing:
         raise ItemGenesisNotReadyError(missing)
 
@@ -491,6 +537,8 @@ def create_and_activate_item(
     description,
     unit_of_measure,
     vat_rate,
+    supplier,
+    cost_price,
     internal_code="",
     reorder_level="0",
     retail_price="0",
@@ -499,6 +547,10 @@ def create_and_activate_item(
     reason="",
     sub_family=None,
 ):
+    supplier = _resolve_supplier(supplier)
+    _ensure_supplier_active(supplier)
+    cost_price = _validate_genesis_cost_price(cost_price)
+
     item = create_item(
         user,
         family=family,
@@ -513,8 +565,15 @@ def create_and_activate_item(
         reason=reason,
         sub_family=sub_family,
     )
-    validate_item_genesis_ready(item)
+    validate_item_genesis_ready(item, supplier=supplier, cost_price=cost_price)
     reactivate_item(user, item, reason="Genesis")
+    create_supplier_item_price(
+        supplier,
+        item,
+        cost_price,
+        primary=True,
+        user=user,
+    )
     item.refresh_from_db()
     return item
 
@@ -1428,3 +1487,261 @@ def catalog_below_reorder(item):
 
             available = available_quantity(item)
     return item.reorder_level > 0 and available <= item.reorder_level
+
+
+COST_TREND_PERIODS = frozenset(
+    {
+        "calendar_year",
+        "last_6_months",
+        "last_3_months",
+        "last_30_days",
+        "last_7_days",
+        "last_1_day",
+    }
+)
+
+
+def _shift_months(dt, months):
+    month = dt.month - months
+    year = dt.year
+    while month <= 0:
+        month += 12
+        year -= 1
+    day = min(dt.day, calendar.monthrange(year, month)[1])
+    return dt.replace(year=year, month=month, day=day)
+
+
+def resolve_cost_trend_window(period, *, now=None, tz_name="UTC"):
+    """Return (start, end) aware datetimes in UTC for a cost-trend preset."""
+    from django.utils import timezone as dj_timezone
+
+    if period not in COST_TREND_PERIODS:
+        raise ValidationError(
+            f"period must be one of: {', '.join(sorted(COST_TREND_PERIODS))}.",
+            code="invalid_period",
+        )
+    if now is None:
+        now = dj_timezone.now()
+    try:
+        tz = ZoneInfo(tz_name or "UTC")
+    except (KeyError, ValueError):
+        tz = ZoneInfo("UTC")
+    now_local = now.astimezone(tz)
+
+    if period == "calendar_year":
+        start_local = datetime(now_local.year, 1, 1, 0, 0, 0, tzinfo=tz)
+        end_local = datetime(
+            now_local.year, 12, 31, 23, 59, 59, 999999, tzinfo=tz
+        )
+    elif period == "last_6_months":
+        end_local = now_local
+        start_local = _shift_months(now_local, 6)
+    elif period == "last_3_months":
+        end_local = now_local
+        start_local = _shift_months(now_local, 3)
+    elif period == "last_30_days":
+        end_local = now_local
+        start_local = now_local - timedelta(days=30)
+    elif period == "last_7_days":
+        end_local = now_local
+        start_local = now_local - timedelta(days=7)
+    else:  # last_1_day
+        end_local = now_local
+        start_local = now_local - timedelta(hours=24)
+
+    return start_local.astimezone(dt_timezone.utc), end_local.astimezone(dt_timezone.utc)
+
+
+def _cost_from_log_changes(log):
+    changes = log.changes or {}
+    if log.action == SupplierItemPriceChangeLog.Action.CREATED:
+        raw = changes.get("cost_price")
+        return Decimal(str(raw)) if raw is not None else None
+    cost_change = changes.get("cost_price")
+    if not cost_change:
+        return None
+    raw = cost_change.get("new")
+    return Decimal(str(raw)) if raw is not None else None
+
+
+def _primary_from_log_changes(log):
+    changes = log.changes or {}
+    if log.action == SupplierItemPriceChangeLog.Action.CREATED:
+        return bool(changes.get("primary"))
+    primary_change = changes.get("primary")
+    if not primary_change:
+        return None
+    return bool(primary_change.get("new"))
+
+
+def _resolve_primary_sip_id(sip_primary):
+    for sip_id, is_primary in sip_primary.items():
+        if is_primary:
+            return sip_id
+    return None
+
+
+def build_item_primary_cost_timeline(item):
+    """Replay SupplierItemPriceChangeLog into effective primary buying-cost steps."""
+    item = _resolve_item(item)
+    sips = {
+        sip.id: sip
+        for sip in SupplierItemPrice.objects.filter(item=item).select_related(
+            "supplier"
+        )
+    }
+    if not sips:
+        return []
+
+    events = []
+    for sip_id, sip in sips.items():
+        for log in sip.change_logs.all():
+            events.append((log.created_at, log.id, sip_id, log))
+    events.sort(key=lambda row: (row[0], row[1]))
+
+    sip_cost = {}
+    sip_primary = {}
+    primary_sip_id = None
+    points = []
+    last_effective = None
+
+    for _at, _log_id, sip_id, log in events:
+        sip = sips[sip_id]
+        cost_delta = _cost_from_log_changes(log)
+        if cost_delta is not None:
+            sip_cost[sip_id] = cost_delta
+
+        primary_delta = _primary_from_log_changes(log)
+        if primary_delta is not None:
+            sip_primary[sip_id] = primary_delta
+            if primary_delta:
+                primary_sip_id = sip_id
+            elif primary_sip_id == sip_id:
+                primary_sip_id = _resolve_primary_sip_id(sip_primary)
+
+        if primary_sip_id is None:
+            continue
+        effective = sip_cost.get(primary_sip_id)
+        if effective is None:
+            continue
+        if effective == last_effective:
+            continue
+        primary_sip = sips[primary_sip_id]
+        points.append(
+            {
+                "at": log.created_at,
+                "cost": effective,
+                "supplier_id": primary_sip.supplier_id,
+                "supplier_name": primary_sip.supplier.name,
+            }
+        )
+        last_effective = effective
+
+    return points
+
+
+def _primary_switched_in_range(item, start, end):
+    item = _resolve_item(item)
+    sip_ids = SupplierItemPrice.objects.filter(item=item).values_list("id", flat=True)
+    return (
+        SupplierItemPriceChangeLog.objects.filter(
+            supplier_item_price_id__in=sip_ids,
+            created_at__gte=start,
+            created_at__lte=end,
+        )
+        .filter(changes__has_key="primary")
+        .exists()
+    )
+
+
+def get_item_primary_cost_series(item, *, start, end, period=None):
+    """Primary buying-cost points within [start, end] plus range summary."""
+    item = _resolve_item(item)
+    timeline = build_item_primary_cost_timeline(item)
+
+    carry_in = None
+    for point in timeline:
+        if point["at"] < start:
+            carry_in = point
+        elif point["at"] <= end:
+            break
+
+    in_window = [point for point in timeline if start <= point["at"] <= end]
+    display = []
+    if carry_in is not None:
+        display.append(
+            {
+                "at": start,
+                "cost": carry_in["cost"],
+                "supplier_id": carry_in["supplier_id"],
+                "supplier_name": carry_in["supplier_name"],
+            }
+        )
+    for point in in_window:
+        if display and display[-1]["cost"] == point["cost"]:
+            continue
+        display.append(point)
+
+    if not display and carry_in is not None:
+        display = [
+            {
+                "at": start,
+                "cost": carry_in["cost"],
+                "supplier_id": carry_in["supplier_id"],
+                "supplier_name": carry_in["supplier_name"],
+            },
+            {
+                "at": end,
+                "cost": carry_in["cost"],
+                "supplier_id": carry_in["supplier_id"],
+                "supplier_name": carry_in["supplier_name"],
+            },
+        ]
+    elif display and display[-1]["at"] < end:
+        last = display[-1]
+        display.append(
+            {
+                "at": end,
+                "cost": last["cost"],
+                "supplier_id": last["supplier_id"],
+                "supplier_name": last["supplier_name"],
+            }
+        )
+
+    start_cost = display[0]["cost"] if display else None
+    end_cost = display[-1]["cost"] if display else None
+    change_pct = None
+    if start_cost is not None and end_cost is not None and start_cost > 0:
+        change_pct = ((end_cost - start_cost) / start_cost * Decimal("100")).quantize(
+            Decimal("0.01")
+        )
+
+    def _serialize_point(point):
+        return {
+            "at": point["at"].isoformat(),
+            "cost": str(point["cost"]),
+            "supplier_id": point["supplier_id"],
+            "supplier_name": point["supplier_name"],
+        }
+
+    return {
+        "item": {
+            "id": item.id,
+            "internal_code": item.internal_code,
+            "description": item.description,
+        },
+        "range": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "period": period,
+        },
+        "points": [_serialize_point(point) for point in display],
+        "summary": {
+            "start_cost": str(start_cost) if start_cost is not None else None,
+            "end_cost": str(end_cost) if end_cost is not None else None,
+            "change_pct": str(change_pct) if change_pct is not None else None,
+            "primary_switched_in_range": _primary_switched_in_range(
+                item, start, end
+            ),
+        },
+    }
