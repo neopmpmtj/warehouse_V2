@@ -1581,6 +1581,16 @@ def _resolve_primary_sip_id(sip_primary):
     return None
 
 
+def _primary_changed_in_log(log):
+    changes = log.changes or {}
+    if log.action != SupplierItemPriceChangeLog.Action.UPDATED:
+        return False
+    primary_change = changes.get("primary")
+    if not primary_change:
+        return False
+    return primary_change.get("old") != primary_change.get("new")
+
+
 def build_item_primary_cost_timeline(item):
     """Replay SupplierItemPriceChangeLog into effective primary buying-cost steps."""
     item = _resolve_item(item)
@@ -1603,7 +1613,7 @@ def build_item_primary_cost_timeline(item):
     sip_primary = {}
     primary_sip_id = None
     points = []
-    last_effective = None
+    last_point_key = None
 
     for _at, _log_id, sip_id, log in events:
         sip = sips[sip_id]
@@ -1624,7 +1634,8 @@ def build_item_primary_cost_timeline(item):
         effective = sip_cost.get(primary_sip_id)
         if effective is None:
             continue
-        if effective == last_effective:
+        point_key = (effective, primary_sip_id)
+        if point_key == last_point_key:
             continue
         primary_sip = sips[primary_sip_id]
         points.append(
@@ -1635,7 +1646,7 @@ def build_item_primary_cost_timeline(item):
                 "supplier_name": primary_sip.supplier.name,
             }
         )
-        last_effective = effective
+        last_point_key = point_key
 
     return points
 
@@ -1643,15 +1654,13 @@ def build_item_primary_cost_timeline(item):
 def _primary_switched_in_range(item, start, end):
     item = _resolve_item(item)
     sip_ids = SupplierItemPrice.objects.filter(item=item).values_list("id", flat=True)
-    return (
-        SupplierItemPriceChangeLog.objects.filter(
-            supplier_item_price_id__in=sip_ids,
-            created_at__gte=start,
-            created_at__lte=end,
-        )
-        .filter(changes__has_key="primary")
-        .exists()
-    )
+    logs = SupplierItemPriceChangeLog.objects.filter(
+        supplier_item_price_id__in=sip_ids,
+        created_at__gte=start,
+        created_at__lte=end,
+        action=SupplierItemPriceChangeLog.Action.UPDATED,
+    ).filter(changes__has_key="primary")
+    return any(_primary_changed_in_log(log) for log in logs)
 
 
 def get_item_primary_cost_series(item, *, start, end, period=None):
@@ -1678,7 +1687,11 @@ def get_item_primary_cost_series(item, *, start, end, period=None):
             }
         )
     for point in in_window:
-        if display and display[-1]["cost"] == point["cost"]:
+        if (
+            display
+            and display[-1]["cost"] == point["cost"]
+            and display[-1]["supplier_id"] == point["supplier_id"]
+        ):
             continue
         display.append(point)
 
