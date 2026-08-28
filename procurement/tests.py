@@ -931,39 +931,31 @@ class PurchaseOrderGradeAndAuditTests(PurchaseOrderTestCaseMixin, TestCase):
     def test_po_detail_exposes_receipt_progress(self):
         from inventory.services import receive_goods
 
+        po = self._submitted_po(quantity="10")
+        po = services.approve(po, self.user)
         self.client.force_login(self.user)
-        po = self._create_po_via_api()
-        self.client.post(
-            reverse("manage_purchase_order_lines", args=[po["id"]]),
-            data=json.dumps({"item_id": self.item.id, "quantity": "10"}),
-            content_type="application/json",
-            **self.host,
-        )
-        self.client.post(reverse("manage_purchase_order_submit", args=[po["id"]]), **self.host)
-        self.client.post(reverse("manage_purchase_order_approve", args=[po["id"]]), **self.host)
 
         detail = self.client.get(
-            reverse("manage_purchase_order_detail", args=[po["id"]]),
+            reverse("manage_purchase_order_detail", args=[po.id]),
             **self.host,
         )
         body = detail.json()["purchase_order"]
         line = body["lines"][0]
-        self.assertEqual(line["quantity_received"], "0.000")
-        self.assertEqual(line["quantity_remaining"], "10.000")
+        self.assertEqual(Decimal(line["quantity_received"]), Decimal("0"))
+        self.assertEqual(Decimal(line["quantity_remaining"]), Decimal("10"))
         self.assertTrue(body["has_remaining"])
         self.assertFalse(body["has_received"])
         self.assertFalse(body["can_short_close"])
 
-        po_obj = PurchaseOrder.objects.get(pk=po["id"])
-        line_obj = po_obj.lines.get()
+        line_obj = po.lines.get()
         receive_goods(
-            po_obj,
+            po,
             [{"line_id": line_obj.id, "quantity_received": "4"}],
             self.user,
         )
 
         detail = self.client.get(
-            reverse("manage_purchase_order_detail", args=[po["id"]]),
+            reverse("manage_purchase_order_detail", args=[po.id]),
             **self.host,
         )
         body = detail.json()["purchase_order"]
@@ -975,26 +967,18 @@ class PurchaseOrderGradeAndAuditTests(PurchaseOrderTestCaseMixin, TestCase):
     def test_short_close_endpoint(self):
         from inventory.services import receive_goods
 
-        self.client.force_login(self.user)
-        po = self._create_po_via_api()
-        self.client.post(
-            reverse("manage_purchase_order_lines", args=[po["id"]]),
-            data=json.dumps({"item_id": self.item.id, "quantity": "10"}),
-            content_type="application/json",
-            **self.host,
-        )
-        self.client.post(reverse("manage_purchase_order_submit", args=[po["id"]]), **self.host)
-        self.client.post(reverse("manage_purchase_order_approve", args=[po["id"]]), **self.host)
-        po_obj = PurchaseOrder.objects.get(pk=po["id"])
-        line_obj = po_obj.lines.get()
+        po = self._submitted_po(quantity="10")
+        po = services.approve(po, self.user)
+        line_obj = po.lines.get()
         receive_goods(
-            po_obj,
+            po,
             [{"line_id": line_obj.id, "quantity_received": "4"}],
             self.user,
         )
+        self.client.force_login(self.user)
 
         resp = self.client.post(
-            reverse("manage_purchase_order_short_close", args=[po["id"]]),
+            reverse("manage_purchase_order_short_close", args=[po.id]),
             data=json.dumps({"reason": "Supplier short shipped"}),
             content_type="application/json",
             **self.host,
