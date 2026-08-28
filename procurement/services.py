@@ -32,7 +32,10 @@ LINE_UPDATABLE_FIELDS = (
 )
 
 STATUS_TRANSITIONS = {
-    PurchaseOrder.Status.DRAFT: {PurchaseOrder.Status.SUBMITTED},
+    PurchaseOrder.Status.DRAFT: {
+        PurchaseOrder.Status.SUBMITTED,
+        PurchaseOrder.Status.CANCELLED,
+    },
     PurchaseOrder.Status.SUBMITTED: {
         PurchaseOrder.Status.APPROVED,
         PurchaseOrder.Status.REJECTED,
@@ -815,23 +818,27 @@ def close(po, user=None, reason=""):
 
 @transaction.atomic
 def cancel(po, user=None, reason=""):
-    """Cancel an approved PO that has no receipts. Terminal void; use close() for short shipments."""
+    """Cancel a draft PO (no reason) or an approved PO with no receipts (reason required)."""
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
+    from_status = po.status
     _transition(po, PurchaseOrder.Status.CANCELLED)
-    reason = _require_reason(
-        reason,
-        "cancel_reason_required",
-        "A reason is required to cancel a purchase order.",
-    )
-    if _po_has_receipts(po):
-        raise PurchaseOrderCancelError()
+
+    if from_status == PurchaseOrder.Status.APPROVED:
+        reason = _require_reason(
+            reason,
+            "cancel_reason_required",
+            "A reason is required to cancel a purchase order.",
+        )
+        if _po_has_receipts(po):
+            raise PurchaseOrderCancelError()
+
     po.status = PurchaseOrder.Status.CANCELLED
     po.save(update_fields=["status", "updated_at"])
     _log(
         po,
         user,
         PurchaseOrderChangeLog.Action.STATUS_CHANGED,
-        {"status": {"old": PurchaseOrder.Status.APPROVED, "new": PurchaseOrder.Status.CANCELLED}},
+        {"status": {"old": from_status, "new": PurchaseOrder.Status.CANCELLED}},
         reason=reason,
     )
     logger.info("Cancelled purchase order id=%s user=%s", po.id, getattr(user, "email", None))

@@ -334,6 +334,19 @@ function renderTable() {
         });
         actions.appendChild(openButton);
 
+        const perms = poPermissions();
+        if (po.status === "draft" && perms.change) {
+            const discardButton = document.createElement("button");
+            discardButton.type = "button";
+            discardButton.className = "btn btn-danger";
+            discardButton.textContent = t("discardDraft");
+            discardButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                discardDraftPo(po.id, discardButton);
+            });
+            actions.appendChild(discardButton);
+        }
+
         row.append(id, supplier, status, total, created, actions);
         row.addEventListener("click", () => openDrawer(po.id));
         body.appendChild(row);
@@ -477,6 +490,36 @@ function renderStatusActions(po, perms) {
         });
         container.appendChild(button);
     });
+}
+
+async function discardDraftPo(poId, button) {
+    if (!poPermissions().change) {
+        return;
+    }
+    if (!window.confirm(t("confirmDiscardDraft"))) {
+        return;
+    }
+    if (isBusy()) {
+        return;
+    }
+    button.disabled = true;
+    state.busy = true;
+    try {
+        await api(`${PO_API}${poId}/cancel/`, {
+            method: "POST",
+            body: JSON.stringify({ reason: "" }),
+        });
+        if (state.openId === poId) {
+            closeDrawer();
+        }
+        await loadPurchaseOrders();
+        showBanner(t("draftDiscarded"));
+    } catch (error) {
+        showBanner(error.message, true);
+    } finally {
+        state.busy = false;
+        button.disabled = false;
+    }
 }
 
 async function performStatusAction(poId, endpoint, successKey, button, reason) {
