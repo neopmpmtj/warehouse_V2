@@ -26,8 +26,8 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | **I — Hook** | 1–2 | Title + call to action (what we need from you) |
 | **II — Why** | 3–6 | Scenario, data metaphor, what is recorded, future vision |
 | **III — Closed circuit** | 7–14 | Architecture + warehouse flow through branch receipt |
-| **IV — Circularity** | 15 | Thread circuit (closes) vs Company Voice stream (parallel) |
-| **V — Send-off** | 16 | Company Voice finale |
+| **IV — Circularity** | 15 | Catalogue-gap thread circuit (closes) |
+| **V — Send-off** | 16 | Company Voice finale (text + ongoing feed panel) |
 
 ---
 
@@ -91,17 +91,17 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - `/branch/receipts/` — closes the operational circuit
 - **Notes:** Every step recorded.
 
-### Slide 15 — Circularity (two zones)
-- **Zone A — Thread circuit (closes):** missing item → thread → dialogue → create item → link → normal request → close + satisfaction → next gap → new thread
-- **Zone B — Company Voice (ongoing feed):** downward stream visual; posts do not close; not part of catalogue-gap circuit
-- Thread bullets: states, opener-only close, force-close, unread badges
-- **Notes:** Thread ≠ order; item born in catalogue flow.
+### Slide 15 — Circularity (thread circuit only)
+- Full-width thread circuit diagram (catalogue gap → open → dialogue → create → link → normal request → close)
+- Loop label: next catalogue gap → new thread
+- Thread bullets + caption below (two columns)
+- **Notes:** No Company Voice on this slide — circularity is only for missing items.
 
 ### Slide 16 — Company Voice (finale)
-- Eyebrow: **Keep talking**
-- Emotional send-off; features + participation CTA
-- Footer: manuals at `docs/user-manuals/en/` · Phase 7
-- **Notes:** Last slide — ongoing channel, not a closing circuit.
+- Text copy (left) + ongoing feed panel illustration (right)
+- Eyebrow: **Keep talking**; emotional send-off
+- Footer: manuals · Phase 7
+- **Notes:** Feed visual moved here from slide 15; stream never closes.
 
 ---
 
