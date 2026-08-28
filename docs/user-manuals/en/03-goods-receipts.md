@@ -149,8 +149,9 @@ Several receipts against the same PO are normal.
 |--------------------|-----------|
 | First (or further) **partial** delivery | **Received** |
 | Every line’s remaining quantity is now **0** | **Closed** (automatic) |
+| Partial delivery and the rest will not arrive | **Short close** from the PO drawer or the goods receipt dialog (reason required) |
 
-You do not close the PO by hand from this screen. Closing is the result of having received everything.
+Full receipt closes the PO automatically. **Short close** is for accepting a short shipment after at least one goods receipt.
 
 New units also become **available to promise** for waiting branch requisições: the oldest approved request that still needs the item gets the hold first. See [Branches & Requisição interna](04-internal-requests.md) §7.
 
@@ -246,5 +247,8 @@ The supplier’s delivery note / *guia de entrega* number. It is optional but it
 **Q9. Does receiving change the purchase-order totals (net / VAT / gross)?**
 No. Those figures were **frozen at approval**. Receiving only writes stock and moves the PO status to Received / Closed.
 
-**Q10. Dates look like 05/08/2026 — is that 5 August or 8 May?**
+**Q10. The supplier short-shipped — how do I close the PO?**
+After you record the partial delivery, click **Short close remainder** in the receipt dialog (or open the PO and click **Short close**). A reason is required. Use **Cancel order** on the PO only when **no** goods were received.
+
+**Q11. Dates look like 05/08/2026 — is that 5 August or 8 May?**
 **5 August 2026.** The app uses day/month/year everywhere.

@@ -149,8 +149,9 @@ Várias receções contra a mesma encomenda são normais.
 |--------------------|-----------|
 | Primeira (ou mais) entrega **parcial** | **Recebido** |
 | A quantidade restante de cada linha é agora **0** | **Fechado** (automático) |
+| Entrega parcial e o resto não chega | **Encerramento parcial** no painel lateral da encomenda ou no diálogo de receção (motivo obrigatório) |
 
-Não fecha a encomenda manualmente neste ecrã. O fecho é o resultado de ter recebido tudo.
+Receber tudo fecha a encomenda automaticamente. **Encerramento parcial** serve para aceitar uma entrega incompleta depois de pelo menos uma receção de mercadorias.
 
 As novas unidades também ficam **disponíveis para prometer** a requisições de filial em espera: a requisição aprovada mais antiga que ainda precisa do artigo recebe a reserva primeiro. Consulte [Filiais e requisição interna](04-internal-requests.md) §7.
 
@@ -246,5 +247,8 @@ O número da guia de entrega / *guia de entrega* do fornecedor. É opcional mas 
 **P9. Receber altera os totais da encomenda de compra (líquido / IVA / bruto)?**
 Não. Esses valores foram **congelados na aprovação**. Receber só escreve stock e move o estado da encomenda a Recebido / Fechado.
 
-**P10. As datas parecem 05/08/2026 — é 5 de agosto ou 8 de maio?**
+**P10. O fornecedor entregou a menos — como fecho a encomenda?**
+Depois de registar a entrega parcial, clique em **Encerramento parcial** no diálogo de receção (ou abra a encomenda e clique em **Encerramento parcial**). É obrigatório um motivo. Use **Cancelar encomenda** na encomenda só quando **não** houve receção de mercadorias.
+
+**P11. As datas parecem 05/08/2026 — é 5 de agosto ou 8 de maio?**
 **5 de agosto de 2026.** A aplicação usa dia/mês/ano em todo o lado.

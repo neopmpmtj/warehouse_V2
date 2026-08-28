@@ -243,7 +243,23 @@ def manage_receipt_summary(request, po_id):
         po = PurchaseOrder.objects.get(pk=po_id)
     except PurchaseOrder.DoesNotExist:
         return _json_error("Purchase order not found.", status=404)
-    return JsonResponse({"lines": services.get_receipt_summary(po)})
+    lines = services.get_receipt_summary(po)
+    has_remaining = any(Decimal(line["remaining"]) > 0 for line in lines)
+    has_received = any(Decimal(line["received"]) > 0 for line in lines)
+    return JsonResponse(
+        {
+            "purchase_order_id": po.id,
+            "status": po.status,
+            "has_remaining": has_remaining,
+            "has_received": has_received,
+            "can_short_close": (
+                po.status == PurchaseOrder.Status.RECEIVED
+                and has_remaining
+                and has_received
+            ),
+            "lines": lines,
+        }
+    )
 
 
 @inventory_required

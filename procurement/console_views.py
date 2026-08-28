@@ -96,8 +96,8 @@ def _paginate(queryset, request):
     return items, meta
 
 
-def _serialize_line(line):
-    return {
+def _serialize_line(line, received_map=None):
+    payload = {
         "id": line.id,
         "item_id": line.item_id,
         "internal_code": line.internal_code,
@@ -114,6 +114,24 @@ def _serialize_line(line):
         "line_vat": _dec(line.line_vat),
         "line_total": _dec(line.line_total),
     }
+    if received_map is not None:
+        received = received_map.get(line.id, Decimal("0"))
+        remaining = line.quantity - received
+        payload["quantity_received"] = _dec(received)
+        payload["quantity_remaining"] = _dec(remaining)
+    return payload
+
+
+def _po_receipt_progress(po):
+    from inventory.services import _received_qty_map
+
+    received_map = _received_qty_map(po)
+    lines = list(po.lines.all())
+    has_remaining = any(
+        (line.quantity - received_map.get(line.id, Decimal("0"))) > 0 for line in lines
+    )
+    has_received = any(received_map.get(line.id, Decimal("0")) > 0 for line in lines)
+    return received_map, has_remaining, has_received
 
 
 def _serialize_po(po, include_lines=True):
@@ -134,9 +152,23 @@ def _serialize_po(po, include_lines=True):
     payload["total_net"] = _dec(net)
     payload["total_vat"] = _dec(vat)
     payload["total_gross"] = _dec(gross)
+    received_map = None
+    if include_lines and po.status in (
+        PurchaseOrder.Status.APPROVED,
+        PurchaseOrder.Status.RECEIVED,
+        PurchaseOrder.Status.CLOSED,
+    ):
+        received_map, has_remaining, has_received = _po_receipt_progress(po)
+        payload["has_remaining"] = has_remaining
+        payload["has_received"] = has_received
+        payload["can_short_close"] = (
+            po.status == PurchaseOrder.Status.RECEIVED
+            and has_remaining
+            and has_received
+        )
     if include_lines:
         lines = list(po.lines.all())
-        payload["lines"] = [_serialize_line(line) for line in lines]
+        payload["lines"] = [_serialize_line(line, received_map) for line in lines]
     if po.approved_net is not None:
         payload["approved_net"] = _dec(po.approved_net)
         payload["approved_vat"] = _dec(po.approved_vat)
@@ -365,7 +397,13 @@ def manage_purchase_order_reopen(request, po_id):
 @procurement_required
 @require_POST
 def manage_purchase_order_close(request, po_id):
-    return _status_action(request, po_id, services.close, CHANGE_PO)
+    return _status_action(request, po_id, services.short_close_purchase_order, CHANGE_PO)
+
+
+@procurement_required
+@require_POST
+def manage_purchase_order_short_close(request, po_id):
+    return _status_action(request, po_id, services.short_close_purchase_order, CHANGE_PO)
 
 
 @procurement_required

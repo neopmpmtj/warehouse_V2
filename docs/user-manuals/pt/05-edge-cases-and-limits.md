@@ -91,7 +91,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `É obrigatório indicar um motivo para rejeitar a encomenda.` | Rejeitar exige motivo | Escreva um |
 | `É obrigatório indicar um motivo para fechar uma encomenda com quantidade por receber.` | Fecho manual (entrega parcial) exige motivo | Escreva um |
 | `É obrigatório indicar um motivo para cancelar a encomenda.` | Cancelar exige motivo | Escreva um |
-| `Uma encomenda com receções não pode ser cancelada. Feche-a para aceitar uma entrega parcial.` | Não pode cancelar uma encomenda aprovada que já recebeu mercadoria | Use **fechar** (entrega parcial) em vez disso |
+| `Uma encomenda com receções não pode ser cancelada. Feche-a para aceitar uma entrega parcial.` | Não pode cancelar uma encomenda aprovada que já recebeu mercadoria | Use **Encerramento parcial** (entrega incompleta) em vez disso |
 | `Purchase order totals exceed the maximum supported value.` (Os totais da encomenda excedem o valor máximo suportado.) | Totais ≥ 1 000 000 000 000 | Reduza quantidades/preços |
 
 ### 2.3 Inventário — receção de mercadorias, saída de mercadoria, stock da filial
@@ -352,8 +352,12 @@ Estes são adiamentos deliberados — confirme antes de assumir que existem:
 ## 9. Árvores de decisão (referência rápida)
 
 **"Não consigo cancelar."**
-- Encomenda: tem receções? → **fechar** (entrega parcial), não cancelar.
+- Encomenda: tem receções? → **Encerramento parcial** (entrega incompleta), não cancelar.
 - Requisição: mercadoria já emitida? → **encerramento parcial** (armazém ou filial), não cancelar.
+
+**Fornecedor deixou de fornecer um artigo depois da encomenda aprovada.**
+- Submeter/aprovar bloqueiam se faltar o preço de fornecedor; depois da aprovação, a receção usa a linha congelada.
+- Não pode remover a linha — **cancelar** (zero receções) ou **encerramento parcial** após receção parcial.
 - Requisição, sem emissão ainda, mas sou operador → só gestor/administrador.
 
 **"Não consigo aprovar."**

@@ -117,13 +117,27 @@ The list's **Total** column shows the **gross**.
 | Submitted | **Approve** | Approved | manager grade 2+ / admin (within caps) |
 | Submitted | **Reject** | Rejected | manager/admin |
 | Approved | **Receive goods** | Received | manager/admin |
-| Received | **Close** | Closed | manager/admin (when fully received, this can happen automatically) |
+| Approved (no receipts) | **Cancel order** | Cancelled | manager/admin (reason required) |
+| Received (partial delivery) | **Short close** | Closed | manager/admin (reason required if quantity remains) |
+| Received | *(automatic when fully received)* | Closed | automatic (“Fully received”) |
 
 - **Submit** requires at least one line.
 - Once submitted, lines are **locked** — you can no longer edit them.
 - **Approve** freezes the totals (see §8).
 
-> **Receive goods** opens the [goods receipt console](03-goods-receipts.md) (`/manage/goods-receipts/?po=<id>`). Recording a receipt writes stock and moves the purchase order to **Received**, then **Closed** when every line is fully received. Partial shipments are allowed.
+> **Receive goods** opens the [goods receipt console](03-goods-receipts.md) (`/manage/goods-receipts/?po=<id>`). Recording a receipt writes stock and moves the purchase order to **Received**. When every line is fully received, the PO **closes automatically**. If the supplier short-ships, receive what arrived, then **Short close** the remainder (reason required).
+
+### 7.1 Cancel vs short close
+
+| Situation | Action | Where |
+|-----------|--------|-------|
+| Supplier will deliver **nothing** (no goods receipt yet) | **Cancel order** | PO drawer while **Approved** |
+| Supplier delivered **part** of the order | **Receive goods**, then **Short close** | Goods receipt console and/or PO drawer while **Received** |
+| Supplier delivered **everything** | **Receive goods** only | PO closes automatically |
+
+After **Approve**, the lines table shows **Received** and **Remaining** columns so you can see progress.
+
+If the supplier **stops carrying an item** after approval: you cannot remove that line. Receive whatever arrives (or nothing on that line), then **cancel** (zero receipts) or **short close** (after a partial receipt). Goods receipt does not re-check the supplier price list — the approved line snapshot is used.
 
 ---
 
@@ -156,5 +170,8 @@ Only **managers grade 2+** and **admins** can approve (within caps for managers)
 **Q5. What's the difference between Net and Gross?**
 Net is before VAT; Gross is net + VAT — the amount you actually pay.
 
-**Q6. Dates and timezone?**
+**Q6. The supplier won't ship the rest — what do I do?**
+If **nothing** was received yet, open the PO and **Cancel order** with a reason. If you already booked a **partial** delivery, use **Short close** (from the PO drawer or the goods receipt dialog) and give a reason — the remaining quantity is written off.
+
+**Q7. Dates and timezone?**
 Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). **Sign out** is a small link on the Settings title row; **Help** is the blue **?** icon next to the gear (placeholder). Press **Escape** to close Settings. **Language** (English / Português) and **theme** are set on the staff dashboard (`/`) and remembered in this browser.

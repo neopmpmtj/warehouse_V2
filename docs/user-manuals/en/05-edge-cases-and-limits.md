@@ -91,7 +91,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `A reason is required to reject a purchase order.` | Reject needs a reason | Type one |
 | `A reason is required to close a purchase order with remaining quantity.` | Manual close (short shipment) needs a reason | Type one |
 | `A reason is required to cancel a purchase order.` | Cancel needs a reason | Type one |
-| `A purchase order with receipts cannot be cancelled. Close it instead to accept a short shipment.` | You can't cancel an approved PO that already received goods | Use **close** (short shipment) instead |
+| `A purchase order with receipts cannot be cancelled. Close it instead to accept a short shipment.` | You can't cancel an approved PO that already received goods | Use **Short close** (short shipment) instead |
 | `Purchase order totals exceed the maximum supported value.` | Totals ≥ 1,000,000,000,000 | Lower quantities/prices |
 
 ### 2.3 Inventory — goods receipt, goods issue, branch stock
@@ -352,8 +352,12 @@ These are deliberate deferrals — ask before assuming they exist:
 ## 9. Decision trees (quick reference)
 
 **"I can't cancel."**
-- PO: has receipts? → **close** (short shipment), not cancel.
+- PO: has receipts? → **Short close** (short shipment), not cancel.
 - Request: already issued goods? → **short-close** (warehouse or branch), not cancel.
+
+**Supplier dropped an item after the PO was approved.**
+- Submit/approve block if the supplier price row is missing; after approval, receipt still uses the frozen line.
+- Cannot remove a line — **cancel** (zero receipts) or **short close** after a partial receipt.
 - Request, no issue yet, but I'm an operator → manager/admin only.
 
 **"I can't approve."**

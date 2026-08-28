@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
-from accounts.capabilities import inventory_permission_flags
+from accounts.capabilities import inventory_permission_flags, procurement_permission_flags
 from branches.capabilities import can_adjust_branch_stock, can_approve_request
 from branches.navigation import branch_page_context
 from branches.permissions import active_branch_required
@@ -13,12 +13,14 @@ from .permissions import inventory_required
 @require_GET
 def goods_receipt_console(request):
     flags = inventory_permission_flags(request.user)
+    po_flags = procurement_permission_flags(request.user)
     return render(
         request,
         "inventory/goods_receipts.html",
         {
             "can_add_goodsreceipt": flags["add_goodsreceipt"],
             "can_adjust_stock": flags["can_adjust_stock"],
+            "can_change_purchaseorder": po_flags["change_purchaseorder"],
         },
     )
 

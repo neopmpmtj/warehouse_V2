@@ -340,6 +340,12 @@ function renderTable() {
     });
 }
 
+function showReceiptColumns(show) {
+    document.querySelectorAll(".po-receipt-col").forEach((element) => {
+        element.hidden = !show;
+    });
+}
+
 function renderDrawer(po) {
     const perms = poPermissions();
 
@@ -358,21 +364,25 @@ function renderDrawer(po) {
     document.getElementById("po-vat").textContent = formatCost(hasApproved ? po.approved_vat : (po.total_vat || "0"));
     document.getElementById("po-gross").textContent = formatCost(hasApproved ? po.approved_gross : (po.total_gross || "0"));
 
-    renderLines(po, perms);
+    const showReceiptProgress = ["approved", "received", "closed"].includes(po.status);
+    showReceiptColumns(showReceiptProgress);
+
+    renderLines(po, perms, showReceiptProgress);
     renderStatusActions(po, perms);
 }
 
-function renderLines(po, perms) {
+function renderLines(po, perms, showReceiptProgress) {
     const body = document.getElementById("po-lines-body");
     body.replaceChildren();
 
     const canEditLines = po.status === "draft" && perms.change;
     document.getElementById("add-line").hidden = !canEditLines;
+    const columnCount = showReceiptProgress ? 12 : 10;
 
     if (!po.lines.length) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.colSpan = 10;
+        cell.colSpan = columnCount;
         cell.className = "empty-row";
         cell.textContent = t("noLines");
         row.appendChild(cell);
@@ -385,6 +395,10 @@ function renderLines(po, perms) {
         row.appendChild(textTd(line.internal_code || "—"));
         row.appendChild(textTd(line.description));
         row.appendChild(textTd(line.quantity));
+        if (showReceiptProgress) {
+            row.appendChild(textTd(line.quantity_received || "0"));
+            row.appendChild(textTd(line.quantity_remaining || line.quantity));
+        }
         row.appendChild(textTd(formatCost(line.unit_cost)));
         row.appendChild(textTd(formatPercent(line.discount_commercial)));
         row.appendChild(textTd(formatPercent(line.discount_financial)));
@@ -418,6 +432,15 @@ function renderStatusActions(po, perms) {
     const container = document.getElementById("po-status-actions");
     container.replaceChildren();
 
+    const hint = document.getElementById("po-status-hint");
+    if (po.status === "approved" && perms.change) {
+        hint.textContent = t("cancelHintApproved");
+        hint.hidden = false;
+    } else {
+        hint.hidden = true;
+        hint.textContent = "";
+    }
+
     // Receiving goods writes stock via the goods-receipt console.
     if ((po.status === "approved" || po.status === "received") && perms.change) {
         const receiveButton = document.createElement("button");
@@ -447,8 +470,14 @@ function renderStatusActions(po, perms) {
             actions = [{ endpoint: "cancel/", labelKey: "actionCancel", successKey: "cancelled", danger: true, confirmKey: "confirmCancel", reasonKey: "reasonCancel" }];
         }
     } else if (po.status === "received") {
-        if (perms.change) {
-            actions = [{ endpoint: "close/", labelKey: "actionClose", successKey: "closed", confirmKey: "confirmClose", reasonKey: "reasonClose" }];
+        if (perms.change && po.can_short_close) {
+            actions = [{
+                endpoint: "short-close/",
+                labelKey: "actionShortClose",
+                successKey: "shortClosed",
+                confirmKey: "confirmShortClose",
+                reasonKey: "reasonShortClose",
+            }];
         }
     } else if (po.status === "rejected") {
         if (perms.change) {
