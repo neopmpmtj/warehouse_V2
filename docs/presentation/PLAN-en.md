@@ -1,6 +1,6 @@
 # CentCompras — Presentation plan (en)
 
-**Version:** 1.0 · **Date:** 26 August 2026  
+**Version:** 2.0 · **Date:** 28 August 2026  
 **URL:** `/presentation/en/` · **Language:** English — Portuguese at `/presentation/pt/`  
 **Audience:** Central warehouse, branch managers and operators, leadership
 
@@ -8,24 +8,26 @@
 
 ## Objective
 
-Communicate three core messages:
+Communicate four core messages:
 
-1. **Data is the new oil** — the sooner staff use CentCompras daily, the sooner the company has reliable information for charts and decisions.
-2. **Closed circuit** — from item to stock, through procurement, authorization, and shipment.
-3. **Circularity** — when an item does not exist, the cycle starts elsewhere (request threads) and closes with human feedback (thread satisfaction + Company Voice).
+1. **Start today** — role-based call to action up front; data compounds with daily use.
+2. **Data is the new oil** — the sooner staff use CentCompras daily, the sooner the company has reliable information for charts and decisions.
+3. **Closed circuit** — from item to stock, through procurement, authorization, and shipment.
+4. **Two human channels** — request threads are **bounded conversations that close**; Company Voice is an **ongoing feed** that never closes.
 
 The presentation is **informational** (no live data). Charts marked **future vision** are illustrative.
 
 ---
 
-## Narrative (4 acts)
+## Narrative (5 acts)
 
 | Act | Slides | Message |
 |-----|--------|---------|
-| **I — Why** | 1–4 | Context, data metaphor, what is already recorded today |
-| **II — Closed circuit** | 5–11 | Warehouse flow: catalogue → procurement → approval → stock → branch |
-| **III — Circularity** | 12–14 | Missing item → thread → catalogue → request → feedback |
-| **IV — Call to action** | 15–16 | Roles, next steps, start now |
+| **I — Hook** | 1–2 | Title + call to action (what we need from you) |
+| **II — Why** | 3–6 | Scenario, data metaphor, what is recorded, future vision |
+| **III — Closed circuit** | 7–14 | Architecture + warehouse flow through branch receipt |
+| **IV — Circularity** | 15 | Thread circuit (closes) vs Company Voice stream (parallel) |
+| **V — Send-off** | 16 | Company Voice finale |
 
 ---
 
@@ -36,78 +38,70 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - **Subtitle:** Data, circuits, and circularity
 - **Notes:** Present the system as a single platform (PostgreSQL = source of truth).
 
-### Slide 2 — Scenario
-- Central warehouse + satellite branches
-- Today: catalogue, purchase orders, receipts, requests, threads, Company Voice, offline PWA at branches
+### Slide 2 — What we need from you (CTA)
+- Eyebrow: **What we need from you**
+- Four role-based actions: warehouse, branches, management, everyone
+- **Notes:** No manuals/Phase 7 footer here — urgency first; foreshadows Company Voice (item 4).
+
+### Slide 3 — Today's scenario
+- Central warehouse + satellite branches; single-column list of modules (no card grid)
 - **Notes:** Not a prototype — phases 0–6 complete (548 tests).
 
-### Slide 3 — Data is the new oil
+### Slide 4 — Data is the new oil
 - Metaphor: crude vs refined oil; raw data vs decisions
-- Every click generates structured events (stock movements, PO states, approvals, audit)
 - **Notes:** Emphasize you do not need to wait for charts to start using the system.
 
-### Slide 4 — What the system already records
+### Slide 5 — What the system already records
 - Table: `StockMovement`, `ItemChangeLog`, PO states, `InternalRequest`, `ThreadMessage`, `VoicePost`
-- **Notes:** Link to real models in code; zero direct quantity typing.
+- **Notes:** Golden rule — stock only via ledger movements.
 
-### Slide 5 — Future vision: charts *(mock)*
-- Illustrative charts: stock over time, POs by state, requests per branch
-- Visible label: **FUTURE VISION — real data accumulates with use**
+### Slide 6 — Future vision: charts *(mock)*
+- Illustrative charts; label **Future vision — illustrative**
 - **Notes:** Honest about what exists vs what is coming.
 
-### Slide 6 — Two worlds, one system
+### Slide 7 — Two worlds, one system
 - Warehouse (`/manage/…`) vs branch (`/branch/…`)
-- Roles: admin/manager/operator (warehouse and branch)
 - **Notes:** Warehouse groups ≠ branch roles.
 
-### Slide 7 — Closed circuit (diagram)
-- SVG: Catalogue → Procurement → Approval → Central stock → Request → Issue → Branch receipt
-- **Notes:** Bird's-eye view before detailing each step.
+### Slide 8 — Closed circuit (diagram)
+- SVG: Catalogue → Procurement → Approval → Stock → Request → Issue → Branch receipt
+- **Notes:** Bird's-eye view before step slides.
 
-### Slide 8 — Catalogue and pricing
-- `/manage/items/` — families, items, `internal_code`, selling and supplier prices
-- Genesis: activation with retail price > 0
+### Slide 9 — Catalogue and pricing
+- `/manage/items/` — families, Genesis, audit
 - **Notes:** Item inactive until qualified.
 
-### Slide 9 — Procurement
-- `/manage/purchase-orders/` — draft → submitted → approved → received
-- Line rejected if supplier has no price for item
-- **Notes:** Links to `SupplierItemPrice`.
+### Slide 10 — Procurement
+- `/manage/purchase-orders/` — draft through received/closed
+- **Notes:** No supplier price → no line.
 
-### Slide 10 — Authorization
-- Grade + EUR gross limits (`/manage/approval-limits/`)
-- Branch: caps at `/manage/branch-approval-limits/`
+### Slide 11 — Authorization
+- PO limits + branch request caps
 - **Notes:** Operators never approve POs.
 
-### Slide 11 — Central stock
-- `/manage/goods-receipts/` → `StockMovement` ledger
-- FIFO reservation (D32): available = on-hand − reserved
+### Slide 12 — Central stock
+- `/manage/goods-receipts/` → `StockMovement`; FIFO reservation (D32)
 - **Notes:** `Item.quantity` only via movements.
 
-### Slide 12 — Internal request
-- Branch: draft → approval → warehouse issues (`/manage/internal-requests/`)
-- Offline: drafts in local queue (PWA)
-- **Notes:** Approve never fails for lack of stock; reserves what is on hand.
+### Slide 13 — Internal request
+- Branch draft/offline + warehouse issue
+- **Notes:** Approve never fails for lack of stock.
 
-### Slide 13 — Branch receipt
-- `/branch/receipts/` — branch stock increases
-- `BranchStockMovement` ledger
-- **Notes:** Closes the branch circuit.
+### Slide 14 — Branch receipt
+- `/branch/receipts/` — closes the operational circuit
+- **Notes:** Every step recorded.
 
-### Slide 14 — Circularity (diagram)
-- Item missing → `/branch/threads/` → dialogue → create item → link → normal request → close thread (satisfaction)
-- **Notes:** Thread ≠ order; item created in normal catalogue flow.
+### Slide 15 — Circularity (two zones)
+- **Zone A — Thread circuit (closes):** missing item → thread → dialogue → create item → link → normal request → close + satisfaction → next gap → new thread
+- **Zone B — Company Voice (ongoing feed):** downward stream visual; posts do not close; not part of catalogue-gap circuit
+- Thread bullets: states, opener-only close, force-close, unread badges
+- **Notes:** Thread ≠ order; item born in catalogue flow.
 
-### Slide 15 — Continuous feedback
-- Company Voice (`/company-voice/`) — praise, concerns, suggestions
-- Threads: satisfaction rating on close
-- **Notes:** Closes the human loop.
-
-### Slide 16 — Next steps
-- Start now: every transaction feeds future analytics
-- Role-based training; manuals at `docs/user-manuals/en/`
-- Phase 7: production deployment readiness
-- **Notes:** Concrete call to action.
+### Slide 16 — Company Voice (finale)
+- Eyebrow: **Keep talking**
+- Emotional send-off; features + participation CTA
+- Footer: manuals at `docs/user-manuals/en/` · Phase 7
+- **Notes:** Last slide — ongoing channel, not a closing circuit.
 
 ---
 

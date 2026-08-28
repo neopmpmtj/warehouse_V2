@@ -17,7 +17,16 @@ class PresentationDeckTests(TestCase):
         response = self.client.get("/presentation/en/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Data is the new oil")
+        self.assertContains(response, "What we need from you")
+        self.assertContains(response, "Start today — data compounds")
+        self.assertContains(response, "Company Voice — your ongoing channel")
         self.assertContains(response, 'lang="en"')
+
+    def test_presentation_pt_cta_on_slide_two(self):
+        response = self.client.get("/presentation/pt/")
+        self.assertContains(response, "O que precisamos de si")
+        self.assertContains(response, "Comece hoje — os dados acumulam-se")
+        self.assertContains(response, "Voz da Empresa — o seu canal permanente")
 
     def test_language_switcher_links(self):
         pt = self.client.get("/presentation/pt/")
