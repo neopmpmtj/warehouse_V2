@@ -1,6 +1,6 @@
 # CentCompras — Plano da apresentação (pt-PT)
 
-**Versão:** 2.0 · **Data:** 28 agosto 2026  
+**Versão:** 2.1 · **Data:** 28 agosto 2026  
 **URL:** `/presentation/pt/` (atalho: `/presentation/`) · **Inglês:** `/presentation/en/`  
 **Idioma:** Português (pt-PT) · Plano EN: [`PLAN-en.md`](PLAN-en.md)  
 **Público:** Armazém central, gestores e operadores de filial, direção
@@ -20,15 +20,16 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 
 ---
 
-## Narrativa (5 actos)
+## Narrativa (6 actos)
 
 | Acto | Slides | Mensagem |
 |------|--------|----------|
-| **I — Gancho** | 1–2 | Capa + chamada à acção (o que precisamos de si) |
-| **II — Porquê** | 3–6 | Cenário, metáfora dos dados, o que se regista, visão futura |
-| **III — Circuito fechado** | 7–14 | Arquitectura + fluxo armazém até receção na filial |
-| **IV — Circularidade** | 15 | Circuito do fio para lacunas no catálogo (fecha) |
-| **V — Despedida** | 16 | Final Voz da Empresa (texto + painel do feed) |
+| **I — Gancho** | 1–2 | Capa + chamada à acção |
+| **II — Porquê** | 3–6 | Cenário, metáfora dos dados, registo, visão futura |
+| **III — Circuito fechado** | 7–14 | Arquitectura + fluxo operacional |
+| **IV — Circularidade** | 15 | Circuito do fio (fecha) |
+| **V — Despedida** | 16 | Voz da Empresa (texto + feed) |
+| **VI — Mãos à obra** | 17 | URL de demo, aviso HTTP, contas seed |
 
 ---
 
@@ -92,6 +93,12 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 - **Continue a falar**; despedida com participação activa
 - Rodapé: manuais · Fase 7
 - **Notas:** Visual do feed movido do slide 15.
+
+### Slide 17 — Experimente a aplicação (login demo)
+- **Experimente agora**; aviso HTTP; URL `http://168.58.240.120/accounts/login/`
+- Palavra-passe `devpass123` para todas as contas seed
+- Tabelas armazém + filiais
+- **Notas:** Último slide — login imediato após a apresentação.
 
 ---
 

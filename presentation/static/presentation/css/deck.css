@@ -289,6 +289,61 @@ body.deck-fullscreen:hover {
     }
 }
 
+/* Demo login slide (slide 17) */
+.demo-alert {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid var(--accent-warm);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0 1rem;
+    max-width: 950px;
+    font-size: var(--small-size);
+    color: var(--text);
+}
+
+.demo-alert strong {
+    color: #fbbf24;
+}
+
+.demo-login-block {
+    margin: 0 0 1rem;
+    max-width: 950px;
+}
+
+.demo-login-block p {
+    margin: 0.35rem 0;
+}
+
+.demo-login-link {
+    font-family: var(--mono);
+    font-size: var(--small-size);
+    color: var(--accent-light);
+    word-break: break-all;
+}
+
+.demo-password {
+    font-family: var(--mono);
+    font-size: 1.05em;
+    color: var(--accent-light);
+    background: rgba(15, 118, 110, 0.15);
+    padding: 0.1em 0.4em;
+    border-radius: 0.25rem;
+}
+
+.credentials-columns h2 {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    margin: 0 0 0.5rem;
+}
+
+.credentials-table {
+    font-size: 0.78rem;
+}
+
+.credentials-table td code,
+.credentials-table th {
+    font-size: inherit;
+}
+
 /* Data table */
 .data-table {
     width: 100%;

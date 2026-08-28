@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Presentation: data, circuits, and circularity">
     <title>CentCompras — Presentation</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=5">
 </head>
 <body>
     <div class="deck" role="application" aria-label="CentCompras presentation">
@@ -472,6 +472,61 @@
                         <p class="voice-stream-label">Posts do not close — the stream continues</p>
                     </div>
                 </div>
+            </section>
+
+            <!-- Slide 17: Try the app -->
+            <section class="slide" data-slide="17" aria-label="Try the app">
+                <p class="slide-eyebrow">Try it now</p>
+                <h1>Log in and explore</h1>
+                <div class="demo-alert" role="alert">
+                    <strong>Browser warning expected</strong> — This demo runs over <strong>HTTP</strong>, not HTTPS. Your browser may show “Not secure” or similar. That is normal for this demo; you can proceed to log in.
+                </div>
+                <div class="demo-login-block">
+                    <p>Login: <a class="demo-login-link" href="{{ demo_login_url }}" target="_blank" rel="noopener noreferrer">{{ demo_login_url }}</a></p>
+                    <p>Password (all users): <code class="demo-password">{{ demo_password }}</code></p>
+                </div>
+                <div class="credentials-columns slide-columns">
+                    <div>
+                        <h2>Central warehouse</h2>
+                        <table class="data-table credentials-table">
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Admin</td><td><code>armazem.admin@centcompras.dev</code></td></tr>
+                                <tr><td>Manager (grade 1)</td><td><code>armazem.gestor@centcompras.dev</code></td></tr>
+                                <tr><td>Manager (grade 2)</td><td><code>armazem.gestor2@centcompras.dev</code></td></tr>
+                                <tr><td>Manager (grade 3)</td><td><code>armazem.gestor3@centcompras.dev</code></td></tr>
+                                <tr><td>Operator (grade 1)</td><td><code>armazem.operador@centcompras.dev</code></td></tr>
+                                <tr><td>Operator (grade 2)</td><td><code>armazem.operador2@centcompras.dev</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <h2>Branches</h2>
+                        <table class="data-table credentials-table">
+                            <thead>
+                                <tr>
+                                    <th>Branch</th>
+                                    <th>Role</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Norte</td><td>Operator</td><td><code>filial.operador.norte@centcompras.dev</code></td></tr>
+                                <tr><td>Norte</td><td>Manager</td><td><code>filial.gestor.norte@centcompras.dev</code></td></tr>
+                                <tr><td>Norte</td><td>Admin</td><td><code>filial.admin.norte@centcompras.dev</code></td></tr>
+                                <tr><td>Sul</td><td>Operator</td><td><code>filial.operador.sul@centcompras.dev</code></td></tr>
+                                <tr><td>Sul</td><td>Manager</td><td><code>filial.gestor.sul@centcompras.dev</code></td></tr>
+                                <tr><td>Norte + Sul</td><td>Operator</td><td><code>filial.dual@centcompras.dev</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <p class="slide-meta">Same password for every account above — pick any role to explore.</p>
             </section>
 
         </div>

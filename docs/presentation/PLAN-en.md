@@ -1,6 +1,6 @@
 # CentCompras — Presentation plan (en)
 
-**Version:** 2.0 · **Date:** 28 August 2026  
+**Version:** 2.1 · **Date:** 28 August 2026  
 **URL:** `/presentation/en/` · **Language:** English — Portuguese at `/presentation/pt/`  
 **Audience:** Central warehouse, branch managers and operators, leadership
 
@@ -19,7 +19,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 
 ---
 
-## Narrative (5 acts)
+## Narrative (6 acts)
 
 | Act | Slides | Message |
 |-----|--------|---------|
@@ -28,6 +28,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | **III — Closed circuit** | 7–14 | Architecture + warehouse flow through branch receipt |
 | **IV — Circularity** | 15 | Catalogue-gap thread circuit (closes) |
 | **V — Send-off** | 16 | Company Voice finale (text + ongoing feed panel) |
+| **VI — Hands-on** | 17 | Demo login URL, HTTP warning, seeded accounts |
 
 ---
 
@@ -102,6 +103,14 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - Eyebrow: **Keep talking**; emotional send-off
 - Footer: manuals · Phase 7
 - **Notes:** Feed visual moved here from slide 15; stream never closes.
+
+### Slide 17 — Try the app (demo login)
+- Eyebrow: **Try it now**
+- HTTP demo alert (browser “Not secure” warning expected)
+- Login URL: `http://168.58.240.120/accounts/login/` (from `presentation/views.py`)
+- Password: `devpass123` (all seeded users)
+- Two tables: warehouse (6) + branches (6 incl. dual)
+- **Notes:** Last slide — audience logs in immediately after the deck.
 
 ---
 
