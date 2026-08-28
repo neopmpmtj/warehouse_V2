@@ -1,5 +1,7 @@
 from django.test import TestCase
 
+from presentation.views import DEMO_LOGIN_URL, DEMO_PASSWORD, SLIDE_COUNT
+
 
 class PresentationDeckTests(TestCase):
     def test_presentation_pt_default_loads(self):
@@ -41,3 +43,18 @@ class PresentationDeckTests(TestCase):
         response = self.client.get("/presentation/en/")
         self.assertContains(response, "presentation/css/deck.css")
         self.assertContains(response, "presentation/js/deck.js")
+
+    def test_presentation_demo_login_slide(self):
+        self.assertEqual(SLIDE_COUNT, 17)
+        en = self.client.get("/presentation/en/")
+        self.assertContains(en, 'data-slide="17"')
+        self.assertContains(en, "Log in and explore")
+        self.assertContains(en, "Browser warning expected")
+        self.assertContains(en, DEMO_LOGIN_URL)
+        self.assertContains(en, DEMO_PASSWORD)
+        self.assertContains(en, "armazem.admin@centcompras.dev")
+        self.assertContains(en, "filial.dual@centcompras.dev")
+        pt = self.client.get("/presentation/pt/")
+        self.assertContains(pt, "Experimente agora")
+        self.assertContains(pt, "Aviso do browser esperado")
+        self.assertContains(pt, DEMO_PASSWORD)

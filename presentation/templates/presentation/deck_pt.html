@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Apresentação: dados, circuitos e circularidade">
     <title>CentCompras — Apresentação</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=5">
 </head>
 <body>
     <div class="deck" role="application" aria-label="Apresentação CentCompras">
@@ -472,6 +472,61 @@
                         <p class="voice-stream-label">Publicações não fecham — o stream continua</p>
                     </div>
                 </div>
+            </section>
+
+            <!-- Slide 17: Experimente a aplicação -->
+            <section class="slide" data-slide="17" aria-label="Experimente a aplicação">
+                <p class="slide-eyebrow">Experimente agora</p>
+                <h1>Entre e explore</h1>
+                <div class="demo-alert" role="alert">
+                    <strong>Aviso do browser esperado</strong> — Esta demonstração usa <strong>HTTP</strong>, não HTTPS. O browser pode mostrar “Não seguro” ou similar. É normal nesta demo; pode avançar para o login.
+                </div>
+                <div class="demo-login-block">
+                    <p>Login: <a class="demo-login-link" href="{{ demo_login_url }}" target="_blank" rel="noopener noreferrer">{{ demo_login_url }}</a></p>
+                    <p>Palavra-passe (todos os utilizadores): <code class="demo-password">{{ demo_password }}</code></p>
+                </div>
+                <div class="credentials-columns slide-columns">
+                    <div>
+                        <h2>Armazém central</h2>
+                        <table class="data-table credentials-table">
+                            <thead>
+                                <tr>
+                                    <th>Função</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Administrador</td><td><code>armazem.admin@centcompras.dev</code></td></tr>
+                                <tr><td>Gestor (grau 1)</td><td><code>armazem.gestor@centcompras.dev</code></td></tr>
+                                <tr><td>Gestor (grau 2)</td><td><code>armazem.gestor2@centcompras.dev</code></td></tr>
+                                <tr><td>Gestor (grau 3)</td><td><code>armazem.gestor3@centcompras.dev</code></td></tr>
+                                <tr><td>Operador (grau 1)</td><td><code>armazem.operador@centcompras.dev</code></td></tr>
+                                <tr><td>Operador (grau 2)</td><td><code>armazem.operador2@centcompras.dev</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <h2>Filiais</h2>
+                        <table class="data-table credentials-table">
+                            <thead>
+                                <tr>
+                                    <th>Filial</th>
+                                    <th>Função</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Norte</td><td>Operador</td><td><code>filial.operador.norte@centcompras.dev</code></td></tr>
+                                <tr><td>Norte</td><td>Gestor</td><td><code>filial.gestor.norte@centcompras.dev</code></td></tr>
+                                <tr><td>Norte</td><td>Administrador</td><td><code>filial.admin.norte@centcompras.dev</code></td></tr>
+                                <tr><td>Sul</td><td>Operador</td><td><code>filial.operador.sul@centcompras.dev</code></td></tr>
+                                <tr><td>Sul</td><td>Gestor</td><td><code>filial.gestor.sul@centcompras.dev</code></td></tr>
+                                <tr><td>Norte + Sul</td><td>Operador</td><td><code>filial.dual@centcompras.dev</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <p class="slide-meta">A mesma palavra-passe para todas as contas — escolha qualquer função para explorar.</p>
             </section>
 
         </div>

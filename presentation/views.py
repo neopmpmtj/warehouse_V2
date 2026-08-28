@@ -1,6 +1,17 @@
 from django.shortcuts import render
 
-SLIDE_COUNT = 16
+SLIDE_COUNT = 17
+DEMO_LOGIN_URL = "http://168.58.240.120/accounts/login/"
+DEMO_PASSWORD = "devpass123"
+
+
+def _deck_context(extra):
+    return {
+        "slide_count": SLIDE_COUNT,
+        "demo_login_url": DEMO_LOGIN_URL,
+        "demo_password": DEMO_PASSWORD,
+        **extra,
+    }
 
 
 def deck_pt(request):
@@ -8,13 +19,14 @@ def deck_pt(request):
     return render(
         request,
         "presentation/deck_pt.html",
-        {
-            "slide_count": SLIDE_COUNT,
-            "lang": "pt-PT",
-            "lang_label": "Português",
-            "other_lang_url": "/presentation/en/",
-            "other_lang_label": "English",
-        },
+        _deck_context(
+            {
+                "lang": "pt-PT",
+                "lang_label": "Português",
+                "other_lang_url": "/presentation/en/",
+                "other_lang_label": "English",
+            }
+        ),
     )
 
 
@@ -23,11 +35,12 @@ def deck_en(request):
     return render(
         request,
         "presentation/deck_en.html",
-        {
-            "slide_count": SLIDE_COUNT,
-            "lang": "en",
-            "lang_label": "English",
-            "other_lang_url": "/presentation/pt/",
-            "other_lang_label": "Português",
-        },
+        _deck_context(
+            {
+                "lang": "en",
+                "lang_label": "English",
+                "other_lang_url": "/presentation/pt/",
+                "other_lang_label": "Português",
+            }
+        ),
     )
