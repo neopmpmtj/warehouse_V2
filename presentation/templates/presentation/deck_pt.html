@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Apresentação: dados, circuitos e circularidade">
     <title>CentCompras — Apresentação</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=3">
 </head>
 <body>
     <div class="deck" role="application" aria-label="Apresentação CentCompras">
@@ -22,39 +22,47 @@
                 <p class="slide-meta">Armazém central · Filiais satélite · PostgreSQL como fonte de verdade</p>
             </section>
 
-            <!-- Slide 2: Cenário -->
-            <section class="slide" data-slide="2" aria-label="O cenário">
-                <p class="slide-eyebrow">Contexto</p>
-                <h1>O cenário de hoje</h1>
-                <div class="slide-columns">
-                    <div>
-                        <p><strong>Um armazém central</strong> gere o catálogo mestre, compra a fornecedores e expede stock.</p>
-                        <p><strong>Filiais satélite</strong> consultam o catálogo, pedem artigos e confirmam chegadas — inclusive <strong>offline</strong> (PWA).</p>
-                        <p>Tudo converge numa única base de dados: cada acção deixa rasto estruturado.</p>
-                    </div>
-                    <div class="card-grid">
-                        <div class="card">
-                            <h3>Catálogo + preços</h3>
-                            <p>Famílias, artigos, fornecedores, preços de venda e custo</p>
-                        </div>
-                        <div class="card">
-                            <h3>Compras + stock</h3>
-                            <p>Encomendas de compra, receções, livro-razão de movimentos</p>
-                        </div>
-                        <div class="card">
-                            <h3>Requisição interna</h3>
-                            <p>Pedidos filial → expedição → receção na filial</p>
-                        </div>
-                        <div class="card">
-                            <h3>Comunicação</h3>
-                            <p>Fios de pedido + Voz da Empresa</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Slide 2: Chamada à acção -->
+            <section class="slide" data-slide="2" aria-label="O que precisamos de si">
+                <p class="slide-eyebrow">O que precisamos de si</p>
+                <h1>Comece hoje — os dados acumulam-se</h1>
+                <ul class="cta-list">
+                    <li>
+                        <span class="cta-num">1</span>
+                        <span><strong>Armazém:</strong> mantenha o catálogo actualizado; registe cada receção e expedição no sistema — não em papel paralelo.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">2</span>
+                        <span><strong>Filiais:</strong> faça requisições pelo <span class="url-tag">/branch/requests/</span>; use fios para artigos em falta; confirme recepções.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">3</span>
+                        <span><strong>Gestão:</strong> aprove com critério; os limites EUR protegem o fluxo de caixa e geram histórico de decisões.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">4</span>
+                        <span><strong>Todos:</strong> partilhe feedback na Voz da Empresa — melhoria contínua depende de vozes reais.</span>
+                    </li>
+                </ul>
             </section>
 
-            <!-- Slide 3: Dados são o petróleo -->
-            <section class="slide" data-slide="3" aria-label="Os dados são o novo petróleo">
+            <!-- Slide 3: Cenário -->
+            <section class="slide" data-slide="3" aria-label="O cenário">
+                <p class="slide-eyebrow">Contexto</p>
+                <h1>O cenário de hoje</h1>
+                <p><strong>Um armazém central</strong> gere o catálogo mestre, compra a fornecedores e expede stock.</p>
+                <p><strong>Filiais satélite</strong> consultam o catálogo, pedem artigos e confirmam chegadas — inclusive <strong>offline</strong> (PWA).</p>
+                <p>Tudo converge numa única base de dados: cada acção deixa rasto estruturado.</p>
+                <ul>
+                    <li><strong>Catálogo + preços</strong> — famílias, artigos, fornecedores, preços de venda e custo</li>
+                    <li><strong>Compras + stock</strong> — encomendas de compra, receções, livro-razão de movimentos</li>
+                    <li><strong>Requisição interna</strong> — pedidos filial → expedição → receção na filial</li>
+                    <li><strong>Comunicação</strong> — fios de pedido + Voz da Empresa</li>
+                </ul>
+            </section>
+
+            <!-- Slide 4: Dados são o petróleo -->
+            <section class="slide" data-slide="4" aria-label="Os dados são o novo petróleo">
                 <p class="slide-eyebrow">Mensagem central</p>
                 <h1>Os dados são o novo petróleo</h1>
                 <p class="slide-subtitle">Quanto mais cedo começarmos a usar o sistema no dia a dia, mais cedo teremos combustível para decisões inteligentes.</p>
@@ -81,7 +89,7 @@
             </section>
 
             <!-- Slide 4: O que já registamos -->
-            <section class="slide" data-slide="4" aria-label="O que o sistema já regista">
+            <section class="slide" data-slide="5" aria-label="O que o sistema já regista">
                 <p class="slide-eyebrow">Hoje, sem gráficos</p>
                 <h1>O que o sistema já regista</h1>
                 <table class="data-table">
@@ -129,7 +137,7 @@
             </section>
 
             <!-- Slide 5: Visão futura gráficos -->
-            <section class="slide" data-slide="5" aria-label="Visão futura gráficos">
+            <section class="slide" data-slide="6" aria-label="Visão futura gráficos">
                 <p class="slide-eyebrow">Amanhã</p>
                 <h1>Visão futura: gráficos e decisões</h1>
                 <span class="future-badge">Visão futura — ilustrativo</span>
@@ -167,7 +175,7 @@
             </section>
 
             <!-- Slide 6: Dois mundos -->
-            <section class="slide" data-slide="6" aria-label="Dois mundos um sistema">
+            <section class="slide" data-slide="7" aria-label="Dois mundos um sistema">
                 <p class="slide-eyebrow">Arquitectura</p>
                 <h1>Dois mundos, um sistema</h1>
                 <div class="slide-columns">
@@ -208,7 +216,7 @@
             </section>
 
             <!-- Slide 7: Circuito fechado diagrama -->
-            <section class="slide" data-slide="7" aria-label="Circuito fechado">
+            <section class="slide" data-slide="8" aria-label="Circuito fechado">
                 <p class="slide-eyebrow">Circuito fechado</p>
                 <h1>Do artigo ao stock na filial</h1>
                 <div class="diagram-wrap">
@@ -261,7 +269,7 @@
             </section>
 
             <!-- Slide 8: Catálogo -->
-            <section class="slide" data-slide="8" aria-label="Catálogo">
+            <section class="slide" data-slide="9" aria-label="Catálogo">
                 <p class="slide-eyebrow">Etapa 1</p>
                 <h1>Catálogo e preços</h1>
                 <p class="url-tag">/manage/items/</p>
@@ -276,7 +284,7 @@
             </section>
 
             <!-- Slide 9: Aprovisionamento -->
-            <section class="slide" data-slide="9" aria-label="Aprovisionamento">
+            <section class="slide" data-slide="10" aria-label="Aprovisionamento">
                 <p class="slide-eyebrow">Etapa 2</p>
                 <h1>Aprovisionamento</h1>
                 <p class="url-tag">/manage/purchase-orders/</p>
@@ -291,7 +299,7 @@
             </section>
 
             <!-- Slide 10: Autorização -->
-            <section class="slide" data-slide="10" aria-label="Autorização">
+            <section class="slide" data-slide="11" aria-label="Autorização">
                 <p class="slide-eyebrow">Etapa 3</p>
                 <h1>Autorização e controlos</h1>
                 <div class="slide-columns">
@@ -317,7 +325,7 @@
             </section>
 
             <!-- Slide 11: Stock central -->
-            <section class="slide" data-slide="11" aria-label="Stock central">
+            <section class="slide" data-slide="12" aria-label="Stock central">
                 <p class="slide-eyebrow">Etapa 4</p>
                 <h1>Stock central</h1>
                 <p class="url-tag">/manage/goods-receipts/</p>
@@ -331,7 +339,7 @@
             </section>
 
             <!-- Slide 12: Requisição -->
-            <section class="slide" data-slide="12" aria-label="Requisição interna">
+            <section class="slide" data-slide="13" aria-label="Requisição interna">
                 <p class="slide-eyebrow">Etapa 5</p>
                 <h1>Requisição interna</h1>
                 <div class="slide-columns">
@@ -359,7 +367,7 @@
             </section>
 
             <!-- Slide 13: Receção filial -->
-            <section class="slide" data-slide="13" aria-label="Receção na filial">
+            <section class="slide" data-slide="14" aria-label="Receção na filial">
                 <p class="slide-eyebrow">Etapa 6</p>
                 <h1>Receção na filial</h1>
                 <p class="url-tag">/branch/receipts/</p>
@@ -372,113 +380,96 @@
                 <p><strong>Circuito fechado:</strong> o artigo percorreu catálogo → compra → stock central → requisição → expedição → stock filial. Cada passo ficou registado.</p>
             </section>
 
-            <!-- Slide 14: Circularidade -->
-            <section class="slide" data-slide="14" aria-label="Circularidade">
+            <!-- Slide 15: Circularidade -->
+            <section class="slide" data-slide="15" aria-label="Circularidade">
                 <p class="slide-eyebrow">Circularidade</p>
                 <h1>Quando o artigo não existe</h1>
-                <div class="diagram-wrap">
-                    <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama de circularidade">
-                        <defs>
-                            <marker id="arrowhead2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
-                            </marker>
-                        </defs>
-                        <rect class="flow-node flow-node-warm" x="250" y="10" width="200" height="44" rx="8"/>
-                        <text class="flow-text" x="350" y="37" text-anchor="middle">Artigo não está no catálogo</text>
+                <div class="circularity-zones">
+                    <div class="circularity-zone circularity-zone-thread">
+                        <h2>Fio de pedido — fecha</h2>
+                        <div class="diagram-wrap">
+                            <svg viewBox="0 0 500 195" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama do circuito do fio">
+                                <defs>
+                                    <marker id="arrowhead-thread" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                        <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                                    </marker>
+                                </defs>
+                                <rect class="flow-node flow-node-warm" x="150" y="5" width="200" height="36" rx="8"/>
+                                <text class="flow-text" x="250" y="28" text-anchor="middle">Artigo não está no catálogo</text>
 
-                        <rect class="flow-node flow-node-warm" x="30" y="90" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="105" y="110" text-anchor="middle">Abrir fio</text>
-                        <text class="flow-text-sm" x="105" y="125" text-anchor="middle">/branch/threads/</text>
+                                <rect class="flow-node flow-node-warm" x="5" y="58" width="105" height="40" rx="8"/>
+                                <text class="flow-text" x="57" y="76" text-anchor="middle">Abrir fio</text>
+                                <text class="flow-text-sm" x="57" y="90" text-anchor="middle">/branch/threads/</text>
 
-                        <rect class="flow-node" x="220" y="90" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="295" y="110" text-anchor="middle">Diálogo</text>
-                        <text class="flow-text-sm" x="295" y="125" text-anchor="middle">filial ↔ armazém</text>
+                                <rect class="flow-node" x="125" y="58" width="95" height="40" rx="8"/>
+                                <text class="flow-text" x="172" y="76" text-anchor="middle">Diálogo</text>
+                                <text class="flow-text-sm" x="172" y="90" text-anchor="middle">filial ↔ armazém</text>
 
-                        <rect class="flow-node" x="410" y="90" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="485" y="110" text-anchor="middle">Criar artigo</text>
-                        <text class="flow-text-sm" x="485" y="125" text-anchor="middle">/manage/items/</text>
+                                <rect class="flow-node" x="235" y="58" width="95" height="40" rx="8"/>
+                                <text class="flow-text" x="282" y="76" text-anchor="middle">Criar artigo</text>
+                                <text class="flow-text-sm" x="282" y="90" text-anchor="middle">/manage/items/</text>
 
-                        <rect class="flow-node" x="570" y="90" width="120" height="44" rx="8"/>
-                        <text class="flow-text" x="630" y="110" text-anchor="middle">Ligar ao fio</text>
-                        <text class="flow-text-sm" x="630" y="125" text-anchor="middle">manage/threads</text>
+                                <rect class="flow-node" x="345" y="58" width="95" height="40" rx="8"/>
+                                <text class="flow-text" x="392" y="76" text-anchor="middle">Ligar</text>
+                                <text class="flow-text-sm" x="392" y="90" text-anchor="middle">manage/threads</text>
 
-                        <rect class="flow-node flow-node-accent" x="100" y="180" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="175" y="200" text-anchor="middle">Requisição normal</text>
-                        <text class="flow-text-sm" x="175" y="215" text-anchor="middle">circuito fechado</text>
+                                <rect class="flow-node flow-node-accent" x="5" y="118" width="130" height="40" rx="8"/>
+                                <text class="flow-text" x="70" y="136" text-anchor="middle">Requisição normal</text>
+                                <text class="flow-text-sm" x="70" y="150" text-anchor="middle">entra no circuito fechado</text>
 
-                        <rect class="flow-node flow-node-warm" x="300" y="180" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="375" y="200" text-anchor="middle">Fechar fio</text>
-                        <text class="flow-text-sm" x="375" y="215" text-anchor="middle">+ satisfação</text>
+                                <rect class="flow-node flow-node-warm" x="155" y="118" width="130" height="40" rx="8"/>
+                                <text class="flow-text" x="220" y="136" text-anchor="middle">Fechar fio</text>
+                                <text class="flow-text-sm" x="220" y="150" text-anchor="middle">+ satisfação</text>
 
-                        <rect class="flow-node flow-node-warm" x="500" y="180" width="170" height="44" rx="8"/>
-                        <text class="flow-text" x="585" y="200" text-anchor="middle">Voz da Empresa</text>
-                        <text class="flow-text-sm" x="585" y="215" text-anchor="middle">/company-voice/</text>
-
-                        <line class="flow-arrow" x1="350" y1="54" x2="105" y2="88" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="180" y1="112" x2="218" y2="112" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="370" y1="112" x2="408" y2="112" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="560" y1="112" x2="568" y2="112" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="485" y1="134" x2="175" y2="178" stroke="#14b8a6" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="250" y1="202" x2="298" y2="202" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="450" y1="202" x2="498" y2="202" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <path class="flow-arrow" d="M 585 224 Q 585 260 350 260 Q 80 260 80 134" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead2)"/>
-                        <text class="flow-text-sm" x="350" y="252" text-anchor="middle">O ciclo recomeça — melhoria contínua</text>
-                    </svg>
-                </div>
-                <p>O fio é uma <strong>conversa</strong>, não uma encomenda. O artigo nasce no fluxo normal do catálogo — nunca dentro do fio.</p>
-            </section>
-
-            <!-- Slide 15: Feedback -->
-            <section class="slide" data-slide="15" aria-label="Feedback">
-                <p class="slide-eyebrow">Fechar o ciclo humano</p>
-                <h1>Feedback contínuo</h1>
-                <div class="slide-columns">
-                    <div>
-                        <h2>Fios de pedido</h2>
-                        <p class="url-tag">/branch/threads/ · /manage/threads/</p>
+                                <line class="flow-arrow" x1="250" y1="41" x2="57" y2="56" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="110" y1="78" x2="123" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="220" y1="78" x2="233" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="330" y1="78" x2="343" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="392" y1="98" x2="70" y2="116" stroke="#14b8a6" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="135" y1="138" x2="153" y2="138" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <path class="flow-arrow" d="M 220 158 Q 220 178 250 178 Q 380 178 380 50" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead-thread)"/>
+                                <text class="flow-text-sm" x="250" y="192" text-anchor="middle">Próxima lacuna no catálogo → novo fio</text>
+                            </svg>
+                        </div>
                         <ul>
-                            <li>Estados: a aguardar armazém / a aguardar filial / fechado</li>
-                            <li>Só quem abriu fecha (com motivo + satisfação)</li>
+                            <li>Estados: a aguardar armazém / a aguardar filial / <strong>fechado</strong></li>
+                            <li>Só quem abriu fecha (motivo + satisfação)</li>
                             <li>Administrador armazém pode forçar fecho</li>
                             <li>Badges de não lidos via <code>ThreadReadState</code></li>
                         </ul>
                     </div>
-                    <div>
-                        <h2>Voz da Empresa</h2>
+                    <div class="circularity-zone circularity-zone-voice">
+                        <h2>Voz da Empresa — feed contínuo</h2>
                         <p class="url-tag">/company-voice/</p>
-                        <ul>
-                            <li>Todo o pessoal (armazém + filial) lê e publica</li>
-                            <li>Etiquetas: elogio, preocupação, sugestão, desejo</li>
-                            <li>Um sub-fio de resposta por publicação</li>
-                            <li>Editar nos primeiros 15 min; eliminação suave pelo autor</li>
-                        </ul>
+                        <div class="voice-stream" aria-hidden="true">
+                            <div class="voice-post">Elogio — óptimo apoio!</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Sugestão — etiquetas mais rápidas</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Preocupação — atrasos de stock</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Desejo — alertas no telemóvel</div>
+                        </div>
+                        <p class="voice-stream-label">Feed contínuo — publicações não fecham</p>
+                        <p style="margin-top:0.5rem;font-size:var(--small-size)">Canal paralelo para feedback geral — <strong>não</strong> faz parte do circuito de lacunas no catálogo.</p>
                     </div>
                 </div>
-                <p>Transacções geram dados; conversas geram <strong>contexto</strong>. Ambos alimentam a gestão.</p>
+                <p>O fio é uma <strong>conversa que fecha</strong>, não uma encomenda. O artigo nasce no fluxo normal do catálogo — nunca dentro do fio.</p>
             </section>
 
-            <!-- Slide 16: Próximos passos -->
-            <section class="slide" data-slide="16" aria-label="Próximos passos">
-                <p class="slide-eyebrow">Chamada à acção</p>
-                <h1>Comece hoje — os dados acumulam-se</h1>
-                <ul class="cta-list">
-                    <li>
-                        <span class="cta-num">1</span>
-                        <span><strong>Armazém:</strong> mantenha o catálogo actualizado; registe cada receção e expedição no sistema — não em papel paralelo.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">2</span>
-                        <span><strong>Filiais:</strong> faça requisições pelo <span class="url-tag">/branch/requests/</span>; use fios para artigos em falta; confirme recepções.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">3</span>
-                        <span><strong>Gestão:</strong> aprove com critério; os limites EUR protegem o fluxo de caixa e geram histórico de decisões.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">4</span>
-                        <span><strong>Todos:</strong> partilhe feedback na Voz da Empresa — melhoria contínua depende de vozes reais.</span>
-                    </li>
+            <!-- Slide 16: Voz da Empresa — final -->
+            <section class="slide slide-finale" data-slide="16" aria-label="Voz da Empresa">
+                <p class="slide-eyebrow">Continue a falar</p>
+                <h1>Voz da Empresa — o seu canal permanente</h1>
+                <p class="slide-subtitle">A sua voz molda a nossa melhoria. Transacções geram dados; conversas geram contexto.</p>
+                <p class="url-tag">/company-voice/</p>
+                <ul>
+                    <li><strong>Todos</strong> — pessoal de armazém e filial lê e publica</li>
+                    <li><strong>Etiquetas</strong> — elogio, preocupação, sugestão, desejo</li>
+                    <li><strong>Um sub-fio de resposta</strong> por publicação</li>
+                    <li><strong>Editar</strong> nos primeiros 15 min; eliminação suave pelo autor</li>
                 </ul>
+                <p><strong>Partilhe elogios, preocupações, sugestões e desejos</strong> — o feed nunca fecha; cada publicação enriquece o quadro.</p>
                 <p class="slide-meta">Manuais: <span class="url-tag">docs/user-manuals/pt/</span> · Próxima fase: preparação para produção (Fase 7)</p>
             </section>
 

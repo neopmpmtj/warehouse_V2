@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Presentation: data, circuits, and circularity">
     <title>CentCompras — Presentation</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=3">
 </head>
 <body>
     <div class="deck" role="application" aria-label="CentCompras presentation">
@@ -22,39 +22,47 @@
                 <p class="slide-meta">Central warehouse · Satellite branches · PostgreSQL as source of truth</p>
             </section>
 
-            <!-- Slide 2: Scenario -->
-            <section class="slide" data-slide="2" aria-label="Today's scenario">
-                <p class="slide-eyebrow">Context</p>
-                <h1>Today's scenario</h1>
-                <div class="slide-columns">
-                    <div>
-                        <p><strong>A central warehouse</strong> manages the master catalogue, buys from suppliers, and ships stock.</p>
-                        <p><strong>Satellite branches</strong> browse the catalogue, request items, and confirm arrivals — including <strong>offline</strong> (PWA).</p>
-                        <p>Everything converges in one database: every action leaves a structured trail.</p>
-                    </div>
-                    <div class="card-grid">
-                        <div class="card">
-                            <h3>Catalogue + pricing</h3>
-                            <p>Families, items, suppliers, selling and cost prices</p>
-                        </div>
-                        <div class="card">
-                            <h3>Procurement + stock</h3>
-                            <p>Purchase orders, receipts, movement ledger</p>
-                        </div>
-                        <div class="card">
-                            <h3>Internal request</h3>
-                            <p>Branch orders → shipment → branch receipt</p>
-                        </div>
-                        <div class="card">
-                            <h3>Communication</h3>
-                            <p>Request threads + Company Voice</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Slide 2: Call to action -->
+            <section class="slide" data-slide="2" aria-label="What we need from you">
+                <p class="slide-eyebrow">What we need from you</p>
+                <h1>Start today — data compounds</h1>
+                <ul class="cta-list">
+                    <li>
+                        <span class="cta-num">1</span>
+                        <span><strong>Warehouse:</strong> keep the catalogue up to date; record every receipt and shipment in the system — not on parallel paper.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">2</span>
+                        <span><strong>Branches:</strong> place requests via <span class="url-tag">/branch/requests/</span>; use threads for missing items; confirm receipts.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">3</span>
+                        <span><strong>Management:</strong> approve with care; EUR limits protect cash flow and build a decision history.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">4</span>
+                        <span><strong>Everyone:</strong> share feedback on Company Voice — continuous improvement needs real voices.</span>
+                    </li>
+                </ul>
             </section>
 
-            <!-- Slide 3: Data is the new oil -->
-            <section class="slide" data-slide="3" aria-label="Data is the new oil">
+            <!-- Slide 3: Scenario -->
+            <section class="slide" data-slide="3" aria-label="Today's scenario">
+                <p class="slide-eyebrow">Context</p>
+                <h1>Today's scenario</h1>
+                <p><strong>A central warehouse</strong> manages the master catalogue, buys from suppliers, and ships stock.</p>
+                <p><strong>Satellite branches</strong> browse the catalogue, request items, and confirm arrivals — including <strong>offline</strong> (PWA).</p>
+                <p>Everything converges in one database: every action leaves a structured trail.</p>
+                <ul>
+                    <li><strong>Catalogue + pricing</strong> — families, items, suppliers, selling and cost prices</li>
+                    <li><strong>Procurement + stock</strong> — purchase orders, receipts, movement ledger</li>
+                    <li><strong>Internal request</strong> — branch orders → shipment → branch receipt</li>
+                    <li><strong>Communication</strong> — request threads + Company Voice</li>
+                </ul>
+            </section>
+
+            <!-- Slide 4: Data is the new oil -->
+            <section class="slide" data-slide="4" aria-label="Data is the new oil">
                 <p class="slide-eyebrow">Core message</p>
                 <h1>Data is the new oil</h1>
                 <p class="slide-subtitle">The sooner we use the system in daily operations, the sooner we have fuel for smart decisions.</p>
@@ -81,7 +89,7 @@
             </section>
 
             <!-- Slide 4: What we already record -->
-            <section class="slide" data-slide="4" aria-label="What the system already records">
+            <section class="slide" data-slide="5" aria-label="What the system already records">
                 <p class="slide-eyebrow">Today, without charts</p>
                 <h1>What the system already records</h1>
                 <table class="data-table">
@@ -129,7 +137,7 @@
             </section>
 
             <!-- Slide 5: Future vision charts -->
-            <section class="slide" data-slide="5" aria-label="Future vision charts">
+            <section class="slide" data-slide="6" aria-label="Future vision charts">
                 <p class="slide-eyebrow">Tomorrow</p>
                 <h1>Future vision: charts and decisions</h1>
                 <span class="future-badge">Future vision — illustrative</span>
@@ -167,7 +175,7 @@
             </section>
 
             <!-- Slide 6: Two worlds -->
-            <section class="slide" data-slide="6" aria-label="Two worlds one system">
+            <section class="slide" data-slide="7" aria-label="Two worlds one system">
                 <p class="slide-eyebrow">Architecture</p>
                 <h1>Two worlds, one system</h1>
                 <div class="slide-columns">
@@ -208,7 +216,7 @@
             </section>
 
             <!-- Slide 7: Closed circuit diagram -->
-            <section class="slide" data-slide="7" aria-label="Closed circuit">
+            <section class="slide" data-slide="8" aria-label="Closed circuit">
                 <p class="slide-eyebrow">Closed circuit</p>
                 <h1>From item to branch stock</h1>
                 <div class="diagram-wrap">
@@ -261,7 +269,7 @@
             </section>
 
             <!-- Slide 8: Catalogue -->
-            <section class="slide" data-slide="8" aria-label="Catalogue">
+            <section class="slide" data-slide="9" aria-label="Catalogue">
                 <p class="slide-eyebrow">Step 1</p>
                 <h1>Catalogue and pricing</h1>
                 <p class="url-tag">/manage/items/</p>
@@ -276,7 +284,7 @@
             </section>
 
             <!-- Slide 9: Procurement -->
-            <section class="slide" data-slide="9" aria-label="Procurement">
+            <section class="slide" data-slide="10" aria-label="Procurement">
                 <p class="slide-eyebrow">Step 2</p>
                 <h1>Procurement</h1>
                 <p class="url-tag">/manage/purchase-orders/</p>
@@ -291,7 +299,7 @@
             </section>
 
             <!-- Slide 10: Authorization -->
-            <section class="slide" data-slide="10" aria-label="Authorization">
+            <section class="slide" data-slide="11" aria-label="Authorization">
                 <p class="slide-eyebrow">Step 3</p>
                 <h1>Authorization and controls</h1>
                 <div class="slide-columns">
@@ -317,7 +325,7 @@
             </section>
 
             <!-- Slide 11: Central stock -->
-            <section class="slide" data-slide="11" aria-label="Central stock">
+            <section class="slide" data-slide="12" aria-label="Central stock">
                 <p class="slide-eyebrow">Step 4</p>
                 <h1>Central stock</h1>
                 <p class="url-tag">/manage/goods-receipts/</p>
@@ -331,7 +339,7 @@
             </section>
 
             <!-- Slide 12: Internal request -->
-            <section class="slide" data-slide="12" aria-label="Internal request">
+            <section class="slide" data-slide="13" aria-label="Internal request">
                 <p class="slide-eyebrow">Step 5</p>
                 <h1>Internal request</h1>
                 <div class="slide-columns">
@@ -359,7 +367,7 @@
             </section>
 
             <!-- Slide 13: Branch receipt -->
-            <section class="slide" data-slide="13" aria-label="Branch receipt">
+            <section class="slide" data-slide="14" aria-label="Branch receipt">
                 <p class="slide-eyebrow">Step 6</p>
                 <h1>Branch receipt</h1>
                 <p class="url-tag">/branch/receipts/</p>
@@ -372,113 +380,96 @@
                 <p><strong>Closed circuit:</strong> the item went catalogue → purchase → central stock → request → issue → branch stock. Every step was recorded.</p>
             </section>
 
-            <!-- Slide 14: Circularity -->
-            <section class="slide" data-slide="14" aria-label="Circularity">
+            <!-- Slide 15: Circularity -->
+            <section class="slide" data-slide="15" aria-label="Circularity">
                 <p class="slide-eyebrow">Circularity</p>
                 <h1>When the item does not exist</h1>
-                <div class="diagram-wrap">
-                    <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Circularity diagram">
-                        <defs>
-                            <marker id="arrowhead2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
-                            </marker>
-                        </defs>
-                        <rect class="flow-node flow-node-warm" x="250" y="10" width="200" height="44" rx="8"/>
-                        <text class="flow-text" x="350" y="37" text-anchor="middle">Item not in catalogue</text>
+                <div class="circularity-zones">
+                    <div class="circularity-zone circularity-zone-thread">
+                        <h2>Request thread — closes</h2>
+                        <div class="diagram-wrap">
+                            <svg viewBox="0 0 500 195" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Thread circuit diagram">
+                                <defs>
+                                    <marker id="arrowhead-thread" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                        <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                                    </marker>
+                                </defs>
+                                <rect class="flow-node flow-node-warm" x="150" y="5" width="200" height="36" rx="8"/>
+                                <text class="flow-text" x="250" y="28" text-anchor="middle">Item not in catalogue</text>
 
-                        <rect class="flow-node flow-node-warm" x="30" y="90" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="105" y="110" text-anchor="middle">Open thread</text>
-                        <text class="flow-text-sm" x="105" y="125" text-anchor="middle">/branch/threads/</text>
+                                <rect class="flow-node flow-node-warm" x="5" y="58" width="105" height="40" rx="8"/>
+                                <text class="flow-text" x="57" y="76" text-anchor="middle">Open thread</text>
+                                <text class="flow-text-sm" x="57" y="90" text-anchor="middle">/branch/threads/</text>
 
-                        <rect class="flow-node" x="220" y="90" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="295" y="110" text-anchor="middle">Dialogue</text>
-                        <text class="flow-text-sm" x="295" y="125" text-anchor="middle">branch ↔ warehouse</text>
+                                <rect class="flow-node" x="125" y="58" width="95" height="40" rx="8"/>
+                                <text class="flow-text" x="172" y="76" text-anchor="middle">Dialogue</text>
+                                <text class="flow-text-sm" x="172" y="90" text-anchor="middle">branch ↔ warehouse</text>
 
-                        <rect class="flow-node" x="410" y="90" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="485" y="110" text-anchor="middle">Create item</text>
-                        <text class="flow-text-sm" x="485" y="125" text-anchor="middle">/manage/items/</text>
+                                <rect class="flow-node" x="235" y="58" width="95" height="40" rx="8"/>
+                                <text class="flow-text" x="282" y="76" text-anchor="middle">Create item</text>
+                                <text class="flow-text-sm" x="282" y="90" text-anchor="middle">/manage/items/</text>
 
-                        <rect class="flow-node" x="570" y="90" width="120" height="44" rx="8"/>
-                        <text class="flow-text" x="630" y="110" text-anchor="middle">Link to thread</text>
-                        <text class="flow-text-sm" x="630" y="125" text-anchor="middle">manage/threads</text>
+                                <rect class="flow-node" x="345" y="58" width="95" height="40" rx="8"/>
+                                <text class="flow-text" x="392" y="76" text-anchor="middle">Link</text>
+                                <text class="flow-text-sm" x="392" y="90" text-anchor="middle">manage/threads</text>
 
-                        <rect class="flow-node flow-node-accent" x="100" y="180" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="175" y="200" text-anchor="middle">Normal request</text>
-                        <text class="flow-text-sm" x="175" y="215" text-anchor="middle">closed circuit</text>
+                                <rect class="flow-node flow-node-accent" x="5" y="118" width="130" height="40" rx="8"/>
+                                <text class="flow-text" x="70" y="136" text-anchor="middle">Normal request</text>
+                                <text class="flow-text-sm" x="70" y="150" text-anchor="middle">joins closed circuit</text>
 
-                        <rect class="flow-node flow-node-warm" x="300" y="180" width="150" height="44" rx="8"/>
-                        <text class="flow-text" x="375" y="200" text-anchor="middle">Close thread</text>
-                        <text class="flow-text-sm" x="375" y="215" text-anchor="middle">+ satisfaction</text>
+                                <rect class="flow-node flow-node-warm" x="155" y="118" width="130" height="40" rx="8"/>
+                                <text class="flow-text" x="220" y="136" text-anchor="middle">Close thread</text>
+                                <text class="flow-text-sm" x="220" y="150" text-anchor="middle">+ satisfaction</text>
 
-                        <rect class="flow-node flow-node-warm" x="500" y="180" width="170" height="44" rx="8"/>
-                        <text class="flow-text" x="585" y="200" text-anchor="middle">Company Voice</text>
-                        <text class="flow-text-sm" x="585" y="215" text-anchor="middle">/company-voice/</text>
-
-                        <line class="flow-arrow" x1="350" y1="54" x2="105" y2="88" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="180" y1="112" x2="218" y2="112" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="370" y1="112" x2="408" y2="112" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="560" y1="112" x2="568" y2="112" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="485" y1="134" x2="175" y2="178" stroke="#14b8a6" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="250" y1="202" x2="298" y2="202" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <line class="flow-arrow" x1="450" y1="202" x2="498" y2="202" stroke="#f59e0b" marker-end="url(#arrowhead2)"/>
-                        <path class="flow-arrow" d="M 585 224 Q 585 260 350 260 Q 80 260 80 134" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead2)"/>
-                        <text class="flow-text-sm" x="350" y="252" text-anchor="middle">The cycle restarts — continuous improvement</text>
-                    </svg>
-                </div>
-                <p>A thread is a <strong>conversation</strong>, not an order. The item is born in the normal catalogue flow — never inside the thread.</p>
-            </section>
-
-            <!-- Slide 15: Feedback -->
-            <section class="slide" data-slide="15" aria-label="Feedback">
-                <p class="slide-eyebrow">Closing the human loop</p>
-                <h1>Continuous feedback</h1>
-                <div class="slide-columns">
-                    <div>
-                        <h2>Request threads</h2>
-                        <p class="url-tag">/branch/threads/ · /manage/threads/</p>
+                                <line class="flow-arrow" x1="250" y1="41" x2="57" y2="56" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="110" y1="78" x2="123" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="220" y1="78" x2="233" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="330" y1="78" x2="343" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="392" y1="98" x2="70" y2="116" stroke="#14b8a6" marker-end="url(#arrowhead-thread)"/>
+                                <line class="flow-arrow" x1="135" y1="138" x2="153" y2="138" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                                <path class="flow-arrow" d="M 220 158 Q 220 178 250 178 Q 380 178 380 50" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead-thread)"/>
+                                <text class="flow-text-sm" x="250" y="192" text-anchor="middle">Next catalogue gap → new thread</text>
+                            </svg>
+                        </div>
                         <ul>
-                            <li>States: awaiting warehouse / awaiting branch / closed</li>
-                            <li>Only the opener closes (with reason + satisfaction)</li>
+                            <li>States: awaiting warehouse / awaiting branch / <strong>closed</strong></li>
+                            <li>Only the opener closes (reason + satisfaction)</li>
                             <li>Warehouse admin can force-close</li>
                             <li>Unread badges via <code>ThreadReadState</code></li>
                         </ul>
                     </div>
-                    <div>
-                        <h2>Company Voice</h2>
+                    <div class="circularity-zone circularity-zone-voice">
+                        <h2>Company Voice — ongoing feed</h2>
                         <p class="url-tag">/company-voice/</p>
-                        <ul>
-                            <li>All staff (warehouse + branch) read and post</li>
-                            <li>Tags: praise, concern, suggestion, wish</li>
-                            <li>One reply sub-thread per post</li>
-                            <li>Edit within 15 minutes; soft delete by author</li>
-                        </ul>
+                        <div class="voice-stream" aria-hidden="true">
+                            <div class="voice-post">Praise — great support!</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Suggestion — faster labels</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Concern — stock delays</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Wish — mobile alerts</div>
+                        </div>
+                        <p class="voice-stream-label">Ongoing feed — posts do not close</p>
+                        <p style="margin-top:0.5rem;font-size:var(--small-size)">Parallel channel for general feedback — <strong>not</strong> part of the catalogue-gap circuit.</p>
                     </div>
                 </div>
-                <p>Transactions generate data; conversations generate <strong>context</strong>. Both feed management.</p>
+                <p>A thread is a <strong>conversation that closes</strong>, not an order. The item is born in the normal catalogue flow — never inside the thread.</p>
             </section>
 
-            <!-- Slide 16: Next steps -->
-            <section class="slide" data-slide="16" aria-label="Next steps">
-                <p class="slide-eyebrow">Call to action</p>
-                <h1>Start today — data compounds</h1>
-                <ul class="cta-list">
-                    <li>
-                        <span class="cta-num">1</span>
-                        <span><strong>Warehouse:</strong> keep the catalogue up to date; record every receipt and shipment in the system — not on parallel paper.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">2</span>
-                        <span><strong>Branches:</strong> place requests via <span class="url-tag">/branch/requests/</span>; use threads for missing items; confirm receipts.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">3</span>
-                        <span><strong>Management:</strong> approve with care; EUR limits protect cash flow and build a decision history.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">4</span>
-                        <span><strong>Everyone:</strong> share feedback on Company Voice — continuous improvement needs real voices.</span>
-                    </li>
+            <!-- Slide 16: Company Voice finale -->
+            <section class="slide slide-finale" data-slide="16" aria-label="Company Voice">
+                <p class="slide-eyebrow">Keep talking</p>
+                <h1>Company Voice — your ongoing channel</h1>
+                <p class="slide-subtitle">Your voice shapes how we improve. Transactions generate data; conversations generate context.</p>
+                <p class="url-tag">/company-voice/</p>
+                <ul>
+                    <li><strong>Everyone</strong> — warehouse and branch staff read and post</li>
+                    <li><strong>Tags</strong> — praise, concern, suggestion, wish</li>
+                    <li><strong>One reply sub-thread</strong> per post</li>
+                    <li><strong>Edit</strong> within 15 minutes; soft delete by author</li>
                 </ul>
+                <p><strong>Share praise, concerns, suggestions, and wishes</strong> — the feed never closes; every post adds to the picture.</p>
                 <p class="slide-meta">Manuals: <span class="url-tag">docs/user-manuals/en/</span> · Next phase: production deployment readiness (Phase 7)</p>
             </section>
 
