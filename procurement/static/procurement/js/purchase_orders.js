@@ -503,6 +503,23 @@ async function performStatusAction(poId, endpoint, successKey, button, reason) {
     }
 }
 
+function formatHistoryActionLabel(entry) {
+    if (entry.action === "status_changed") {
+        const statusChange = entry.changes && entry.changes.status;
+        if (statusChange) {
+            const fromStatus = statusChange.old ? statusLabel(statusChange.old) : "";
+            const toStatus = statusChange.new ? statusLabel(statusChange.new) : "";
+            if (fromStatus && toStatus) {
+                return t("action.status_changed_from_to", { from: fromStatus, to: toStatus });
+            }
+            if (toStatus) {
+                return t("action.status_changed_to", { status: toStatus });
+            }
+        }
+    }
+    return t(`action.${entry.action}`);
+}
+
 function fillHistoryList(list, entries) {
     list.replaceChildren();
     if (!entries.length) {
@@ -516,7 +533,7 @@ function fillHistoryList(list, entries) {
         const when = formatDateTime(entry.created_at);
         const who = entry.user_email || "—";
         const reason = entry.reason ? ` — ${entry.reason}` : "";
-        item.textContent = `${t(`action.${entry.action}`)} · ${who} · ${when}${reason}`;
+        item.textContent = `${formatHistoryActionLabel(entry)} · ${who} · ${when}${reason}`;
         list.appendChild(item);
     });
 }

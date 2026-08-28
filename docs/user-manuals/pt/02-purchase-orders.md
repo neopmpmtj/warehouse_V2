@@ -135,7 +135,7 @@ Quando um gestor ou administrador **aprova** uma encomenda de compra, os valores
 
 ## 9. Histórico
 
-Cada ação é registada — quem fez e quando: criação, linha adicionada/atualizada/removida e cada mudança de estado. Abra uma encomenda e role até **Histórico**.
+Cada ação é registada — quem fez e quando: criação, linha adicionada/atualizada/removida e cada mudança de estado. As **mudanças de estado** mostram a transição (por exemplo *Estado alterado: Rascunho → Cancelada*). Abra uma encomenda e role até **Histórico**.
 
 ---
 

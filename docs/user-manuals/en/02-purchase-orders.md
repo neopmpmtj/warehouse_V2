@@ -135,7 +135,7 @@ When a manager or admin **approves** a purchase order, the **Net / VAT / Gross**
 
 ## 9. History
 
-Every action is recorded — who did it and when: created, line added/updated/removed, and each status change. Open an order and scroll to **History**.
+Every action is recorded — who did it and when: created, line added/updated/removed, and each status change. **Status changes** show the transition (for example *Status changed: Draft → Cancelled*). Open an order and scroll to **History**.
 
 ---
 
