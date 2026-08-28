@@ -27,8 +27,8 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 | **I — Gancho** | 1–2 | Capa + chamada à acção (o que precisamos de si) |
 | **II — Porquê** | 3–6 | Cenário, metáfora dos dados, o que se regista, visão futura |
 | **III — Circuito fechado** | 7–14 | Arquitectura + fluxo armazém até receção na filial |
-| **IV — Circularidade** | 15 | Circuito do fio (fecha) vs feed Voz da Empresa (paralelo) |
-| **V — Despedida** | 16 | Final Voz da Empresa |
+| **IV — Circularidade** | 15 | Circuito do fio para lacunas no catálogo (fecha) |
+| **V — Despedida** | 16 | Final Voz da Empresa (texto + painel do feed) |
 
 ---
 
@@ -82,16 +82,16 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 ### Slide 14 — Receção na filial
 - Fecha o circuito operacional
 
-### Slide 15 — Circularidade (duas zonas)
-- **Zona A — Fio (fecha):** lacuna → fio → diálogo → criar artigo → ligar → requisição → fechar + satisfação → próxima lacuna → novo fio
-- **Zona B — Voz da Empresa (feed):** fluxo descendente; publicações não fecham; canal paralelo
-- Bullets do fio: estados, fecho pelo autor, force-close, não lidos
-- **Notas:** Fio ≠ encomenda.
+### Slide 15 — Circularidade (só circuito do fio)
+- Diagrama do fio a largura total (lacuna → abrir → diálogo → criar → ligar → requisição → fechar)
+- Bullets + legenda em duas colunas
+- **Notas:** Sem Voz da Empresa neste slide.
 
 ### Slide 16 — Voz da Empresa (final)
-- **Continue a falar** — despedida com participação activa
-- Rodapé: manuais `docs/user-manuals/pt/` · Fase 7
-- **Notas:** Último slide — canal permanente.
+- Texto (esquerda) + painel do feed contínuo (direita)
+- **Continue a falar**; despedida com participação activa
+- Rodapé: manuais · Fase 7
+- **Notas:** Visual do feed movido do slide 15.
 
 ---
 

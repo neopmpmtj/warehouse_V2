@@ -20,6 +20,9 @@ class PresentationDeckTests(TestCase):
         self.assertContains(response, "What we need from you")
         self.assertContains(response, "Start today — data compounds")
         self.assertContains(response, "Company Voice — your ongoing channel")
+        self.assertContains(response, "thread-circuit-diagram")
+        self.assertContains(response, "voice-feed-panel")
+        self.assertNotContains(response, "circularity-zones")
         self.assertContains(response, 'lang="en"')
 
     def test_presentation_pt_cta_on_slide_two(self):

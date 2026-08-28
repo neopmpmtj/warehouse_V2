@@ -197,51 +197,53 @@ body.deck-fullscreen:hover {
     }
 }
 
-/* Circularity — two zones (thread circuit vs voice stream) */
-.circularity-zones {
-    display: grid;
-    grid-template-columns: 1.45fr 1fr;
-    gap: clamp(0.75rem, 2vw, 1.25rem);
+/* Thread circuit slide (slide 15 — full width) */
+.thread-circuit-diagram {
+    max-width: 950px;
+    margin: 0.75rem 0 1rem;
+}
+
+.thread-circuit-details {
+    max-width: 950px;
+    margin-top: 0.5rem;
+}
+
+.thread-circuit-details ul {
+    margin: 0;
+}
+
+.thread-circuit-caption {
+    margin: 0;
+    font-size: var(--small-size);
+    color: var(--muted);
+}
+
+.thread-circuit-caption strong {
+    color: var(--text);
+}
+
+/* Company Voice finale (slide 16 — text + feed panel) */
+.slide-finale-layout {
     width: 100%;
     max-width: 1100px;
     align-items: start;
 }
 
-.circularity-zone {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    padding: 0.85rem 1rem;
+.slide-finale-copy {
+    min-width: 0;
 }
 
-.circularity-zone h2 {
+.voice-feed-panel {
+    background: var(--surface);
+    border: 1px solid var(--accent-light);
+    border-radius: 0.75rem;
+    padding: 1rem 1.15rem;
+}
+
+.voice-feed-panel h2 {
     font-size: clamp(0.95rem, 1.8vw, 1.15rem);
     margin: 0 0 0.5rem;
-}
-
-.circularity-zone-thread {
-    border-color: var(--accent-warm);
-}
-
-.circularity-zone-thread h2 {
-    color: #fbbf24;
-}
-
-.circularity-zone-voice {
-    border-color: var(--accent-light);
-}
-
-.circularity-zone-voice h2 {
     color: var(--accent-light);
-}
-
-.circularity-zone .diagram-wrap {
-    margin: 0.25rem 0 0.5rem;
-}
-
-.circularity-zone ul {
-    margin: 0.35rem 0 0;
-    font-size: var(--small-size);
 }
 
 .voice-stream {
@@ -278,11 +280,11 @@ body.deck-fullscreen:hover {
 }
 
 .slide-finale .slide-subtitle {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
-@media (max-width: 900px) {
-    .circularity-zones {
+@media (max-width: 768px) {
+    .slide-finale-layout {
         grid-template-columns: 1fr;
     }
 }

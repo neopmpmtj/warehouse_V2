@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Presentation: data, circuits, and circularity">
     <title>CentCompras — Presentation</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=4">
 </head>
 <body>
     <div class="deck" role="application" aria-label="CentCompras presentation">
@@ -384,63 +384,82 @@
             <section class="slide" data-slide="15" aria-label="Circularity">
                 <p class="slide-eyebrow">Circularity</p>
                 <h1>When the item does not exist</h1>
-                <div class="circularity-zones">
-                    <div class="circularity-zone circularity-zone-thread">
-                        <h2>Request thread — closes</h2>
-                        <div class="diagram-wrap">
-                            <svg viewBox="0 0 500 195" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Thread circuit diagram">
-                                <defs>
-                                    <marker id="arrowhead-thread" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                        <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
-                                    </marker>
-                                </defs>
-                                <rect class="flow-node flow-node-warm" x="150" y="5" width="200" height="36" rx="8"/>
-                                <text class="flow-text" x="250" y="28" text-anchor="middle">Item not in catalogue</text>
+                <p class="slide-subtitle">Request thread — a conversation that closes</p>
+                <div class="diagram-wrap thread-circuit-diagram">
+                    <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Thread circuit diagram">
+                        <defs>
+                            <marker id="arrowhead-thread" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                        </defs>
+                        <rect class="flow-node flow-node-warm" x="275" y="8" width="350" height="44" rx="8"/>
+                        <text class="flow-text" x="450" y="28" text-anchor="middle">Item not in catalogue</text>
+                        <text class="flow-text-sm" x="450" y="44" text-anchor="middle">catalogue gap</text>
 
-                                <rect class="flow-node flow-node-warm" x="5" y="58" width="105" height="40" rx="8"/>
-                                <text class="flow-text" x="57" y="76" text-anchor="middle">Open thread</text>
-                                <text class="flow-text-sm" x="57" y="90" text-anchor="middle">/branch/threads/</text>
+                        <rect class="flow-node flow-node-warm" x="20" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="95" y="98" text-anchor="middle">Open thread</text>
+                        <text class="flow-text-sm" x="95" y="116" text-anchor="middle">/branch/threads/</text>
 
-                                <rect class="flow-node" x="125" y="58" width="95" height="40" rx="8"/>
-                                <text class="flow-text" x="172" y="76" text-anchor="middle">Dialogue</text>
-                                <text class="flow-text-sm" x="172" y="90" text-anchor="middle">branch ↔ warehouse</text>
+                        <rect class="flow-node" x="200" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="275" y="98" text-anchor="middle">Dialogue</text>
+                        <text class="flow-text-sm" x="275" y="116" text-anchor="middle">branch ↔ warehouse</text>
 
-                                <rect class="flow-node" x="235" y="58" width="95" height="40" rx="8"/>
-                                <text class="flow-text" x="282" y="76" text-anchor="middle">Create item</text>
-                                <text class="flow-text-sm" x="282" y="90" text-anchor="middle">/manage/items/</text>
+                        <rect class="flow-node" x="380" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="455" y="98" text-anchor="middle">Create item</text>
+                        <text class="flow-text-sm" x="455" y="116" text-anchor="middle">/manage/items/</text>
 
-                                <rect class="flow-node" x="345" y="58" width="95" height="40" rx="8"/>
-                                <text class="flow-text" x="392" y="76" text-anchor="middle">Link</text>
-                                <text class="flow-text-sm" x="392" y="90" text-anchor="middle">manage/threads</text>
+                        <rect class="flow-node" x="560" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="635" y="98" text-anchor="middle">Link to thread</text>
+                        <text class="flow-text-sm" x="635" y="116" text-anchor="middle">/manage/threads/</text>
 
-                                <rect class="flow-node flow-node-accent" x="5" y="118" width="130" height="40" rx="8"/>
-                                <text class="flow-text" x="70" y="136" text-anchor="middle">Normal request</text>
-                                <text class="flow-text-sm" x="70" y="150" text-anchor="middle">joins closed circuit</text>
+                        <rect class="flow-node flow-node-accent" x="140" y="158" width="200" height="50" rx="8"/>
+                        <text class="flow-text" x="240" y="178" text-anchor="middle">Normal request</text>
+                        <text class="flow-text-sm" x="240" y="196" text-anchor="middle">joins the closed circuit</text>
 
-                                <rect class="flow-node flow-node-warm" x="155" y="118" width="130" height="40" rx="8"/>
-                                <text class="flow-text" x="220" y="136" text-anchor="middle">Close thread</text>
-                                <text class="flow-text-sm" x="220" y="150" text-anchor="middle">+ satisfaction</text>
+                        <rect class="flow-node flow-node-warm" x="480" y="158" width="200" height="50" rx="8"/>
+                        <text class="flow-text" x="580" y="178" text-anchor="middle">Close thread</text>
+                        <text class="flow-text-sm" x="580" y="196" text-anchor="middle">reason + satisfaction</text>
 
-                                <line class="flow-arrow" x1="250" y1="41" x2="57" y2="56" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="110" y1="78" x2="123" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="220" y1="78" x2="233" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="330" y1="78" x2="343" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="392" y1="98" x2="70" y2="116" stroke="#14b8a6" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="135" y1="138" x2="153" y2="138" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <path class="flow-arrow" d="M 220 158 Q 220 178 250 178 Q 380 178 380 50" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead-thread)"/>
-                                <text class="flow-text-sm" x="250" y="192" text-anchor="middle">Next catalogue gap → new thread</text>
-                            </svg>
-                        </div>
-                        <ul>
-                            <li>States: awaiting warehouse / awaiting branch / <strong>closed</strong></li>
-                            <li>Only the opener closes (reason + satisfaction)</li>
-                            <li>Warehouse admin can force-close</li>
-                            <li>Unread badges via <code>ThreadReadState</code></li>
-                        </ul>
-                    </div>
-                    <div class="circularity-zone circularity-zone-voice">
-                        <h2>Company Voice — ongoing feed</h2>
+                        <line class="flow-arrow" x1="450" y1="52" x2="95" y2="76" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="170" y1="103" x2="198" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="350" y1="103" x2="378" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="530" y1="103" x2="558" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="635" y1="128" x2="240" y2="156" stroke="#14b8a6" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="340" y1="183" x2="478" y2="183" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <path class="flow-arrow" d="M 580 208 Q 580 218 450 218 Q 120 218 120 103" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead-thread)"/>
+                        <text class="flow-text-sm" x="450" y="214" text-anchor="middle">Next catalogue gap → new thread</text>
+                    </svg>
+                </div>
+                <div class="thread-circuit-details slide-columns">
+                    <ul>
+                        <li>States: awaiting warehouse / awaiting branch / <strong>closed</strong></li>
+                        <li>Only the opener closes (reason + satisfaction)</li>
+                        <li>Warehouse admin can force-close</li>
+                        <li>Unread badges via <code>ThreadReadState</code></li>
+                    </ul>
+                    <p class="thread-circuit-caption">A thread is a <strong>conversation that closes</strong>, not an order. The item is born in the normal catalogue flow — never inside the thread.</p>
+                </div>
+            </section>
+
+            <!-- Slide 16: Company Voice finale -->
+            <section class="slide slide-finale" data-slide="16" aria-label="Company Voice">
+                <p class="slide-eyebrow">Keep talking</p>
+                <h1>Company Voice — your ongoing channel</h1>
+                <div class="slide-finale-layout slide-columns">
+                    <div class="slide-finale-copy">
+                        <p class="slide-subtitle">Your voice shapes how we improve. Transactions generate data; conversations generate context.</p>
                         <p class="url-tag">/company-voice/</p>
+                        <ul>
+                            <li><strong>Everyone</strong> — warehouse and branch staff read and post</li>
+                            <li><strong>Tags</strong> — praise, concern, suggestion, wish</li>
+                            <li><strong>One reply sub-thread</strong> per post</li>
+                            <li><strong>Edit</strong> within 15 minutes; soft delete by author</li>
+                        </ul>
+                        <p><strong>Share praise, concerns, suggestions, and wishes</strong> — the feed never closes; every post adds to the picture.</p>
+                        <p class="slide-meta">Manuals: <span class="url-tag">docs/user-manuals/en/</span> · Next phase: production deployment readiness (Phase 7)</p>
+                    </div>
+                    <div class="voice-feed-panel" aria-label="Ongoing feed illustration">
+                        <h2>Ongoing feed</h2>
                         <div class="voice-stream" aria-hidden="true">
                             <div class="voice-post">Praise — great support!</div>
                             <div class="voice-stream-arrow">↓</div>
@@ -450,27 +469,9 @@
                             <div class="voice-stream-arrow">↓</div>
                             <div class="voice-post">Wish — mobile alerts</div>
                         </div>
-                        <p class="voice-stream-label">Ongoing feed — posts do not close</p>
-                        <p style="margin-top:0.5rem;font-size:var(--small-size)">Parallel channel for general feedback — <strong>not</strong> part of the catalogue-gap circuit.</p>
+                        <p class="voice-stream-label">Posts do not close — the stream continues</p>
                     </div>
                 </div>
-                <p>A thread is a <strong>conversation that closes</strong>, not an order. The item is born in the normal catalogue flow — never inside the thread.</p>
-            </section>
-
-            <!-- Slide 16: Company Voice finale -->
-            <section class="slide slide-finale" data-slide="16" aria-label="Company Voice">
-                <p class="slide-eyebrow">Keep talking</p>
-                <h1>Company Voice — your ongoing channel</h1>
-                <p class="slide-subtitle">Your voice shapes how we improve. Transactions generate data; conversations generate context.</p>
-                <p class="url-tag">/company-voice/</p>
-                <ul>
-                    <li><strong>Everyone</strong> — warehouse and branch staff read and post</li>
-                    <li><strong>Tags</strong> — praise, concern, suggestion, wish</li>
-                    <li><strong>One reply sub-thread</strong> per post</li>
-                    <li><strong>Edit</strong> within 15 minutes; soft delete by author</li>
-                </ul>
-                <p><strong>Share praise, concerns, suggestions, and wishes</strong> — the feed never closes; every post adds to the picture.</p>
-                <p class="slide-meta">Manuals: <span class="url-tag">docs/user-manuals/en/</span> · Next phase: production deployment readiness (Phase 7)</p>
             </section>
 
         </div>

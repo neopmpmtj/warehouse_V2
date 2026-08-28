@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Apresentação: dados, circuitos e circularidade">
     <title>CentCompras — Apresentação</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=4">
 </head>
 <body>
     <div class="deck" role="application" aria-label="Apresentação CentCompras">
@@ -384,63 +384,82 @@
             <section class="slide" data-slide="15" aria-label="Circularidade">
                 <p class="slide-eyebrow">Circularidade</p>
                 <h1>Quando o artigo não existe</h1>
-                <div class="circularity-zones">
-                    <div class="circularity-zone circularity-zone-thread">
-                        <h2>Fio de pedido — fecha</h2>
-                        <div class="diagram-wrap">
-                            <svg viewBox="0 0 500 195" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama do circuito do fio">
-                                <defs>
-                                    <marker id="arrowhead-thread" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                        <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
-                                    </marker>
-                                </defs>
-                                <rect class="flow-node flow-node-warm" x="150" y="5" width="200" height="36" rx="8"/>
-                                <text class="flow-text" x="250" y="28" text-anchor="middle">Artigo não está no catálogo</text>
+                <p class="slide-subtitle">Fio de pedido — uma conversa que fecha</p>
+                <div class="diagram-wrap thread-circuit-diagram">
+                    <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama do circuito do fio">
+                        <defs>
+                            <marker id="arrowhead-thread" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                        </defs>
+                        <rect class="flow-node flow-node-warm" x="275" y="8" width="350" height="44" rx="8"/>
+                        <text class="flow-text" x="450" y="28" text-anchor="middle">Artigo não está no catálogo</text>
+                        <text class="flow-text-sm" x="450" y="44" text-anchor="middle">lacuna no catálogo</text>
 
-                                <rect class="flow-node flow-node-warm" x="5" y="58" width="105" height="40" rx="8"/>
-                                <text class="flow-text" x="57" y="76" text-anchor="middle">Abrir fio</text>
-                                <text class="flow-text-sm" x="57" y="90" text-anchor="middle">/branch/threads/</text>
+                        <rect class="flow-node flow-node-warm" x="20" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="95" y="98" text-anchor="middle">Abrir fio</text>
+                        <text class="flow-text-sm" x="95" y="116" text-anchor="middle">/branch/threads/</text>
 
-                                <rect class="flow-node" x="125" y="58" width="95" height="40" rx="8"/>
-                                <text class="flow-text" x="172" y="76" text-anchor="middle">Diálogo</text>
-                                <text class="flow-text-sm" x="172" y="90" text-anchor="middle">filial ↔ armazém</text>
+                        <rect class="flow-node" x="200" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="275" y="98" text-anchor="middle">Diálogo</text>
+                        <text class="flow-text-sm" x="275" y="116" text-anchor="middle">filial ↔ armazém</text>
 
-                                <rect class="flow-node" x="235" y="58" width="95" height="40" rx="8"/>
-                                <text class="flow-text" x="282" y="76" text-anchor="middle">Criar artigo</text>
-                                <text class="flow-text-sm" x="282" y="90" text-anchor="middle">/manage/items/</text>
+                        <rect class="flow-node" x="380" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="455" y="98" text-anchor="middle">Criar artigo</text>
+                        <text class="flow-text-sm" x="455" y="116" text-anchor="middle">/manage/items/</text>
 
-                                <rect class="flow-node" x="345" y="58" width="95" height="40" rx="8"/>
-                                <text class="flow-text" x="392" y="76" text-anchor="middle">Ligar</text>
-                                <text class="flow-text-sm" x="392" y="90" text-anchor="middle">manage/threads</text>
+                        <rect class="flow-node" x="560" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="635" y="98" text-anchor="middle">Ligar ao fio</text>
+                        <text class="flow-text-sm" x="635" y="116" text-anchor="middle">/manage/threads/</text>
 
-                                <rect class="flow-node flow-node-accent" x="5" y="118" width="130" height="40" rx="8"/>
-                                <text class="flow-text" x="70" y="136" text-anchor="middle">Requisição normal</text>
-                                <text class="flow-text-sm" x="70" y="150" text-anchor="middle">entra no circuito fechado</text>
+                        <rect class="flow-node flow-node-accent" x="140" y="158" width="200" height="50" rx="8"/>
+                        <text class="flow-text" x="240" y="178" text-anchor="middle">Requisição normal</text>
+                        <text class="flow-text-sm" x="240" y="196" text-anchor="middle">entra no circuito fechado</text>
 
-                                <rect class="flow-node flow-node-warm" x="155" y="118" width="130" height="40" rx="8"/>
-                                <text class="flow-text" x="220" y="136" text-anchor="middle">Fechar fio</text>
-                                <text class="flow-text-sm" x="220" y="150" text-anchor="middle">+ satisfação</text>
+                        <rect class="flow-node flow-node-warm" x="480" y="158" width="200" height="50" rx="8"/>
+                        <text class="flow-text" x="580" y="178" text-anchor="middle">Fechar fio</text>
+                        <text class="flow-text-sm" x="580" y="196" text-anchor="middle">motivo + satisfação</text>
 
-                                <line class="flow-arrow" x1="250" y1="41" x2="57" y2="56" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="110" y1="78" x2="123" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="220" y1="78" x2="233" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="330" y1="78" x2="343" y2="78" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="392" y1="98" x2="70" y2="116" stroke="#14b8a6" marker-end="url(#arrowhead-thread)"/>
-                                <line class="flow-arrow" x1="135" y1="138" x2="153" y2="138" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                                <path class="flow-arrow" d="M 220 158 Q 220 178 250 178 Q 380 178 380 50" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead-thread)"/>
-                                <text class="flow-text-sm" x="250" y="192" text-anchor="middle">Próxima lacuna no catálogo → novo fio</text>
-                            </svg>
-                        </div>
-                        <ul>
-                            <li>Estados: a aguardar armazém / a aguardar filial / <strong>fechado</strong></li>
-                            <li>Só quem abriu fecha (motivo + satisfação)</li>
-                            <li>Administrador armazém pode forçar fecho</li>
-                            <li>Badges de não lidos via <code>ThreadReadState</code></li>
-                        </ul>
-                    </div>
-                    <div class="circularity-zone circularity-zone-voice">
-                        <h2>Voz da Empresa — feed contínuo</h2>
+                        <line class="flow-arrow" x1="450" y1="52" x2="95" y2="76" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="170" y1="103" x2="198" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="350" y1="103" x2="378" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="530" y1="103" x2="558" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="635" y1="128" x2="240" y2="156" stroke="#14b8a6" marker-end="url(#arrowhead-thread)"/>
+                        <line class="flow-arrow" x1="340" y1="183" x2="478" y2="183" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
+                        <path class="flow-arrow" d="M 580 208 Q 580 218 450 218 Q 120 218 120 103" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead-thread)"/>
+                        <text class="flow-text-sm" x="450" y="214" text-anchor="middle">Próxima lacuna no catálogo → novo fio</text>
+                    </svg>
+                </div>
+                <div class="thread-circuit-details slide-columns">
+                    <ul>
+                        <li>Estados: a aguardar armazém / a aguardar filial / <strong>fechado</strong></li>
+                        <li>Só quem abriu fecha (motivo + satisfação)</li>
+                        <li>Administrador armazém pode forçar fecho</li>
+                        <li>Badges de não lidos via <code>ThreadReadState</code></li>
+                    </ul>
+                    <p class="thread-circuit-caption">O fio é uma <strong>conversa que fecha</strong>, não uma encomenda. O artigo nasce no fluxo normal do catálogo — nunca dentro do fio.</p>
+                </div>
+            </section>
+
+            <!-- Slide 16: Voz da Empresa — final -->
+            <section class="slide slide-finale" data-slide="16" aria-label="Voz da Empresa">
+                <p class="slide-eyebrow">Continue a falar</p>
+                <h1>Voz da Empresa — o seu canal permanente</h1>
+                <div class="slide-finale-layout slide-columns">
+                    <div class="slide-finale-copy">
+                        <p class="slide-subtitle">A sua voz molda a nossa melhoria. Transacções geram dados; conversas geram contexto.</p>
                         <p class="url-tag">/company-voice/</p>
+                        <ul>
+                            <li><strong>Todos</strong> — pessoal de armazém e filial lê e publica</li>
+                            <li><strong>Etiquetas</strong> — elogio, preocupação, sugestão, desejo</li>
+                            <li><strong>Um sub-fio de resposta</strong> por publicação</li>
+                            <li><strong>Editar</strong> nos primeiros 15 min; eliminação suave pelo autor</li>
+                        </ul>
+                        <p><strong>Partilhe elogios, preocupações, sugestões e desejos</strong> — o feed nunca fecha; cada publicação enriquece o quadro.</p>
+                        <p class="slide-meta">Manuais: <span class="url-tag">docs/user-manuals/pt/</span> · Próxima fase: preparação para produção (Fase 7)</p>
+                    </div>
+                    <div class="voice-feed-panel" aria-label="Ilustração do feed contínuo">
+                        <h2>Feed contínuo</h2>
                         <div class="voice-stream" aria-hidden="true">
                             <div class="voice-post">Elogio — óptimo apoio!</div>
                             <div class="voice-stream-arrow">↓</div>
@@ -450,27 +469,9 @@
                             <div class="voice-stream-arrow">↓</div>
                             <div class="voice-post">Desejo — alertas no telemóvel</div>
                         </div>
-                        <p class="voice-stream-label">Feed contínuo — publicações não fecham</p>
-                        <p style="margin-top:0.5rem;font-size:var(--small-size)">Canal paralelo para feedback geral — <strong>não</strong> faz parte do circuito de lacunas no catálogo.</p>
+                        <p class="voice-stream-label">Publicações não fecham — o stream continua</p>
                     </div>
                 </div>
-                <p>O fio é uma <strong>conversa que fecha</strong>, não uma encomenda. O artigo nasce no fluxo normal do catálogo — nunca dentro do fio.</p>
-            </section>
-
-            <!-- Slide 16: Voz da Empresa — final -->
-            <section class="slide slide-finale" data-slide="16" aria-label="Voz da Empresa">
-                <p class="slide-eyebrow">Continue a falar</p>
-                <h1>Voz da Empresa — o seu canal permanente</h1>
-                <p class="slide-subtitle">A sua voz molda a nossa melhoria. Transacções geram dados; conversas geram contexto.</p>
-                <p class="url-tag">/company-voice/</p>
-                <ul>
-                    <li><strong>Todos</strong> — pessoal de armazém e filial lê e publica</li>
-                    <li><strong>Etiquetas</strong> — elogio, preocupação, sugestão, desejo</li>
-                    <li><strong>Um sub-fio de resposta</strong> por publicação</li>
-                    <li><strong>Editar</strong> nos primeiros 15 min; eliminação suave pelo autor</li>
-                </ul>
-                <p><strong>Partilhe elogios, preocupações, sugestões e desejos</strong> — o feed nunca fecha; cada publicação enriquece o quadro.</p>
-                <p class="slide-meta">Manuais: <span class="url-tag">docs/user-manuals/pt/</span> · Próxima fase: preparação para produção (Fase 7)</p>
             </section>
 
         </div>
