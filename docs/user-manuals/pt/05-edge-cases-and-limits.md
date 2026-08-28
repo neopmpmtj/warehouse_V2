@@ -247,12 +247,14 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 ```text
 draft ──submit──▶ submitted ──approve──▶ approved ──receive──▶ received ──close──▶ closed
   │                  │                     │                       │
-  └── (edições de    └─reject─▶ rejected  └─cancel─▶ cancelled   └── (fecho manual = entrega parcial)
-       rascunho)                          └──reopen─▶ draft
+  │ cancel           └─reject─▶ rejected  └─cancel─▶ cancelled   └── (fecho manual = entrega parcial)
+  ▼                                        └──reopen─▶ draft
+cancelled
 ```
 
 - Só linhas em **draft** (rascunho) são editáveis.
-- **Cancelar** só a partir de **approved** e só com **zero receções**; caso contrário **fechar** (entrega parcial).
+- **Descartar Rascunho** (`draft → cancelled`) não exige motivo; ação só na lista.
+- **Cancelar** (approved → cancelled) exige motivo e **zero receções**; caso contrário **fechar** (entrega parcial).
 - **Rejeitar** exige motivo; **reabrir** move `rejected → draft`.
 
 ### 4.2 Requisição interna (requisição)

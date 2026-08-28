@@ -46,9 +46,11 @@ Sign in with your email + password (the one your administrator gave you). This m
 | **Status** | Where the order is in the workflow |
 | **Total** | The **gross** amount (net + VAT) — the full cost to fund |
 | **Created** | Date/time (DD/MM/YYYY) |
-| **Actions** | **Open** |
+| **Actions** | **Open**; **Discard draft** (draft only, edit permission) |
 
 Click a row (or **Open**) to see the full order in a drawer. Press **Escape** to close it (same as **Close**). If a dialog is open on top (**New purchase order**, **Add line**), Escape closes that dialog first.
+
+While an order is still a **Draft**, the list shows **Discard draft** next to **Open**. Use it to void a purchase order created in error — no reason is required. The PO number is kept and the status becomes **Cancelled**.
 
 ---
 
@@ -113,6 +115,7 @@ The list's **Total** column shows the **gross**.
 
 | From | Action | To | Who |
 |------|--------|----|-----|
+| Draft | **Discard draft** | Cancelled | manager/admin (no reason) |
 | Draft | **Submit** | Submitted | manager/admin |
 | Submitted | **Approve** | Approved | manager grade 2+ / admin (within caps) |
 | Submitted | **Reject** | Rejected | manager/admin |
