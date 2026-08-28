@@ -691,6 +691,19 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["purchase_order"]["status"], "cancelled")
 
+    def test_cancel_draft_po_through_api(self):
+        self.client.force_login(self.user)
+        po = self._create_po_via_api()
+
+        resp = self.client.post(
+            reverse("manage_purchase_order_cancel", args=[po["id"]]),
+            data=json.dumps({}),
+            content_type="application/json",
+            **self.host,
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["purchase_order"]["status"], "cancelled")
+
     def test_cancel_requires_reason_through_api(self):
         self.client.force_login(self.user)
         po = self._create_po_via_api()
@@ -1028,13 +1041,24 @@ class PurchaseOrderGradeAndAuditTests(PurchaseOrderTestCaseMixin, TestCase):
         ).latest("created_at")
         self.assertEqual(log.reason, "Supplier cannot fulfil")
 
+    def test_cancel_draft_po_no_reason(self):
+        po = services.create_purchase_order(self.supplier, user=self.user)
+        po = services.cancel(po, self.user)
+        self.assertEqual(po.status, PurchaseOrder.Status.CANCELLED)
+        log = po.change_logs.filter(
+            action=PurchaseOrderChangeLog.Action.STATUS_CHANGED,
+            changes__status__new=PurchaseOrder.Status.CANCELLED,
+        ).latest("created_at")
+        self.assertEqual(log.changes["status"]["old"], PurchaseOrder.Status.DRAFT)
+        self.assertEqual(log.reason, "")
+
     def test_cancel_requires_reason(self):
         po = self._approved_po()
         with self.assertRaises(ValidationError) as ctx:
             services.cancel(po, self.user, reason="   ")
         self.assertEqual(ctx.exception.code, "cancel_reason_required")
 
-    def test_cancel_non_approved_is_invalid(self):
+    def test_cancel_submitted_is_invalid(self):
         po = self._submitted_po()
         with self.assertRaises(services.InvalidStatusTransitionError):
             services.cancel(po, self.user, reason="Changed my mind")

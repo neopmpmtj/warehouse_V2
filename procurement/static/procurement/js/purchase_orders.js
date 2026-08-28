@@ -334,6 +334,19 @@ function renderTable() {
         });
         actions.appendChild(openButton);
 
+        const perms = poPermissions();
+        if (po.status === "draft" && perms.change) {
+            const discardButton = document.createElement("button");
+            discardButton.type = "button";
+            discardButton.className = "btn btn-danger";
+            discardButton.textContent = t("discardDraft");
+            discardButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                discardDraftPo(po.id, discardButton);
+            });
+            actions.appendChild(discardButton);
+        }
+
         row.append(id, supplier, status, total, created, actions);
         row.addEventListener("click", () => openDrawer(po.id));
         body.appendChild(row);
@@ -508,6 +521,36 @@ function renderStatusActions(po, perms) {
     });
 }
 
+async function discardDraftPo(poId, button) {
+    if (!poPermissions().change) {
+        return;
+    }
+    if (!window.confirm(t("confirmDiscardDraft"))) {
+        return;
+    }
+    if (isBusy()) {
+        return;
+    }
+    button.disabled = true;
+    state.busy = true;
+    try {
+        await api(`${PO_API}${poId}/cancel/`, {
+            method: "POST",
+            body: JSON.stringify({ reason: "" }),
+        });
+        if (state.openId === poId) {
+            closeDrawer();
+        }
+        await loadPurchaseOrders();
+        showBanner(t("draftDiscarded"));
+    } catch (error) {
+        showBanner(error.message, true);
+    } finally {
+        state.busy = false;
+        button.disabled = false;
+    }
+}
+
 async function performStatusAction(poId, endpoint, successKey, button, reason) {
     if (isBusy()) {
         return;
@@ -532,6 +575,23 @@ async function performStatusAction(poId, endpoint, successKey, button, reason) {
     }
 }
 
+function formatHistoryActionLabel(entry) {
+    if (entry.action === "status_changed") {
+        const statusChange = entry.changes && entry.changes.status;
+        if (statusChange) {
+            const fromStatus = statusChange.old ? statusLabel(statusChange.old) : "";
+            const toStatus = statusChange.new ? statusLabel(statusChange.new) : "";
+            if (fromStatus && toStatus) {
+                return t("action.status_changed_from_to", { from: fromStatus, to: toStatus });
+            }
+            if (toStatus) {
+                return t("action.status_changed_to", { status: toStatus });
+            }
+        }
+    }
+    return t(`action.${entry.action}`);
+}
+
 function fillHistoryList(list, entries) {
     list.replaceChildren();
     if (!entries.length) {
@@ -545,7 +605,7 @@ function fillHistoryList(list, entries) {
         const when = formatDateTime(entry.created_at);
         const who = entry.user_email || "—";
         const reason = entry.reason ? ` — ${entry.reason}` : "";
-        item.textContent = `${t(`action.${entry.action}`)} · ${who} · ${when}${reason}`;
+        item.textContent = `${formatHistoryActionLabel(entry)} · ${who} · ${when}${reason}`;
         list.appendChild(item);
     });
 }

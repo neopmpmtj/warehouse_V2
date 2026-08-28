@@ -46,9 +46,11 @@ Inicie sessão com o seu email + palavra-passe (a que o administrador lhe atribu
 | **Estado** | Onde a encomenda está no fluxo de trabalho |
 | **Total** | O montante **bruto** (líquido + IVA) — o custo total a financiar |
 | **Criada** | Data/hora (DD/MM/AAAA) |
-| **Ações** | **Abrir** |
+| **Ações** | **Abrir**; **Descartar Rascunho** (só em rascunho, com permissão de edição) |
 
 Clique numa linha (ou **Abrir**) para ver a encomenda completa num painel lateral. Pressione **Escape** para fechar (igual a **Fechar**). Se um diálogo está aberto por cima (**Nova encomenda**, **Adicionar linha**), Escape fecha primeiro esse diálogo.
+
+Enquanto a encomenda é **Rascunho**, a lista mostra **Descartar Rascunho** junto a **Abrir**. Use-o para anular uma encomenda criada por engano — não é necessário motivo. O número da PO mantém-se e o estado passa a **Cancelada**.
 
 ---
 
@@ -113,6 +115,7 @@ A coluna **Total** da lista mostra o **bruto**.
 
 | De | Ação | Para | Quem |
 |------|--------|----|-----|
+| Rascunho | **Descartar Rascunho** | Cancelada | gestor/administrador (sem motivo) |
 | Rascunho | **Submeter** | Submetido | gestor/administrador |
 | Submetido | **Aprovar** | Aprovado | gestor grau 2+ / administrador (dentro dos limites) |
 | Submetido | **Rejeitar** | Rejeitado | gestor/administrador |
@@ -149,7 +152,7 @@ Quando um gestor ou administrador **aprova** uma encomenda de compra, os valores
 
 ## 9. Histórico
 
-Cada ação é registada — quem fez e quando: criação, linha adicionada/atualizada/removida e cada mudança de estado. Abra uma encomenda e role até **Histórico**.
+Cada ação é registada — quem fez e quando: criação, linha adicionada/atualizada/removida e cada mudança de estado. As **mudanças de estado** mostram a transição (por exemplo *Estado alterado: Rascunho → Cancelada*). Abra uma encomenda e role até **Histórico**.
 
 ---
 

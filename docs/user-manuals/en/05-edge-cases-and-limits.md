@@ -247,12 +247,14 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 ```text
 draft ──submit──▶ submitted ──approve──▶ approved ──receive──▶ received ──close──▶ closed
   │                  │                     │                       │
-  └── (draft edits)   └─reject─▶ rejected  └─cancel─▶ cancelled   └── (manual close = short shipment)
-                                        └──reopen─▶ draft
+  │ cancel           └─reject─▶ rejected  └─cancel─▶ cancelled   └── (manual close = short shipment)
+  ▼                                        └──reopen─▶ draft
+cancelled
 ```
 
 - Only **draft** lines are editable.
-- **Cancel** is only from **approved** and only with **zero receipts**; otherwise **close** (short shipment).
+- **Discard draft** (`draft → cancelled`) needs no reason; list action only.
+- **Cancel** (approved → cancelled) requires a reason and **zero receipts**; otherwise **close** (short shipment).
 - **Reject** requires a reason; **reopen** moves `rejected → draft`.
 
 ### 4.2 Internal request (requisição)
