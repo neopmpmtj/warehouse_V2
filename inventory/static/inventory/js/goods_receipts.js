@@ -28,6 +28,7 @@ const state = {
     items: [],
     purchaseOrders: [],
     receiptSummary: [],
+    receiptSummaryMeta: null,
     receiptsPage: 1,
     receiptsPageSize: 50,
     receiptsTotal: 0,
@@ -72,6 +73,7 @@ function permissions() {
     return {
         add: body.dataset.canAddGoodsreceipt === "true",
         adjust: body.dataset.canAdjustStock === "true",
+        changePo: body.dataset.canChangePurchaseorder === "true",
     };
 }
 
@@ -369,16 +371,29 @@ async function onReceiptPoChange() {
     const poId = document.getElementById("receipt-po").value;
     const container = document.getElementById("receipt-lines");
     container.replaceChildren();
+    updateShortCloseButton(null);
     if (!poId) {
         return;
     }
     try {
         const data = await api(`${PO_API}${poId}/receipt-summary/`);
         state.receiptSummary = data.lines;
+        state.receiptSummaryMeta = data;
         renderReceiptLines(data.lines);
+        updateShortCloseButton(data);
     } catch (error) {
         showBanner(error.message, true);
     }
+}
+
+function updateShortCloseButton(summary) {
+    const button = document.getElementById("receipt-short-close");
+    const canShow = Boolean(
+        summary
+        && summary.can_short_close
+        && permissions().changePo
+    );
+    button.hidden = !canShow;
 }
 
 function renderReceiptLines(lines) {
@@ -468,6 +483,42 @@ function closeReceiptDialog() {
     document.getElementById("receipt-dialog-backdrop").hidden = true;
     document.getElementById("receipt-dialog").hidden = true;
     state.receiptSummary = [];
+    state.receiptSummaryMeta = null;
+    updateShortCloseButton(null);
+}
+
+async function shortCloseSelectedPo() {
+    const poId = document.getElementById("receipt-po").value;
+    if (!poId || !permissions().changePo) {
+        return;
+    }
+    if (!window.confirm(t("confirmShortClose"))) {
+        return;
+    }
+    const reason = window.prompt(t("reasonShortClose"));
+    if (reason === null) {
+        return;
+    }
+    if (isBusy()) {
+        return;
+    }
+    const button = document.getElementById("receipt-short-close");
+    button.disabled = true;
+    state.busy = true;
+    try {
+        await api(`${PO_API}${poId}/short-close/`, {
+            method: "POST",
+            body: JSON.stringify({ reason: reason || "" }),
+        });
+        closeReceiptDialog();
+        await loadReceivablePurchaseOrders();
+        showBanner(t("shortClosed"));
+    } catch (requestError) {
+        showBanner(requestError.message, true);
+    } finally {
+        state.busy = false;
+        button.disabled = false;
+    }
 }
 
 async function submitReceipt() {
@@ -625,6 +676,7 @@ function bindEvents() {
     document.getElementById("new-receipt").addEventListener("click", () => openReceiptDialog());
     document.getElementById("receipt-po").addEventListener("change", onReceiptPoChange);
     document.getElementById("receipt-confirm").addEventListener("click", submitReceipt);
+    document.getElementById("receipt-short-close").addEventListener("click", shortCloseSelectedPo);
     document.getElementById("receipt-cancel").addEventListener("click", closeReceiptDialog);
     document.getElementById("receipt-dialog-backdrop").addEventListener("click", closeReceiptDialog);
 

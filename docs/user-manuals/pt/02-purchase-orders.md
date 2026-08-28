@@ -120,13 +120,27 @@ A coluna **Total** da lista mostra o **bruto**.
 | Submetido | **Aprovar** | Aprovado | gestor grau 2+ / administrador (dentro dos limites) |
 | Submetido | **Rejeitar** | Rejeitado | gestor/administrador |
 | Aprovado | **Receber mercadoria** | Recebido | gestor/administrador |
-| Recebido | **Fechar** | Fechado | gestor/administrador (quando totalmente recebido, pode ocorrer automaticamente) |
+| Aprovado (sem receções) | **Cancelar encomenda** | Cancelada | gestor/administrador (motivo obrigatório) |
+| Recebido (entrega parcial) | **Encerramento parcial** | Fechado | gestor/administrador (motivo obrigatório se houver quantidade em falta) |
+| Recebido | *(automático quando totalmente recebido)* | Fechado | automático (“Fully received”) |
 
 - **Submeter** exige pelo menos uma linha.
 - Depois de submetida, as linhas ficam **bloqueadas** — não pode editá-las.
 - **Aprovar** congela os totais (ver §8).
 
-> **Receber mercadoria** abre a [consola de receção de mercadorias](03-goods-receipts.md) (`/manage/goods-receipts/?po=<id>`). Registar uma receção escreve stock e move a encomenda de compra a **Recebido**, depois **Fechado** quando cada linha está totalmente recebida. Entregas parciais são permitidas.
+> **Receber mercadoria** abre a [consola de receção de mercadorias](03-goods-receipts.md) (`/manage/goods-receipts/?po=<id>`). Registar uma receção escreve stock e move a encomenda a **Recebido**. Quando cada linha está totalmente recebida, a encomenda **fecha automaticamente**. Se o fornecedor entregar a menos, receba o que chegou e depois faça **Encerramento parcial** do restante (motivo obrigatório).
+
+### 7.1 Cancelar vs encerramento parcial
+
+| Situação | Ação | Onde |
+|-----------|--------|-------|
+| O fornecedor **não entrega nada** (ainda sem receção) | **Cancelar encomenda** | Painel lateral da encomenda em **Aprovado** |
+| O fornecedor entregou **parte** da encomenda | **Receber mercadoria**, depois **Encerramento parcial** | Consola de receção e/ou painel lateral em **Recebido** |
+| O fornecedor entregou **tudo** | Só **Receber mercadoria** | A encomenda fecha automaticamente |
+
+Depois de **Aprovar**, a tabela de linhas mostra colunas **Recebido** e **Em falta** para acompanhar o progresso.
+
+Se o fornecedor **deixar de fornecer um artigo** depois da aprovação: não pode remover a linha. Receba o que chegar (ou zero nessa linha), depois **cancele** (sem receções) ou faça **encerramento parcial** (após receção parcial). A receção não volta a validar a lista de preços — usa o instantâneo da linha aprovada.
 
 ---
 
@@ -159,5 +173,8 @@ Só **gestores grau 2+** e **administradores** podem aprovar (dentro dos limites
 **P5. Qual é a diferença entre Líquido e Bruto?**
 Líquido é antes do IVA; Bruto é líquido + IVA — o montante que efetivamente paga.
 
-**P6. Datas e fuso horário?**
+**P6. O fornecedor não vai enviar o resto — o que faço?**
+Se **nada** foi recebido, abra a encomenda e **Cancele a encomenda** com um motivo. Se já registou uma entrega **parcial**, use **Encerramento parcial** (no painel lateral ou no diálogo de receção) com um motivo — a quantidade restante é dada como baixa.
+
+**P7. Datas e fuso horário?**
 As datas aparecem como DD/MM/AAAA, no seu fuso horário local (por defeito Europe/Lisbon). **Terminar sessão** é uma ligação pequena na linha do título Definições; **Ajuda** é o ícone **?** azul ao lado do ícone (placeholder). Pressione **Escape** para fechar Definições. **Idioma** (Inglês / Português) e **tema** são definidos no painel do pessoal (`/`) e memorizados neste navegador.

@@ -223,6 +223,16 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
         self.assertEqual(summary[0]["received"], "4.000")
         self.assertEqual(summary[0]["remaining"], "6.000")
 
+    def test_short_close_purchase_order_wrapper(self):
+        po, line = self.create_approved_po("10")
+        services.receive_goods(
+            po, [{"line_id": line.id, "quantity_received": "4"}], self.user
+        )
+        po = services.short_close_purchase_order(
+            po, self.user, reason="Supplier short shipped"
+        )
+        self.assertEqual(po.status, PurchaseOrder.Status.CLOSED)
+
     def test_malformed_quantity_is_rejected(self):
         po, line = self.create_approved_po("10")
         with self.assertRaises(services.InvalidQuantityError):
@@ -389,6 +399,35 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
             r'id="settings-popover"[^>]*\bhidden\b',
         )
         self.assertContains(response, "console_escape_close.js")
+
+    def test_receipt_summary_api_flags_short_close(self):
+        self.client.force_login(self.user)
+        po = self._create_approved_po_via_api()
+        line = self.client.get(
+            reverse("manage_receipt_summary", args=[po["id"]]),
+            **self.host,
+        ).json()["lines"][0]
+        self.client.post(
+            reverse("manage_goods_receipt_list"),
+            data=json.dumps(
+                {
+                    "purchase_order_id": po["id"],
+                    "lines": [{"line_id": line["line_id"], "quantity_received": "4"}],
+                }
+            ),
+            content_type="application/json",
+            **self.host,
+        )
+
+        resp = self.client.get(
+            reverse("manage_receipt_summary", args=[po["id"]]),
+            **self.host,
+        )
+        payload = resp.json()
+        self.assertTrue(payload["has_remaining"])
+        self.assertTrue(payload["has_received"])
+        self.assertTrue(payload["can_short_close"])
+        self.assertEqual(payload["status"], "received")
 
     def test_admin_receives_goods_via_api(self):
         self.client.force_login(self.user)

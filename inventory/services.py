@@ -295,9 +295,7 @@ def receive_goods(po, lines, user, reference="", notes=""):
 
         po = receive(po, user, reason="Goods received")
     if _is_fully_received(po):
-        from procurement.services import close
-
-        close(po, user, reason="Fully received")
+        short_close_purchase_order(po, user, reason="Fully received")
 
     logger.info(
         "Received goods receipt id=%s po=%s lines=%s user=%s",
@@ -385,6 +383,13 @@ def get_receipt_summary(po):
         }
         for line in lines
     ]
+
+
+def short_close_purchase_order(po, user, reason=""):
+    """Write off unreceived PO remainder and mark the order closed."""
+    from procurement.services import short_close_purchase_order as _short_close_po
+
+    return _short_close_po(po, user, reason=reason)
 
 
 class RequestNotIssuableError(ValidationError):

@@ -156,7 +156,7 @@ class ApprovalPolicyForbiddenError(ValidationError):
 class PurchaseOrderCancelError(ValidationError):
     def __init__(self):
         super().__init__(
-            "A purchase order with receipts cannot be cancelled. Close it instead to accept a short shipment.",
+            "A purchase order with receipts cannot be cancelled. Short close it instead to accept a short shipment.",
             code="purchase_order_not_cancelable",
         )
 
@@ -790,8 +790,12 @@ def receive(po, user=None, reason=""):
 
 
 @transaction.atomic
-def close(po, user=None, reason=""):
-    """Transition received -> closed. Called by inventory.receive_goods() when fully received, or manually to accept a short shipment."""
+def short_close_purchase_order(po, user=None, reason=""):
+    """Transition received -> closed after a short shipment or full receipt.
+
+    Called by inventory.receive_goods() when every line is fully received, or
+    manually when staff accept that the remaining ordered quantity will not arrive.
+    """
     po = PurchaseOrder.objects.select_for_update().get(pk=po.pk)
     _transition(po, PurchaseOrder.Status.CLOSED)
     reason = (reason or "").strip()
@@ -812,8 +816,17 @@ def close(po, user=None, reason=""):
         {"status": {"old": PurchaseOrder.Status.RECEIVED, "new": PurchaseOrder.Status.CLOSED}},
         reason=reason,
     )
-    logger.info("Closed purchase order id=%s user=%s", po.id, getattr(user, "email", None))
+    logger.info(
+        "Short-closed purchase order id=%s user=%s",
+        po.id,
+        getattr(user, "email", None),
+    )
     return po
+
+
+def close(po, user=None, reason=""):
+    """Backward-compatible alias for short_close_purchase_order()."""
+    return short_close_purchase_order(po, user, reason=reason)
 
 
 @transaction.atomic
