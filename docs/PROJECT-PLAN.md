@@ -2,7 +2,7 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 29 August 2026, 10:00 WEST
+- **Last updated:** 29 August 2026, 16:20 WEST
 - **Current phase:** Phases 0–6 **complete** ✅. **Phase 7 next** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
@@ -110,6 +110,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D35 | Phase sequencing after offline | **Phase 6** = offline (done). **Phase 7** = production deployment readiness only. **Phase 8** = OAuth production + shared chrome. **Phase 9** = email. Do not bundle deploy with OAuth/chrome. |
 | D36 | Genesis primary supplier | New catalogue items (Genesis / `create_and_activate_item`) require an **active supplier** and **cost price > 0**; first `SupplierItemPrice` is always `primary=True`. One primary per item (D14) unchanged; promotion/demotion via `_clear_other_primaries` + audit. |
 | D37 | Branch commercial mode | Company-wide singleton `BranchCommercialSettings` (superuser `/admin/` only). Default **unpriced**: branch catalogue omits selling prices; requisição UI is quantity-only; manager approve is yes/no (EUR `BranchApprovalLimit` not applied). **Priced** restores today's selling prices + EUR caps. Buying cost never on the branch (lock 7). Warehouse `/manage/…` unchanged. PostgreSQL still snapshots `unit_price` / `approved_*`. No per-user or per-branch flag; no storefront. |
+| D38 | Dashboard vs work-page chrome | Language + theme **only** on `/` and `/branch/`. Sibling URL strips **only** on work pages (not dashboards). Branch strip: Home, Catalog, Requests, Receipts, Threads. Warehouse strip on `/manage/…`: Home, Items, Catalog, POs, Receipts, Requests, Threads. Company Voice **CentCompras** → `home_url_for_request` (`/` warehouse/dual, `/branch/` branch-only). Does **not** complete Phase 8 shared chrome. |
 | D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
@@ -147,7 +148,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (26 Aug 2026):** phases 0–6 complete; 1205 production-readiness review **applied**. Suite **548 OK**. **Next:** Phase 7 (production deployment readiness). OAuth + shared chrome deferred to Phase 8; email to Phase 9.
+**Current (29 Aug 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 (chrome split) landed. Suite **593 OK**. **Next:** Phase 7 (production deployment readiness). OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -176,6 +177,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | 5+ | Branch dashboard + shared branch navigation | ✅ **Done** (#18) | Phase 5 |
 | 5+ | Manage console header / settings UX polish | ✅ **Done** | Aug 2026 |
 | 5+ | Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** | Header polish |
+| 5+ | Dashboard vs work-page chrome (D38) | ✅ **Done** | Header polish |
 | 6 | Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (#19; reviewed 26 Aug) | Phase 5 |
 | 6+ | Phase 6 offline review fixes (P0/P1/P2) | ✅ **Done** | Phase 6 review |
 | 7 | Production deployment readiness | 🔵 **Next** | Phase 6 |
@@ -460,12 +462,12 @@ Dev already has password login + optional Google (`AUTH_MODE=both`); Phase 7 doe
 
 ### 15.2 Shared chrome (ideas — contribute before build)
 
-Unify the **persistent shell** (header, nav, account controls) across warehouse, branch, and Company Voice. Today: shared **includes** (`branch_page_header`, `account_settings`, `console_eyebrow`) but each page is still mostly standalone HTML.
+Unify the **persistent shell** (header, nav, account controls) across warehouse, branch, and Company Voice. Partial chrome already shipped as **D38** (dashboard vs work-page prefs/nav split; warehouse sibling strip; Company Voice brand home). Remaining: one shared layout, dual-role switcher, etc. Shared includes today: `branch_dashboard_header` / `branch_work_page_header`, `warehouse_page_nav`, `account_settings`, `console_eyebrow`.
 
-**Navigation**
+**Navigation (D38 locked for this slice)**
 
-- Should warehouse `/` show the same top nav as `/manage/catalog/` (Items, Catalog, POs, Receipts, Requests, Threads)?
-- Should branch nav include Company Voice (today: dashboard cards only)?
+- Warehouse `/` does **not** show the same top nav as `/manage/catalog/` — dashboards use **cards**; work pages use the sibling strip.
+- Branch nav does **not** include Company Voice (dashboard cards only).
 - Breadcrumbs vs flat nav on deep pages?
 
 **Roles**
@@ -564,6 +566,7 @@ Unify the **persistent shell** (header, nav, account controls) across warehouse,
 - [x] Chrome review H1–H3 + M1 (+ L1, L2) — [`docs/reviews/code-review-full-2026-08-25-1125.md`](reviews/code-review-full-2026-08-25-1125.md)
 - [x] Phase 6 — offline catalogue + offline request queue + sync / PWA (#19)
 - [x] Phase 6 offline review fixes — P0/P1/P2 ([archive](archive/phase6-offline-review-2026-08-26-1009.md))
+- [x] Dashboard vs work-page chrome (D38) — prefs on dashboards only; sibling nav on work pages; warehouse strip; Company Voice brand → `home_url_for_request`
 - [ ] Phase 7 — production deployment readiness — **Next** ([`DEPLOYMENT.md`](DEPLOYMENT.md))
 - [ ] Phase 8 — Google OAuth production rollout + shared chrome
 - [ ] Phase 9 — email automation (stub exists)

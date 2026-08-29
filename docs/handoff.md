@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 29 August 2026, 10:00 WEST.
+> **Read this first when resuming work.** Last updated: 29 August 2026, 16:20 WEST.
 
 ---
 
@@ -24,6 +24,7 @@
 | 5+ — Manage console header / settings UX polish | ✅ **Done** |
 | 5+ — Chrome review H1–H3 + M1 (+ L1, L2) | ✅ **Done** |
 | 5+ — Branch dashboard + shared branch navigation | ✅ **Done** |
+| 5+ — Dashboard vs work-page chrome (D38) | ✅ **Done** |
 | 6 — Offline catalogue + offline request queue + sync / PWA | ✅ **Done** (reviewed 26 Aug) |
 | 6+ — Phase 6 offline review fixes (P0 / P1 / P2) | ✅ **Done** |
 | 6+ — Full-tree production-readiness review fixes (26 Aug 1205) | ✅ **Done** |
@@ -33,9 +34,20 @@
 
 **Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Next:** **Phase 7** — production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8** (ideas in PROJECT-PLAN §15). Email = **Phase 9**.
 
-**Tests:** suite **589 OK** (29 Aug; D37 complete including deep-review leftovers).
+**Tests:** suite **593 OK** (29 Aug; dashboard vs work-page chrome + Company Voice home link).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (29 Aug 2026, late afternoon) — dashboard vs work-page chrome ✅
+
+Language/theme vs sibling nav aligned on warehouse and branch (greenfield chrome split; not Phase 8 OAuth).
+
+- **Dashboards** (`/` and `/branch/`): language + theme + Settings; navigation is the **card grid** only (no sibling URL strip).
+- **Branch work pages** (catalog, requests, receipts, threads): sibling nav **Home → Catalog → Requests → Receipts → Threads** (Threads last); no prefs bar. Headers split: `branch_dashboard_header.html` / `branch_work_page_header.html` (`branch_page_header.html` removed).
+- **Warehouse `/manage/…` consoles:** sibling strip **Home, Items, Catalog, POs, Receipts, Requests, Threads** (`warehouse_page_nav.html`). Admin-only limits, cost trends, and Company Voice stay dashboard cards. Dropped one-off “Branch caps” / “Requests” topbar links.
+- **Company Voice:** **CentCompras** uses `home_url_for_request()` — warehouse (and dual) → `/`; branch-only → `/branch/` (not `/`, which 403s without catalogue permission).
+- Cache: `preferences_bar.js?v=9`, `console.css?v=19`, SW `centcompras-branch-v11`. Manuals 01 / 03 / 04 / 07 / 08 / 09 EN+PT. Plan: [`.cursor/plans/branch_chrome_consistency_b18412a7.plan.md`](../.cursor/plans/branch_chrome_consistency_b18412a7.plan.md).
+- **Tests:** **593 OK**. Git on `main`: `419fdba`, `7b063b1`.
 
 ## This session (29 Aug 2026, afternoon) — D37 deep-review leftovers ✅
 
@@ -147,7 +159,7 @@ Use **`http://127.0.0.1:8000`** only (not mixed with `localhost`).
 ### Branch dashboard (#18)
 
 - Branch-only users land on **`/branch/`** (card grid: catalog, requisição, threads, receipts, Company Voice) instead of the catalog alone.
-- Shared header navigation on all branch pages (`branch_chrome.css`, `branch_page_header.html`); **Switch branch** only for multi-membership users.
+- Shared header on branch **work** pages (`branch_chrome.css`, `branch_work_page_header.html` + `branch_nav.html`); dashboard uses `branch_dashboard_header.html` (prefs, no sibling nav). **Switch branch** only for multi-membership users.
 - Manuals: [`04-internal-requests.md`](user-manuals/en/04-internal-requests.md), [`05-edge-cases-and-limits.md`](user-manuals/en/05-edge-cases-and-limits.md).
 
 ### Phase 6 offline catalogue + draft sync + PWA (#19)
@@ -473,6 +485,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D29 | **`internal_code` lifecycle (Phases 1–2 ✅)** | Charset: `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. **Locked after first save** (set-if-empty once for legacy). Console create = **mandatory Genesis** (atomic); requires internal code + description + unit + VAT + active family + **retail_price > 0** + **supplier** + **cost price > 0** (primary row) |
 | D36 | **Genesis primary supplier ✅** | Same as PROJECT-PLAN D36 — `create_and_activate_item` creates primary `SupplierItemPrice` atomically; existing one-primary demotion unchanged (D14) |
 | D37 | **Branch commercial mode ✅** | Company-wide `BranchCommercialSettings` (superuser `/admin/` only). Default **unpriced**. **Priced** restores selling prices + EUR caps. Buying cost never on the branch. Warehouse `/manage/…` unchanged. No per-user/per-branch flag; no storefront. |
+| D38 | **Dashboard vs work-page chrome ✅** | Prefs only on `/` and `/branch/`. Sibling nav only on work pages. Company Voice **CentCompras** → `home_url_for_request`. Does not complete Phase 8. |
 | D30 | **Server-side item drafts** | **Deferred** — try localStorage autosave first if staff report lost forms; see plan advisory |
 | D31 | **Warehouse short-close** | `approved` + zero dispatch → **closed**; `fulfilling` (partial issue) → **shipped** for branch receipt path |
 | D32 | **Warehouse stock reservation** | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `RESERVE` movement (D5). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |

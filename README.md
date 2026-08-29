@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 29 August 2026, 08:40 WEST.*
+*Last updated: 29 August 2026, 16:20 WEST.*
 
-**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default, priced path kept; review fixes applied). Full-tree production-readiness review **applied** (26 Aug 1205). **Phase 7 next** (production deployment readiness). OAuth + shared chrome = Phase 8; email = Phase 9. Suite **589 OK**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Full-tree production-readiness review **applied** (26 Aug 1205). **Phase 7 next** (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. Suite **593 OK**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -33,7 +33,7 @@ After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**
 1. Read [`docs/handoff.md`](docs/handoff.md).
 2. Fresh environment: `python manage.py migrate`, `./scripts/seed_dev_data.sh`, and `createsuperuser` (the seed does not create one).
 3. Practice: warehouse user → `/manage/items/`, `/manage/catalog/`, `/manage/purchase-orders/`, `/manage/goods-receipts/` (admins also `/manage/approval-limits/`).
-4. **Next:** Phase 7 production deployment readiness — see [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Phase 8 = OAuth + shared chrome; Phase 9 = email.
+4. **Next:** Phase 7 production deployment readiness — see [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Phase 8 = OAuth + remaining shared chrome; Phase 9 = email.
 
 ---
 
@@ -351,5 +351,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Production deployment readiness** (Phase 7 — **Next**) — [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - **Google OAuth production rollout + shared chrome** (Phase 8)
 - **Email automation** (Phase 9 — wire notify stubs to real email; stub exists today)
-- Integration tests (unit suites: **589 OK**)
+- Integration tests (unit suites: **593 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)
