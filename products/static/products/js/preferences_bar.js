@@ -63,7 +63,8 @@
             cardBranchPicker: "Branch picker",
             cardBranchPickerDesc: "Switch the active branch",
             cardBranchCatalog: "Branch catalog",
-            cardBranchCatalogDesc: "Read-only catalogue (cost hidden)",
+            cardBranchCatalogDesc:
+                "Read-only catalogue (cost always hidden; selling prices only in priced mode)",
             cardRequisicao: "Requisição interna",
             cardRequisicaoDesc: "Request stock from the warehouse",
             cardBranchThreads: "Branch threads",
@@ -133,7 +134,8 @@
             cardBranchPicker: "Seletor de filial",
             cardBranchPickerDesc: "Mudar a filial ativa",
             cardBranchCatalog: "Catálogo da filial",
-            cardBranchCatalogDesc: "Catálogo só de leitura (custo oculto)",
+            cardBranchCatalogDesc:
+                "Catálogo só de leitura (custo sempre oculto; preços de venda só no modo com preços)",
             cardRequisicao: "Requisição interna",
             cardRequisicaoDesc: "Pedir stock ao armazém",
             cardBranchThreads: "Fios da filial",

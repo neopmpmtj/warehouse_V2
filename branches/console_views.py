@@ -29,10 +29,10 @@ def _serialize_branch_item(item, *, show_selling_prices):
         "unit_of_measure": item.unit_of_measure,
         "family": item.family.name,
         "sub_family": item.sub_family.name if item.sub_family_id else "",
-        "vat_rate": _decimal_string(item.vat_rate.rate),
         "availability": availability_hint(item),
     }
     if show_selling_prices:
+        row["vat_rate"] = _decimal_string(item.vat_rate.rate)
         row["retail_price"] = _decimal_string(item.retail_price)
         row["wholesale_price"] = _decimal_string(item.wholesale_price)
         row["special_price"] = _decimal_string(item.special_price)

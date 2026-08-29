@@ -2,7 +2,7 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 29 August 2026, 09:00 WEST
+- **Last updated:** 29 August 2026, 10:00 WEST
 - **Current phase:** Phases 0–6 **complete** ✅. **Phase 7 next** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
@@ -545,7 +545,7 @@ Unify the **persistent shell** (header, nav, account controls) across warehouse,
 - [x] Phase 5 — branches + internal request (implementation; see roadmap slices)
   - [x] Slice 1 — tenancy (`branches` app, middleware, picker, admin, seed)
   - [x] Slice 2 — branch catalog (cost hidden, stock hint)
-- [x] Branch commercial mode (D37) — company-wide unpriced default; priced path kept; superuser `/admin/` switch
+- [x] Branch commercial mode (D37) — company-wide unpriced default; priced path kept; superuser `/admin/` switch; deep-review L4–L6 / N1–N2 applied ([`d37-deep-review-combined-2026-08-29-0905.md`](reviews/d37-deep-review-combined-2026-08-29-0905.md))
   - [x] Slice 3 — requisição (internal request)
   - [x] Slice 4 — goods issue
   - [x] Slice 5 — branch receipt + branch stock

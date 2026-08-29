@@ -32,8 +32,24 @@ var BranchDB = (function () {
         });
     }
 
+    var CATALOG_PRICE_KEYS = ["retail_price", "wholesale_price", "special_price", "vat_rate"];
+
+    function catalogItemForCache(item, showSellingPrices) {
+        if (showSellingPrices) {
+            return item;
+        }
+        var row = {};
+        Object.keys(item || {}).forEach(function (key) {
+            if (CATALOG_PRICE_KEYS.indexOf(key) === -1) {
+                row[key] = item[key];
+            }
+        });
+        return row;
+    }
+
     function saveCatalog(items, branchId, extras) {
         extras = extras || {};
+        var showSellingPrices = extras.show_selling_prices === true;
         return openDatabase().then(function (db) {
             return new Promise(function (resolve, reject) {
                 var tx = db.transaction([CATALOG_ITEMS, CATALOG_META], "readwrite");
@@ -41,7 +57,7 @@ var BranchDB = (function () {
                 var metaStore = tx.objectStore(CATALOG_META);
                 itemStore.clear();
                 (items || []).forEach(function (item) {
-                    itemStore.put(item);
+                    itemStore.put(catalogItemForCache(item, showSellingPrices));
                 });
                 metaStore.put({
                     key: "catalog",

@@ -365,9 +365,12 @@ def request_history(request, request_id):
 
     req = _get_request_or_404(request_id, request.active_branch)
     include_money = branch_shows_selling_prices()
-    return JsonResponse(
-        {"history": [_serialize_history(log, include_money=include_money) for log in get_request_history(req)]}
-    )
+    payload = _branch_mode_fields()
+    payload["history"] = [
+        _serialize_history(log, include_money=include_money)
+        for log in get_request_history(req)
+    ]
+    return JsonResponse(payload)
 
 
 def _parse_int_id(value, field_name):

@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 29 August 2026, 08:40 WEST.
+> **Read this first when resuming work.** Last updated: 29 August 2026, 10:00 WEST.
 
 ---
 
@@ -33,9 +33,20 @@
 
 **Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Next:** **Phase 7** — production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8** (ideas in PROJECT-PLAN §15). Email = **Phase 9**.
 
-**Tests:** suite **589 OK** (29 Aug; D37 review fixes applied).
+**Tests:** suite **589 OK** (29 Aug; D37 complete including deep-review leftovers).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (29 Aug 2026, afternoon) — D37 deep-review leftovers ✅
+
+Applied optional follow-ups from [`docs/reviews/d37-deep-review-combined-2026-08-29-0905.md`](reviews/d37-deep-review-combined-2026-08-29-0905.md):
+
+- **L4** — warehouse dashboard API blurb mentions priced-mode selling prices.
+- **L5** — branch dashboard card copy + `preferences_bar.js` EN/PT i18n.
+- **L6** — branch `GET …/history/` includes `commercial_mode` / `show_selling_prices`.
+- **N1** — unpriced catalog JSON omits `vat_rate`.
+- **N2** — `saveCatalog` strips price/vat keys when unpriced; SW `centcompras-branch-v10`; `db.js?v=5`, `preferences_bar.js?v=8`.
+- Manual 04 Q16 EN+PT updated. **No D37 leftovers remain.**
 
 ## This session (29 Aug 2026) — branch commercial mode (D37) ✅
 
@@ -44,7 +55,7 @@ Company-wide **unpriced / priced** switch for the branch catalogue and requisiç
 - **Unpriced:** `/api/branch/catalog/` omits selling prices (cost still never present); branch requisição APIs omit `unit_price` / totals; manager approve is yes/no (EUR caps skipped); offline cache stores items without price fields. Wholesale `> 0` still required; `approve()` still snapshots `unit_price` / `approved_*` for warehouse Gross.
 - **Priced:** restores today's selling prices + EUR `BranchApprovalLimit`. Same catalog page and `branch_requests.js`.
 - D37 review ([`docs/reviews/d37-priced-unpriced-review-2026-08-29-0845.md`](reviews/d37-priced-unpriced-review-2026-08-29-0845.md)) **H1 / M1 / M2 / L1–L3 applied** (offline catalogue no longer infers prices from cache; membership `__str__`; unpriced history omits money; manuals/tests/admin save).
-- SW cache `centcompras-branch-v9`. Manuals 04 / 05 / 06 / 07 / 10 (EN+PT). **Tests:** **589 OK**.
+- SW cache `centcompras-branch-v10`. Manuals 04 / 05 / 06 / 07 / 10 (EN+PT). **Tests:** **589 OK**.
 
 ## Next session — do this
 

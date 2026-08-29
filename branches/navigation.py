@@ -23,7 +23,7 @@ def branch_dashboard_cards(*, include_picker=False):
                 "title_key": "cardBranchCatalog",
                 "desc_key": "cardBranchCatalogDesc",
                 "title": "Branch catalog",
-                "desc": "Read-only catalogue (cost always hidden)",
+                "desc": "Read-only catalogue (cost always hidden; selling prices only in priced mode)",
                 "url": "/branch/catalog/",
             },
             {

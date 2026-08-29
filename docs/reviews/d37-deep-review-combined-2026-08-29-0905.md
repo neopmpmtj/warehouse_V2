@@ -1,6 +1,16 @@
 # Deep Review — D37 branch commercial mode (combined)
 
-> **Status (29 August 2026, 09:05 UTC):** Read-only second-pass review. **Verdict: merge-ready** — original H1/M1/M2/L1–L3 are fixed in commit `b08e837`; no new blocking defects found.
+> **Status (29 August 2026, 09:05 UTC):** Read-only second-pass review. **Verdict: merge-ready** — original H1/M1/M2/L1–L3 are fixed in commit `b08e837`; no new blocking defects found. **L4–L6 / N1–N2 applied** (29 Aug afternoon session).
+
+**Resolution (29 Aug 2026, afternoon)**
+
+| ID | Status | Summary |
+|----|--------|---------|
+| **L4** | Applied | Warehouse dashboard API blurb mentions priced-mode selling prices |
+| **L5** | Applied | Branch dashboard card copy + `preferences_bar.js` EN/PT i18n |
+| **L6** | Applied | `GET …/history/` includes `commercial_mode` / `show_selling_prices` |
+| **N1** | Applied | Unpriced catalog JSON omits `vat_rate` |
+| **N2** | Applied | `saveCatalog` strips price/vat keys when unpriced; SW `centcompras-branch-v10` |
 
 **Date:** 2026-08-29  
 **Branch:** `branch-catalog-no-price`  
@@ -122,6 +132,8 @@ Priced mode restores selling columns, line unit prices, totals, approve confirma
 ---
 
 ## Optional follow-ups (not blocking merge)
+
+**All applied 29 Aug 2026 (afternoon).**
 
 | ID | Severity | Location | Issue | Suggested fix |
 |----|----------|----------|-------|---------------|

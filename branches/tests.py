@@ -312,7 +312,7 @@ class ServiceWorkerTests(TestCase):
         response = self.client.get("/service-worker.js")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
-        self.assertContains(response, "centcompras-branch-v9")
+        self.assertContains(response, "centcompras-branch-v10")
         self.assertContains(response, "/api/")
         self.assertContains(response, "/manage/")
         self.assertContains(response, "CACHE_NAME")
@@ -560,6 +560,7 @@ class BranchCatalogApiTests(TestCase):
             self.assertNotIn("suppliers", row)
             self.assertNotIn("quantity", row)
             self.assertNotIn("reorder_level", row)
+            self.assertNotIn("vat_rate", row)
 
     def test_priced_mode_includes_selling_prices_not_cost(self):
         from .models import BranchCommercialSettings
@@ -576,6 +577,7 @@ class BranchCatalogApiTests(TestCase):
             self.assertIn("retail_price", row)
             self.assertIn("wholesale_price", row)
             self.assertIn("special_price", row)
+            self.assertIn("vat_rate", row)
             self.assertNotIn("cost_price", row)
             self.assertNotIn("quantity", row)
 

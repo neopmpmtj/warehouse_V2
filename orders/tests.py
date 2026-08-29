@@ -305,6 +305,9 @@ class InternalRequestApiTests(TestCase):
         self._login(self.operator)
         r = self.client.get(reverse("request_history", args=[req_id]))
         self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["commercial_mode"], "unpriced")
+        self.assertFalse(payload["show_selling_prices"])
         money_keys = {
             "unit_price",
             "vat_rate",
@@ -320,7 +323,7 @@ class InternalRequestApiTests(TestCase):
             "gross",
         }
         found_line = False
-        for entry in r.json()["history"]:
+        for entry in payload["history"]:
             changes = entry.get("changes") or {}
             if not isinstance(changes, dict):
                 continue
@@ -342,9 +345,11 @@ class InternalRequestApiTests(TestCase):
         self._login(self.operator)
         r = self.client.get(reverse("request_history", args=[req_id]))
         self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertTrue(payload["show_selling_prices"])
         unit_prices = [
             entry["changes"]["unit_price"]
-            for entry in r.json()["history"]
+            for entry in payload["history"]
             if isinstance(entry.get("changes"), dict) and "unit_price" in entry["changes"]
         ]
         self.assertTrue(unit_prices)
