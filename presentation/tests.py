@@ -27,11 +27,27 @@ class PresentationDeckTests(TestCase):
         self.assertNotContains(response, "circularity-zones")
         self.assertContains(response, 'lang="en"')
 
-    def test_presentation_pt_cta_on_slide_two(self):
+    def test_presentation_pt_cta_present(self):
         response = self.client.get("/presentation/pt/")
         self.assertContains(response, "O que precisamos de si")
         self.assertContains(response, "Comece hoje — os dados acumulam-se")
         self.assertContains(response, "Voz da Empresa — o seu canal permanente")
+
+    def test_presentation_en_slide_order(self):
+        response = self.client.get("/presentation/en/")
+        content = response.content.decode()
+        self.assertLess(
+            content.index("Data is the new oil"),
+            content.index("Today's scenario"),
+        )
+        self.assertLess(
+            content.index("Internal request"),
+            content.index("Catalogue and pricing"),
+        )
+        self.assertLess(
+            content.index("Future vision: charts and decisions"),
+            content.index("Start today — data compounds"),
+        )
 
     def test_language_switcher_links(self):
         pt = self.client.get("/presentation/pt/")

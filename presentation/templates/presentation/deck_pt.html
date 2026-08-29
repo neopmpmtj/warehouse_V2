@@ -12,7 +12,7 @@
     <div class="deck" role="application" aria-label="Apresentação CentCompras">
         <div class="deck-progress" id="deck-progress" aria-hidden="true"></div>
 
-        <div class="deck-slides">
+                <div class="deck-slides">
 
             <!-- Slide 1: Capa -->
             <section class="slide slide-title active" data-slide="1" aria-label="Capa">
@@ -22,47 +22,8 @@
                 <p class="slide-meta">Armazém central · Filiais satélite · PostgreSQL como fonte de verdade</p>
             </section>
 
-            <!-- Slide 2: Chamada à acção -->
-            <section class="slide" data-slide="2" aria-label="O que precisamos de si">
-                <p class="slide-eyebrow">O que precisamos de si</p>
-                <h1>Comece hoje — os dados acumulam-se</h1>
-                <ul class="cta-list">
-                    <li>
-                        <span class="cta-num">1</span>
-                        <span><strong>Armazém:</strong> mantenha o catálogo actualizado; registe cada receção e expedição no sistema — não em papel paralelo.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">2</span>
-                        <span><strong>Filiais:</strong> faça requisições pelo <span class="url-tag">/branch/requests/</span>; use fios para artigos em falta; confirme recepções.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">3</span>
-                        <span><strong>Gestão:</strong> aprove com critério; os limites EUR protegem o fluxo de caixa e geram histórico de decisões.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">4</span>
-                        <span><strong>Todos:</strong> partilhe feedback na Voz da Empresa — melhoria contínua depende de vozes reais.</span>
-                    </li>
-                </ul>
-            </section>
-
-            <!-- Slide 3: Cenário -->
-            <section class="slide" data-slide="3" aria-label="O cenário">
-                <p class="slide-eyebrow">Contexto</p>
-                <h1>O cenário de hoje</h1>
-                <p><strong>Um armazém central</strong> gere o catálogo mestre, compra a fornecedores e expede stock.</p>
-                <p><strong>Filiais satélite</strong> consultam o catálogo, pedem artigos e confirmam chegadas — inclusive <strong>offline</strong> (PWA).</p>
-                <p>Tudo converge numa única base de dados: cada acção deixa rasto estruturado.</p>
-                <ul>
-                    <li><strong>Catálogo + preços</strong> — famílias, artigos, fornecedores, preços de venda e custo</li>
-                    <li><strong>Compras + stock</strong> — encomendas de compra, receções, livro-razão de movimentos</li>
-                    <li><strong>Requisição interna</strong> — pedidos filial → expedição → receção na filial</li>
-                    <li><strong>Comunicação</strong> — fios de pedido + Voz da Empresa</li>
-                </ul>
-            </section>
-
-            <!-- Slide 4: Dados são o petróleo -->
-            <section class="slide" data-slide="4" aria-label="Os dados são o novo petróleo">
+            <!-- Slide 2: Os dados são o novo petróleo -->
+            <section class="slide" data-slide="2" aria-label="Os dados são o novo petróleo">
                 <p class="slide-eyebrow">Mensagem central</p>
                 <h1>Os dados são o novo petróleo</h1>
                 <p class="slide-subtitle">Quanto mais cedo começarmos a usar o sistema no dia a dia, mais cedo teremos combustível para decisões inteligentes.</p>
@@ -88,8 +49,23 @@
                 <p><strong>Não espere pelos gráficos.</strong> O petróleo só existe se alguém o extrair — comece hoje.</p>
             </section>
 
-            <!-- Slide 4: O que já registamos -->
-            <section class="slide" data-slide="5" aria-label="O que o sistema já regista">
+            <!-- Slide 3: Cenário -->
+            <section class="slide" data-slide="3" aria-label="O cenário">
+                <p class="slide-eyebrow">Contexto</p>
+                <h1>O cenário de hoje</h1>
+                <p><strong>Um armazém central</strong> gere o catálogo mestre, compra a fornecedores e expede stock.</p>
+                <p><strong>Filiais satélite</strong> consultam o catálogo, pedem artigos e confirmam chegadas — inclusive <strong>offline</strong> (PWA).</p>
+                <p>Tudo converge numa única base de dados: cada acção deixa rasto estruturado.</p>
+                <ul>
+                    <li><strong>Catálogo + preços</strong> — famílias, artigos, fornecedores, preços de venda e custo</li>
+                    <li><strong>Compras + stock</strong> — encomendas de compra, receções, livro-razão de movimentos</li>
+                    <li><strong>Requisição interna</strong> — pedidos filial → expedição → receção na filial</li>
+                    <li><strong>Comunicação</strong> — fios de pedido + Voz da Empresa</li>
+                </ul>
+            </section>
+
+            <!-- Slide 4: O que já regista -->
+            <section class="slide" data-slide="4" aria-label="O que o sistema já regista">
                 <p class="slide-eyebrow">Hoje, sem gráficos</p>
                 <h1>O que o sistema já regista</h1>
                 <table class="data-table">
@@ -136,87 +112,114 @@
                 <p style="margin-top:0.75rem"><strong>Regra de ouro:</strong> a quantidade de stock nunca se digita — só resulta de movimentos no livro-razão.</p>
             </section>
 
-            <!-- Slide 5: Visão futura gráficos -->
-            <section class="slide" data-slide="6" aria-label="Visão futura gráficos">
-                <p class="slide-eyebrow">Amanhã</p>
-                <h1>Visão futura: gráficos e decisões</h1>
-                <span class="future-badge">Visão futura — ilustrativo</span>
-                <div class="slide-columns">
-                    <div class="chart-panel">
-                        <h3>Stock ao longo do tempo</h3>
-                        <div class="mock-chart" aria-hidden="true">
-                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="40" y1="110" x2="300" y2="110" stroke="#334155" stroke-width="1"/>
-                                <line x1="40" y1="20" x2="40" y2="110" stroke="#334155" stroke-width="1"/>
-                                <polyline points="50,90 80,75 110,80 140,55 170,60 200,40 230,50 260,30 290,35" fill="none" stroke="#14b8a6" stroke-width="2.5"/>
-                                <circle cx="140" cy="55" r="4" fill="#14b8a6"/>
-                                <circle cx="260" cy="30" r="4" fill="#14b8a6"/>
-                                <text x="50" y="125" fill="#94a3b8" font-size="10">Jan</text>
-                                <text x="140" y="125" fill="#94a3b8" font-size="10">Abr</text>
-                                <text x="230" y="125" fill="#94a3b8" font-size="10">Jul</text>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="chart-panel">
-                        <h3>Requisições por filial</h3>
-                        <div class="mock-chart" aria-hidden="true">
-                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="60" y="50" width="50" height="60" fill="#0f766e" rx="4"/>
-                                <rect x="130" y="30" width="50" height="80" fill="#14b8a6" rx="4"/>
-                                <rect x="200" y="65" width="50" height="45" fill="#0f766e" opacity="0.7" rx="4"/>
-                                <text x="72" y="125" fill="#94a3b8" font-size="10">Norte</text>
-                                <text x="142" y="125" fill="#94a3b8" font-size="10">Sul</text>
-                                <text x="205" y="125" fill="#94a3b8" font-size="10">Lisboa</text>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <p style="margin-top:1rem">Estes gráficos <strong>ainda não existem na aplicação</strong> — mas cada transacção de hoje alimenta o relatório de amanhã.</p>
-            </section>
-
-            <!-- Slide 6: Dois mundos -->
-            <section class="slide" data-slide="7" aria-label="Dois mundos um sistema">
-                <p class="slide-eyebrow">Arquitectura</p>
-                <h1>Dois mundos, um sistema</h1>
+            <!-- Slide 5: Requisição interna -->
+            <section class="slide" data-slide="5" aria-label="Requisição interna">
+                <h1>Requisição interna</h1>
                 <div class="slide-columns">
                     <div>
-                        <h2>Armazém central</h2>
-                        <p class="url-tag">/manage/…</p>
-                        <div class="role-pills">
-                            <span class="role-pill">Administrador</span>
-                            <span class="role-pill">Gestor (grau 1–3)</span>
-                            <span class="role-pill">Operador</span>
-                        </div>
+                        <h2>Lado filial</h2>
+                        <p class="url-tag">/branch/requests/</p>
+                        <ol>
+                            <li>Consultar catálogo (custo oculto, indicação de stock)</li>
+                            <li>Criar rascunho e adicionar linhas</li>
+                            <li>Submeter → gestor aprova (congela totais)</li>
+                            <li><strong>Offline:</strong> rascunhos em fila local; sincronizam ao reconectar</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h2>Lado armazém</h2>
+                        <p class="url-tag">/manage/internal-requests/</p>
+                        <ol>
+                            <li>Fila de requisições aprovadas</li>
+                            <li>Emitir mercadoria (parcial OK) — stock central desce</li>
+                            <li>Encerramento parcial com motivo</li>
+                            <li>Estado passa a <strong>expedido</strong> → filial recebe</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 6: Receção na filial -->
+            <section class="slide" data-slide="6" aria-label="Receção na filial">
+                <h1>Receção na filial</h1>
+                <p class="url-tag">/branch/receipts/</p>
+                <ul>
+                    <li>A filial confirma quantidades recebidas face à expedição</li>
+                    <li><strong>Stock da filial sobe</strong> via <code>BranchStockMovement</code></li>
+                    <li>Recepção parcial permitida; encerramento parcial com motivo (gestor+)</li>
+                    <li>Administrador de filial pode ajustar stock local</li>
+                </ul>
+                <p><strong>Circuito fechado:</strong> o artigo percorreu catálogo → compra → stock central → requisição → expedição → stock filial. Cada passo ficou registado.</p>
+            </section>
+
+            <!-- Slide 7: Catálogo -->
+            <section class="slide" data-slide="7" aria-label="Catálogo">
+                <h1>Catálogo e preços</h1>
+                <p class="url-tag">/manage/items/</p>
+                <ul>
+                    <li><strong>Famílias e sub-famílias</strong> — taxonomia de dois níveis</li>
+                    <li><strong>Artigo</strong> — código interno (imutável após criação), descrição, IVA, preços de venda (retalho, grosso, especial)</li>
+                    <li><strong>Fornecedores</strong> — preços de custo por artigo; um fornecedor <em>principal</em> por artigo</li>
+                    <li><strong>Genesis</strong> — activação exige preço de retalho &gt; 0 e qualificação</li>
+                    <li><strong>Auditoria</strong> — cada alteração fica em <code>ItemChangeLog</code></li>
+                </ul>
+                <p>Artigos novos começam <strong>inactivos</strong> até estarem prontos para o catálogo global.</p>
+            </section>
+
+            <!-- Slide 8: Aprovisionamento -->
+            <section class="slide" data-slide="8" aria-label="Aprovisionamento">
+                <h1>Aprovisionamento</h1>
+                <p class="url-tag">/manage/purchase-orders/</p>
+                <ul>
+                    <li><strong>Rascunho</strong> → escolher fornecedor, adicionar linhas com quantidade e descontos</li>
+                    <li><strong>Validação</strong> — linha rejeitada se o fornecedor não tiver preço para o artigo</li>
+                    <li><strong>Submetido</strong> → aguarda aprovação financeira</li>
+                    <li><strong>Aprovado</strong> — totais líquido/IVA/bruto congelados no momento da aprovação</li>
+                    <li><strong>Recebido / Fechado</strong> — após receção parcial ou total de mercadorias</li>
+                </ul>
+                <p>Sem preço de fornecedor, não há linha de compra — o catálogo tem de estar completo primeiro.</p>
+            </section>
+
+            <!-- Slide 9: Autorização -->
+            <section class="slide" data-slide="9" aria-label="Autorização">
+                <h1>Autorização e controlos</h1>
+                <div class="slide-columns">
+                    <div>
+                        <h2>Armazém — encomendas de compra</h2>
+                        <p class="url-tag">/manage/approval-limits/</p>
                         <ul>
-                            <li>Gestão de artigos e fornecedores</li>
-                            <li>Encomendas de compra e aprovação</li>
-                            <li>Receção de mercadorias e stock</li>
-                            <li>Expedição para filiais</li>
-                            <li>Fios de pedido (lado armazém)</li>
+                            <li><strong>Administrador</strong> — aprova qualquer montante</li>
+                            <li><strong>Gestor grau 2+</strong> — aprova dentro de tetos EUR brutos (próprios vs outros)</li>
+                            <li><strong>Operador</strong> — nunca aprova</li>
                         </ul>
                     </div>
                     <div>
-                        <h2>Filiais satélite</h2>
-                        <p class="url-tag">/branch/…</p>
-                        <div class="role-pills">
-                            <span class="role-pill branch">Administrador</span>
-                            <span class="role-pill branch">Gestor</span>
-                            <span class="role-pill branch">Operador</span>
-                        </div>
+                        <h2>Filial — requisições internas</h2>
+                        <p class="url-tag">/manage/branch-approval-limits/</p>
                         <ul>
-                            <li>Catálogo só de leitura (custo oculto)</li>
-                            <li>Requisição interna (+ offline)</li>
-                            <li>Fios de pedido (artigo inexistente)</li>
-                            <li>Receção na filial</li>
-                            <li>Voz da Empresa</li>
+                            <li><strong>Gestor</strong> — aprova dentro de tetos por filial</li>
+                            <li><strong>Administrador filial</strong> — aprovação ilimitada</li>
+                            <li>Rejeitar / encerrar parcial exige <strong>motivo escrito</strong></li>
                         </ul>
                     </div>
                 </div>
-                <p><strong>Importante:</strong> grupo de armazém ≠ função de filial. São circuitos de permissão independentes.</p>
             </section>
 
-            <!-- Slide 7: Circuito fechado diagrama -->
-            <section class="slide" data-slide="8" aria-label="Circuito fechado">
+            <!-- Slide 10: Stock central -->
+            <section class="slide" data-slide="10" aria-label="Stock central">
+                <h1>Stock central</h1>
+                <p class="url-tag">/manage/goods-receipts/</p>
+                <ul>
+                    <li><strong>Receção de mercadorias</strong> — parcial ou total; cada receção escreve <code>StockMovement</code></li>
+                    <li><strong>Quantidade em cache</strong> — <code>Item.quantity</code> actualiza-se só via movimentos</li>
+                    <li><strong>Disponível</strong> = físico − reservado (requisições aprovadas)</li>
+                    <li><strong>Reserva FIFO (D32)</strong> — ao aprovar requisição, reserva-se o que há; stock entrante aloca-se automaticamente</li>
+                    <li><strong>Ajuste de stock</strong> — só administrador de armazém, com motivo obrigatório</li>
+                </ul>
+            </section>
+
+            <!-- Slide 11: Circuito fechado -->
+            <section class="slide" data-slide="11" aria-label="Circuito fechado">
                 <p class="slide-eyebrow">Circuito fechado</p>
                 <h1>Do artigo ao stock na filial</h1>
                 <div class="diagram-wrap">
@@ -268,116 +271,107 @@
                 <p>Cada etapa gera dados estruturados. O circuito só fecha quando a filial confirma a chegada.</p>
             </section>
 
-            <!-- Slide 8: Catálogo -->
-            <section class="slide" data-slide="9" aria-label="Catálogo">
-                <p class="slide-eyebrow">Etapa 1</p>
-                <h1>Catálogo e preços</h1>
-                <p class="url-tag">/manage/items/</p>
-                <ul>
-                    <li><strong>Famílias e sub-famílias</strong> — taxonomia de dois níveis</li>
-                    <li><strong>Artigo</strong> — código interno (imutável após criação), descrição, IVA, preços de venda (retalho, grosso, especial)</li>
-                    <li><strong>Fornecedores</strong> — preços de custo por artigo; um fornecedor <em>principal</em> por artigo</li>
-                    <li><strong>Genesis</strong> — activação exige preço de retalho &gt; 0 e qualificação</li>
-                    <li><strong>Auditoria</strong> — cada alteração fica em <code>ItemChangeLog</code></li>
-                </ul>
-                <p>Artigos novos começam <strong>inactivos</strong> até estarem prontos para o catálogo global.</p>
-            </section>
-
-            <!-- Slide 9: Aprovisionamento -->
-            <section class="slide" data-slide="10" aria-label="Aprovisionamento">
-                <p class="slide-eyebrow">Etapa 2</p>
-                <h1>Aprovisionamento</h1>
-                <p class="url-tag">/manage/purchase-orders/</p>
-                <ul>
-                    <li><strong>Rascunho</strong> → escolher fornecedor, adicionar linhas com quantidade e descontos</li>
-                    <li><strong>Validação</strong> — linha rejeitada se o fornecedor não tiver preço para o artigo</li>
-                    <li><strong>Submetido</strong> → aguarda aprovação financeira</li>
-                    <li><strong>Aprovado</strong> — totais líquido/IVA/bruto congelados no momento da aprovação</li>
-                    <li><strong>Recebido / Fechado</strong> — após receção parcial ou total de mercadorias</li>
-                </ul>
-                <p>Sem preço de fornecedor, não há linha de compra — o catálogo tem de estar completo primeiro.</p>
-            </section>
-
-            <!-- Slide 10: Autorização -->
-            <section class="slide" data-slide="11" aria-label="Autorização">
-                <p class="slide-eyebrow">Etapa 3</p>
-                <h1>Autorização e controlos</h1>
+            <!-- Slide 12: Dois mundos -->
+            <section class="slide" data-slide="12" aria-label="Dois mundos um sistema">
+                <p class="slide-eyebrow">Arquitectura</p>
+                <h1>Dois mundos, um sistema</h1>
                 <div class="slide-columns">
                     <div>
-                        <h2>Armazém — encomendas de compra</h2>
-                        <p class="url-tag">/manage/approval-limits/</p>
+                        <h2>Armazém central</h2>
+                        <p class="url-tag">/manage/…</p>
+                        <div class="role-pills">
+                            <span class="role-pill">Administrador</span>
+                            <span class="role-pill">Gestor (grau 1–3)</span>
+                            <span class="role-pill">Operador</span>
+                        </div>
                         <ul>
-                            <li><strong>Administrador</strong> — aprova qualquer montante</li>
-                            <li><strong>Gestor grau 2+</strong> — aprova dentro de tetos EUR brutos (próprios vs outros)</li>
-                            <li><strong>Operador</strong> — nunca aprova</li>
+                            <li>Gestão de artigos e fornecedores</li>
+                            <li>Encomendas de compra e aprovação</li>
+                            <li>Receção de mercadorias e stock</li>
+                            <li>Expedição para filiais</li>
+                            <li>Fios de pedido (lado armazém)</li>
                         </ul>
                     </div>
                     <div>
-                        <h2>Filial — requisições internas</h2>
-                        <p class="url-tag">/manage/branch-approval-limits/</p>
+                        <h2>Filiais satélite</h2>
+                        <p class="url-tag">/branch/…</p>
+                        <div class="role-pills">
+                            <span class="role-pill branch">Administrador</span>
+                            <span class="role-pill branch">Gestor</span>
+                            <span class="role-pill branch">Operador</span>
+                        </div>
                         <ul>
-                            <li><strong>Gestor</strong> — aprova dentro de tetos por filial</li>
-                            <li><strong>Administrador filial</strong> — aprovação ilimitada</li>
-                            <li>Rejeitar / encerrar parcial exige <strong>motivo escrito</strong></li>
+                            <li>Catálogo só de leitura (custo oculto)</li>
+                            <li>Requisição interna (+ offline)</li>
+                            <li>Fios de pedido (artigo inexistente)</li>
+                            <li>Receção na filial</li>
+                            <li>Voz da Empresa</li>
                         </ul>
                     </div>
                 </div>
+                <p><strong>Importante:</strong> grupo de armazém ≠ função de filial. São circuitos de permissão independentes.</p>
             </section>
 
-            <!-- Slide 11: Stock central -->
-            <section class="slide" data-slide="12" aria-label="Stock central">
-                <p class="slide-eyebrow">Etapa 4</p>
-                <h1>Stock central</h1>
-                <p class="url-tag">/manage/goods-receipts/</p>
-                <ul>
-                    <li><strong>Receção de mercadorias</strong> — parcial ou total; cada receção escreve <code>StockMovement</code></li>
-                    <li><strong>Quantidade em cache</strong> — <code>Item.quantity</code> actualiza-se só via movimentos</li>
-                    <li><strong>Disponível</strong> = físico − reservado (requisições aprovadas)</li>
-                    <li><strong>Reserva FIFO (D32)</strong> — ao aprovar requisição, reserva-se o que há; stock entrante aloca-se automaticamente</li>
-                    <li><strong>Ajuste de stock</strong> — só administrador de armazém, com motivo obrigatório</li>
-                </ul>
-            </section>
-
-            <!-- Slide 12: Requisição -->
-            <section class="slide" data-slide="13" aria-label="Requisição interna">
-                <p class="slide-eyebrow">Etapa 5</p>
-                <h1>Requisição interna</h1>
+            <!-- Slide 13: Visão futura gráficos -->
+            <section class="slide" data-slide="13" aria-label="Visão futura gráficos">
+                <p class="slide-eyebrow">Amanhã</p>
+                <h1>Visão futura: gráficos e decisões</h1>
+                <span class="future-badge">Visão futura — ilustrativo</span>
                 <div class="slide-columns">
-                    <div>
-                        <h2>Lado filial</h2>
-                        <p class="url-tag">/branch/requests/</p>
-                        <ol>
-                            <li>Consultar catálogo (custo oculto, indicação de stock)</li>
-                            <li>Criar rascunho e adicionar linhas</li>
-                            <li>Submeter → gestor aprova (congela totais)</li>
-                            <li><strong>Offline:</strong> rascunhos em fila local; sincronizam ao reconectar</li>
-                        </ol>
+                    <div class="chart-panel">
+                        <h3>Stock ao longo do tempo</h3>
+                        <div class="mock-chart" aria-hidden="true">
+                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="40" y1="110" x2="300" y2="110" stroke="#334155" stroke-width="1"/>
+                                <line x1="40" y1="20" x2="40" y2="110" stroke="#334155" stroke-width="1"/>
+                                <polyline points="50,90 80,75 110,80 140,55 170,60 200,40 230,50 260,30 290,35" fill="none" stroke="#14b8a6" stroke-width="2.5"/>
+                                <circle cx="140" cy="55" r="4" fill="#14b8a6"/>
+                                <circle cx="260" cy="30" r="4" fill="#14b8a6"/>
+                                <text x="50" y="125" fill="#94a3b8" font-size="10">Jan</text>
+                                <text x="140" y="125" fill="#94a3b8" font-size="10">Abr</text>
+                                <text x="230" y="125" fill="#94a3b8" font-size="10">Jul</text>
+                            </svg>
+                        </div>
                     </div>
-                    <div>
-                        <h2>Lado armazém</h2>
-                        <p class="url-tag">/manage/internal-requests/</p>
-                        <ol>
-                            <li>Fila de requisições aprovadas</li>
-                            <li>Emitir mercadoria (parcial OK) — stock central desce</li>
-                            <li>Encerramento parcial com motivo</li>
-                            <li>Estado passa a <strong>expedido</strong> → filial recebe</li>
-                        </ol>
+                    <div class="chart-panel">
+                        <h3>Requisições por filial</h3>
+                        <div class="mock-chart" aria-hidden="true">
+                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="60" y="50" width="50" height="60" fill="#0f766e" rx="4"/>
+                                <rect x="130" y="30" width="50" height="80" fill="#14b8a6" rx="4"/>
+                                <rect x="200" y="65" width="50" height="45" fill="#0f766e" opacity="0.7" rx="4"/>
+                                <text x="72" y="125" fill="#94a3b8" font-size="10">Norte</text>
+                                <text x="142" y="125" fill="#94a3b8" font-size="10">Sul</text>
+                                <text x="205" y="125" fill="#94a3b8" font-size="10">Lisboa</text>
+                            </svg>
+                        </div>
                     </div>
                 </div>
+                <p style="margin-top:1rem">Estes gráficos <strong>ainda não existem na aplicação</strong> — mas cada transacção de hoje alimenta o relatório de amanhã.</p>
             </section>
 
-            <!-- Slide 13: Receção filial -->
-            <section class="slide" data-slide="14" aria-label="Receção na filial">
-                <p class="slide-eyebrow">Etapa 6</p>
-                <h1>Receção na filial</h1>
-                <p class="url-tag">/branch/receipts/</p>
-                <ul>
-                    <li>A filial confirma quantidades recebidas face à expedição</li>
-                    <li><strong>Stock da filial sobe</strong> via <code>BranchStockMovement</code></li>
-                    <li>Recepção parcial permitida; encerramento parcial com motivo (gestor+)</li>
-                    <li>Administrador de filial pode ajustar stock local</li>
+            <!-- Slide 14: Chamada à ação -->
+            <section class="slide" data-slide="14" aria-label="O que precisamos de si">
+                <p class="slide-eyebrow">O que precisamos de si</p>
+                <h1>Comece hoje — os dados acumulam-se</h1>
+                <ul class="cta-list">
+                    <li>
+                        <span class="cta-num">1</span>
+                        <span><strong>Armazém:</strong> mantenha o catálogo actualizado; registe cada receção e expedição no sistema — não em papel paralelo.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">2</span>
+                        <span><strong>Filiais:</strong> faça requisições pelo <span class="url-tag">/branch/requests/</span>; use fios para artigos em falta; confirme recepções.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">3</span>
+                        <span><strong>Gestão:</strong> aprove com critério; os limites EUR protegem o fluxo de caixa e geram histórico de decisões.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">4</span>
+                        <span><strong>Todos:</strong> partilhe feedback na Voz da Empresa — melhoria contínua depende de vozes reais.</span>
+                    </li>
                 </ul>
-                <p><strong>Circuito fechado:</strong> o artigo percorreu catálogo → compra → stock central → requisição → expedição → stock filial. Cada passo ficou registado.</p>
             </section>
 
             <!-- Slide 15: Circularidade -->
@@ -441,7 +435,7 @@
                 </div>
             </section>
 
-            <!-- Slide 16: Voz da Empresa — final -->
+            <!-- Slide 16: Voz da Empresa -->
             <section class="slide slide-finale" data-slide="16" aria-label="Voz da Empresa">
                 <p class="slide-eyebrow">Continue a falar</p>
                 <h1>Voz da Empresa — o seu canal permanente</h1>
@@ -529,7 +523,7 @@
                 <p class="slide-meta">A mesma palavra-passe para todas as contas — escolha qualquer função para explorar.</p>
             </section>
 
-        </div>
+        </div></div>
 
         <footer class="deck-controls">
             <button type="button" id="btn-prev" aria-label="Slide anterior">← Anterior</button>

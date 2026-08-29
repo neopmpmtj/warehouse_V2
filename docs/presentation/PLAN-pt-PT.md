@@ -1,6 +1,6 @@
 # CentCompras — Plano da apresentação (pt-PT)
 
-**Versão:** 2.1 · **Data:** 28 agosto 2026  
+**Versão:** 2.2 · **Data:** 29 agosto 2026  
 **URL:** `/presentation/pt/` (atalho: `/presentation/`) · **Inglês:** `/presentation/en/`  
 **Idioma:** Português (pt-PT) · Plano EN: [`PLAN-en.md`](PLAN-en.md)  
 **Público:** Armazém central, gestores e operadores de filial, direção
@@ -11,7 +11,7 @@
 
 Comunicar quatro mensagens centrais:
 
-1. **Comece hoje** — chamada à acção por papel no início; os dados acumulam-se com o uso diário.
+1. **Comece hoje** — chamada à acção por papel (slide 14, antes da despedida); os dados acumulam-se com o uso diário.
 2. **Os dados são o novo petróleo** — quanto mais cedo o pessoal usar o CentCompras, mais cedo haverá informação fiável para gráficos e decisões.
 3. **Circuito fechado** — do artigo ao stock, passando por aprovisionamento, autorização e expedição.
 4. **Dois canais humanos** — fios de pedido são **conversas limitadas que fecham**; a Voz da Empresa é um **feed contínuo** que nunca fecha.
@@ -24,12 +24,12 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 
 | Acto | Slides | Mensagem |
 |------|--------|----------|
-| **I — Gancho** | 1–2 | Capa + chamada à acção |
-| **II — Porquê** | 3–6 | Cenário, metáfora dos dados, registo, visão futura |
-| **III — Circuito fechado** | 7–14 | Arquitectura + fluxo operacional |
-| **IV — Circularidade** | 15 | Circuito do fio (fecha) |
-| **V — Despedida** | 16 | Voz da Empresa (texto + feed) |
-| **VI — Mãos à obra** | 17 | URL de demo, aviso HTTP, contas seed |
+| **I — Gancho + porquê** | 1–4 | Capa, metáfora dos dados, cenário, registo |
+| **II — Fluxo filial primeiro** | 5–6 | Requisição interna + receção na filial |
+| **III — Passos armazém** | 7–10 | Catálogo até stock central |
+| **IV — Arquitectura + visão** | 11–13 | Diagrama circuito fechado, dois mundos, gráficos futuros |
+| **V — Chamada à acção** | 14 | CTA por papel (adiada) |
+| **VI — Canais humanos + mãos à obra** | 15–17 | Fios, Voz da Empresa, login demo |
 
 ---
 
@@ -40,48 +40,51 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 - **Subtítulo:** Dados, circuitos e circularidade
 - **Notas:** Plataforma única (PostgreSQL = fonte de verdade).
 
-### Slide 2 — O que precisamos de si (CTA)
-- Quatro acções por papel: armazém, filiais, gestão, todos
-- **Notas:** Sem rodapé de manuais/Fase 7 aqui; antecipa Voz da Empresa (ponto 4).
-
-### Slide 3 — O cenário de hoje
-- Armazém central + filiais; lista simples de módulos (sem grelha de cartões)
-- **Notas:** Fases 0–6 concluídas (548 testes).
-
-### Slide 4 — Os dados são o novo petróleo
+### Slide 2 — Os dados são o novo petróleo
 - Metáfora petróleo bruto vs refinado
 - **Notas:** Não é preciso esperar por gráficos.
 
-### Slide 5 — O que o sistema já regista
+### Slide 3 — O cenário de hoje
+- Armazém central + filiais; lista simples de módulos (sem grelha de cartões)
+- **Notas:** Fases 0–6 concluídas.
+
+### Slide 4 — O que o sistema já regista
 - Tabela de modelos; regra de ouro do stock
 - **Notas:** Zero digitação directa de quantidades.
 
-### Slide 6 — Visão futura: gráficos *(mock)*
-- Gráficos ilustrativos; etiqueta **Visão futura — ilustrativo**
+### Slide 5 — Requisição interna
+- Filial + armazém; offline PWA
+- **Notas:** Aprovar nunca falha por falta de stock.
 
-### Slide 7 — Dois mundos, um sistema
-- Armazém vs filial; papéis independentes
+### Slide 6 — Receção na filial
+- Fecha o circuito operacional do lado da filial
+- **Notas:** Cada passo fica registado.
 
-### Slide 8 — Circuito fechado (diagrama)
-- SVG do fluxo operacional completo
-
-### Slide 9 — Catálogo e preços
+### Slide 7 — Catálogo e preços
 - `/manage/items/` — Genesis, auditoria
 
-### Slide 10 — Aprovisionamento
+### Slide 8 — Aprovisionamento
 - `/manage/purchase-orders/`
 
-### Slide 11 — Autorização
+### Slide 9 — Autorização
 - Limites PO + tetos filial
 
-### Slide 12 — Stock central
+### Slide 10 — Stock central
 - `/manage/goods-receipts/`; reserva FIFO (D32)
 
-### Slide 13 — Requisição interna
-- Filial + armazém; offline PWA
+### Slide 11 — Circuito fechado (diagrama)
+- SVG do fluxo operacional completo
+- **Notas:** Vista de pássaro depois dos slides de passos.
 
-### Slide 14 — Receção na filial
-- Fecha o circuito operacional
+### Slide 12 — Dois mundos, um sistema
+- Armazém vs filial; papéis independentes
+
+### Slide 13 — Visão futura: gráficos *(mock)*
+- Gráficos ilustrativos; etiqueta **Visão futura — ilustrativo**
+
+### Slide 14 — O que precisamos de si (CTA)
+- Quatro acções por papel: armazém, filiais, gestão, todos
+- **Notas:** Sem rodapé de manuais/Fase 7 aqui; antecipa Voz da Empresa (ponto 4).
 
 ### Slide 15 — Circularidade (só circuito do fio)
 - Diagrama do fio a largura total (lacuna → abrir → diálogo → criar → ligar → requisição → fechar)
@@ -92,10 +95,10 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 - Texto (esquerda) + painel do feed contínuo (direita)
 - **Continue a falar**; despedida com participação activa
 - Rodapé: manuais · Fase 7
-- **Notas:** Visual do feed movido do slide 15.
+- **Notas:** O feed nunca fecha.
 
 ### Slide 17 — Experimente a aplicação (login demo)
-- **Experimente agora**; aviso HTTP; URL `http://168.58.240.120/accounts/login/`
+- **Experimente agora**; aviso HTTP; URL de `presentation/views.py` (`DEMO_LOGIN_URL`)
 - Palavra-passe `devpass123` para todas as contas seed
 - Tabelas armazém + filiais
 - **Notas:** Último slide — login imediato após a apresentação.

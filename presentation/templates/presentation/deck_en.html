@@ -12,7 +12,7 @@
     <div class="deck" role="application" aria-label="CentCompras presentation">
         <div class="deck-progress" id="deck-progress" aria-hidden="true"></div>
 
-        <div class="deck-slides">
+                <div class="deck-slides">
 
             <!-- Slide 1: Title -->
             <section class="slide slide-title active" data-slide="1" aria-label="Title">
@@ -22,47 +22,8 @@
                 <p class="slide-meta">Central warehouse · Satellite branches · PostgreSQL as source of truth</p>
             </section>
 
-            <!-- Slide 2: Call to action -->
-            <section class="slide" data-slide="2" aria-label="What we need from you">
-                <p class="slide-eyebrow">What we need from you</p>
-                <h1>Start today — data compounds</h1>
-                <ul class="cta-list">
-                    <li>
-                        <span class="cta-num">1</span>
-                        <span><strong>Warehouse:</strong> keep the catalogue up to date; record every receipt and shipment in the system — not on parallel paper.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">2</span>
-                        <span><strong>Branches:</strong> place requests via <span class="url-tag">/branch/requests/</span>; use threads for missing items; confirm receipts.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">3</span>
-                        <span><strong>Management:</strong> approve with care; EUR limits protect cash flow and build a decision history.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">4</span>
-                        <span><strong>Everyone:</strong> share feedback on Company Voice — continuous improvement needs real voices.</span>
-                    </li>
-                </ul>
-            </section>
-
-            <!-- Slide 3: Scenario -->
-            <section class="slide" data-slide="3" aria-label="Today's scenario">
-                <p class="slide-eyebrow">Context</p>
-                <h1>Today's scenario</h1>
-                <p><strong>A central warehouse</strong> manages the master catalogue, buys from suppliers, and ships stock.</p>
-                <p><strong>Satellite branches</strong> browse the catalogue, request items, and confirm arrivals — including <strong>offline</strong> (PWA).</p>
-                <p>Everything converges in one database: every action leaves a structured trail.</p>
-                <ul>
-                    <li><strong>Catalogue + pricing</strong> — families, items, suppliers, selling and cost prices</li>
-                    <li><strong>Procurement + stock</strong> — purchase orders, receipts, movement ledger</li>
-                    <li><strong>Internal request</strong> — branch orders → shipment → branch receipt</li>
-                    <li><strong>Communication</strong> — request threads + Company Voice</li>
-                </ul>
-            </section>
-
-            <!-- Slide 4: Data is the new oil -->
-            <section class="slide" data-slide="4" aria-label="Data is the new oil">
+            <!-- Slide 2: Data is the new oil -->
+            <section class="slide" data-slide="2" aria-label="Data is the new oil">
                 <p class="slide-eyebrow">Core message</p>
                 <h1>Data is the new oil</h1>
                 <p class="slide-subtitle">The sooner we use the system in daily operations, the sooner we have fuel for smart decisions.</p>
@@ -88,8 +49,23 @@
                 <p><strong>Don't wait for charts.</strong> Oil only exists if someone extracts it — start today.</p>
             </section>
 
+            <!-- Slide 3: Scenario -->
+            <section class="slide" data-slide="3" aria-label="Today's scenario">
+                <p class="slide-eyebrow">Context</p>
+                <h1>Today's scenario</h1>
+                <p><strong>A central warehouse</strong> manages the master catalogue, buys from suppliers, and ships stock.</p>
+                <p><strong>Satellite branches</strong> browse the catalogue, request items, and confirm arrivals — including <strong>offline</strong> (PWA).</p>
+                <p>Everything converges in one database: every action leaves a structured trail.</p>
+                <ul>
+                    <li><strong>Catalogue + pricing</strong> — families, items, suppliers, selling and cost prices</li>
+                    <li><strong>Procurement + stock</strong> — purchase orders, receipts, movement ledger</li>
+                    <li><strong>Internal request</strong> — branch orders → shipment → branch receipt</li>
+                    <li><strong>Communication</strong> — request threads + Company Voice</li>
+                </ul>
+            </section>
+
             <!-- Slide 4: What we already record -->
-            <section class="slide" data-slide="5" aria-label="What the system already records">
+            <section class="slide" data-slide="4" aria-label="What the system already records">
                 <p class="slide-eyebrow">Today, without charts</p>
                 <h1>What the system already records</h1>
                 <table class="data-table">
@@ -136,87 +112,114 @@
                 <p style="margin-top:0.75rem"><strong>Golden rule:</strong> stock quantity is never typed — it only comes from ledger movements.</p>
             </section>
 
-            <!-- Slide 5: Future vision charts -->
-            <section class="slide" data-slide="6" aria-label="Future vision charts">
-                <p class="slide-eyebrow">Tomorrow</p>
-                <h1>Future vision: charts and decisions</h1>
-                <span class="future-badge">Future vision — illustrative</span>
-                <div class="slide-columns">
-                    <div class="chart-panel">
-                        <h3>Stock over time</h3>
-                        <div class="mock-chart" aria-hidden="true">
-                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="40" y1="110" x2="300" y2="110" stroke="#334155" stroke-width="1"/>
-                                <line x1="40" y1="20" x2="40" y2="110" stroke="#334155" stroke-width="1"/>
-                                <polyline points="50,90 80,75 110,80 140,55 170,60 200,40 230,50 260,30 290,35" fill="none" stroke="#14b8a6" stroke-width="2.5"/>
-                                <circle cx="140" cy="55" r="4" fill="#14b8a6"/>
-                                <circle cx="260" cy="30" r="4" fill="#14b8a6"/>
-                                <text x="50" y="125" fill="#94a3b8" font-size="10">Jan</text>
-                                <text x="140" y="125" fill="#94a3b8" font-size="10">Apr</text>
-                                <text x="230" y="125" fill="#94a3b8" font-size="10">Jul</text>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="chart-panel">
-                        <h3>Requests per branch</h3>
-                        <div class="mock-chart" aria-hidden="true">
-                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="60" y="50" width="50" height="60" fill="#0f766e" rx="4"/>
-                                <rect x="130" y="30" width="50" height="80" fill="#14b8a6" rx="4"/>
-                                <rect x="200" y="65" width="50" height="45" fill="#0f766e" opacity="0.7" rx="4"/>
-                                <text x="72" y="125" fill="#94a3b8" font-size="10">North</text>
-                                <text x="142" y="125" fill="#94a3b8" font-size="10">South</text>
-                                <text x="205" y="125" fill="#94a3b8" font-size="10">Lisbon</text>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <p style="margin-top:1rem">These charts <strong>do not exist in the app yet</strong> — but every transaction today feeds tomorrow's reports.</p>
-            </section>
-
-            <!-- Slide 6: Two worlds -->
-            <section class="slide" data-slide="7" aria-label="Two worlds one system">
-                <p class="slide-eyebrow">Architecture</p>
-                <h1>Two worlds, one system</h1>
+            <!-- Slide 5: Internal request -->
+            <section class="slide" data-slide="5" aria-label="Internal request">
+                <h1>Internal request</h1>
                 <div class="slide-columns">
                     <div>
-                        <h2>Central warehouse</h2>
-                        <p class="url-tag">/manage/…</p>
-                        <div class="role-pills">
-                            <span class="role-pill">Admin</span>
-                            <span class="role-pill">Manager (grade 1–3)</span>
-                            <span class="role-pill">Operator</span>
-                        </div>
+                        <h2>Branch side</h2>
+                        <p class="url-tag">/branch/requests/</p>
+                        <ol>
+                            <li>Browse catalogue (cost hidden, stock hint)</li>
+                            <li>Create draft and add lines</li>
+                            <li>Submit → manager approves (freezes totals)</li>
+                            <li><strong>Offline:</strong> drafts queued locally; sync on reconnect</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h2>Warehouse side</h2>
+                        <p class="url-tag">/manage/internal-requests/</p>
+                        <ol>
+                            <li>Queue of approved requests</li>
+                            <li>Issue goods (partial OK) — central stock decreases</li>
+                            <li>Short-close with reason</li>
+                            <li>Status becomes <strong>shipped</strong> → branch receives</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 6: Branch receipt -->
+            <section class="slide" data-slide="6" aria-label="Branch receipt">
+                <h1>Branch receipt</h1>
+                <p class="url-tag">/branch/receipts/</p>
+                <ul>
+                    <li>Branch confirms quantities received against the shipment</li>
+                    <li><strong>Branch stock increases</strong> via <code>BranchStockMovement</code></li>
+                    <li>Partial receipt allowed; short-close with reason (manager+)</li>
+                    <li>Branch admin can adjust local stock</li>
+                </ul>
+                <p><strong>Closed circuit:</strong> the item went catalogue → purchase → central stock → request → issue → branch stock. Every step was recorded.</p>
+            </section>
+
+            <!-- Slide 7: Catalogue -->
+            <section class="slide" data-slide="7" aria-label="Catalogue">
+                <h1>Catalogue and pricing</h1>
+                <p class="url-tag">/manage/items/</p>
+                <ul>
+                    <li><strong>Families and sub-families</strong> — two-level taxonomy</li>
+                    <li><strong>Item</strong> — internal code (immutable after creation), description, VAT, selling prices (retail, wholesale, special)</li>
+                    <li><strong>Suppliers</strong> — cost price per item; one <em>primary</em> supplier per item</li>
+                    <li><strong>Genesis</strong> — activation requires retail price &gt; 0 and qualification</li>
+                    <li><strong>Audit</strong> — every change logged in <code>ItemChangeLog</code></li>
+                </ul>
+                <p>New items start <strong>inactive</strong> until ready for the global catalogue.</p>
+            </section>
+
+            <!-- Slide 8: Procurement -->
+            <section class="slide" data-slide="8" aria-label="Procurement">
+                <h1>Procurement</h1>
+                <p class="url-tag">/manage/purchase-orders/</p>
+                <ul>
+                    <li><strong>Draft</strong> → choose supplier, add lines with quantity and discounts</li>
+                    <li><strong>Validation</strong> — line rejected if supplier has no price for the item</li>
+                    <li><strong>Submitted</strong> → awaits financial approval</li>
+                    <li><strong>Approved</strong> — net/VAT/gross totals frozen at approval time</li>
+                    <li><strong>Received / Closed</strong> — after partial or full goods receipt</li>
+                </ul>
+                <p>No supplier price means no purchase line — the catalogue must be complete first.</p>
+            </section>
+
+            <!-- Slide 9: Authorization -->
+            <section class="slide" data-slide="9" aria-label="Authorization">
+                <h1>Authorization and controls</h1>
+                <div class="slide-columns">
+                    <div>
+                        <h2>Warehouse — purchase orders</h2>
+                        <p class="url-tag">/manage/approval-limits/</p>
                         <ul>
-                            <li>Item and supplier management</li>
-                            <li>Purchase orders and approval</li>
-                            <li>Goods receipt and stock</li>
-                            <li>Shipment to branches</li>
-                            <li>Request threads (warehouse side)</li>
+                            <li><strong>Admin</strong> — approves any amount</li>
+                            <li><strong>Manager grade 2+</strong> — approves within EUR gross caps (own vs others)</li>
+                            <li><strong>Operator</strong> — never approves</li>
                         </ul>
                     </div>
                     <div>
-                        <h2>Satellite branches</h2>
-                        <p class="url-tag">/branch/…</p>
-                        <div class="role-pills">
-                            <span class="role-pill branch">Admin</span>
-                            <span class="role-pill branch">Manager</span>
-                            <span class="role-pill branch">Operator</span>
-                        </div>
+                        <h2>Branch — internal requests</h2>
+                        <p class="url-tag">/manage/branch-approval-limits/</p>
                         <ul>
-                            <li>Read-only catalogue (cost hidden)</li>
-                            <li>Internal request (+ offline)</li>
-                            <li>Request threads (missing items)</li>
-                            <li>Branch receipt</li>
-                            <li>Company Voice</li>
+                            <li><strong>Manager</strong> — approves within per-branch caps</li>
+                            <li><strong>Branch admin</strong> — unlimited approval</li>
+                            <li>Reject / short-close requires a <strong>written reason</strong></li>
                         </ul>
                     </div>
                 </div>
-                <p><strong>Important:</strong> warehouse group ≠ branch role. These are independent permission circuits.</p>
             </section>
 
-            <!-- Slide 7: Closed circuit diagram -->
-            <section class="slide" data-slide="8" aria-label="Closed circuit">
+            <!-- Slide 10: Central stock -->
+            <section class="slide" data-slide="10" aria-label="Central stock">
+                <h1>Central stock</h1>
+                <p class="url-tag">/manage/goods-receipts/</p>
+                <ul>
+                    <li><strong>Goods receipt</strong> — partial or full; each receipt writes <code>StockMovement</code></li>
+                    <li><strong>Cached quantity</strong> — <code>Item.quantity</code> updates only via movements</li>
+                    <li><strong>Available</strong> = on-hand − reserved (approved requests)</li>
+                    <li><strong>FIFO reservation (D32)</strong> — on request approval, reserve what is on hand; incoming stock auto-allocates</li>
+                    <li><strong>Stock adjust</strong> — warehouse admin only, mandatory reason</li>
+                </ul>
+            </section>
+
+            <!-- Slide 11: Closed circuit diagram -->
+            <section class="slide" data-slide="11" aria-label="Closed circuit">
                 <p class="slide-eyebrow">Closed circuit</p>
                 <h1>From item to branch stock</h1>
                 <div class="diagram-wrap">
@@ -268,116 +271,107 @@
                 <p>Every step generates structured data. The circuit only closes when the branch confirms arrival.</p>
             </section>
 
-            <!-- Slide 8: Catalogue -->
-            <section class="slide" data-slide="9" aria-label="Catalogue">
-                <p class="slide-eyebrow">Step 1</p>
-                <h1>Catalogue and pricing</h1>
-                <p class="url-tag">/manage/items/</p>
-                <ul>
-                    <li><strong>Families and sub-families</strong> — two-level taxonomy</li>
-                    <li><strong>Item</strong> — internal code (immutable after creation), description, VAT, selling prices (retail, wholesale, special)</li>
-                    <li><strong>Suppliers</strong> — cost price per item; one <em>primary</em> supplier per item</li>
-                    <li><strong>Genesis</strong> — activation requires retail price &gt; 0 and qualification</li>
-                    <li><strong>Audit</strong> — every change logged in <code>ItemChangeLog</code></li>
-                </ul>
-                <p>New items start <strong>inactive</strong> until ready for the global catalogue.</p>
-            </section>
-
-            <!-- Slide 9: Procurement -->
-            <section class="slide" data-slide="10" aria-label="Procurement">
-                <p class="slide-eyebrow">Step 2</p>
-                <h1>Procurement</h1>
-                <p class="url-tag">/manage/purchase-orders/</p>
-                <ul>
-                    <li><strong>Draft</strong> → choose supplier, add lines with quantity and discounts</li>
-                    <li><strong>Validation</strong> — line rejected if supplier has no price for the item</li>
-                    <li><strong>Submitted</strong> → awaits financial approval</li>
-                    <li><strong>Approved</strong> — net/VAT/gross totals frozen at approval time</li>
-                    <li><strong>Received / Closed</strong> — after partial or full goods receipt</li>
-                </ul>
-                <p>No supplier price means no purchase line — the catalogue must be complete first.</p>
-            </section>
-
-            <!-- Slide 10: Authorization -->
-            <section class="slide" data-slide="11" aria-label="Authorization">
-                <p class="slide-eyebrow">Step 3</p>
-                <h1>Authorization and controls</h1>
+            <!-- Slide 12: Two worlds -->
+            <section class="slide" data-slide="12" aria-label="Two worlds one system">
+                <p class="slide-eyebrow">Architecture</p>
+                <h1>Two worlds, one system</h1>
                 <div class="slide-columns">
                     <div>
-                        <h2>Warehouse — purchase orders</h2>
-                        <p class="url-tag">/manage/approval-limits/</p>
+                        <h2>Central warehouse</h2>
+                        <p class="url-tag">/manage/…</p>
+                        <div class="role-pills">
+                            <span class="role-pill">Admin</span>
+                            <span class="role-pill">Manager (grade 1–3)</span>
+                            <span class="role-pill">Operator</span>
+                        </div>
                         <ul>
-                            <li><strong>Admin</strong> — approves any amount</li>
-                            <li><strong>Manager grade 2+</strong> — approves within EUR gross caps (own vs others)</li>
-                            <li><strong>Operator</strong> — never approves</li>
+                            <li>Item and supplier management</li>
+                            <li>Purchase orders and approval</li>
+                            <li>Goods receipt and stock</li>
+                            <li>Shipment to branches</li>
+                            <li>Request threads (warehouse side)</li>
                         </ul>
                     </div>
                     <div>
-                        <h2>Branch — internal requests</h2>
-                        <p class="url-tag">/manage/branch-approval-limits/</p>
+                        <h2>Satellite branches</h2>
+                        <p class="url-tag">/branch/…</p>
+                        <div class="role-pills">
+                            <span class="role-pill branch">Admin</span>
+                            <span class="role-pill branch">Manager</span>
+                            <span class="role-pill branch">Operator</span>
+                        </div>
                         <ul>
-                            <li><strong>Manager</strong> — approves within per-branch caps</li>
-                            <li><strong>Branch admin</strong> — unlimited approval</li>
-                            <li>Reject / short-close requires a <strong>written reason</strong></li>
+                            <li>Read-only catalogue (cost hidden)</li>
+                            <li>Internal request (+ offline)</li>
+                            <li>Request threads (missing items)</li>
+                            <li>Branch receipt</li>
+                            <li>Company Voice</li>
                         </ul>
                     </div>
                 </div>
+                <p><strong>Important:</strong> warehouse group ≠ branch role. These are independent permission circuits.</p>
             </section>
 
-            <!-- Slide 11: Central stock -->
-            <section class="slide" data-slide="12" aria-label="Central stock">
-                <p class="slide-eyebrow">Step 4</p>
-                <h1>Central stock</h1>
-                <p class="url-tag">/manage/goods-receipts/</p>
-                <ul>
-                    <li><strong>Goods receipt</strong> — partial or full; each receipt writes <code>StockMovement</code></li>
-                    <li><strong>Cached quantity</strong> — <code>Item.quantity</code> updates only via movements</li>
-                    <li><strong>Available</strong> = on-hand − reserved (approved requests)</li>
-                    <li><strong>FIFO reservation (D32)</strong> — on request approval, reserve what is on hand; incoming stock auto-allocates</li>
-                    <li><strong>Stock adjust</strong> — warehouse admin only, mandatory reason</li>
-                </ul>
-            </section>
-
-            <!-- Slide 12: Internal request -->
-            <section class="slide" data-slide="13" aria-label="Internal request">
-                <p class="slide-eyebrow">Step 5</p>
-                <h1>Internal request</h1>
+            <!-- Slide 13: Future vision charts -->
+            <section class="slide" data-slide="13" aria-label="Future vision charts">
+                <p class="slide-eyebrow">Tomorrow</p>
+                <h1>Future vision: charts and decisions</h1>
+                <span class="future-badge">Future vision — illustrative</span>
                 <div class="slide-columns">
-                    <div>
-                        <h2>Branch side</h2>
-                        <p class="url-tag">/branch/requests/</p>
-                        <ol>
-                            <li>Browse catalogue (cost hidden, stock hint)</li>
-                            <li>Create draft and add lines</li>
-                            <li>Submit → manager approves (freezes totals)</li>
-                            <li><strong>Offline:</strong> drafts queued locally; sync on reconnect</li>
-                        </ol>
+                    <div class="chart-panel">
+                        <h3>Stock over time</h3>
+                        <div class="mock-chart" aria-hidden="true">
+                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="40" y1="110" x2="300" y2="110" stroke="#334155" stroke-width="1"/>
+                                <line x1="40" y1="20" x2="40" y2="110" stroke="#334155" stroke-width="1"/>
+                                <polyline points="50,90 80,75 110,80 140,55 170,60 200,40 230,50 260,30 290,35" fill="none" stroke="#14b8a6" stroke-width="2.5"/>
+                                <circle cx="140" cy="55" r="4" fill="#14b8a6"/>
+                                <circle cx="260" cy="30" r="4" fill="#14b8a6"/>
+                                <text x="50" y="125" fill="#94a3b8" font-size="10">Jan</text>
+                                <text x="140" y="125" fill="#94a3b8" font-size="10">Apr</text>
+                                <text x="230" y="125" fill="#94a3b8" font-size="10">Jul</text>
+                            </svg>
+                        </div>
                     </div>
-                    <div>
-                        <h2>Warehouse side</h2>
-                        <p class="url-tag">/manage/internal-requests/</p>
-                        <ol>
-                            <li>Queue of approved requests</li>
-                            <li>Issue goods (partial OK) — central stock decreases</li>
-                            <li>Short-close with reason</li>
-                            <li>Status becomes <strong>shipped</strong> → branch receives</li>
-                        </ol>
+                    <div class="chart-panel">
+                        <h3>Requests per branch</h3>
+                        <div class="mock-chart" aria-hidden="true">
+                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="60" y="50" width="50" height="60" fill="#0f766e" rx="4"/>
+                                <rect x="130" y="30" width="50" height="80" fill="#14b8a6" rx="4"/>
+                                <rect x="200" y="65" width="50" height="45" fill="#0f766e" opacity="0.7" rx="4"/>
+                                <text x="72" y="125" fill="#94a3b8" font-size="10">North</text>
+                                <text x="142" y="125" fill="#94a3b8" font-size="10">South</text>
+                                <text x="205" y="125" fill="#94a3b8" font-size="10">Lisbon</text>
+                            </svg>
+                        </div>
                     </div>
                 </div>
+                <p style="margin-top:1rem">These charts <strong>do not exist in the app yet</strong> — but every transaction today feeds tomorrow's reports.</p>
             </section>
 
-            <!-- Slide 13: Branch receipt -->
-            <section class="slide" data-slide="14" aria-label="Branch receipt">
-                <p class="slide-eyebrow">Step 6</p>
-                <h1>Branch receipt</h1>
-                <p class="url-tag">/branch/receipts/</p>
-                <ul>
-                    <li>Branch confirms quantities received against the shipment</li>
-                    <li><strong>Branch stock increases</strong> via <code>BranchStockMovement</code></li>
-                    <li>Partial receipt allowed; short-close with reason (manager+)</li>
-                    <li>Branch admin can adjust local stock</li>
+            <!-- Slide 14: Call to action -->
+            <section class="slide" data-slide="14" aria-label="What we need from you">
+                <p class="slide-eyebrow">What we need from you</p>
+                <h1>Start today — data compounds</h1>
+                <ul class="cta-list">
+                    <li>
+                        <span class="cta-num">1</span>
+                        <span><strong>Warehouse:</strong> keep the catalogue up to date; record every receipt and shipment in the system — not on parallel paper.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">2</span>
+                        <span><strong>Branches:</strong> place requests via <span class="url-tag">/branch/requests/</span>; use threads for missing items; confirm receipts.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">3</span>
+                        <span><strong>Management:</strong> approve with care; EUR limits protect cash flow and build a decision history.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">4</span>
+                        <span><strong>Everyone:</strong> share feedback on Company Voice — continuous improvement needs real voices.</span>
+                    </li>
                 </ul>
-                <p><strong>Closed circuit:</strong> the item went catalogue → purchase → central stock → request → issue → branch stock. Every step was recorded.</p>
             </section>
 
             <!-- Slide 15: Circularity -->
@@ -529,7 +523,7 @@
                 <p class="slide-meta">Same password for every account above — pick any role to explore.</p>
             </section>
 
-        </div>
+        </div></div>
 
         <footer class="deck-controls">
             <button type="button" id="btn-prev" aria-label="Previous slide">← Previous</button>
