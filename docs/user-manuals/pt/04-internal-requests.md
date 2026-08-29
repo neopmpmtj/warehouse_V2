@@ -13,16 +13,18 @@
 Uma filial encomenda ao armazém central através de uma **Requisição interna**. O circuito:
 
 ```text
-A filial consulta o catálogo   (custo oculto, stock como indicação)
+A filial consulta o catálogo   (sem preços de venda; custo oculto; stock como indicação)
         ↓
-A filial levanta uma requisição (rascunho)
+A filial levanta uma requisição (rascunho — quantidades)
         ↓
-O gestor da filial aprova       (congela totais; bruto mostrado antes de confirmar)
+O gestor/administrador da filial concorda  (sim/não às quantidades; sem teto em euros)
         ↓
 O armazém expede                (saída de mercadoria — stock central DESCE)
         ↓
 A filial confirma a chegada     (receção na filial — stock da filial SOBE)
 ```
+
+Um superutilizador pode passar a empresa para o modo **com preços** em `/admin/` (Branch commercial settings). O catálogo da filial volta a mostrar os preços de venda e a aprovação dos gestores usa tetos em EUR — o comportamento anterior. As consolas do armazém mantêm sempre o custo e os preços de venda.
 
 Sem stock? O armazém levanta primeiro uma **encomenda de compra** a um fornecedor — consulte os manuais [Encomendas de compra](02-purchase-orders.md) e [Receção de mercadorias](03-goods-receipts.md). Essa parte mantém-se inalterada.
 
@@ -34,7 +36,7 @@ Sem stock? O armazém levanta primeiro uma **encomenda de compra** a um forneced
 |-----|------|----------|
 | Filial (qualquer função) | `/branch/` | Painel da filial — cartões para todas as ferramentas da filial |
 | Filial (qualquer função) | `/branch/select/` | Escolher a filial (só quando pertence a várias) |
-| Filial (qualquer função) | `/branch/catalog/` | Catálogo só de leitura (custo oculto, indicação de stock) |
+| Filial (qualquer função) | `/branch/catalog/` | Catálogo só de leitura (sem preços de venda por omissão; custo sempre oculto; indicação de stock) |
 | Filial (qualquer função) | `/branch/requests/` | Levantar e editar uma requisição |
 | Filial (qualquer função) | `/branch/threads/` | Pedir artigos que não estão no catálogo |
 | Filial (gestor / administrador) | `/branch/requests/` | Aprovar / rejeitar |
@@ -59,14 +61,14 @@ Existem **três funções de filial** (definidas pela sede) e as habituais **fun
 |-----------|:---:|:---:|:---:|
 | Consultar o catálogo | ✅ | ✅ | ✅ |
 | Levantar e editar rascunho, submeter, cancelar rascunho | ✅ | ✅ | ✅ |
-| Aprovar / rejeitar | ❌ | ✅ (dentro dos tetos) | ✅ (ilimitado) |
+| Aprovar / rejeitar | ❌ | ✅ (sim/não; tetos em EUR só se o modo com preços estiver ligado) | ✅ (ilimitado) |
 | Cancelar requisição **aprovada** | ❌ | ✅ | ✅ |
 | Confirmar chegada (receção na filial) | ✅ | ✅ | ✅ |
 | Encerramento parcial na filial | ❌ | ✅ | ✅ |
 | Ajustar stock da filial | ❌ | ❌ | ✅ |
 
 - O **operador** faz o dia a dia (catálogo, requisição, receção) mas nunca aprova nem faz encerramento parcial.
-- O **gestor** acrescenta aprovação/rejeição/encerramento parcial, dentro de **tetos em EUR bruto** (próprio vs outros — ver §8).
+- O **gestor** acrescenta aprovação/rejeição/encerramento parcial. Por omissão a aprovação é **sim/não às quantidades** (sem teto em euros). Se o superutilizador ligar o modo **com preços**, os gestores ficam limitados por **tetos em EUR bruto** (próprio vs outros — ver §8).
 - O **administrador** é o utilizador avançado da filial: aprovação ilimitada, mais **ajustes de stock da filial**.
 - O ecrã Django **`/admin/`** é **só para o superutilizador do sítio**. O pessoal de filial nunca entra em `/admin/`. A sede cria o seu início de sessão e a função de filial aí.
 
@@ -104,7 +106,7 @@ No painel, abra **Catálogo**, **Requisição interna**, **Fios**, **Receções*
 
 Abra **`/branch/catalog/`**. É o mesmo catálogo de produtos que o armazém gere, mas com duas diferenças deliberadas:
 
-1. **O custo fica oculto.** Vê os **preços de venda** (Retalho / Grossista / Especial), nunca o custo do fornecedor.
+1. **Preços na filial.** **Sem preços** (omissão): vê identidade, unidade, família e disponibilidade — **sem** retalho/grossista/especial, e nunca o custo do fornecedor. **Com preços** (interruptor do superutilizador em `/admin/`): vê os **preços de venda** (Retalho / Grossista / Especial), continua sem o custo do fornecedor.
 2. **O stock é apenas uma indicação** — nunca um número exato.
 
 O pessoal do armazém vê stock exato **e** custo no [catálogo do gestor](07-manager-catalog.md) em `/manage/catalog/`.
@@ -160,17 +162,17 @@ Abra uma requisição **submitted** (submetida).
 ### 5.1 Aprovar
 
 1. Clique em **Approve** (Aprovar).
-2. A confirmação mostra o **bruto** (grossista × quantidade + IVA) — reveja-o.
+2. Confirme. No modo **sem preços** (omissão) a confirmação é sobre as **quantidades**, não um total em euros. No modo **com preços** a confirmação mostra o **bruto** (grossista × quantidade + IVA).
 3. Confirme.
 
-Aprovar **congela os totais** — os preços e o IVA ficam registados neste momento, por isso alterações de preço posteriores não reescrevem o histórico.
+Em ambos os modos o armazém **congela os totais** internamente (instantâneo de grossista + IVA) para alterações de preço posteriores não reescreverem o histórico. O pessoal da filial só **vê** esses números quando o modo com preços está ligado.
 
 Aprovar também **reserva o stock de armazém atualmente livre** para esta requisição (ver §7). Uma filial posterior não pode levar essas unidades. Se o hub tiver menos do que pediu, a requisição continua aprovada: a parte livre fica reservada e o resto aguarda stock entrante (primeiro aprovado ganha).
 
 | Aprovador | Limite |
 |----------|-------|
 | **Administrador** | Ilimitado |
-| **Gestor** | Tetos em EUR bruto: um para requisições **suas**, outro para requisições **de outras pessoas** (definidos pelo administrador do armazém, §8) |
+| **Gestor** | **Sem preços:** sem teto em euros — concorda ou recusa a requisição. **Com preços:** tetos em EUR bruto, um para requisições **suas**, outro para requisições **de outras pessoas** (definidos pelo administrador do armazém, §8) |
 
 ### 5.2 Rejeitar
 
@@ -274,7 +276,9 @@ Gestores e operadores não veem esta opção. O stock da filial é um livro-raz�
 
 ## 10. Tetos de aprovação das filiais (administrador do armazém)
 
-Abra **`/manage/branch-approval-limits/`** (só **administrador** do armazém). Define quanto um **gestor** de filial pode aprovar, em **EUR bruto**. O cabeçalho coincide com as outras consolas do armazém: **CentCompras** (liga a **`/`**), **Requests** (Pedidos) e **Settings** (Definições — terminar sessão).
+Abra **`/manage/branch-approval-limits/`** (só **administrador** do armazém). Define quanto um **gestor** de filial pode aprovar, em **EUR bruto**, **quando a empresa está no modo com preços**. No modo **sem preços** (omissão) estes tetos ficam guardados mas **não se aplicam** — o gestor simplesmente concorda ou recusa. O superutilizador liga ou desliga o modo com preços em **`/admin/` → Branch commercial settings**.
+
+O cabeçalho coincide com as outras consolas do armazém: **CentCompras** (liga a **`/`**), **Requests** (Pedidos) e **Settings** (Definições — terminar sessão).
 
 - **Others** (Outros) — o teto quando o gestor aprova a requisição de outra pessoa.
 - **Self** (Próprio) — o teto (mais baixo) quando o gestor aprova a **própria** requisição.
@@ -313,9 +317,9 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 
 ## 12. O que não pode fazer aqui
 
-- Ver o **custo** do fornecedor a partir de uma conta de filial (só preços de venda).
+- Ver o **custo** do fornecedor a partir de uma conta de filial (nunca). Os preços de venda só aparecem no modo **com preços**.
 - Ver o stock **exato** do armazém a partir de uma conta de filial (só indicação).
-- Aprovar como **operador**, ou aprovar acima do **teto de gestor**.
+- Aprovar como **operador**. No modo **com preços**, um gestor também não pode aprovar acima do **teto em EUR**.
 - Pedir um artigo **inativo**, ou uma linha **sem preço de grossista**, ou o **mesmo artigo duas vezes** numa requisição.
 - Editar uma requisição depois de **submeter**.
 - **Emitir** mais do que está reservado para essa requisição, ou mais do que o restante da requisição.
@@ -348,8 +352,8 @@ Igual às outras consolas:
 
 ## 15. FAQ
 
-**P1. Porque não vejo o preço de custo no catálogo da filial?**
-Deliberado. As filiais veem só preços de venda; o custo do fornecedor é confidencial do armazém. O pessoal do armazém vê o custo no [catálogo do gestor](07-manager-catalog.md) em `/manage/catalog/`. Se precisar de um preço que não vê, peça ao armazém.
+**P1. Porque não vejo preços no catálogo da filial?**
+Por omissão a empresa está no modo **sem preços**: as filiais pedem **quantidades**, não dinheiro. O **custo** do fornecedor nunca aparece na filial (confidencial do armazém). Se o superutilizador passar ao modo **com preços**, os preços de venda (retalho / grossista / especial) voltam a aparecer — continua sem o custo. O pessoal do armazém vê o custo no [catálogo do gestor](07-manager-catalog.md) em `/manage/catalog/`.
 
 **P2. O catálogo diz "None" para um artigo — posso mesmo assim pedi-lo?**
 Sim. **None** (Nenhum) significa que nada está livre para expedição *hoje* (prateleira vazia, ou stock já reservado para requisições aprovadas anteriores). Levante a requisição na mesma — entra na fila de espera. O stock entrante é oferecido primeiro à requisição aprovada mais antiga.
@@ -376,7 +380,7 @@ Não — uma linha por artigo por requisição. **Edite** a quantidade da linha 
 A sede ainda não o atribuiu a uma filial (ou a filial está inativa). Contacte o administrador — o acesso à filial configura-se no Django `/admin/`, não por si.
 
 **P10. O que significa "gross" no botão de aprovar?**
-O total da requisição **incluindo IVA** (grossista × quantidade, mais IVA). É esse valor que o teto de aprovação mede.
+Só no modo **com preços**. É o total da requisição **incluindo IVA** (grossista × quantidade, mais IVA) — o valor que o teto de aprovação mede. No modo **sem preços** a confirmação de aprovar não tem montante em euros.
 
 **P11. Outra filial pediu o mesmo artigo depois de nós — vão levar o nosso stock?**
 Não, depois da nossa requisição estar **approved**. O armazém reserva a quantidade livre para nós. Uma filial posterior pode ainda aprovar (e esperar), mas não lhe podem ser emitidas essas unidades reservadas.
@@ -394,7 +398,7 @@ Dois livros-razão separados. O stock do armazém vive no artigo; o **stock da f
 Sim, **só rascunhos**. Abra `/branch/requests/` depois de ter visitado o catálogo online pelo menos uma vez (para a lista de artigos ficar em cache). Offline pode iniciar **New request** (Nova requisição) e adicionar linhas a partir do catálogo em cache. A requisição mostra **pending sync** (sincronização pendente) até o Wi-Fi voltar; depois carrega automaticamente quando abrir qualquer página da filial que carregue os scripts offline (catálogo, requisição, painel, etc.). **Submit**, **Approve**, **Reject** e **Cancel** continuam a exigir Wi-Fi.
 
 **P16. O aviso offline do catálogo diz que a disponibilidade pode estar desatualizada — porquê?**
-O modo offline mostra o **último catálogo descarregado** para a **filial ativa**. O stock do armazém e as indicações de disponibilidade podem mudar enquanto estava desligado. Se mudar de filial offline, a app avisa que a cache pertence a outra filial — ligue o Wi-Fi na filial atual para descarregar o respetivo catálogo.
+O modo offline mostra o **último catálogo descarregado** para a **filial ativa**. O stock do armazém e as indicações de disponibilidade podem mudar enquanto estava desligado. As colunas de preço de venda seguem esse último descarregamento: se foi **sem preços** (ou a cache não tem flag de modo), os preços ficam ocultos mesmo que linhas antigas ainda tenham campos de preço. Ligue-se uma vez depois de uma mudança de modo comercial para a cache coincidir. Se mudar de filial offline, a app avisa que a cache pertence a outra filial — ligue o Wi-Fi na filial atual para descarregar o respetivo catálogo.
 
 **P17. Mudei de filial com um rascunho offline pendente — porque não sincroniza?**
 Rascunhos offline ficam ligados à filial onde os criou. Se mudar para outra filial, a sincronização é **ignorada** até voltar e abrir `/branch/requests/` nessa filial. Não reutilize o mesmo UUID de rascunho offline entre filiais — o servidor rejeita com `client_uuid is already in use on another branch.`

@@ -104,7 +104,8 @@ Default:
 
 **Internal requests (branch manager caps):**
 
-- A branch **manager** may approve a request within the global manager cap — `Others` for requests created by other users, `Self` for their own.
+- These EUR caps apply only when the company is in **priced** branch commercial mode (superuser: `/admin/` → Branch commercial settings). **Unpriced** (default): a branch manager agrees or refuses with **no euro cap**.
+- In **priced** mode, a branch **manager** may approve a request within the global manager cap — `Others` for requests created by other users, `Self` for their own.
 - Branch **admins**: unlimited. **Operators**: never approve.
 
 If a document is over the cap, you'll see an error like:
@@ -130,7 +131,7 @@ Only warehouse **admins** can edit approval limits. If you're a manager or opera
 The **gross** total = net + VAT — the full amount to fund. Caps are checked against gross, VAT included.
 
 **Q3. Can I approve my own purchase order / request?**
-Only up to your **self-approve** cap (€ 100 / € 500 by default). Above that, another approver must approve it.
+**Purchase orders:** only up to your **self-approve** cap (€ 100 / € 500 by default). Above that, another approver must approve it. **Branch requests:** in **unpriced** mode (the default) there is no euro cap — a manager agrees or refuses. In **priced** mode the self-approve cap applies the same way as for POs.
 
 **Q4. I changed a value but it reverted / shows an error — why?**
 Values must be **zero or greater**, with at most **2 decimal places**. Negative values are rejected. Also check the banner at the top of the console for the exact message.

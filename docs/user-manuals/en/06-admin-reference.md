@@ -177,6 +177,17 @@ Open **`/admin/` → Branchs** (Branches).
 - **Deactivating a branch** blocks *new* work (no new requests, lines, submit, or approve), but **in-flight** requests can still be issued, received, and closed — stock in transit isn't stuck.
 - There is no "delete branch" — deactivate it. History is preserved.
 
+### 7.1 Branch commercial mode (priced vs unpriced)
+
+Open **`/admin/` → Branch commercial settings**. There is **one row** for the whole company (not per branch).
+
+| Mode | Branch catalogue | Branch approval |
+|------|------------------|-----------------|
+| **Unpriced** (default) | No selling prices (cost never shown) | Manager/admin yes/no; EUR caps not applied |
+| **Priced** | Retail / wholesale / special (cost still hidden) | Existing EUR manager caps apply |
+
+Warehouse `/manage/…` pages are unchanged. Flip is going-forward; tell staff if you switch while requests are still **submitted**.
+
 ---
 
 ## 8. Approval limits (where they live)
@@ -210,7 +221,7 @@ Most business tables in `/admin/` are **read-only on purpose** — day-to-day ch
 | Company Voice | `/company-voice/` (admin is inspect-only; **no hard delete**) |
 | Change logs (all `*ChangeLog`) | Read-only everywhere (audit) |
 
-The **only** tables you normally edit in `/admin/` are: **Users**, **Groups** (membership only, see §5), **Branches**, and **Branch memberships**.
+The **only** tables you normally edit in `/admin/` are: **Users**, **Groups** (membership only, see §5), **Branches**, **Branch memberships**, and **Branch commercial settings** (company-wide unpriced vs priced branch catalogue / requisição).
 
 Warehouse staff also have a **read-only** stock + prices overview at `/manage/catalog/` — see [Manager catalog](07-manager-catalog.md). Edits still go through `/manage/items/` and `/manage/goods-receipts/`.
 
@@ -299,10 +310,13 @@ The branch **admin** role can `adjust_branch_stock` (on `/branch/receipts/`), wi
 No — **deactivate** it (unset `is_active`). History is kept and in-flight requests still finish.
 
 **Q8. Where do I set the approval caps?**
-Not in `/admin/`. Warehouse PO caps → `/manage/approval-limits/`; branch manager caps → `/manage/branch-approval-limits/`. Warehouse admin only.
+Not in `/admin/`. Warehouse PO caps → `/manage/approval-limits/`; branch manager caps → `/manage/branch-approval-limits/`. Warehouse admin only. Branch EUR caps apply only in **priced** commercial mode (see §7.1).
 
 **Q9. Why does the User form ask for a timezone?**
 Every user has a timezone so server-rendered dates are correct for them. Default is `Europe/Lisbon`; only valid IANA names are accepted.
 
 **Q10. The seed didn't create a superuser — how do I get one?**
 Run `python manage.py createsuperuser` (email + password). The seed deliberately creates only warehouse + branch users.
+
+**Q11. How do I show selling prices on the branch catalogue again?**
+`/admin/` → **Branch commercial settings** → set mode to **Priced**. After the next online catalogue fetch, branch staff see selling prices and manager approval uses EUR caps.

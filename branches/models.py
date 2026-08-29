@@ -61,3 +61,29 @@ class BranchMembership(models.Model):
 
     def __str__(self):
         return f"{self.user.email} @ {self.branch.name} ({self.role})"
+
+
+class BranchCommercialSettings(models.Model):
+    """Company-wide branch commercial mode (singleton, pk=1)."""
+
+    class Mode(models.TextChoices):
+        UNPRICED = "unpriced", "Unpriced — quantity only"
+        PRICED = "priced", "Priced — selling prices and EUR caps"
+
+    mode = models.CharField(
+        max_length=16,
+        choices=Mode.choices,
+        default=Mode.UNPRICED,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "branch commercial settings"
+        verbose_name_plural = "branch commercial settings"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Branch commercial mode: {self.get_mode_display()}"

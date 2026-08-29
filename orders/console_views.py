@@ -56,50 +56,114 @@ def _decimal_string(value):
     return str(value)
 
 
-def _serialize_line(line):
+def _branch_mode_fields():
+    from branches.services import branch_shows_selling_prices, get_branch_commercial_mode
+
     return {
+        "commercial_mode": get_branch_commercial_mode(),
+        "show_selling_prices": branch_shows_selling_prices(),
+    }
+
+
+def _serialize_line(line, *, include_money=True):
+    payload = {
         "id": line.id,
         "item_id": line.item_id,
         "description": line.description,
         "internal_code": line.internal_code,
         "unit_of_measure": line.unit_of_measure,
         "quantity": _decimal_string(line.quantity),
-        "unit_price": _decimal_string(line.unit_price),
-        "vat_rate": _decimal_string(line.vat_rate),
     }
+    if include_money:
+        payload["unit_price"] = _decimal_string(line.unit_price)
+        payload["vat_rate"] = _decimal_string(line.vat_rate)
+    return payload
 
 
 def _serialize_request(request):
-    net, vat, gross = request.totals()
-    return {
+    from branches.services import branch_shows_selling_prices
+
+    include_money = branch_shows_selling_prices()
+    payload = {
         "id": request.id,
         "branch_id": request.branch_id,
         "status": request.status,
         "notes": request.notes,
         "warehouse_notes": request.warehouse_notes,
         "created_by": request.created_by_id,
-        "approved_net": _decimal_string(request.approved_net) if request.approved_net is not None else None,
-        "approved_vat": _decimal_string(request.approved_vat) if request.approved_vat is not None else None,
-        "approved_gross": _decimal_string(request.approved_gross) if request.approved_gross is not None else None,
-        "totals": {
+        "created_at": request.created_at.isoformat(),
+        "client_uuid": str(request.client_uuid) if request.client_uuid else None,
+        "lines": [
+            _serialize_line(line, include_money=include_money)
+            for line in request.lines.all()
+        ],
+    }
+    if include_money:
+        net, vat, gross = request.totals()
+        payload["approved_net"] = (
+            _decimal_string(request.approved_net) if request.approved_net is not None else None
+        )
+        payload["approved_vat"] = (
+            _decimal_string(request.approved_vat) if request.approved_vat is not None else None
+        )
+        payload["approved_gross"] = (
+            _decimal_string(request.approved_gross) if request.approved_gross is not None else None
+        )
+        payload["totals"] = {
             "net": _decimal_string(net),
             "vat": _decimal_string(vat),
             "gross": _decimal_string(gross),
-        },
-        "created_at": request.created_at.isoformat(),
-        "client_uuid": str(request.client_uuid) if request.client_uuid else None,
-        "lines": [_serialize_line(line) for line in request.lines.all()],
-    }
+        }
+    return payload
 
 
-def _serialize_history(log):
+def _branch_request_response(req, status=200, extra=None):
+    payload = _branch_mode_fields()
+    payload["request"] = _serialize_request(req)
+    if extra:
+        payload.update(extra)
+    return JsonResponse(payload, status=status)
+
+
+def _serialize_history(log, *, include_money=True):
+    changes = log.changes
+    if not include_money:
+        changes = _strip_money_from_changes(changes)
     return {
         "id": log.id,
         "user": log.user.email if log.user else None,
         "action": log.action,
-        "changes": log.changes,
+        "changes": changes,
         "reason": log.reason,
         "created_at": log.created_at.isoformat(),
+    }
+
+
+_HISTORY_MONEY_KEYS = frozenset(
+    {
+        "unit_price",
+        "vat_rate",
+        "approved_net",
+        "approved_vat",
+        "approved_gross",
+        "totals",
+        "retail_price",
+        "wholesale_price",
+        "special_price",
+        "net",
+        "vat",
+        "gross",
+    }
+)
+
+
+def _strip_money_from_changes(changes):
+    if not isinstance(changes, dict):
+        return changes
+    return {
+        key: _strip_money_from_changes(value) if isinstance(value, dict) else value
+        for key, value in changes.items()
+        if key not in _HISTORY_MONEY_KEYS
     }
 
 
@@ -142,9 +206,9 @@ def _get_line_or_404(request, line_id):
 @require_GET
 def request_list(request):
     queryset = get_internal_requests(branch=request.active_branch)
-    return JsonResponse(
-        {"requests": [_serialize_request(r) for r in queryset]}
-    )
+    payload = _branch_mode_fields()
+    payload["requests"] = [_serialize_request(r) for r in queryset]
+    return JsonResponse(payload)
 
 
 @active_branch_required
@@ -156,7 +220,7 @@ def request_create(request):
         req = create_internal_request(branch, request.user, notes=data.get("notes", ""))
     except ValidationError as exc:
         return _validation_error_response(exc)
-    return JsonResponse({"request": _serialize_request(req)}, status=201)
+    return _branch_request_response(req, status=201)
 
 
 @active_branch_required
@@ -175,20 +239,14 @@ def request_sync(request):
     except ValidationError as exc:
         return _validation_error_response(exc)
     status = 201 if created else 200
-    return JsonResponse(
-        {
-            "request": _serialize_request(req),
-            "idempotent": not created,
-        },
-        status=status,
-    )
+    return _branch_request_response(req, status=status, extra={"idempotent": not created})
 
 
 @active_branch_required
 @require_GET
 def request_detail(request, request_id):
     req = _get_request_or_404(request_id, request.active_branch)
-    return JsonResponse({"request": _serialize_request(req)})
+    return _branch_request_response(req)
 
 
 @active_branch_required
@@ -200,7 +258,7 @@ def request_update(request, request_id):
         req = update_internal_request(req, request.user, notes=data.get("notes"))
     except ValidationError as exc:
         return _validation_error_response(exc)
-    return JsonResponse({"request": _serialize_request(req)})
+    return _branch_request_response(req)
 
 
 @active_branch_required
@@ -217,7 +275,9 @@ def request_add_line(request, request_id):
         )
     except ValidationError as exc:
         return _validation_error_response(exc)
-    return JsonResponse({"line": _serialize_line(line)}, status=201)
+    payload = _branch_mode_fields()
+    payload["line"] = _serialize_line(line, include_money=payload["show_selling_prices"])
+    return JsonResponse(payload, status=201)
 
 
 @active_branch_required
@@ -230,7 +290,9 @@ def request_update_line(request, request_id, line_id):
         line = update_line(line, request.user, quantity=data.get("quantity"))
     except ValidationError as exc:
         return _validation_error_response(exc)
-    return JsonResponse({"line": _serialize_line(line)})
+    payload = _branch_mode_fields()
+    payload["line"] = _serialize_line(line, include_money=payload["show_selling_prices"])
+    return JsonResponse(payload)
 
 
 @active_branch_required
@@ -253,7 +315,7 @@ def request_submit(request, request_id):
         req = submit(req, request.user)
     except ValidationError as exc:
         return _validation_error_response(exc)
-    return JsonResponse({"request": _serialize_request(req)})
+    return _branch_request_response(req)
 
 
 @active_branch_required
@@ -267,7 +329,7 @@ def request_approve(request, request_id):
         req = approve(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
         return _validation_error_response(exc)
-    return JsonResponse({"request": _serialize_request(req)})
+    return _branch_request_response(req)
 
 
 @active_branch_required
@@ -281,7 +343,7 @@ def request_reject(request, request_id):
         req = reject(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
         return _validation_error_response(exc)
-    return JsonResponse({"request": _serialize_request(req)})
+    return _branch_request_response(req)
 
 
 @active_branch_required
@@ -293,15 +355,18 @@ def request_cancel(request, request_id):
         req = cancel(req, request.user, reason=data.get("reason", ""))
     except ValidationError as exc:
         return _validation_error_response(exc)
-    return JsonResponse({"request": _serialize_request(req)})
+    return _branch_request_response(req)
 
 
 @active_branch_required
 @require_GET
 def request_history(request, request_id):
+    from branches.services import branch_shows_selling_prices
+
     req = _get_request_or_404(request_id, request.active_branch)
+    include_money = branch_shows_selling_prices()
     return JsonResponse(
-        {"history": [_serialize_history(log) for log in get_request_history(req)]}
+        {"history": [_serialize_history(log, include_money=include_money) for log in get_request_history(req)]}
     )
 
 

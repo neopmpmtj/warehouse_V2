@@ -329,6 +329,10 @@ def _assert_can_approve(request, user, gross):
         return
     if role != ROLE_MANAGER:
         raise ApprovalDeniedError()
+    from branches.services import branch_shows_selling_prices
+
+    if not branch_shows_selling_prices():
+        return
     ensure_default_branch_approval_limits()
     limit = BranchApprovalLimit.objects.filter(role=ROLE_MANAGER).first()
     if limit is None:

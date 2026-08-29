@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 26 August 2026, 12:50 WEST.
+> **Read this first when resuming work.** Last updated: 29 August 2026, 08:40 WEST.
 
 ---
 
@@ -33,9 +33,18 @@
 
 **Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Next:** **Phase 7** — production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8** (ideas in PROJECT-PLAN §15). Email = **Phase 9**.
 
-**Tests:** suite **557 OK** (27 Aug; cost-trends demo slice).
+**Tests:** suite **589 OK** (29 Aug; D37 review fixes applied).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (29 Aug 2026) — branch commercial mode (D37) ✅
+
+Company-wide **unpriced / priced** switch for the branch catalogue and requisição (not a second dashboard). Superuser only, in `/admin/` → Branch commercial settings. Default **unpriced**.
+
+- **Unpriced:** `/api/branch/catalog/` omits selling prices (cost still never present); branch requisição APIs omit `unit_price` / totals; manager approve is yes/no (EUR caps skipped); offline cache stores items without price fields. Wholesale `> 0` still required; `approve()` still snapshots `unit_price` / `approved_*` for warehouse Gross.
+- **Priced:** restores today's selling prices + EUR `BranchApprovalLimit`. Same catalog page and `branch_requests.js`.
+- D37 review ([`docs/reviews/d37-priced-unpriced-review-2026-08-29-0845.md`](reviews/d37-priced-unpriced-review-2026-08-29-0845.md)) **H1 / M1 / M2 / L1–L3 applied** (offline catalogue no longer infers prices from cache; membership `__str__`; unpriced history omits money; manuals/tests/admin save).
+- SW cache `centcompras-branch-v9`. Manuals 04 / 05 / 06 / 07 / 10 (EN+PT). **Tests:** **589 OK**.
 
 ## Next session — do this
 
@@ -452,6 +461,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | — | Dates DD/MM/YYYY (24h); per-user timezone (default `Europe/Lisbon`); EN + pt-PT |
 | D29 | **`internal_code` lifecycle (Phases 1–2 ✅)** | Charset: `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. **Locked after first save** (set-if-empty once for legacy). Console create = **mandatory Genesis** (atomic); requires internal code + description + unit + VAT + active family + **retail_price > 0** + **supplier** + **cost price > 0** (primary row) |
 | D36 | **Genesis primary supplier ✅** | Same as PROJECT-PLAN D36 — `create_and_activate_item` creates primary `SupplierItemPrice` atomically; existing one-primary demotion unchanged (D14) |
+| D37 | **Branch commercial mode ✅** | Company-wide `BranchCommercialSettings` (superuser `/admin/` only). Default **unpriced**. **Priced** restores selling prices + EUR caps. Buying cost never on the branch. Warehouse `/manage/…` unchanged. No per-user/per-branch flag; no storefront. |
 | D30 | **Server-side item drafts** | **Deferred** — try localStorage autosave first if staff report lost forms; see plan advisory |
 | D31 | **Warehouse short-close** | `approved` + zero dispatch → **closed**; `fulfilling` (partial issue) → **shipped** for branch receipt path |
 | D32 | **Warehouse stock reservation** | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `RESERVE` movement (D5). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |
@@ -562,7 +572,7 @@ python manage.py runserver
 ```
 
 - **Logins** (all `devpass123`): `armazem.admin@centcompras.dev`, `armazem.gestor@…` / `gestor2` / `gestor3`, `armazem.operador@…` / `operador2` (grades 1–3 as seeded). **Branch:** `filial.operador.norte@…` / `filial.gestor.norte@…` / `filial.admin.norte@…` (Norte), `filial.operador.sul@…` / `filial.gestor.sul@…` (Sul), and `filial.dual@…` (both branches).
-- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/company-voice/` Company Voice (all staff) · `/branch/` branch dashboard · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (cost hidden; offline cache) · `/branch/requests/` requisição interna (offline drafts) · `/branch/threads/` request threads (branch side) · `/branch/receipts/` branch receipts · `/service-worker.js` branch SW · `/healthz` liveness · `/admin/` superuser only.
+- **URLs:** `/` dashboard · `/manage/items/` item console · `/manage/catalog/` manager catalog · `/manage/purchase-orders/` PO console · `/manage/approval-limits/` PO caps (admin edit) · `/manage/goods-receipts/` goods receipt + stock · `/manage/internal-requests/` request queue + goods issue · `/manage/threads/` request threads (catalogue-gap) · `/manage/branch-approval-limits/` branch caps (admin edit) · `/company-voice/` Company Voice (all staff) · `/branch/` branch dashboard · `/branch/select/` branch picker · `/branch/catalog/` branch catalog (unpriced default; cost always hidden; offline cache) · `/branch/requests/` requisição interna (offline drafts; quantity-only unless priced) · `/branch/threads/` request threads (branch side) · `/branch/receipts/` branch receipts · `/service-worker.js` branch SW · `/healthz` liveness · `/admin/` superuser only (incl. Branch commercial settings).
 
 ---
 

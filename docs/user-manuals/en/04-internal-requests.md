@@ -13,16 +13,18 @@
 A branch orders from the central warehouse through a **Requisição interna** (internal request). The loop:
 
 ```text
-Branch browses catalogue   (cost hidden, stock as a hint)
+Branch browses catalogue   (no selling prices; cost hidden; stock as a hint)
         ↓
-Branch raises a requisição (draft)
+Branch raises a requisição (draft — quantities)
         ↓
-Branch manager approves    (freezes totals; gross shown before confirm)
+Branch manager/admin agrees  (yes/no on the quantities; no euro cap)
         ↓
 Warehouse ships            (goods issue — central stock goes DOWN)
         ↓
 Branch confirms arrival    (branch receipt — branch stock goes UP)
 ```
+
+A superuser can switch the company to **priced** mode in `/admin/` (Branch commercial settings). Then the branch catalogue shows selling prices again, and manager approval uses EUR caps — the previous behaviour. Warehouse consoles always keep cost and selling prices.
 
 Out of stock? The warehouse raises a **purchase order** to a supplier first — see the [Purchase Orders](02-purchase-orders.md) and [Goods receipt](03-goods-receipts.md) manuals. That part is unchanged.
 
@@ -34,7 +36,7 @@ Out of stock? The warehouse raises a **purchase order** to a supplier first — 
 |-----|------|----------|
 | Branch (any role) | `/branch/` | Branch dashboard — cards to every branch tool |
 | Branch (any role) | `/branch/select/` | Choose your branch (only when you belong to several) |
-| Branch (any role) | `/branch/catalog/` | Read-only catalogue (cost hidden, stock hint) |
+| Branch (any role) | `/branch/catalog/` | Read-only catalogue (no selling prices by default; cost always hidden; stock hint) |
 | Branch (any role) | `/branch/requests/` | Raise & edit a requisição |
 | Branch (any role) | `/branch/threads/` | Request items not in the catalogue |
 | Branch (manager / admin) | `/branch/requests/` | Approve / reject |
@@ -59,14 +61,14 @@ There are **three branch roles** (set for you by the head office) and the usual 
 |-----------|:---:|:---:|:---:|
 | Browse catalogue | ✅ | ✅ | ✅ |
 | Raise & edit a draft, submit, cancel a draft | ✅ | ✅ | ✅ |
-| Approve / reject | ❌ | ✅ (within caps) | ✅ (unlimited) |
+| Approve / reject | ❌ | ✅ (yes/no; EUR caps only if priced mode is on) | ✅ (unlimited) |
 | Cancel an **approved** request | ❌ | ✅ | ✅ |
 | Confirm arrival (branch receipt) | ✅ | ✅ | ✅ |
 | Branch short-close | ❌ | ✅ | ✅ |
 | Adjust branch stock | ❌ | ❌ | ✅ |
 
 - **Operator** can do the day-to-day (catalogue, request, receipt) but never approves and never short-closes.
-- **Manager** adds approval/rejection/short-close, within **EUR gross caps** (self vs others — see §8).
+- **Manager** adds approval/rejection/short-close. By default approval is **yes/no on quantities** (no euro cap). If the superuser turns on **priced** mode, managers are limited by **EUR gross caps** (self vs others — see §8).
 - **Admin** is the branch power user: unlimited approval, plus **branch stock adjustments**.
 - The Django **`/admin/`** screen is for the **site superuser only**. Branch staff never log into `/admin/`. Head office creates your login and your branch role there.
 
@@ -104,7 +106,7 @@ From the dashboard, open **Catalog**, **Requisição interna**, **Threads**, **R
 
 Open **`/branch/catalog/`**. This is the same product catalogue the warehouse manages, but with two deliberate differences:
 
-1. **Cost is hidden.** You see the **selling prices** (Retail / Wholesale / Special), never the supplier cost.
+1. **Prices on the branch.** **Unpriced** (the default): you see identity, unit, family, and availability — **no** retail/wholesale/special, and never the supplier cost. **Priced** (superuser switch in `/admin/`): you see the **selling prices** (Retail / Wholesale / Special), still never the supplier cost.
 2. **Stock is only a hint** — never an exact number.
 
 Warehouse staff see exact stock **and** cost on the [manager catalog](07-manager-catalog.md) at `/manage/catalog/`.
@@ -160,17 +162,17 @@ Open a **submitted** request.
 ### 5.1 Approve
 
 1. Click **Approve** (*Aprovar*).
-2. The confirmation shows the **gross** (wholesale × quantity + VAT) — review it.
+2. Confirm. In **unpriced** mode (default) the confirmation is on the **quantities**, not a euro total. In **priced** mode the confirmation shows the **gross** (wholesale × quantity + VAT).
 3. Confirm.
 
-Approving **freezes the totals** — the prices and VAT are snapshotted at this moment, so later price changes don't rewrite history.
+In both modes the warehouse still **freezes the totals** internally (wholesale + VAT snapshot) so later price changes don't rewrite history. Branch staff only **see** those numbers when priced mode is on.
 
 Approving also **holds whatever warehouse stock is currently free** for this request (see §7). A later branch cannot take those units. If the hub has less than you asked for, the request is still approved: the free portion is held, and the rest waits for incoming stock (first approved wins).
 
 | Approver | Limit |
 |----------|-------|
 | **Admin** | Unlimited |
-| **Manager** | EUR gross caps: one for **your own** requests, one for **other people's** (set by the warehouse admin, §8) |
+| **Manager** | **Unpriced:** no euro cap — agree or refuse the request. **Priced:** EUR gross caps, one for **your own** requests, one for **other people's** (set by the warehouse admin, §8) |
 
 ### 5.2 Reject
 
@@ -274,7 +276,9 @@ Managers and operators do not see this option. Branch stock is a ledger like war
 
 ## 10. Branch approval caps (warehouse admin)
 
-Open **`/manage/branch-approval-limits/`** (warehouse **admin** only). This sets how much a branch **manager** may approve, in **EUR gross**. The header matches other warehouse consoles: **CentCompras** (links to **`/`**), **Requests**, and **Settings** (sign out).
+Open **`/manage/branch-approval-limits/`** (warehouse **admin** only). This sets how much a branch **manager** may approve, in **EUR gross**, **when the company is in priced mode**. In **unpriced** mode (the default) these caps are stored but **not applied** — a manager simply agrees or refuses. The superuser turns priced mode on or off at **`/admin/` → Branch commercial settings**.
+
+The header matches other warehouse consoles: **CentCompras** (links to **`/`**), **Requests**, and **Settings** (sign out).
 
 - **Others** — the cap when the manager approves someone else's request.
 - **Self** — the (lower) cap when the manager approves their **own** request.
@@ -313,9 +317,9 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 
 ## 12. What you cannot do here
 
-- See the supplier **cost** from a branch account (selling prices only).
+- See the supplier **cost** from a branch account (never). Selling prices appear only in **priced** mode.
 - See the **exact** warehouse stock from a branch account (hint only).
-- Approve as an **operator**, or approve over your **manager cap**.
+- Approve as an **operator**. In **priced** mode, a manager also cannot approve over their **EUR cap**.
 - Request an **inactive** item, or a line with **no wholesale price**, or the **same item twice** on one request.
 - Edit a request after **submit**.
 - **Issue** more than is reserved for that request, or more than the request's remaining.
@@ -348,8 +352,8 @@ Same as the other consoles:
 
 ## 15. FAQ
 
-**Q1. Why can't I see the cost price in the branch catalogue?**
-Deliberate. Branches see selling prices only; supplier cost is warehouse-confidential. Warehouse staff see cost on the [manager catalog](07-manager-catalog.md) at `/manage/catalog/`. If you need a price you can't see, ask the warehouse.
+**Q1. Why can't I see prices in the branch catalogue?**
+By default the company is in **unpriced** mode: branches request **quantities**, not money. Supplier **cost** is never shown on the branch (warehouse-confidential). If the superuser switches to **priced** mode, selling prices (retail / wholesale / special) appear again — still never cost. Warehouse staff see cost on the [manager catalog](07-manager-catalog.md) at `/manage/catalog/`.
 
 **Q2. The catalogue says "None" for an item — can I still request it?**
 Yes. **None** means nothing is free to ship *today* (empty shelf, or stock already held for earlier approved requisições). Raise the requisição anyway — you join the wait. Incoming stock is offered to the oldest approved request first.
@@ -376,7 +380,7 @@ No — one line per item per request. **Edit** the line's quantity instead of ad
 Head office hasn't assigned you to a branch (or your branch is inactive). Contact your administrator — branch access is set up in Django `/admin/`, not by you.
 
 **Q10. What does "gross" mean on the approve button?**
-The request's total **including VAT** (wholesale × quantity, plus VAT). That's the figure your approval cap is measured against.
+Only in **priced** mode. It is the request's total **including VAT** (wholesale × quantity, plus VAT) — the figure your approval cap is measured against. In **unpriced** mode the approve confirmation has no euro amount.
 
 **Q11. Another branch asked for the same item after us — will they take our stock?**
 No, once your requisição is **approved**. The warehouse holds the free quantity for you. A later branch can still approve (and wait), but they cannot be issued those held units.
@@ -394,7 +398,7 @@ Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives 
 Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically when you open any branch page that loads the offline scripts (catalog, requisição, dashboard, etc.). **Submit**, **Approve**, **Reject**, and **Cancel** still require Wi-Fi.
 
 **Q16. The catalogue offline banner says availability may be outdated — why?**
-Offline mode shows the **last downloaded** catalogue for the **active branch**. Warehouse stock and availability hints can change while you were disconnected. If you switch branch while offline, the app warns that the cache belongs to another branch — connect to Wi-Fi on the current branch to download its catalogue.
+Offline mode shows the **last downloaded** catalogue for the **active branch**. Warehouse stock and availability hints can change while you were disconnected. Selling-price columns follow that last successful download: if it was **unpriced** (or the cache has no mode flag), prices stay hidden even when older rows still contain price fields. Connect once after a commercial-mode change so the cache matches. If you switch branch while offline, the app warns that the cache belongs to another branch — connect to Wi-Fi on the current branch to download its catalogue.
 
 **Q17. I switched branch with a pending offline draft — why won't it sync?**
 Offline drafts are tied to the branch where you created them. If you switch to another branch, sync is **skipped** until you switch back and open `/branch/requests/` on that branch. Do not reuse the same offline draft UUID across branches — the server rejects it with `client_uuid is already in use on another branch.`

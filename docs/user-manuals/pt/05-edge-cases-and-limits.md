@@ -146,8 +146,8 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Cannot submit a request without lines.` (Não é possível submeter uma requisição sem linhas.) | Requisição vazia | Adicione uma linha |
 | `Cannot move an internal request from 'X' to 'Y'.` (Não é possível mover uma requisição interna de 'X' para 'Y'.) | Transição ilegal | Ver §4 |
 | `You do not have permission to approve or cancel this request.` (Não tem permissão para aprovar ou cancelar esta requisição.) | Operador (ou cancelar aprovada como operador) | Só gestor/administrador |
-| `Self-approval is limited to … EUR gross (this request is …).` (A auto-aprovação limita-se a … EUR bruto (esta requisição é …).) | Gestor a aprovar requisição própria acima do teto **próprio** | Peça a outro gestor |
-| `Approval is limited to … EUR gross (this request is …).` (A aprovação limita-se a … EUR bruto (esta requisição é …).) | Gestor acima do teto **outros** | Peça a um aprovador superior |
+| `Self-approval is limited to … EUR gross (this request is …).` (A auto-aprovação limita-se a … EUR bruto (esta requisição é …).) | Gestor a aprovar requisição própria acima do teto **próprio** (só no modo **com preços**) | Peça a outro gestor |
+| `Approval is limited to … EUR gross (this request is …).` (A aprovação limita-se a … EUR bruto (esta requisição é …).) | Gestor acima do teto **outros** (só no modo **com preços**) | Peça a um aprovador superior |
 | `No branch approval limit is configured for managers.` (Não há limite de aprovação de filial configurado para gestores.) | Falta `BranchApprovalLimit` | Administrador do armazém define |
 | `A reason is required to reject a request.` (É obrigatório indicar um motivo para rejeitar uma requisição.) | Rejeitar exige motivo | Escreva um |
 | `A reason is required to cancel an approved request.` (É obrigatório indicar um motivo para cancelar uma requisição aprovada.) | Cancelar aprovada exige motivo | Escreva um |

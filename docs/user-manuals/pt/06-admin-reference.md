@@ -177,6 +177,17 @@ Abra **`/admin/` → Branchs** (Branches).
 - **Desativar uma filial** bloqueia trabalho *novo* (sem novos pedidos, linhas, submissão ou aprovação), mas pedidos **em curso** ainda podem ser emitidos, recebidos e encerrados — o stock em trânsito não fica preso.
 - Não existe «eliminar filial» — desative-a. O histórico é preservado.
 
+### 7.1 Modo comercial da filial (com preços vs sem preços)
+
+Abra **`/admin/` → Branch commercial settings**. Há **uma linha** para toda a empresa (não por filial).
+
+| Modo | Catálogo da filial | Aprovação na filial |
+|------|------------------|-----------------|
+| **Unpriced** (omissão) | Sem preços de venda (custo nunca mostrado) | Gestor/administrador sim/não; tetos em EUR não aplicados |
+| **Priced** | Retalho / grossista / especial (custo continua oculto) | Tetos em EUR dos gestores aplicam-se |
+
+As páginas `/manage/…` do armazém não mudam. A mudança vale daí para a frente; avise o pessoal se mudar com requisições ainda **submitted**.
+
 ---
 
 ## 8. Limites de aprovação (onde estão)
@@ -210,7 +221,7 @@ A maior parte das tabelas de negócio em `/admin/` é **só de leitura de propó
 | Voz da Empresa | `/company-voice/` (admin só inspeção; **sem eliminação permanente**) |
 | Change logs (todos os `*ChangeLog`) | Só leitura em todo o lado (auditoria) |
 
-As **únicas** tabelas que normalmente edita em `/admin/` são: **Users**, **Groups** (só adesão, ver §5), **Branches** e **Branch memberships**.
+As **únicas** tabelas que normalmente edita em `/admin/` são: **Users**, **Groups** (só adesão, ver §5), **Branches**, **Branch memberships** e **Branch commercial settings** (catálogo/requisição da filial sem preços vs com preços, em toda a empresa).
 
 O pessoal do armazém também tem uma vista **só de leitura** de stock + preços em `/manage/catalog/` — ver [Catálogo do gestor](07-manager-catalog.md). As edições continuam a passar por `/manage/items/` e `/manage/goods-receipts/`.
 
@@ -299,10 +310,13 @@ A função **admin** de filial pode `adjust_branch_stock` (em `/branch/receipts/
 Não — **desative-a** (desmarque `is_active`). O histórico mantém-se e os pedidos em curso terminam na mesma.
 
 **P8. Onde defino os tetos de aprovação?**
-Não em `/admin/`. Tetos de encomendas de compra do armazém → `/manage/approval-limits/`; tetos dos gestores de filial → `/manage/branch-approval-limits/`. Só administrador de armazém.
+Não em `/admin/`. Tetos de encomendas de compra do armazém → `/manage/approval-limits/`; tetos dos gestores de filial → `/manage/branch-approval-limits/`. Só administrador de armazém. Os tetos em EUR da filial só se aplicam no modo comercial **com preços** (ver §7.1).
 
 **P9. Porque é que o formulário User pede fuso horário?**
 Cada utilizador tem fuso horário para as datas renderizadas no servidor estarem corretas para ele. A predefinição é `Europe/Lisbon`; só são aceites nomes IANA válidos.
 
 **P10. O seed não criou superutilizador — como obtenho um?**
 Execute `python manage.py createsuperuser` (email + palavra-passe). O seed cria de propósito só utilizadores de armazém e de filial.
+
+**P11. Como volto a mostrar preços de venda no catálogo da filial?**
+`/admin/` → **Branch commercial settings** → defina o modo como **Priced**. Depois da próxima descarga online do catálogo, o pessoal da filial vê os preços de venda e a aprovação dos gestores usa tetos em EUR.
