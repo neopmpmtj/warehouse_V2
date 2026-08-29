@@ -16,7 +16,9 @@ A Voz da Empresa é uma caixa de sugestões interna para todo o pessoal do CentC
 
 Não é necessário escolher filial. Utilizadores de armazém e de filial partilham o mesmo feed.
 
-Abra a engrenagem **Definições** (canto superior direito) para **Sessão iniciada como** e uma ligação pequena **Terminar sessão** na linha do título. **Ajuda** é o ícone azul **?** junto à engrenagem (placeholder). O **Idioma** (English / Português) define-se no painel do pessoal (`/`) ou no catálogo da filial (`/branch/catalog/`) e memoriza-se neste browser.
+Abra a engrenagem **Definições** (canto superior direito) para **Sessão iniciada como** e uma ligação pequena **Terminar sessão** na linha do título. **Ajuda** é o ícone azul **?** junto à engrenagem (placeholder). O **Idioma** (English / Português) define-se no painel do pessoal (`/`) ou no painel da filial (`/branch/`) e memoriza-se neste browser.
+
+**CentCompras** (canto superior esquerdo) devolve-o ao seu painel: **`/`** para o pessoal do armazém, **`/branch/`** para o pessoal só de filial. Não envia o pessoal de filial para `/` (essa página exige uma permissão de catálogo do armazém).
 
 ---
 

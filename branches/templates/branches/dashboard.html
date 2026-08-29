@@ -30,7 +30,7 @@
     {% include "branches/includes/offline_assets.html" %}
 </head>
 <body data-branch-id="{{ branch.id }}" data-user-id="{{ user.id }}">
-    {% include "branches/includes/branch_page_header.html" with page_title="Dashboard" page_title_key="branchDashTitle" active_nav="home" %}
+    {% include "branches/includes/branch_dashboard_header.html" with page_title="Dashboard" page_title_key="branchDashTitle" %}
 
     <main class="branch-dash-main">
         <p id="offline-banner" class="banner banner-info" hidden style="margin:0 20px 12px;padding:10px 14px;border-radius:4px;background:#e8f0fe;color:#0b57d0;"></p>
@@ -48,7 +48,7 @@
     </main>
 
     {% include "branches/includes/offline_scripts.html" %}
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=8"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=9"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>
 </html>

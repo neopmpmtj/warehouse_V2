@@ -28,6 +28,7 @@ from .services import (
     get_memberships,
     post_login_landing,
     post_login_redirect,
+    home_url_for_request,
     set_active_branch,
 )
 
@@ -248,6 +249,44 @@ class PostLoginLandingTests(TestCase):
         self.assertNotIn(SESSION_KEY, request.session)
 
 
+class HomeUrlForRequestTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.north = create_branch("North")
+        self.south = create_branch("South")
+
+    def _request(self, user, *, active_branch=None):
+        request = self.factory.get("/company-voice/")
+        request.user = user
+        request.active_branch = active_branch
+        return request
+
+    def test_warehouse_user_goes_to_staff_dashboard(self):
+        user = _make_user("home-warehouse@example.com")
+        assign_warehouse_group(user, GROUP_ADMINS)
+        self.assertEqual(home_url_for_request(self._request(user)), "/")
+
+    def test_branch_only_with_active_branch_goes_to_branch_dashboard(self):
+        user = _make_user("home-branch@example.com")
+        assign_membership(user, self.north, ROLE_OPERATOR)
+        request = self._request(user, active_branch=self.north)
+        self.assertEqual(home_url_for_request(request), "/branch/")
+
+    def test_branch_only_multi_without_session_goes_to_picker(self):
+        user = _make_user("home-multi@example.com")
+        assign_membership(user, self.north, ROLE_OPERATOR)
+        assign_membership(user, self.south, ROLE_OPERATOR)
+        request = self._request(user, active_branch=None)
+        self.assertEqual(home_url_for_request(request), "/branch/select/")
+
+    def test_dual_user_goes_to_staff_dashboard(self):
+        user = _make_user("home-dual@example.com")
+        assign_warehouse_group(user, GROUP_ADMINS)
+        assign_membership(user, self.north, ROLE_OPERATOR)
+        request = self._request(user, active_branch=self.north)
+        self.assertEqual(home_url_for_request(request), "/")
+
+
 class CapabilityTests(TestCase):
     def setUp(self):
         self.branch = create_branch("North")
@@ -312,7 +351,7 @@ class ServiceWorkerTests(TestCase):
         response = self.client.get("/service-worker.js")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
-        self.assertContains(response, "centcompras-branch-v10")
+        self.assertContains(response, "centcompras-branch-v11")
         self.assertContains(response, "/api/")
         self.assertContains(response, "/manage/")
         self.assertContains(response, "CACHE_NAME")
@@ -407,6 +446,10 @@ class BranchViewTests(TestCase):
         self.assertContains(response, "branch_bootstrap.js")
         self.assertContains(response, 'data-branch-id="' + str(self.north.id) + '"')
         self.assertContains(response, 'data-user-id="' + str(user.id) + '"')
+        self.assertContains(response, 'id="pref-language"')
+        self.assertContains(response, 'id="pref-theme"')
+        self.assertNotContains(response, 'class="branch-nav"')
+        self.assertNotContains(response, 'data-i18n="navBranchCatalog"')
 
     def test_dashboard_shows_picker_for_multi_membership(self):
         user = _make_user("dash-multi@example.com")
@@ -442,8 +485,10 @@ class BranchViewTests(TestCase):
         self.assertContains(response, 'id="settings-toggle"')
         self.assertNotContains(response, "Switch branch")
         self.assertContains(response, 'href="/branch/requests/"')
-        self.assertContains(response, 'id="pref-language"')
-        self.assertContains(response, 'id="pref-theme"')
+        self.assertContains(response, 'class="branch-nav"')
+        self.assertContains(response, 'data-i18n="navBranchCatalog"')
+        self.assertNotContains(response, 'id="pref-language"')
+        self.assertNotContains(response, 'id="pref-theme"')
         self.assertContains(response, "branch_catalog.js")
         self.assertContains(response, "register_sw.js")
         self.assertNotContains(response, 'id="language-select"')

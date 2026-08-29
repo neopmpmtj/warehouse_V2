@@ -1,6 +1,13 @@
 const COST_TRENDS_I18N = {
     en: {
         title: "Cost trends",
+        navWarehouseHome: "Home",
+        navWarehouseItems: "Items",
+        navWarehouseCatalog: "Catalog",
+        navWarehousePOs: "POs",
+        navWarehouseReceipts: "Receipts",
+        navWarehouseRequests: "Requests",
+        navWarehouseThreads: "Threads",
         subtitle: "Reference purchase cost (primary supplier)",
         periodLabel: "Period",
         itemLabel: "Item",
@@ -23,6 +30,13 @@ const COST_TRENDS_I18N = {
     },
     "pt-PT": {
         title: "Evolução de custos",
+        navWarehouseHome: "Início",
+        navWarehouseItems: "Artigos",
+        navWarehouseCatalog: "Catálogo",
+        navWarehousePOs: "Encomendas",
+        navWarehouseReceipts: "Receções",
+        navWarehouseRequests: "Pedidos",
+        navWarehouseThreads: "Fios",
         subtitle: "Custo de compra de referência (fornecedor principal)",
         periodLabel: "Período",
         itemLabel: "Artigo",

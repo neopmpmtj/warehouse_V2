@@ -1,0 +1,10 @@
+<header class="branch-page-header">
+    {% include "branches/includes/branch_page_heading.html" %}
+    <div class="header-actions">
+        {% include "products/includes/preferences_bar.html" %}
+        {% if can_switch_branch %}
+        <a href="{% url 'branch_select' %}" data-i18n="switchBranch">Switch branch</a>
+        {% endif %}
+        {% include "products/includes/account_settings.html" %}
+    </div>
+</header>

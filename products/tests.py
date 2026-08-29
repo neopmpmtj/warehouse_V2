@@ -1332,6 +1332,10 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="settings-help"')
         self.assertContains(response, 'class="help-launcher"')
         self.assertContains(response, 'class="settings-signout-link"')
+        self.assertContains(response, 'class="warehouse-nav"')
+        self.assertContains(response, 'data-i18n="navWarehouseItems"')
+        self.assertContains(response, 'aria-current="page"')
+        self.assertNotContains(response, 'id="pref-language"')
         self.assertRegex(
             response.content.decode(),
             r'data-i18n="signOut"[\s\S]*id="settings-help"',
@@ -1380,6 +1384,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="pref-language"')
         self.assertContains(response, 'id="pref-theme"')
+        self.assertNotContains(response, 'class="warehouse-nav"')
         self.assertContains(response, 'class="dash-card"')
         self.assertContains(response, 'data-i18n="cardItemConsole"')
         self.assertContains(response, 'data-i18n="sectionWarehouse"')
@@ -3563,7 +3568,7 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, "th-sortable")
         self.assertContains(response, 'data-sort="internal_code"')
         self.assertContains(response, "catalog.js?v=7")
-        self.assertContains(response, "catalog_i18n.js?v=8")
+        self.assertContains(response, "catalog_i18n.js?v=9")
 
 
 class LanguageCodeContractTests(SimpleTestCase):

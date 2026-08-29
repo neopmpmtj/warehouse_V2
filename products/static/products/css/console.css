@@ -719,6 +719,30 @@ body[data-can-change-item="false"] .col-check {
     text-decoration: underline;
 }
 
+.topbar-nav-link.is-active {
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.warehouse-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.85rem;
+    align-items: center;
+    flex: 1 1 auto;
+}
+
+@media (max-width: 900px) {
+    .topbar {
+        flex-wrap: wrap;
+    }
+
+    .warehouse-nav {
+        order: 3;
+        width: 100%;
+    }
+}
+
 .console-panel {
     border: 1px solid var(--border);
     border-radius: 8px;

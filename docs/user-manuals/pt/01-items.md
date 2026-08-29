@@ -47,11 +47,11 @@ A consola completa funciona em dois idiomas. Defina **Idioma** no painel do pess
 - **Inglês**
 - **Português**
 
-A escolha é memorizada neste navegador e aplica-se a todas as consolas de armazém, Company Voice e threads de pedido. O pessoal de filial usa o mesmo controlo no catálogo de filial (`/branch/catalog/`). O ícone **Definições** mostra o email com sessão iniciada, uma ligação pequena **Terminar sessão** e **Terminar sessão noutros dispositivos**. **Ajuda** é o ícone **?** azul ao lado do ícone.
+A escolha é memorizada neste navegador e aplica-se a todas as consolas de armazém, Company Voice e threads de pedido. O pessoal de filial usa o mesmo controlo no **painel da filial** (`/branch/`). O ícone **Definições** mostra o email com sessão iniciada, uma ligação pequena **Terminar sessão** e **Terminar sessão noutros dispositivos**. **Ajuda** é o ícone **?** azul ao lado do ícone.
 
 ### 1.4 Tema claro / escuro
 
-Use o botão de **tema** no painel do pessoal (`/`) — ao lado de **Idioma** — para alternar entre **Tema claro** e **Tema escuro**. Também é memorizado neste navegador. O pessoal de filial usa o mesmo controlo no catálogo de filial (`/branch/catalog/`).
+Use o botão de **tema** no painel do pessoal (`/`) — ao lado de **Idioma** — para alternar entre **Tema claro** e **Tema escuro**. Também é memorizado neste navegador. O pessoal de filial usa o mesmo controlo no **painel da filial** (`/branch/`).
 
 ---
 
@@ -292,7 +292,7 @@ Cada alteração é registada — **quem** fez, **o que** mudou e **quando** (co
 
 - **Datas** são mostradas como **DD/MM/AAAA** (dia, mês, ano), com hora em 24 horas — por exemplo `20/08/2026 10:30`.
 - **Fuso horário:** as horas são mostradas no *seu* horário local, onde quer que esteja. Um colega em Singapura vê o mesmo evento no horário de Singapura; você vê no horário de Portugal. (O sistema guarda tudo em UTC e converte automaticamente.) Novos utilizadores usam por defeito **Europe/Lisbon**.
-- **Idioma:** Inglês / Português — definido no painel do pessoal (`/`) ou no catálogo de filial (`/branch/catalog/`); memorizado neste navegador.
+- **Idioma:** Inglês / Português — definido no painel do pessoal (`/`) ou no painel da filial (`/branch/`); memorizado neste navegador.
 - **Tema:** claro / escuro — mesma barra que o idioma; memorizado.
 
 ---

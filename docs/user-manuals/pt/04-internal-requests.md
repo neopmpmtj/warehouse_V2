@@ -47,7 +47,7 @@ Sem stock? O armazém levanta primeiro uma **encomenda de compra** a um forneced
 
 *(Durante o desenvolvimento na sua máquina: `http://127.0.0.1:8015/…`.)*
 
-> 📷 **[CAPTURA DE ECRÃ — painel da filial com grelha de cartões e navegação superior]**
+> 📷 **[CAPTURA DE ECRÃ — painel da filial com grelha de cartões]**
 
 ---
 
@@ -92,11 +92,11 @@ Pode pertencer a **uma filial, várias filiais ou a nenhuma**. Depois de iniciar
 | **Várias filiais** | Aterra em `/branch/select/` — escolha uma, depois continue para o painel. |
 | **Sem filial** | O seletor diz *"You have no active branch access."* (Não tem acesso ativo a nenhuma filial.) Peça ajuda ao administrador. |
 
-No painel, abra **Catálogo**, **Requisição interna**, **Fios**, **Receções** ou **Voz da Empresa** a partir dos cartões. Todas as páginas da filial têm as mesmas ligações na barra superior (**Início**, **Catálogo**, **Pedidos**, **Fios**, **Receções**).
+No painel, abra **Catálogo**, **Requisição interna**, **Fios**, **Receções** ou **Voz da Empresa** a partir dos cartões. Em **Catálogo**, **Pedidos**, **Receções** e **Fios**, a barra superior também tem **Início**, **Catálogo**, **Pedidos**, **Receções** e **Fios** (Fios é o último) — não no painel em si.
 
 **Mudar filial** só aparece quando pertence a **mais do que uma** filial. Se só viu uma filial na sua vida, essa ligação fica oculta — não pode consultar outras filiais.
 
-**Terminar sessão** é uma ligação pequena na linha do título **Definições** (engrenagem, canto superior direito). **Ajuda** é o ícone azul **?** junto à engrenagem (placeholder). **Idioma** e **tema** estão no painel (e em todas as páginas da filial que mostram a barra de preferências).
+**Terminar sessão** é uma ligação pequena na linha do título **Definições** (engrenagem, canto superior direito). **Ajuda** é o ícone azul **?** junto à engrenagem (placeholder). **Idioma** e **tema** estão apenas no painel do pessoal (`/`) e no painel da filial (`/branch/`) — não nas páginas de trabalho da filial.
 
 > 📷 **[CAPTURA DE ECRÃ — seletor de filial com duas filiais listadas]**
 

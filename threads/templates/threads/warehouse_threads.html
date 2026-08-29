@@ -17,7 +17,7 @@
             document.documentElement.setAttribute("data-theme", theme);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=18">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=19">
     <link rel="stylesheet" href="{% static 'threads/css/warehouse_threads.css' %}?v=2">
 </head>
 <body>
@@ -26,6 +26,7 @@
             {% include "products/includes/console_eyebrow.html" %}
             <h1 data-i18n="title">Request threads</h1>
         </div>
+        {% include "products/includes/warehouse_page_nav.html" with active_nav="threads" %}
         <div class="topbar-actions">
             {% include "products/includes/account_settings.html" %}
         </div>
@@ -122,6 +123,10 @@
                     searchPlaceholder: "Search item…", stale: "awaiting", satisfactionLabel: "Satisfaction",
                     settings: "Settings", signedInAs: "Signed in as", signOut: "Sign out",
                     signOutOtherDevices: "Sign out other devices", help: "Help",
+                    navWarehouseHome: "Home", navWarehouseItems: "Items",
+                    navWarehouseCatalog: "Catalog", navWarehousePOs: "POs",
+                    navWarehouseReceipts: "Receipts", navWarehouseRequests: "Requests",
+                    navWarehouseThreads: "Threads",
                 },
                 pt: {
                     title: "Fios de pedido", queueTitle: "Todos os fios", newThread: "Novo fio",
@@ -141,6 +146,10 @@
                     searchPlaceholder: "Pesquisar artigo…", stale: "a aguardar", satisfactionLabel: "Satisfação",
                     settings: "Definições", signedInAs: "Sessão iniciada como", signOut: "Terminar sessão",
                     signOutOtherDevices: "Terminar sessão noutros dispositivos", help: "Ajuda",
+                    navWarehouseHome: "Início", navWarehouseItems: "Artigos",
+                    navWarehouseCatalog: "Catálogo", navWarehousePOs: "Encomendas",
+                    navWarehouseReceipts: "Receções", navWarehouseRequests: "Pedidos",
+                    navWarehouseThreads: "Fios",
                 },
             };
 

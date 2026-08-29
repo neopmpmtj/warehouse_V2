@@ -17,7 +17,7 @@
             document.documentElement.setAttribute("data-theme", theme);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=18">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=19">
 </head>
 <body data-can-edit="{% if can_edit_approval_policy %}true{% else %}false{% endif %}">
     <header class="topbar">
@@ -25,6 +25,7 @@
             {% include "products/includes/console_eyebrow.html" %}
             <h1>Approval limits (EUR gross)</h1>
         </div>
+        {% include "products/includes/warehouse_page_nav.html" %}
         <div class="topbar-actions">
             {% include "products/includes/account_settings.html" %}
         </div>
@@ -46,6 +47,7 @@
         </table>
     </main>
     <script src="{% static 'procurement/js/approval_limits.js' %}?v=1"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=9"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>
 </html>

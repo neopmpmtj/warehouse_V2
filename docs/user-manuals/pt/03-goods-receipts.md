@@ -213,7 +213,7 @@ Igual às outras consolas:
 
 - **Datas:** DD/MM/AAAA, hora em 24 horas (por exemplo `20/08/2026 14:05`).
 - **Fuso horário:** o seu horário local (novos utilizadores usam por defeito **Europe/Lisbon**).
-- **Idioma:** Inglês / Português — definido no painel do pessoal (`/`) ou no catálogo de filial (`/branch/catalog/`); memorizado neste navegador.
+- **Idioma:** Inglês / Português — definido no painel do pessoal (`/`) ou no painel da filial (`/branch/`); memorizado neste navegador.
 - **Tema:** claro / escuro — mesma barra que o idioma; memorizado.
 
 ---

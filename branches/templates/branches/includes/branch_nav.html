@@ -1,0 +1,7 @@
+<nav class="branch-nav" aria-label="Branch pages">
+    <a href="{% url 'branch_dashboard' %}"{% if active_nav == "home" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchHome">Home</a>
+    <a href="{% url 'branch_catalog' %}"{% if active_nav == "catalog" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchCatalog">Catalog</a>
+    <a href="{% url 'request_console' %}"{% if active_nav == "requests" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchRequests">Requests</a>
+    <a href="{% url 'branch_receipt_console' %}"{% if active_nav == "receipts" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchReceipts">Receipts</a>
+    <a href="{% url 'branch_thread_console' %}"{% if active_nav == "threads" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchThreads">Threads</a>
+</nav>

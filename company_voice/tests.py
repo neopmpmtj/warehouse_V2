@@ -230,11 +230,14 @@ class FeedApiTests(CompanyVoiceTestMixin, TestCase):
         self.assertNotContains(response, 'id="theme-toggle"')
         self.assertNotContains(response, 'id="pref-language"')
         self.assertNotContains(response, 'id="pref-theme"')
+        self.assertContains(response, 'href="/" class="brand"')
 
     def test_branch_user_can_load_feed_page(self):
         self.client.force_login(self.branch_user)
         response = self.client.get(reverse("company_voice_feed"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/branch/" class="brand"')
+        self.assertNotContains(response, 'href="/" class="brand"')
 
     def test_create_post_via_api(self):
         self.client.force_login(self.warehouse_user)

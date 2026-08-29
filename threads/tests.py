@@ -357,6 +357,7 @@ class ThreadIsolationTests(TestCase):
         self.assertContains(resp, 'id="settings-help"')
         self.assertContains(resp, 'data-i18n="navBranchCatalog"')
         self.assertContains(resp, "branch-page-header")
+        self.assertNotContains(resp, 'id="pref-language"')
         self.assertNotContains(resp, 'id="language-select"')
         self.assertNotContains(resp, 'id="theme-toggle"')
         wh_client = self._login(self.wh_admin)
@@ -366,7 +367,9 @@ class ThreadIsolationTests(TestCase):
         self.assertContains(resp, 'id="settings-help"')
         self.assertContains(resp, "eyebrow-link")
         self.assertContains(resp, "CentCompras")
-        self.assertContains(resp, 'id="cancel-selection-btn"')
+        self.assertContains(resp, 'class="warehouse-nav"')
+        self.assertContains(resp, 'data-i18n="navWarehouseThreads"')
+        self.assertNotContains(resp, 'id="pref-language"')
         self.assertNotContains(resp, 'id="language-select"')
         self.assertNotContains(resp, 'id="theme-toggle"')
 

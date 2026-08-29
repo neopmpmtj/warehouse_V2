@@ -172,6 +172,23 @@ def post_login_landing(request):
     return landing
 
 
+def home_url_for_request(request):
+    """Dashboard URL for the CentCompras brand link on shared pages.
+
+    Warehouse (and dual warehouse+branch) staff go to ``/``. Branch-only
+    staff go to ``/branch/`` when a branch is already selected, otherwise the
+    same landing as post-login (picker when they have 0 or several).
+    """
+    landing = post_login_redirect(getattr(request, "user", None))
+    if landing is None:
+        return "/"
+    if landing == "/":
+        return landing
+    if getattr(request, "active_branch", None) is not None:
+        return BRANCH_HOME_URL
+    return landing
+
+
 def availability_hint(item):
     """Lock 7 stock hint for branch UI: ``none`` / ``low`` / ``in stock``.
 

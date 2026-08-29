@@ -1,0 +1,12 @@
+<div class="branch-page-heading">
+    <p class="branch-eyebrow">
+        <a href="{% url 'branch_dashboard' %}" class="eyebrow-link" data-i18n="branchEyebrow">CentCompras</a>
+    </p>
+    <h1>{{ branch.name }} — <span{% if page_title_key %} data-i18n="{{ page_title_key }}"{% endif %}>{{ page_title }}</span></h1>
+    {% if branch_role_label %}
+    <p class="branch-role-line">
+        <span data-i18n="branchRoleLabel">Role:</span>
+        <span>{{ branch_role_label }}</span>
+    </p>
+    {% endif %}
+</div>

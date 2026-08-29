@@ -47,11 +47,11 @@ The whole console works in two languages. Set **Language** on the staff dashboar
 - **English**
 - **Português**
 
-The choice is remembered in this browser and applies to every warehouse console, Company Voice, and request threads. Branch staff set the same control on the branch catalog (`/branch/catalog/`). The **Settings** gear shows signed-in email, a small **Sign out** link, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear.
+The choice is remembered in this browser and applies to every warehouse console, Company Voice, and request threads. Branch staff set the same control on the **branch dashboard** (`/branch/`). The **Settings** gear shows signed-in email, a small **Sign out** link, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear.
 
 ### 1.4 Light / dark theme
 
-Use the **theme** button on the staff dashboard (`/`) — next to **Language** — to switch between **Light theme** and **Dark theme**. Also remembered in this browser. Branch staff use the same control on the branch catalog (`/branch/catalog/`).
+Use the **theme** button on the staff dashboard (`/`) — next to **Language** — to switch between **Light theme** and **Dark theme**. Also remembered in this browser. Branch staff use the same control on the **branch dashboard** (`/branch/`).
 
 ---
 
@@ -79,7 +79,7 @@ The console is one screen, split into three areas.
 **A. Top bar**
 - App name (**CentCompras**) and title (**Item console** / *Gestão de artigos*)
 - **Families**, **Sub-families**, and **Suppliers** — open the master-data drawers. On a narrow window they collapse under **Master data** (*Dados mestres*).
-- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", a small **Sign out** link on the Settings title row, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear (placeholder). Language and theme live on the [staff dashboard](01-items.md#13-language) (`/`).
+- **Settings** gear (top-right) — opens a panel with "Signed in as *you@company*", a small **Sign out** link on the Settings title row, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear (placeholder). Language and theme live on the [staff dashboard](01-items.md#13-language) (`/`). Warehouse work pages (`/manage/…`) also have a sibling link strip (**Home**, **Items**, **Catalog**, **POs**, **Receipts**, **Requests**, **Threads**) — not on the dashboard.
 
 ![Settings popover](screenshots/08-settings-popover.png)
 
@@ -292,7 +292,7 @@ This is your safety net: nothing is ever silently overwritten.
 
 - **Dates** are shown as **DD/MM/YYYY** (day, month, year), with a 24-hour time — e.g. `20/08/2026 10:30`.
 - **Timezone:** times are shown in *your* local time, wherever you are. A colleague in Singapore sees the same event in Singapore time; you see it in Portugal time. (The system stores everything in UTC and converts automatically.) New users default to **Europe/Lisbon**.
-- **Language:** English / Português — set on the staff dashboard (`/`) or branch catalog (`/branch/catalog/`); remembered in this browser.
+- **Language:** English / Português — set on the staff dashboard (`/`) or branch dashboard (`/branch/`); remembered in this browser.
 - **Theme:** light / dark — same bar as language; remembered.
 
 ---

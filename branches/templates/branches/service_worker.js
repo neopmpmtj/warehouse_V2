@@ -1,12 +1,12 @@
 {% load static %}
 "use strict";
 
-var CACHE_NAME = "centcompras-branch-v10";
+var CACHE_NAME = "centcompras-branch-v11";
 
 var APP_SHELL = [
     "{% static 'products/css/settings_menu.css' %}?v=5",
     "{% static 'branches/css/branch_chrome.css' %}?v=1",
-    "{% static 'products/js/preferences_bar.js' %}?v=8",
+    "{% static 'products/js/preferences_bar.js' %}?v=9",
     "{% static 'products/js/console_settings_menu.js' %}?v=3",
     "{% static 'branches/js/db.js' %}?v=5",
     "{% static 'branches/js/register_sw.js' %}?v=2",

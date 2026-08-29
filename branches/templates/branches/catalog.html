@@ -42,7 +42,7 @@
     {% include "branches/includes/offline_assets.html" %}
 </head>
 <body data-branch-id="{{ branch.id }}" data-user-id="{{ user.id }}">
-    {% include "branches/includes/branch_page_header.html" %}
+    {% include "branches/includes/branch_work_page_header.html" %}
 
     <main>
         <p id="offline-banner" class="banner banner-info" hidden></p>
@@ -58,7 +58,7 @@
 
     {% include "branches/includes/offline_scripts.html" %}
     <script src="{% static 'branches/js/branch_catalog.js' %}?v=4"></script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=8"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=9"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>
 </html>

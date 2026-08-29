@@ -29,7 +29,7 @@
     {% include "branches/includes/offline_assets.html" %}
 </head>
 <body data-branch-id="{{ branch.id }}" data-user-id="{{ user.id }}" data-can-approve="{{ can_approve|yesno:'true,false' }}">
-    {% include "branches/includes/branch_page_header.html" %}
+    {% include "branches/includes/branch_work_page_header.html" %}
 
     <main>
         <section class="panel">
@@ -68,7 +68,7 @@
 
     {% include "branches/includes/offline_scripts.html" %}
     <script src="{% static 'orders/js/branch_requests.js' %}?v=5"></script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=8"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=9"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>
 </html>
