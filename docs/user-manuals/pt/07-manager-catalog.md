@@ -18,7 +18,7 @@ Esta é a vista **só de leitura** do armazém: stock, ponto de encomenda, preç
 
 Inicie sessão com o email e palavra-passe do armazém. O painel em `/` lista esta página (e as outras consolas de armazém / filial) como *catálogo do gestor (stock + preços)*.
 
-O pessoal de filial **não** usa este URL. Consulta o [catálogo da filial](04-internal-requests.md) em `/branch/catalog/` (custo oculto, stock apenas como indicação).
+O pessoal de filial **não** usa este URL. Consulta o [catálogo da filial](04-internal-requests.md) em `/branch/catalog/` (custo sempre oculto; preços de venda só se o superutilizador ligar o modo com preços; stock apenas como indicação).
 
 ---
 

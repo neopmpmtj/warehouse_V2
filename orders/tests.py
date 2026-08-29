@@ -25,6 +25,7 @@ from products.models import FamilyProduct, Item, VatRate
 from .models import InternalRequest
 from .services import (
     ApprovalDeniedError,
+    ApprovalLimitExceededError,
     DuplicateRequestLineError,
     InactiveBranchError,
     InactiveItemError,
@@ -130,11 +131,23 @@ class InternalRequestWorkflowTests(TestCase):
             approve(req, self.operator)
 
     def test_manager_self_approval_cap(self):
+        from branches.models import BranchCommercialSettings
+        from branches.services import set_branch_commercial_mode
+
+        set_branch_commercial_mode(BranchCommercialSettings.Mode.PRICED)
         req = create_internal_request(self.branch, self.manager)
         add_line(req, self.item, 20, self.manager)  # gross 116 > 100 self cap
         req = submit(req, self.manager)
         with self.assertRaises(SelfApprovalLimitError):
             approve(req, self.manager)
+
+    def test_unpriced_manager_approves_over_self_cap(self):
+        req = create_internal_request(self.branch, self.manager)
+        add_line(req, self.item, 20, self.manager)
+        req = submit(req, self.manager)
+        req = approve(req, self.manager)
+        self.assertEqual(req.status, InternalRequest.Status.APPROVED)
+        self.assertIsNotNone(req.approved_gross)
 
     def test_admin_approves_unlimited(self):
         req = create_internal_request(self.branch, self.operator)
@@ -144,11 +157,34 @@ class InternalRequestWorkflowTests(TestCase):
         self.assertEqual(req.status, InternalRequest.Status.APPROVED)
 
     def test_manager_approves_others_within_cap(self):
+        from branches.models import BranchCommercialSettings
+        from branches.services import set_branch_commercial_mode
+
+        set_branch_commercial_mode(BranchCommercialSettings.Mode.PRICED)
         req = create_internal_request(self.branch, self.operator)
         add_line(req, self.item, 1, self.operator)
         req = submit(req, self.operator)
         req = approve(req, self.manager)
         self.assertEqual(req.status, InternalRequest.Status.APPROVED)
+
+    def test_manager_others_approval_cap(self):
+        from branches.models import BranchCommercialSettings
+        from branches.services import set_branch_commercial_mode
+
+        from .models import BranchApprovalLimit
+        from .services import ensure_default_branch_approval_limits
+
+        set_branch_commercial_mode(BranchCommercialSettings.Mode.PRICED)
+        ensure_default_branch_approval_limits()
+        limit = BranchApprovalLimit.objects.get(role=ROLE_MANAGER)
+        limit.approval_limit = Decimal("10.00")
+        limit.save(update_fields=["approval_limit", "updated_at"])
+
+        req = create_internal_request(self.branch, self.operator)
+        add_line(req, self.item, 20, self.operator)
+        req = submit(req, self.operator)
+        with self.assertRaises(ApprovalLimitExceededError):
+            approve(req, self.manager)
 
     def test_reject_requires_reason(self):
         req = create_internal_request(self.branch, self.operator)
@@ -236,6 +272,82 @@ class InternalRequestApiTests(TestCase):
         r = self._post_json(reverse("request_approve", args=[req_id]), {})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["request"]["status"], "approved")
+
+    def test_unpriced_list_omits_money(self):
+        req_id = self._create_and_submit()
+        self._login(self.operator)
+        r = self.client.get(reverse("request_list"))
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertEqual(payload["commercial_mode"], "unpriced")
+        self.assertFalse(payload["show_selling_prices"])
+        row = next(req for req in payload["requests"] if req["id"] == req_id)
+        self.assertNotIn("totals", row)
+        self.assertNotIn("unit_price", row["lines"][0])
+
+    def test_priced_list_includes_money(self):
+        from branches.models import BranchCommercialSettings
+        from branches.services import set_branch_commercial_mode
+
+        set_branch_commercial_mode(BranchCommercialSettings.Mode.PRICED)
+        req_id = self._create_and_submit()
+        self._login(self.operator)
+        r = self.client.get(reverse("request_list"))
+        self.assertEqual(r.status_code, 200)
+        payload = r.json()
+        self.assertTrue(payload["show_selling_prices"])
+        row = next(req for req in payload["requests"] if req["id"] == req_id)
+        self.assertIn("totals", row)
+        self.assertIn("unit_price", row["lines"][0])
+
+    def test_unpriced_history_omits_money(self):
+        req_id = self._create_and_submit()
+        self._login(self.operator)
+        r = self.client.get(reverse("request_history", args=[req_id]))
+        self.assertEqual(r.status_code, 200)
+        money_keys = {
+            "unit_price",
+            "vat_rate",
+            "approved_net",
+            "approved_vat",
+            "approved_gross",
+            "totals",
+            "retail_price",
+            "wholesale_price",
+            "special_price",
+            "net",
+            "vat",
+            "gross",
+        }
+        found_line = False
+        for entry in r.json()["history"]:
+            changes = entry.get("changes") or {}
+            if not isinstance(changes, dict):
+                continue
+            self.assertFalse(money_keys.intersection(changes))
+            if "line_id" in changes or "quantity" in changes:
+                found_line = True
+        self.assertTrue(found_line)
+        stored = InternalRequest.objects.get(pk=req_id).change_logs.filter(
+            action="line_added"
+        )
+        self.assertTrue(any("unit_price" in (log.changes or {}) for log in stored))
+
+    def test_priced_history_includes_unit_price(self):
+        from branches.models import BranchCommercialSettings
+        from branches.services import set_branch_commercial_mode
+
+        set_branch_commercial_mode(BranchCommercialSettings.Mode.PRICED)
+        req_id = self._create_and_submit()
+        self._login(self.operator)
+        r = self.client.get(reverse("request_history", args=[req_id]))
+        self.assertEqual(r.status_code, 200)
+        unit_prices = [
+            entry["changes"]["unit_price"]
+            for entry in r.json()["history"]
+            if isinstance(entry.get("changes"), dict) and "unit_price" in entry["changes"]
+        ]
+        self.assertTrue(unit_prices)
 
     def test_warehouse_user_forbidden(self):
         wuser = _make_user("wh@example.com")

@@ -4,6 +4,8 @@
     var CSRF = document.querySelector('meta[name="csrf-token"]').content;
     var CAN_APPROVE = document.body.getAttribute("data-can-approve") === "true";
     var state = { selectedId: null, selectedClientUuid: null, requests: [], pending: [], items: [] };
+    var showSellingPrices = false;
+    var lineHead = document.getElementById("line-head");
 
     var requestBody = document.getElementById("request-body");
     var lineBody = document.getElementById("line-body");
@@ -15,6 +17,32 @@
     var detailMeta = document.getElementById("detail-meta");
     var detailTotals = document.getElementById("detail-totals");
     var newRequestBtn = document.getElementById("new-request");
+
+    function applyCommercialMode(data) {
+        if (data && typeof data.show_selling_prices === "boolean") {
+            showSellingPrices = data.show_selling_prices;
+        }
+    }
+
+    function headerCell(text) {
+        var th = document.createElement("th");
+        th.textContent = text;
+        return th;
+    }
+
+    function renderLineHead() {
+        if (!lineHead) {
+            return;
+        }
+        lineHead.textContent = "";
+        lineHead.appendChild(headerCell("Code"));
+        lineHead.appendChild(headerCell("Description"));
+        lineHead.appendChild(headerCell("Qty"));
+        if (showSellingPrices) {
+            lineHead.appendChild(headerCell("Unit price"));
+        }
+        lineHead.appendChild(headerCell(""));
+    }
 
     function el(tag, text, className) {
         var node = document.createElement(tag);
@@ -79,11 +107,16 @@
                     return;
                 }
                 populateItemPicker(cache.items);
+                showSellingPrices = !!(data.meta && data.meta.show_selling_prices);
             });
         }
         return api("/api/branch/catalog/").then(function (data) {
+            applyCommercialMode(data);
             populateItemPicker(data.catalog || []);
-            return BranchDB.saveCatalog(data.catalog || [], document.body.getAttribute("data-branch-id"));
+            return BranchDB.saveCatalog(data.catalog || [], document.body.getAttribute("data-branch-id"), {
+                show_selling_prices: data.show_selling_prices === true,
+                commercial_mode: data.commercial_mode || "",
+            });
         });
     }
 
@@ -130,16 +163,24 @@
             });
         }
         return Promise.all([api("/api/branch/requests/"), loadPending()]).then(function (results) {
+            applyCommercialMode(results[0]);
             state.requests = results[0].requests || [];
             renderList();
         });
     }
 
     function renderDetail(req) {
+        renderLineHead();
         detailTitle.textContent = "Request #" + req.id;
         detailMeta.textContent = "Status: " + req.status;
-        detailTotals.textContent =
-            "Net " + req.totals.net + " · VAT " + req.totals.vat + " · Gross " + req.totals.gross;
+        if (showSellingPrices && req.totals) {
+            detailTotals.hidden = false;
+            detailTotals.textContent =
+                "Net " + req.totals.net + " · VAT " + req.totals.vat + " · Gross " + req.totals.gross;
+        } else {
+            detailTotals.textContent = "";
+            detailTotals.hidden = true;
+        }
 
         lineBody.textContent = "";
         req.lines.forEach(function (line) {
@@ -147,7 +188,9 @@
             tr.appendChild(el("td", line.internal_code));
             tr.appendChild(el("td", line.description));
             tr.appendChild(el("td", line.quantity));
-            tr.appendChild(el("td", line.unit_price));
+            if (showSellingPrices) {
+                tr.appendChild(el("td", line.unit_price));
+            }
             var td = document.createElement("td");
             if (req.status === "draft" && BranchOffline.isOnline()) {
                 var btn = el("button", "Remove", "btn");
@@ -173,7 +216,10 @@
             });
         } else if (req.status === "submitted" && CAN_APPROVE && BranchOffline.isOnline()) {
             addAction("Approve", function () {
-                if (confirm("Approve request #" + req.id + " for " + req.totals.gross + " gross?")) {
+                var confirmMsg = showSellingPrices && req.totals
+                    ? "Approve request #" + req.id + " for " + req.totals.gross + " gross?"
+                    : "Approve request #" + req.id + "?";
+                if (confirm(confirmMsg)) {
                     action(req.id, "approve");
                 }
             }, true);
@@ -198,19 +244,26 @@
     }
 
     function renderPendingDetail(pending) {
+        renderLineHead();
         detailTitle.textContent = "Pending sync";
         detailMeta.textContent =
             "Status: draft (local) · " + (pending.last_error ? pending.last_error : "Waiting for Wi-Fi");
-        var net = 0;
-        pending.lines.forEach(function (line) {
-            var item = state.items.find(function (i) {
-                return String(i.id) === String(line.item_id);
+        if (showSellingPrices) {
+            var net = 0;
+            pending.lines.forEach(function (line) {
+                var priced = state.items.find(function (i) {
+                    return String(i.id) === String(line.item_id);
+                });
+                if (priced && priced.wholesale_price) {
+                    net += parseFloat(priced.wholesale_price) * parseFloat(line.quantity);
+                }
             });
-            if (item && item.wholesale_price) {
-                net += parseFloat(item.wholesale_price) * parseFloat(line.quantity);
-            }
-        });
-        detailTotals.textContent = "Estimated net (local): " + net.toFixed(2);
+            detailTotals.hidden = false;
+            detailTotals.textContent = "Estimated net (local): " + net.toFixed(2);
+        } else {
+            detailTotals.textContent = "";
+            detailTotals.hidden = true;
+        }
 
         lineBody.textContent = "";
         pending.lines.forEach(function (line) {
@@ -221,7 +274,9 @@
             tr.appendChild(el("td", item ? item.internal_code : line.item_id));
             tr.appendChild(el("td", item ? item.description : ""));
             tr.appendChild(el("td", line.quantity));
-            tr.appendChild(el("td", item ? item.wholesale_price : ""));
+            if (showSellingPrices) {
+                tr.appendChild(el("td", item ? item.wholesale_price : ""));
+            }
             tr.appendChild(el("td", ""));
             lineBody.appendChild(tr);
         });
@@ -253,6 +308,7 @@
         }
         api("/api/branch/requests/" + id + "/")
             .then(function (data) {
+                applyCommercialMode(data);
                 renderDetail(data.request);
                 renderList();
             })

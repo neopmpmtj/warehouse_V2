@@ -104,7 +104,8 @@ Predefinição:
 
 **Pedidos internos (tetos dos gestores de filial):**
 
-- Um **gestor** de filial pode aprovar um pedido dentro do teto global de gestor — `Others` para pedidos criados por outros utilizadores, `Self` para os próprios.
+- Estes tetos em EUR só se aplicam quando a empresa está no modo comercial de filial **com preços** (superutilizador: `/admin/` → Branch commercial settings). **Sem preços** (omissão): um gestor de filial concorda ou recusa **sem teto em euros**.
+- No modo **com preços**, um **gestor** de filial pode aprovar um pedido dentro do teto global de gestor — `Others` para pedidos criados por outros utilizadores, `Self` para os próprios.
 - **Administradores** de filial: ilimitados. **Operadores**: nunca aprovam.
 
 Se um documento ultrapassar o teto, verá um erro como:
@@ -130,7 +131,7 @@ Só os **administradores** de armazém podem editar limites de aprovação. Se f
 O total **bruto** = líquido + IVA — o montante completo a financiar. Os tetos verificam-se contra o bruto, IVA incluído.
 
 **P3. Posso aprovar a minha própria encomenda de compra / pedido?**
-Só até ao teto de **auto-aprovação** (€ 100 / € 500 por predefinição). Acima disso, outro aprovador tem de aprovar.
+**Encomendas de compra:** só até ao teto de **auto-aprovação** (€ 100 / € 500 por predefinição). Acima disso, outro aprovador tem de aprovar. **Pedidos internos:** no modo **sem preços** (omissão) não há teto em euros — o gestor concorda ou recusa. No modo **com preços** o teto de auto-aprovação aplica-se da mesma forma que nas encomendas de compra.
 
 **P4. Alterei um valor mas reverteu / mostra erro — porquê?**
 Os valores têm de ser **zero ou superior**, com no máximo **2 casas decimais**. Valores negativos são rejeitados. Verifique também o banner no topo da consola para a mensagem exata.

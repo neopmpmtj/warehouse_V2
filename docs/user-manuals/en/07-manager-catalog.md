@@ -18,7 +18,7 @@ This is the warehouse **read-only** overview: stock, reorder level, selling pric
 
 Sign in with your warehouse email + password. The dashboard at `/` lists this page (and the other warehouse / branch consoles) as *manager catalog (stock + prices)*.
 
-Branch staff do **not** use this URL. They browse the [branch catalogue](04-internal-requests.md) at `/branch/catalog/` (cost hidden, stock as a hint only).
+Branch staff do **not** use this URL. They browse the [branch catalogue](04-internal-requests.md) at `/branch/catalog/` (cost always hidden; selling prices only if the superuser turns on priced mode; stock as a hint only).
 
 ---
 

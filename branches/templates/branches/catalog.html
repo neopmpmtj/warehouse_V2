@@ -49,17 +49,7 @@
         <p id="banner" class="banner" hidden></p>
         <table>
             <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Description</th>
-                    <th>Family</th>
-                    <th>Sub-family</th>
-                    <th>Unit</th>
-                    <th>Retail</th>
-                    <th>Wholesale</th>
-                    <th>Special</th>
-                    <th>Availability</th>
-                </tr>
+                <tr id="catalog-head"></tr>
             </thead>
             <tbody id="catalog-body"></tbody>
         </table>
@@ -67,7 +57,7 @@
     </main>
 
     {% include "branches/includes/offline_scripts.html" %}
-    <script src="{% static 'branches/js/branch_catalog.js' %}?v=2"></script>
+    <script src="{% static 'branches/js/branch_catalog.js' %}?v=4"></script>
     <script src="{% static 'products/js/preferences_bar.js' %}?v=7"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>

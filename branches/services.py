@@ -5,7 +5,7 @@ from logging_utils import get_logger
 
 from accounts.groups import warehouse_group_name
 
-from .models import Branch, BranchMembership
+from .models import Branch, BranchCommercialSettings, BranchMembership
 
 logger = get_logger("centcompras.branches")
 
@@ -189,3 +189,37 @@ def availability_hint(item):
     if item.reorder_level > 0 and available <= item.reorder_level:
         return "low"
     return "in stock"
+
+
+def ensure_default_commercial_settings():
+    """Create the singleton row if missing. Does not overwrite edits."""
+    BranchCommercialSettings.objects.get_or_create(
+        pk=1,
+        defaults={"mode": BranchCommercialSettings.Mode.UNPRICED},
+    )
+
+
+def get_branch_commercial_mode():
+    """Return the company-wide branch commercial mode string."""
+    ensure_default_commercial_settings()
+    row = BranchCommercialSettings.objects.filter(pk=1).only("mode").first()
+    if row is None:
+        return BranchCommercialSettings.Mode.UNPRICED
+    return row.mode
+
+
+def branch_shows_selling_prices():
+    return get_branch_commercial_mode() == BranchCommercialSettings.Mode.PRICED
+
+
+def set_branch_commercial_mode(mode):
+    """Set the company-wide mode. Used by tests and admin."""
+    if mode not in BranchCommercialSettings.Mode.values:
+        raise ValidationError("Invalid branch commercial mode.", code="invalid_commercial_mode")
+    ensure_default_commercial_settings()
+    row = BranchCommercialSettings.objects.get(pk=1)
+    if row.mode != mode:
+        row.mode = mode
+        row.save(update_fields=["mode", "updated_at"])
+        logger.info("Branch commercial mode set to %s", mode)
+    return row.mode

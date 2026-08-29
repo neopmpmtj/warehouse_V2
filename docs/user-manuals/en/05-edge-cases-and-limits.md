@@ -146,8 +146,8 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Cannot submit a request without lines.` | Empty request | Add a line |
 | `Cannot move an internal request from 'X' to 'Y'.` | Illegal transition | See §4 |
 | `You do not have permission to approve or cancel this request.` | Operator (or cancelling approved as operator) | Manager/admin only |
-| `Self-approval is limited to … EUR gross (this request is …).` | Manager approving own request over **self** cap | Ask another manager |
-| `Approval is limited to … EUR gross (this request is …).` | Manager over **others** cap | Ask a higher approver |
+| `Self-approval is limited to … EUR gross (this request is …).` | Manager approving own request over **self** cap (**priced** mode only) | Ask another manager, or (if unpriced) this error should not appear |
+| `Approval is limited to … EUR gross (this request is …).` | Manager over **others** cap (**priced** mode only) | Ask a higher approver |
 | `No branch approval limit is configured for managers.` | Missing `BranchApprovalLimit` | Warehouse admin sets it |
 | `A reason is required to reject a request.` | Reject needs a reason | Type one |
 | `A reason is required to cancel an approved request.` | Cancel-approved needs a reason | Type one |

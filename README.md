@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 26 August 2026, 12:50 WEST.*
+*Last updated: 29 August 2026, 08:40 WEST.*
 
-**Phases 0–6 are done.** Full-tree production-readiness review **applied** (26 Aug 1205). **Phase 7 next** (production deployment readiness). OAuth + shared chrome = Phase 8; email = Phase 9. Suite **548 OK**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default, priced path kept; review fixes applied). Full-tree production-readiness review **applied** (26 Aug 1205). **Phase 7 next** (production deployment readiness). OAuth + shared chrome = Phase 8; email = Phase 9. Suite **589 OK**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -21,7 +21,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 | **Warehouse admin** | `armazem.admin@centcompras.dev` | Full catalogue, POs (including approve any amount), goods receipts, stock adjust, `/manage/approval-limits/` (`warehouse_admins`). Cannot log into `/admin/`. |
 | **Warehouse manager** | `armazem.gestor@centcompras.dev` (grade 1); also `gestor2` / `gestor3` | Grade 1: add/edit catalogue and POs (submit, no approve). Grade 2+: approve within caps. No delete / no stock adjust. |
 | **Warehouse operator** | `armazem.operador@centcompras.dev` (grade 1); also `operador2` | Grade 1: read-only. Grade 2: mutate closed circuit. Never approve. |
-| **Branch users** | `filial.operador.norte@…` / `filial.gestor.norte@…` / `filial.admin.norte@…`, `filial.operador.sul@…` / `filial.gestor.sul@…`, `filial.dual@…` | Branch dashboard (`/branch/`), read-only catalogue (cost hidden, stock hint; **offline browse** after one online visit), requisição interna (**offline drafts** sync on reconnect), request threads, branch receipts, Company Voice. |
+| **Branch users** | `filial.operador.norte@…` / `filial.gestor.norte@…` / `filial.admin.norte@…`, `filial.operador.sul@…` / `filial.gestor.sul@…`, `filial.dual@…` | Branch dashboard (`/branch/`), read-only catalogue (no selling prices by default, cost always hidden, stock hint; **offline browse** after one online visit), requisição interna (quantity approve by default; **offline drafts** sync on reconnect), request threads, branch receipts, Company Voice. |
 | **Django superuser** | from `createsuperuser` | Site admin at `/admin/` only. The only users who may use Django admin. |
 
 After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed creates **branches** (Norte, Sul) and **branch users**, but does **not** create a superuser. English seed is archived as `scripts/seed_dev_data_en.sh.old` and `products/*_en.py.old`.
@@ -71,7 +71,7 @@ No React, Vue, or similar frontend framework.
 - Django admin (superuser only) for users and groups
 - Consoles and APIs require login; APIs return 401 when unauthenticated
 
-> **Branches + requisição + goods issue + branch receipt are built (Phase 5 complete).** `Branch` + `BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (cost hidden, stock hint), `/branch/requests/` (requisição through `approved`, manager caps), warehouse goods issue (`/manage/internal-requests/`, `/manage/branch-approval-limits/`), and branch receipt + branch stock (`/branch/receipts/`). Locked decisions (archived): [`docs/archive/phase5-brainstorm-260821-1530.md`](docs/archive/phase5-brainstorm-260821-1530.md).
+> **Branches + requisição + goods issue + branch receipt are built (Phase 5 complete).** `Branch` + `BranchMembership`, `ActiveBranchMiddleware`, `/branch/select/` picker, Django-admin CRUD, the read-only `/branch/catalog/` (D37 unpriced default; cost always hidden, stock hint), `/branch/requests/` (requisição through `approved`; EUR caps only in priced mode), warehouse goods issue (`/manage/internal-requests/`, `/manage/branch-approval-limits/`), and branch receipt + branch stock (`/branch/receipts/`). Locked decisions (archived): [`docs/archive/phase5-brainstorm-260821-1530.md`](docs/archive/phase5-brainstorm-260821-1530.md).
 >
 > **Branch dashboard + offline (Phase 6 complete).** Branch-only users land on `/branch/` (card grid + shared header nav). After one online visit, `/branch/catalog/` works offline from IndexedDB (per-branch cache; last-updated banner). Offline requisição **drafts** queue locally and upload idempotently via `POST /api/branch/requests/sync/` when Wi-Fi returns (auto-sync on any branch page with offline scripts). Submit/approve still require network. Service Worker at `/service-worker.js`; PWA manifest. Use **`127.0.0.1`** consistently for SW dev. Manual: [`04-internal-requests.md`](docs/user-manuals/en/04-internal-requests.md) FAQ Q15–Q17.
 >
@@ -132,9 +132,9 @@ Production will use Google OAuth (not implemented in dev).
 | `/accounts/logout/` | Log out |
 | `/branch/` | Branch dashboard (landing page; card grid to all branch tools) |
 | `/branch/select/` | Branch picker (0 / 1 / N memberships) |
-| `/branch/catalog/` | Branch catalog (read-only; cost hidden, stock hint; offline cache) |
+| `/branch/catalog/` | Branch catalog (read-only; unpriced default; cost always hidden; stock hint; offline cache) |
 | `/service-worker.js` | Branch app-shell Service Worker (API bypass) |
-| `/api/branch/catalog/` | Branch catalog JSON API (cost hidden, stock hint) |
+| `/api/branch/catalog/` | Branch catalog JSON API (cost never present; selling prices only in priced mode; stock hint) |
 | `/branch/requests/` | Requisição interna (branch list + editor) |
 | `/branch/threads/` | Request threads (catalogue-gap requests, branch side) |
 | `/api/branch/requests/` | Requisição interna JSON API (draft → approved) |
@@ -351,5 +351,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Production deployment readiness** (Phase 7 — **Next**) — [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - **Google OAuth production rollout + shared chrome** (Phase 8)
 - **Email automation** (Phase 9 — wire notify stubs to real email; stub exists today)
-- Integration tests (unit suites: **548 OK**)
+- Integration tests (unit suites: **589 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

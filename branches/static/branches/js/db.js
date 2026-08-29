@@ -32,7 +32,8 @@ var BranchDB = (function () {
         });
     }
 
-    function saveCatalog(items, branchId) {
+    function saveCatalog(items, branchId, extras) {
+        extras = extras || {};
         return openDatabase().then(function (db) {
             return new Promise(function (resolve, reject) {
                 var tx = db.transaction([CATALOG_ITEMS, CATALOG_META], "readwrite");
@@ -46,6 +47,8 @@ var BranchDB = (function () {
                     key: "catalog",
                     last_updated: new Date().toISOString(),
                     branch_id: branchId || null,
+                    show_selling_prices: extras.show_selling_prices === true,
+                    commercial_mode: extras.commercial_mode || "",
                 });
                 tx.oncomplete = function () {
                     resolve();

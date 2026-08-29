@@ -80,6 +80,57 @@ class BranchModelTests(TestCase):
             assign_membership(user, branch, "owner")
 
 
+class BranchCommercialSettingsTests(TestCase):
+    def test_default_mode_is_unpriced(self):
+        from .models import BranchCommercialSettings
+        from .services import get_branch_commercial_mode, branch_shows_selling_prices
+
+        self.assertEqual(get_branch_commercial_mode(), BranchCommercialSettings.Mode.UNPRICED)
+        self.assertFalse(branch_shows_selling_prices())
+
+    def test_set_mode_to_priced(self):
+        from .models import BranchCommercialSettings
+        from .services import (
+            branch_shows_selling_prices,
+            get_branch_commercial_mode,
+            set_branch_commercial_mode,
+        )
+
+        set_branch_commercial_mode(BranchCommercialSettings.Mode.PRICED)
+        self.assertEqual(get_branch_commercial_mode(), BranchCommercialSettings.Mode.PRICED)
+        self.assertTrue(branch_shows_selling_prices())
+        self.assertEqual(BranchCommercialSettings.objects.count(), 1)
+
+    def test_save_keeps_singleton(self):
+        from .models import BranchCommercialSettings
+        from .services import ensure_default_commercial_settings
+
+        ensure_default_commercial_settings()
+        second = BranchCommercialSettings(mode=BranchCommercialSettings.Mode.PRICED)
+        second.save()
+        self.assertEqual(BranchCommercialSettings.objects.count(), 1)
+        self.assertEqual(BranchCommercialSettings.objects.get().pk, 1)
+
+    def test_admin_save_model_sets_mode_via_service(self):
+        from django.contrib.admin.sites import AdminSite
+
+        from .admin import BranchCommercialSettingsAdmin
+        from .models import BranchCommercialSettings
+        from .services import ensure_default_commercial_settings, get_branch_commercial_mode
+
+        ensure_default_commercial_settings()
+        obj = BranchCommercialSettings.objects.get(pk=1)
+        admin = BranchCommercialSettingsAdmin(BranchCommercialSettings, AdminSite())
+        request = RequestFactory().post("/")
+        request.user = _make_user("su-admin@example.com")
+
+        class _Form:
+            cleaned_data = {"mode": BranchCommercialSettings.Mode.PRICED}
+
+        admin.save_model(request, obj, _Form(), change=True)
+        self.assertEqual(get_branch_commercial_mode(), BranchCommercialSettings.Mode.PRICED)
+
+
 class BranchServiceTests(TestCase):
     def setUp(self):
         self.branch = create_branch("North")
@@ -95,6 +146,13 @@ class BranchServiceTests(TestCase):
             1,
         )
         self.assertEqual(branch_role(self.user, self.branch), ROLE_MANAGER)
+
+    def test_membership_str(self):
+        membership = assign_membership(self.user, self.branch, ROLE_OPERATOR)
+        self.assertEqual(
+            str(membership),
+            f"{self.user.email} @ {self.branch.name} (operator)",
+        )
 
     def test_get_memberships_returns_none_for_anonymous(self):
         self.assertFalse(get_memberships(get_user_model()()).exists())
@@ -254,7 +312,7 @@ class ServiceWorkerTests(TestCase):
         response = self.client.get("/service-worker.js")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
-        self.assertContains(response, "centcompras-branch-v7")
+        self.assertContains(response, "centcompras-branch-v9")
         self.assertContains(response, "/api/")
         self.assertContains(response, "/manage/")
         self.assertContains(response, "CACHE_NAME")
@@ -391,7 +449,7 @@ class BranchViewTests(TestCase):
         self.assertNotContains(response, 'id="language-select"')
         self.assertNotContains(response, 'id="theme-toggle"')
 
-    def test_catalog_page_lists_price_columns(self):
+    def test_catalog_page_renders_table_shell(self):
         user = _make_user("catalog-page@example.com")
         assign_membership(user, self.north, ROLE_OPERATOR)
         self._login(user)
@@ -400,9 +458,8 @@ class BranchViewTests(TestCase):
         session.save()
         response = self.client.get(reverse("branch_catalog"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Wholesale")
-        self.assertContains(response, "Sub-family")
-        self.assertContains(response, "Availability")
+        self.assertContains(response, 'id="catalog-head"')
+        self.assertContains(response, 'id="catalog-body"')
 
 
 class IsolationTests(TestCase):
@@ -490,13 +547,37 @@ class BranchCatalogApiTests(TestCase):
 
     def test_omits_cost_and_exact_stock(self):
         self._login_and_select()
-        rows = self.client.get(reverse("branch_catalog_list")).json()["catalog"]
+        payload = self.client.get(reverse("branch_catalog_list")).json()
+        self.assertEqual(payload["commercial_mode"], "unpriced")
+        self.assertFalse(payload["show_selling_prices"])
+        rows = payload["catalog"]
         for row in rows:
             self.assertNotIn("buying_price", row)
             self.assertNotIn("cost_price", row)
+            self.assertNotIn("retail_price", row)
+            self.assertNotIn("wholesale_price", row)
+            self.assertNotIn("special_price", row)
             self.assertNotIn("suppliers", row)
             self.assertNotIn("quantity", row)
             self.assertNotIn("reorder_level", row)
+
+    def test_priced_mode_includes_selling_prices_not_cost(self):
+        from .models import BranchCommercialSettings
+        from .services import set_branch_commercial_mode
+
+        set_branch_commercial_mode(BranchCommercialSettings.Mode.PRICED)
+        self._login_and_select()
+        payload = self.client.get(reverse("branch_catalog_list")).json()
+        self.assertEqual(payload["commercial_mode"], "priced")
+        self.assertTrue(payload["show_selling_prices"])
+        rows = payload["catalog"]
+        self.assertGreater(len(rows), 0)
+        for row in rows:
+            self.assertIn("retail_price", row)
+            self.assertIn("wholesale_price", row)
+            self.assertIn("special_price", row)
+            self.assertNotIn("cost_price", row)
+            self.assertNotIn("quantity", row)
 
     def test_excludes_inactive_items(self):
         self._login_and_select()

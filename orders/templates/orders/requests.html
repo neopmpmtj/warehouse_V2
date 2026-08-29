@@ -50,7 +50,7 @@
             <p id="detail-totals" style="margin:0 0 10px;"></p>
 
             <table>
-                <thead><tr><th>Code</th><th>Description</th><th>Qty</th><th>Unit price</th><th></th></tr></thead>
+                <thead><tr id="line-head"></tr></thead>
                 <tbody id="line-body"></tbody>
             </table>
 
@@ -67,7 +67,7 @@
     </main>
 
     {% include "branches/includes/offline_scripts.html" %}
-    <script src="{% static 'orders/js/branch_requests.js' %}?v=4"></script>
+    <script src="{% static 'orders/js/branch_requests.js' %}?v=5"></script>
     <script src="{% static 'products/js/preferences_bar.js' %}?v=7"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>

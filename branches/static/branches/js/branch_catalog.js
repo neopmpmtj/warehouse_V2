@@ -4,7 +4,8 @@
     var body = document.getElementById("catalog-body");
     var empty = document.getElementById("empty");
     var banner = document.getElementById("banner");
-    if (!body || !banner) {
+    var head = document.getElementById("catalog-head");
+    if (!body || !banner || !head) {
         return;
     }
 
@@ -21,6 +22,29 @@
         return td;
     }
 
+    function headerCell(text) {
+        var th = document.createElement("th");
+        th.textContent = text;
+        return th;
+    }
+
+    function showSellingPricesFrom(meta) {
+        return !!(meta && meta.show_selling_prices === true);
+    }
+
+    function renderHead(withPrices) {
+        head.textContent = "";
+        ["Code", "Description", "Family", "Sub-family", "Unit"].forEach(function (label) {
+            head.appendChild(headerCell(label));
+        });
+        if (withPrices) {
+            ["Retail", "Wholesale", "Special"].forEach(function (label) {
+                head.appendChild(headerCell(label));
+            });
+        }
+        head.appendChild(headerCell("Availability"));
+    }
+
     function showBanner(message, isInfo) {
         banner.textContent = message;
         banner.hidden = false;
@@ -33,7 +57,8 @@
         }
     }
 
-    function render(rows) {
+    function render(rows, withPrices) {
+        renderHead(withPrices);
         body.textContent = "";
         rows.forEach(function (row) {
             var tr = document.createElement("tr");
@@ -42,9 +67,11 @@
             tr.appendChild(cell(row.family));
             tr.appendChild(cell(row.sub_family));
             tr.appendChild(cell(row.unit_of_measure));
-            tr.appendChild(cell(row.retail_price));
-            tr.appendChild(cell(row.wholesale_price));
-            tr.appendChild(cell(row.special_price));
+            if (withPrices) {
+                tr.appendChild(cell(row.retail_price));
+                tr.appendChild(cell(row.wholesale_price));
+                tr.appendChild(cell(row.special_price));
+            }
             tr.appendChild(cell(AVAIL[row.availability] || row.availability, AVAIL_CLASS[row.availability]));
             body.appendChild(tr);
         });
@@ -75,7 +102,8 @@
                 empty.hidden = true;
                 return;
             }
-            render(cache.items);
+            var withPrices = showSellingPricesFrom(data.meta);
+            render(cache.items, withPrices);
             showBanner(
                 "Offline — showing last update from " +
                     formatLastUpdated(data.meta && data.meta.last_updated) +
@@ -96,9 +124,13 @@
         })
         .then(function (data) {
             var rows = data.catalog || [];
-            return BranchDB.saveCatalog(rows, branchId).then(function () {
+            var withPrices = data.show_selling_prices === true;
+            return BranchDB.saveCatalog(rows, branchId, {
+                show_selling_prices: withPrices,
+                commercial_mode: data.commercial_mode || "",
+            }).then(function () {
                 banner.hidden = true;
-                render(rows);
+                render(rows, withPrices);
             });
         })
         .catch(function () {
