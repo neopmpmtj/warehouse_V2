@@ -68,7 +68,7 @@ const CATALOG_I18N = {
         navWarehousePOs: "Encomendas",
         navWarehouseReceipts: "Receções",
         navWarehouseRequests: "Pedidos",
-        navWarehouseThreads: "Fios",
+        navWarehouseThreads: "Conversas",
         searchPlaceholder: "Pesquisar código ou descrição…",
         allFamilies: "Todas as famílias",
         allSubFamilies: "Todas as sub-famílias",

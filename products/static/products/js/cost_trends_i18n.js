@@ -36,7 +36,7 @@ const COST_TRENDS_I18N = {
         navWarehousePOs: "Encomendas",
         navWarehouseReceipts: "Receções",
         navWarehouseRequests: "Pedidos",
-        navWarehouseThreads: "Fios",
+        navWarehouseThreads: "Conversas",
         subtitle: "Custo de compra de referência (fornecedor principal)",
         periodLabel: "Período",
         itemLabel: "Artigo",

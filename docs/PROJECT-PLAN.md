@@ -2,7 +2,7 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 29 August 2026, 16:20 WEST
+- **Last updated:** 10 September 2026, 10:40 WEST
 - **Current phase:** Phases 0–6 **complete** ✅. **Phase 7 next** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
@@ -110,7 +110,9 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D35 | Phase sequencing after offline | **Phase 6** = offline (done). **Phase 7** = production deployment readiness only. **Phase 8** = OAuth production + shared chrome. **Phase 9** = email. Do not bundle deploy with OAuth/chrome. |
 | D36 | Genesis primary supplier | New catalogue items (Genesis / `create_and_activate_item`) require an **active supplier** and **cost price > 0**; first `SupplierItemPrice` is always `primary=True`. One primary per item (D14) unchanged; promotion/demotion via `_clear_other_primaries` + audit. |
 | D37 | Branch commercial mode | Company-wide singleton `BranchCommercialSettings` (superuser `/admin/` only). Default **unpriced**: branch catalogue omits selling prices; requisição UI is quantity-only; manager approve is yes/no (EUR `BranchApprovalLimit` not applied). **Priced** restores today's selling prices + EUR caps. Buying cost never on the branch (lock 7). Warehouse `/manage/…` unchanged. PostgreSQL still snapshots `unit_price` / `approved_*`. No per-user or per-branch flag; no storefront. |
-| D38 | Dashboard vs work-page chrome | Language + theme **only** on `/` and `/branch/`. Sibling URL strips **only** on work pages (not dashboards). Branch strip: Home, Catalog, Requests, Receipts, Threads. Warehouse strip on `/manage/…`: Home, Items, Catalog, POs, Receipts, Requests, Threads. Company Voice **CentCompras** → `home_url_for_request` (`/` warehouse/dual, `/branch/` branch-only). Does **not** complete Phase 8 shared chrome. |
+| D38 | Dashboard vs work-page chrome | Language + theme **only** on `/` and `/branch/`. Sibling URL strips **only** on work pages (not dashboards). Branch strip: Home, Catalog, Requests, Receipts, Threads. Warehouse strip on `/manage/…`: Home, Items, Catalog, POs, Receipts, Requests, Threads. Parle **CentCompras** → `home_url_for_request` (`/` warehouse/dual, `/branch/` branch-only). Does **not** complete Phase 8 shared chrome. |
+| D39 | PT name for catalogue-gap threads | English **Threads** / **Request threads** unchanged. Portuguese UI + manuals: **Conversas** (nav), **Conversas de pedido** (page/card), **Conversa** / **Nova conversa** / **Fechar conversa**. Replaces **fio/fios**. Presentation decks unchanged. |
+| D40 | Parle product name | User-visible rename of Company Voice / Voz da Empresa → **Parle** in **both** EN and PT. URLs (`/company-voice/`), Django app `company_voice`, and code identifiers unchanged. Presentation decks unchanged. |
 | D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
@@ -148,7 +150,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (29 Aug 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 (chrome split) landed. Suite **593 OK**. **Next:** Phase 7 (production deployment readiness). OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
+**Current (10 Sep 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 (chrome split) + D39 (Conversas) + D40 (Parle) landed. Warehouse internal-requests console i18n complete. Suite **593 OK**. **Next:** Phase 7 (production deployment readiness). OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 

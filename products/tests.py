@@ -3568,7 +3568,7 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, "th-sortable")
         self.assertContains(response, 'data-sort="internal_code"')
         self.assertContains(response, "catalog.js?v=7")
-        self.assertContains(response, "catalog_i18n.js?v=9")
+        self.assertContains(response, "catalog_i18n.js?v=10")
 
 
 class LanguageCodeContractTests(SimpleTestCase):
@@ -3672,12 +3672,14 @@ process.stdout.write(JSON.stringify(ctx.__export));
                         dictionary[code].get("title"),
                         f"{path.name}[{code!r}] is missing title",
                     )
-                self.assertNotEqual(
-                    dictionary["pt"]["title"],
-                    dictionary["en"]["title"],
-                    f"{path.name} Portuguese title is identical to English "
-                    "(lookup probably fell through)",
-                )
+                # Parle is the same product name in EN and PT (feed_i18n.js).
+                if path.name != "feed_i18n.js":
+                    self.assertNotEqual(
+                        dictionary["pt"]["title"],
+                        dictionary["en"]["title"],
+                        f"{path.name} Portuguese title is identical to English "
+                        "(lookup probably fell through)",
+                    )
                 # Legacy Settings popover value must still resolve.
                 self.assertEqual(
                     dictionary["pt"]["title"],

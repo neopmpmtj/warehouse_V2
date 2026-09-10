@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <title>Company Voice — CentCompras</title>
+    <title>Parle — CentCompras</title>
     <link rel="stylesheet" href="{% static 'company_voice/css/feed.css' %}">
     <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=4">
 </head>
@@ -13,7 +13,7 @@
     <header class="page-header">
         <div class="header-left">
             <a href="{{ home_url }}" class="brand">CentCompras</a>
-            <h1 data-i18n="title">Company Voice</h1>
+            <h1 data-i18n="title">Parle</h1>
         </div>
         <div class="header-right">
             {% include "products/includes/account_settings.html" %}
@@ -47,7 +47,7 @@
         <div id="banner" class="banner hidden" role="alert"></div>
     </main>
 
-    <script src="{% static 'company_voice/js/feed_i18n.js' %}?v=2"></script>
+    <script src="{% static 'company_voice/js/feed_i18n.js' %}?v=3"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
     <script src="{% static 'company_voice/js/feed.js' %}?v=3"></script>
 </body>

@@ -2,7 +2,7 @@
 
 **Referência** · Versão 1.0 · Para pessoal do armazém, pessoal de filial e administradores
 
-> **Complemento de:** [Gestão de artigos](01-items.md) · [Encomendas de compra](02-purchase-orders.md) · [Receção de mercadorias e stock](03-goods-receipts.md) · [Filiais e Requisição interna](04-internal-requests.md) · [Referência de administração e superutilizador](06-admin-reference.md) · [Catálogo do gestor](07-manager-catalog.md) · [Fios de pedido](08-request-threads.md) · [Voz da Empresa](09-company-voice.md).
+> **Complemento de:** [Gestão de artigos](01-items.md) · [Encomendas de compra](02-purchase-orders.md) · [Receção de mercadorias e stock](03-goods-receipts.md) · [Filiais e Requisição interna](04-internal-requests.md) · [Referência de administração e superutilizador](06-admin-reference.md) · [Catálogo do gestor](07-manager-catalog.md) · [Conversas de pedido](08-request-threads.md) · [Parle](09-company-voice.md).
 >
 > Aqueles manuais ensinam o percurso normal. **Este é o manual de consulta** para os limites: os erros exatos que pode encontrar, os limites numéricos rígidos, as regras das máquinas de estados e o que *deliberadamente ainda não está construído*. Quando algo "não o deixa", consulte aqui.
 
@@ -159,30 +159,30 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Unknown item id …` (Id de artigo desconhecido …) | Artigo de catálogo obsoleto ou inválido no payload offline | Atualize o catálogo online, depois recrie o rascunho offline |
 | `Cached catalogue is for another branch. Connect to Wi-Fi to download this branch's catalogue.` (O catálogo em cache é de outra filial. Ligue o Wi-Fi para descarregar o catálogo desta filial.) | Navegação offline depois de mudar de filial sem atualizar | Ligue o Wi-Fi na filial atual para descarregar o respetivo catálogo |
 
-### 2.5 Fios de pedido (`/branch/threads/`, `/manage/threads/`)
+### 2.5 Conversas de pedido (`/branch/threads/`, `/manage/threads/`)
 
 | Mensagem | Porquê | O que fazer |
 |---------|-----|------------|
 | `A subject is required.` / `Subject must be a string.` (É obrigatório um assunto. / O assunto tem de ser texto.) | Assunto vazio ou não-texto | Escreva um título curto |
 | `Request body must be valid JSON.` / `Request body must be a JSON object.` | Corpo de criar/responder/fechar mal formado | Use o formulário do sítio |
 | `A message is required.` / `Message must be a string.` (É obrigatória uma mensagem. / A mensagem tem de ser texto.) | Primeira mensagem / resposta vazia ou não-texto | Escreva a mensagem |
-| `This thread is closed. No further messages can be posted.` (Este fio está fechado. Não podem ser publicadas mais mensagens.) | Resposta depois de fechar | Abra um fio novo |
-| `Only the person who opened the thread can close it.` (Só quem abriu o fio o pode fechar.) | Não é o autor e não pode substituir | Peça ao autor, ou a um gestor/administrador de filial / administrador do armazém |
-| `A reason is required to close a thread.` (É obrigatório indicar um motivo para fechar um fio.) | Fechar sem motivo válido | Escolha Pedido satisfeito ou Outro |
+| `This thread is closed. No further messages can be posted.` (Esta conversa está fechada. Não podem ser publicadas mais mensagens.) | Resposta depois de fechar | Abra uma conversa nova |
+| `Only the person who opened the thread can close it.` (Só quem abriu a conversa o pode fechar.) | Não é o autor e não pode substituir | Peça ao autor, ou a um gestor/administrador de filial / administrador do armazém |
+| `A reason is required to close a thread.` (É obrigatório indicar um motivo para fechar uma conversa.) | Fechar sem motivo válido | Escolha Pedido satisfeito ou Outro |
 | `A reason text is required when 'Other' is selected.` (É obrigatório texto de motivo quando 'Outro' está selecionado.) | Outro com caixa de texto vazia | Escreva o motivo |
 | `Satisfaction must be between 1 and 5 stars.` (A satisfação tem de estar entre 1 e 5 estrelas.) | Classificação em falta, decimal ou fora do intervalo | Escolha 1–5 estrelas inteiras (só ao fechar pelo autor) |
-| `Cannot use inactive branch 'X'.` (Não é possível usar filial inativa 'X'.) | Abrir fio numa filial desativada | Mude para uma filial ativa |
+| `Cannot use inactive branch 'X'.` (Não é possível usar filial inativa 'X'.) | Abrir conversa numa filial desativada | Mude para uma filial ativa |
 | `The opener must be a member of the branch.` (Quem abriu tem de ser membro da filial.) | Ao nível de serviço: o autor não é membro dessa filial | Abra a partir da sua filial |
-| `Only warehouse staff can link items to a thread.` (Só pessoal do armazém pode associar artigos a um fio.) | Utilizador de filial tentou associar | Utilizadores de armazém associam em `/manage/threads/` |
+| `Only warehouse staff can link items to a thread.` (Só pessoal do armazém pode associar artigos a uma conversa.) | Utilizador de filial tentou associar | Utilizadores de armazém associam em `/manage/threads/` |
 | `One or more items were not found.` (Um ou mais artigos não foram encontrados.) | Associação usou id de artigo obsoleto ou desconhecido | Pesquise de novo e escolha um artigo ativo do catálogo |
 | `No items to link.` (Sem artigos para associar.) | Pedido de associação vazio | Escolha pelo menos um artigo |
 | `branch_id must be an integer.` (`branch_id` tem de ser um inteiro.) | Lista de armazém `?branch_id=` não é um número | Use o filtro de filial, ou omita-o |
 
 **Satisfação** só fica registada quando o **autor** fecha (1★ por defeito). Fecho por substituição deixa satisfação vazia.
 
-**Não lidos:** GET das mensagens de um fio **não** o marca como lido. Clicar o fio na lista (POST mark-read) sim.
+**Não lidos:** GET das mensagens de uma conversa **não** o marca como lido. Clicar a conversa na lista (POST mark-read) sim.
 
-### 2.6 Voz da Empresa (`/company-voice/`)
+### 2.6 Parle (`/company-voice/`)
 
 | Mensagem (exata) | Porque aparece | O que fazer |
 |-----------------|----------------|------------|
@@ -233,8 +233,8 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | **Email** | `EmailField` | email válido | fornecedor e utilizador |
 | **Saldos de stock** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | não pode ficar negativo |
 | **Quantidade reservada** (`InternalRequestLine.quantity_reserved`) | `Decimal(12,3)` | `≥ 0` e `≤` quantidade da linha | reivindicação sobre stock de armazém, não movimento de livro-razão |
-| **Corpo Voz da Empresa** | `TextField` | **1–4000** carateres após trim | vazio rejeitado |
-| **Janela de edição Voz da Empresa** | — | **15 minutos** desde `created_at` | só autor |
+| **Corpo Parle** | `TextField` | **1–4000** carateres após trim | vazio rejeitado |
+| **Janela de edição Parle** | — | **15 minutos** desde `created_at` | só autor |
 
 **Arredondamento:** toda a aplicação usa **half-away-from-zero** (`ROUND_HALF_UP` — não arredondamento bancário). Custos unitários arredondam primeiro a **4 casas decimais**, depois montantes de linha (líquido / IVA / bruto) arredondam a **2 casas decimais**.
 
@@ -318,8 +318,8 @@ Estas são garantias, não "melhor esforço":
 - **Reserva FIFO no armazém:** aprovar retém a parte livre para essa requisição. Uma filial posterior não pode ser emitida com essas unidades. A emissão fica limitada a `quantity_reserved` da linha. Stock entrante é oferecido primeiro ao backorder `approved`/`fulfilling` mais antigo.
 - **Livros-razão só de append:** `StockMovement` e `BranchStockMovement` nunca são editados ou eliminados — só linhas novas. Os `Item.quantity` / `BranchItemStock.quantity` em cache são **calculados** a partir do livro-razão; se alguma vez discordarem, o livro-razão é a verdade.
 - **Instantâneos congelados:** linhas de encomenda e de requisição registam descrição, código, unidade, IVA, preço na criação/aprovação, para edições posteriores de dados mestres não reescreverem o histórico.
-- **Auditoria por desenho:** cada alteração de criar/atualizar/ciclo de vida escreve uma linha `*ChangeLog` (`quem`, `ação`, `alterações`, `motivo`, `quando`). Não há eliminação silenciosa — desativação/cancelamento em vez disso. Voz da Empresa usa `VoiceChangeLog` (criado / editado / eliminado) e placeholders de **eliminação lógica**; o Django admin não pode eliminar fisicamente linhas Voice.
-- **Bloqueio de linha Voz da Empresa:** `delete_post` e `add_comment` bloqueiam a publicação-mãe (`select_for_update`). Um primeiro comentário concurrente com eliminação da publicação-mãe não deixa sub-fio vivo num marcador de eliminação. Dois primeiros comentários partilham um sub-fio. Edições exigem o `updated_at` do caller e devolvem **409** numa versão obsoleta.
+- **Auditoria por desenho:** cada alteração de criar/atualizar/ciclo de vida escreve uma linha `*ChangeLog` (`quem`, `ação`, `alterações`, `motivo`, `quando`). Não há eliminação silenciosa — desativação/cancelamento em vez disso. Parle usa `VoiceChangeLog` (criado / editado / eliminado) e placeholders de **eliminação lógica**; o Django admin não pode eliminar fisicamente linhas Voice.
+- **Bloqueio de linha Parle:** `delete_post` e `add_comment` bloqueiam a publicação-mãe (`select_for_update`). Um primeiro comentário concurrente com eliminação da publicação-mãe não deixa respostas vivo num marcador de eliminação. Dois primeiros comentários partilham um sub-conversa. Edições exigem o `updated_at` do caller e devolvem **409** numa versão obsoleta.
 - **Isolamento:** uma filial não pode ler linhas de outra filial (404).
 
 ---
@@ -391,4 +391,4 @@ Estes são adiamentos deliberados — confirme antes de assumir que existem:
 - [Receção de mercadorias e stock](03-goods-receipts.md) — receção, livro-razão de stock, ajustes.
 - [Filiais e Requisição interna](04-internal-requests.md) — circuito filial → armazém → filial.
 - [Catálogo do gestor](07-manager-catalog.md) — stock só de leitura + preços do armazém (`/manage/catalog/`).
-- [Fios de pedido](08-request-threads.md) — pedidos de lacunas de catálogo entre filial e armazém.
+- [Conversas de pedido](08-request-threads.md) — pedidos de lacunas de catálogo entre filial e armazém.

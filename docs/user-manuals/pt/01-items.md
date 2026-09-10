@@ -47,7 +47,7 @@ A consola completa funciona em dois idiomas. Defina **Idioma** no painel do pess
 - **Inglês**
 - **Português**
 
-A escolha é memorizada neste navegador e aplica-se a todas as consolas de armazém, Company Voice e threads de pedido. O pessoal de filial usa o mesmo controlo no **painel da filial** (`/branch/`). O ícone **Definições** mostra o email com sessão iniciada, uma ligação pequena **Terminar sessão** e **Terminar sessão noutros dispositivos**. **Ajuda** é o ícone **?** azul ao lado do ícone.
+A escolha é memorizada neste navegador e aplica-se a todas as consolas de armazém, Parle e conversas de pedido. O pessoal de filial usa o mesmo controlo no **painel da filial** (`/branch/`). O ícone **Definições** mostra o email com sessão iniciada, uma ligação pequena **Terminar sessão** e **Terminar sessão noutros dispositivos**. **Ajuda** é o ícone **?** azul ao lado do ícone.
 
 ### 1.4 Tema claro / escuro
 

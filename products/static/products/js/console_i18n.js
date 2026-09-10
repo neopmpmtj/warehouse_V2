@@ -207,7 +207,7 @@ const CONSOLE_I18N = {
         navWarehousePOs: "Encomendas",
         navWarehouseReceipts: "Receções",
         navWarehouseRequests: "Pedidos",
-        navWarehouseThreads: "Fios",
+        navWarehouseThreads: "Conversas",
         searchPlaceholder: "Pesquisar código ou descrição",
         family: "Família",
         allFamilies: "Todas as famílias",

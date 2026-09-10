@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 29 August 2026, 16:20 WEST.*
+*Last updated: 10 September 2026, 10:40 WEST.*
 
-**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Full-tree production-readiness review **applied** (26 Aug 1205). **Phase 7 next** (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. Suite **593 OK**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** feed name, EN+PT). Warehouse `/manage/internal-requests/` i18n complete. Full-tree production-readiness review **applied** (26 Aug 1205). **Phase 7 next** (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. Suite **593 OK**. See [`docs/handoff.md`](docs/handoff.md).
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -21,7 +21,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 | **Warehouse admin** | `armazem.admin@centcompras.dev` | Full catalogue, POs (including approve any amount), goods receipts, stock adjust, `/manage/approval-limits/` (`warehouse_admins`). Cannot log into `/admin/`. |
 | **Warehouse manager** | `armazem.gestor@centcompras.dev` (grade 1); also `gestor2` / `gestor3` | Grade 1: add/edit catalogue and POs (submit, no approve). Grade 2+: approve within caps. No delete / no stock adjust. |
 | **Warehouse operator** | `armazem.operador@centcompras.dev` (grade 1); also `operador2` | Grade 1: read-only. Grade 2: mutate closed circuit. Never approve. |
-| **Branch users** | `filial.operador.norte@…` / `filial.gestor.norte@…` / `filial.admin.norte@…`, `filial.operador.sul@…` / `filial.gestor.sul@…`, `filial.dual@…` | Branch dashboard (`/branch/`), read-only catalogue (no selling prices by default, cost always hidden, stock hint; **offline browse** after one online visit), requisição interna (quantity approve by default; **offline drafts** sync on reconnect), request threads, branch receipts, Company Voice. |
+| **Branch users** | `filial.operador.norte@…` / `filial.gestor.norte@…` / `filial.admin.norte@…`, `filial.operador.sul@…` / `filial.gestor.sul@…`, `filial.dual@…` | Branch dashboard (`/branch/`), read-only catalogue (no selling prices by default, cost always hidden, stock hint; **offline browse** after one online visit), requisição interna (quantity approve by default; **offline drafts** sync on reconnect), request threads, branch receipts, Parle. |
 | **Django superuser** | from `createsuperuser` | Site admin at `/admin/` only. The only users who may use Django admin. |
 
 After `./scripts/seed_dev_data.sh`, seeded users share password **`devpass123`**. The seed creates **branches** (Norte, Sul) and **branch users**, but does **not** create a superuser. English seed is archived as `scripts/seed_dev_data_en.sh.old` and `products/*_en.py.old`.

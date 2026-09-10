@@ -124,9 +124,9 @@ document.dispatchEvent(new CustomEvent("cc-lang-changed"));
 | Cost trends | `products/static/products/js/cost_trends_i18n.js` |
 | Purchase orders | `procurement/static/procurement/js/purchase_orders_i18n.js` |
 | Goods receipts | `inventory/static/inventory/js/goods_receipts_i18n.js` |
-| Company Voice feed | `company_voice/static/company_voice/js/feed_i18n.js` |
+| Parle feed | `company_voice/static/company_voice/js/feed_i18n.js` |
 
-Some smaller features (e.g. request threads) embed a compact `I18N` object inline in the template instead of a separate file — same shape, same `t()` pattern.
+Some smaller features (e.g. request threads, warehouse internal requests) embed a compact `I18N` object inline in the template instead of a separate file — same shape, same `t()` pattern.
 
 ---
 

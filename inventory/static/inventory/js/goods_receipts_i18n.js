@@ -107,7 +107,7 @@ const GR_I18N = {
         navWarehousePOs: "Encomendas",
         navWarehouseReceipts: "Receções",
         navWarehouseRequests: "Pedidos",
-        navWarehouseThreads: "Fios",
+        navWarehouseThreads: "Conversas",
         newReceipt: "Nova receção",
         adjustStock: "Ajustar stock",
         receiptsTitle: "Receções",

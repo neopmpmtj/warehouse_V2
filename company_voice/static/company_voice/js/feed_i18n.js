@@ -1,6 +1,6 @@
 window.COMPANY_VOICE_I18N = {
     en: {
-        title: "Company Voice",
+        title: "Parle",
         settingsAria: "Settings",
         settings: "Settings",
         signedInAs: "Signed in as",
@@ -50,7 +50,7 @@ window.COMPANY_VOICE_I18N = {
         err_invalid_updated_at: "updated_at must be an ISO timestamp.",
     },
     pt: {
-        title: "Voz da Empresa",
+        title: "Parle",
         settingsAria: "Definições",
         settings: "Definições",
         signedInAs: "Sessão iniciada como",

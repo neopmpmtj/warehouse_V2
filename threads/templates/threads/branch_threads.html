@@ -135,13 +135,13 @@
                     offlineEmptyThreads: "Connect to Wi-Fi to load threads.",
                 },
                 pt: {
-                    title: "Fios de pedido", threadsTitle: "Fios", newThread: "Novo fio",
+                    title: "Conversas de pedido", threadsTitle: "Conversas", newThread: "Nova conversa",
                     subject: "Assunto", statusCol: "Estado", activityCol: "Atividade",
-                    emptyList: "Ainda não existem fios de pedido.", detailTitle: "Fio",
-                    reply: "Responder", closeThread: "Fechar fio", closeHelp: "Fechar termina este fio. Escolha um motivo.",
+                    emptyList: "Ainda não existem conversas de pedido.", detailTitle: "Conversa",
+                    reply: "Responder", closeThread: "Fechar conversa", closeHelp: "Fechar termina esta conversa. Escolha um motivo.",
                     reasonSatisfied: "Pedido satisfeito", reasonOther: "Outro",
                     confirmClose: "Confirmar fecho", cancel: "Cancelar", create: "Criar",
-                    newThreadTitle: "Novo fio de pedido",
+                    newThreadTitle: "Nova conversa de pedido",
                     newThreadHelp: "Descreva o artigo de que precisa — ainda não existe no catálogo. O armazém lerá o seu pedido e responderá.",
                     statusAwaitingWarehouse: "A aguardar armazém", statusAwaitingBranch: "A aguardar filial",
                     statusClosed: "Fechado", unread: "novo", sideBranch: "filial", sideWarehouse: "armazém",
@@ -149,7 +149,7 @@
                     none: "nenhum", closedBy: "Fechado por", postedBy: "enviada por", satisfactionLabel: "Satisfação",
                     settings: "Definições", signedInAs: "Sessão iniciada como", signOut: "Terminar sessão",
                     signOutOtherDevices: "Terminar sessão noutros dispositivos", help: "Ajuda",
-                    offlineEmptyThreads: "Ligue-se ao Wi-Fi para carregar os fios.",
+                    offlineEmptyThreads: "Ligue-se ao Wi-Fi para carregar as conversas.",
                 },
             };
 
@@ -420,7 +420,7 @@
             loadThreads().catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=9"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=10"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>
 </html>

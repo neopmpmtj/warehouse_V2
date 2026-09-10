@@ -50,7 +50,7 @@ def branch_dashboard_cards(*, include_picker=False):
             {
                 "title_key": "cardCompanyVoice",
                 "desc_key": "cardCompanyVoiceDesc",
-                "title": "Company Voice",
+                "title": "Parle",
                 "desc": "Suggestions, praise, and concerns — all logged-in staff can read and post.",
                 "url": "/company-voice/",
             },

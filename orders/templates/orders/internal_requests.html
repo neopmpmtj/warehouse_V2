@@ -9,12 +9,20 @@
     <script>
         (function () {
             var theme = "light";
+            var lang = "en";
             try {
                 theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "en";
             } catch (e) {
                 /* ignore */
             }
+            if (String(lang).toLowerCase().indexOf("pt") === 0) {
+                lang = "pt-PT";
+            } else {
+                lang = "en";
+            }
             document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
         })();
     </script>
     <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=19">
@@ -23,7 +31,7 @@
     <header class="topbar">
         <div class="topbar-title">
             {% include "products/includes/console_eyebrow.html" %}
-            <h1>Internal requests</h1>
+            <h1 data-i18n="title">Internal requests</h1>
         </div>
         {% include "products/includes/warehouse_page_nav.html" with active_nav="requests" %}
         <div class="topbar-actions">
@@ -33,26 +41,26 @@
 
     <main class="manage-split">
         <section class="console-panel">
-            <h2 class="panel-heading">Queue (approved / fulfilling)</h2>
+            <h2 class="panel-heading" data-i18n="queueTitle">Queue (approved / fulfilling)</h2>
             <table>
-                <thead><tr><th>#</th><th>Branch</th><th>Status</th><th>Gross</th></tr></thead>
+                <thead><tr><th>#</th><th data-i18n="colBranch">Branch</th><th data-i18n="colStatus">Status</th><th data-i18n="colGross">Gross</th></tr></thead>
                 <tbody id="request-body"></tbody>
             </table>
         </section>
 
         <section class="console-panel">
-            <h2 class="panel-heading" id="detail-title">Request</h2>
+            <h2 class="panel-heading" id="detail-title" data-i18n="detailTitle">Request</h2>
             <p id="detail-meta" class="muted" style="margin:0 0 10px;"></p>
             <table>
-                <thead><tr><th>Code</th><th>Description</th><th>Qty</th><th>Issued</th><th>Remaining</th><th>Reserved</th><th>Backorder</th><th>On hand</th><th>Available</th><th>Issue qty</th></tr></thead>
+                <thead><tr><th data-i18n="colCode">Code</th><th data-i18n="colDescription">Description</th><th data-i18n="colQty">Qty</th><th data-i18n="colIssued">Issued</th><th data-i18n="colRemaining">Remaining</th><th data-i18n="colReserved">Reserved</th><th data-i18n="colBackorder">Backorder</th><th data-i18n="colOnHand">On hand</th><th data-i18n="colAvailable">Available</th><th data-i18n="colIssueQty">Issue qty</th></tr></thead>
                 <tbody id="line-body"></tbody>
             </table>
             <div class="row-actions">
-                <input id="issue-reference" placeholder="Reference (guia)">
-                <input id="issue-notes" placeholder="Notes">
-                <button id="issue-btn" class="btn btn-primary">Issue</button>
-                <button id="short-close-btn" class="btn">Short close</button>
-                <button id="cancel-btn" class="btn" type="button" hidden>Cancel</button>
+                <input id="issue-reference" data-i18n-placeholder="referencePlaceholder" placeholder="Reference (guia)">
+                <input id="issue-notes" data-i18n-placeholder="notesPlaceholder" placeholder="Notes">
+                <button id="issue-btn" class="btn btn-primary" data-i18n="issue">Issue</button>
+                <button id="short-close-btn" class="btn" data-i18n="shortClose">Short close</button>
+                <button id="cancel-btn" class="btn" type="button" data-i18n="cancel" hidden>Cancel</button>
             </div>
             <p id="banner" class="banner-inline" hidden></p>
         </section>
@@ -63,7 +71,151 @@
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
             var CAN_ISSUE = {{ can_issue|yesno:"true,false" }};
             var CAN_SHORT_CLOSE = {{ can_short_close|yesno:"true,false" }};
-            var state = { selectedId: null, requests: [] };
+            var LANG_KEY = "cc-lang";
+            var state = { selectedId: null, requests: [], selectedRequest: null };
+
+            var I18N = {
+                en: {
+                    title: "Internal requests",
+                    queueTitle: "Queue (approved / fulfilling)",
+                    detailTitle: "Request",
+                    detailTitleSelected: "Request #{id} — {branch}",
+                    detailMeta: "Status {status} · gross {gross}",
+                    colBranch: "Branch",
+                    colStatus: "Status",
+                    colGross: "Gross",
+                    colCode: "Code",
+                    colDescription: "Description",
+                    colQty: "Qty",
+                    colIssued: "Issued",
+                    colRemaining: "Remaining",
+                    colReserved: "Reserved",
+                    colBackorder: "Backorder",
+                    colOnHand: "On hand",
+                    colAvailable: "Available",
+                    colIssueQty: "Issue qty",
+                    referencePlaceholder: "Reference (guia)",
+                    notesPlaceholder: "Notes",
+                    issue: "Issue",
+                    shortClose: "Short close",
+                    cancel: "Cancel",
+                    errorGeneric: "Request failed.",
+                    errorNoIssueQty: "Enter at least one issue quantity.",
+                    shortClosePrompt: "Reason for short-close:",
+                    statusApproved: "approved",
+                    statusFulfilling: "fulfilling",
+                    settings: "Settings",
+                    settingsAria: "Settings",
+                    signedInAs: "Signed in as",
+                    signOut: "Sign out",
+                    signOutOtherDevices: "Sign out other devices",
+                    help: "Help",
+                    navWarehouseHome: "Home",
+                    navWarehouseItems: "Items",
+                    navWarehouseCatalog: "Catalog",
+                    navWarehousePOs: "POs",
+                    navWarehouseReceipts: "Receipts",
+                    navWarehouseRequests: "Requests",
+                    navWarehouseThreads: "Threads",
+                },
+                pt: {
+                    title: "Pedidos internos",
+                    queueTitle: "Fila (aprovados / em cumprimento)",
+                    detailTitle: "Pedido",
+                    detailTitleSelected: "Pedido #{id} — {branch}",
+                    detailMeta: "Estado {status} · bruto {gross}",
+                    colBranch: "Filial",
+                    colStatus: "Estado",
+                    colGross: "Bruto",
+                    colCode: "Código",
+                    colDescription: "Descrição",
+                    colQty: "Qtd",
+                    colIssued: "Emitido",
+                    colRemaining: "Restante",
+                    colReserved: "Reservado",
+                    colBackorder: "Em espera",
+                    colOnHand: "Em armazém",
+                    colAvailable: "Disponível",
+                    colIssueQty: "Qtd a emitir",
+                    referencePlaceholder: "Referência (guia)",
+                    notesPlaceholder: "Notas",
+                    issue: "Emitir",
+                    shortClose: "Encerramento parcial",
+                    cancel: "Cancelar",
+                    errorGeneric: "O pedido falhou.",
+                    errorNoIssueQty: "Indique pelo menos uma quantidade a emitir.",
+                    shortClosePrompt: "Motivo do encerramento parcial:",
+                    statusApproved: "aprovado",
+                    statusFulfilling: "em cumprimento",
+                    settings: "Definições",
+                    settingsAria: "Definições",
+                    signedInAs: "Sessão iniciada como",
+                    signOut: "Terminar sessão",
+                    signOutOtherDevices: "Terminar sessão noutros dispositivos",
+                    help: "Ajuda",
+                    navWarehouseHome: "Início",
+                    navWarehouseItems: "Artigos",
+                    navWarehouseCatalog: "Catálogo",
+                    navWarehousePOs: "Encomendas",
+                    navWarehouseReceipts: "Receções",
+                    navWarehouseRequests: "Pedidos",
+                    navWarehouseThreads: "Conversas",
+                },
+            };
+
+            I18N["pt-PT"] = I18N.pt;
+
+            function lang() {
+                try {
+                    var raw = localStorage.getItem(LANG_KEY) || "en";
+                    return raw.toLowerCase().indexOf("pt") === 0 ? "pt" : "en";
+                } catch (e) {
+                    return "en";
+                }
+            }
+
+            function t(key, vars) {
+                var d = I18N[lang()] || I18N.en;
+                var text = d[key] !== undefined ? d[key] : (I18N.en[key] || key);
+                if (vars) {
+                    Object.keys(vars).forEach(function (name) {
+                        text = text.split("{" + name + "}").join(String(vars[name]));
+                    });
+                }
+                return text;
+            }
+
+            function statusLabel(status) {
+                if (status === "approved") return t("statusApproved");
+                if (status === "fulfilling") return t("statusFulfilling");
+                return status;
+            }
+
+            function applyI18n() {
+                document.documentElement.lang = lang() === "pt" ? "pt-PT" : "en";
+                document.title = t("title") + " — CentCompras";
+                document.querySelectorAll("[data-i18n]").forEach(function (el) {
+                    if (el.id === "detail-title" && state.selectedRequest) {
+                        return;
+                    }
+                    el.textContent = t(el.getAttribute("data-i18n"));
+                });
+                document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+                    el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+                });
+                document.querySelectorAll("[data-i18n-aria]").forEach(function (el) {
+                    el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria")));
+                });
+            }
+
+            applyI18n();
+            document.addEventListener("cc-lang-changed", function () {
+                applyI18n();
+                if (state.selectedRequest) {
+                    renderDetail(state.selectedRequest);
+                }
+                renderList();
+            });
 
             var requestBody = document.getElementById("request-body");
             var lineBody = document.getElementById("line-body");
@@ -75,7 +227,7 @@
             function setCancelVisible(show) { cancelBtn.hidden = !show; }
 
             function el(tag, text, cls) { var n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
-            function showError(m) { banner.textContent = m || "Request failed."; banner.hidden = false; }
+            function showError(m) { banner.textContent = m || t("errorGeneric"); banner.hidden = false; }
             function clearError() { banner.hidden = true; }
 
             function api(path, method, body) {
@@ -93,7 +245,7 @@
                     if (req.id === state.selectedId) tr.className = "row-selected";
                     tr.appendChild(el("td", req.id));
                     tr.appendChild(el("td", req.branch_name));
-                    tr.appendChild(el("td", req.status));
+                    tr.appendChild(el("td", statusLabel(req.status)));
                     tr.appendChild(el("td", req.approved_gross));
                     tr.addEventListener("click", function () { select(req.id); });
                     requestBody.appendChild(tr);
@@ -108,9 +260,13 @@
             }
 
             function renderDetail(req) {
+                state.selectedRequest = req;
                 setCancelVisible(true);
-                detailTitle.textContent = "Request #" + req.id + " — " + req.branch_name;
-                detailMeta.textContent = "Status " + req.status + " · gross " + req.approved_gross;
+                detailTitle.textContent = t("detailTitleSelected", { id: req.id, branch: req.branch_name });
+                detailMeta.textContent = t("detailMeta", {
+                    status: statusLabel(req.status),
+                    gross: req.approved_gross,
+                });
                 lineBody.textContent = "";
                 req.lines.forEach(function (line) {
                     var tr = document.createElement("tr");
@@ -140,8 +296,9 @@
 
             function resetDetailView() {
                 state.selectedId = null;
+                state.selectedRequest = null;
                 setCancelVisible(false);
-                detailTitle.textContent = "Request";
+                detailTitle.textContent = t("detailTitle");
                 detailMeta.textContent = "";
                 lineBody.textContent = "";
                 document.getElementById("issue-reference").value = "";
@@ -175,7 +332,7 @@
                 lineBody.querySelectorAll("input[data-line-id]").forEach(function (input) {
                     if (input.value) lines.push({ line_id: parseInt(input.dataset.lineId, 10), quantity_issued: input.value });
                 });
-                if (!lines.length) { showError("Enter at least one issue quantity."); return; }
+                if (!lines.length) { showError(t("errorNoIssueQty")); return; }
                 api("/api/manage/internal-requests/" + state.selectedId + "/issue/", "POST", {
                     lines: lines,
                     reference: document.getElementById("issue-reference").value,
@@ -185,7 +342,7 @@
 
             function shortClose() {
                 clearError();
-                var reason = prompt("Reason for short-close:");
+                var reason = prompt(t("shortClosePrompt"));
                 if (reason === null) return;
                 api("/api/manage/internal-requests/" + state.selectedId + "/short-close/", "POST", { reason: reason })
                     .then(function () { return refreshAfterQueueChange(); }).catch(showError);
@@ -199,7 +356,7 @@
             load().catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=9"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=10"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
 </body>
 </html>

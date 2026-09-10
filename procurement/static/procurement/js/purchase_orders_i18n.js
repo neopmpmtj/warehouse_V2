@@ -160,7 +160,7 @@ const PO_I18N = {
         navWarehousePOs: "Encomendas",
         navWarehouseReceipts: "Receções",
         navWarehouseRequests: "Pedidos",
-        navWarehouseThreads: "Fios",
+        navWarehouseThreads: "Conversas",
         allStatuses: "Todos os estados",
         "status.draft": "Rascunho",
         "status.submitted": "Submetido",

@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 29 August 2026, 16:20 WEST.
+> **Read this first when resuming work.** Last updated: 10 September 2026, 10:40 WEST.
 
 ---
 
@@ -34,9 +34,23 @@
 
 **Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Next:** **Phase 7** — production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8** (ideas in PROJECT-PLAN §15). Email = **Phase 9**.
 
-**Tests:** suite **593 OK** (29 Aug; dashboard vs work-page chrome + Company Voice home link).
+**Tests:** suite **593 OK** (10 Sep; i18n copy + Parle rename; `feed_i18n.js` exempt from EN≠PT title check).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (10 Sep 2026) — warehouse i18n + product copy (Conversas / Parle) ✅
+
+Three related copy/i18n slices on top of D38 (language from dashboard `cc-lang`):
+
+1. **Internal requests** (`/manage/internal-requests/`) — inline `I18N` + `data-i18n` on page title, **Queue** / **Request** section headings, columns, buttons, and JS-generated detail/meta/status/prompt strings. PT: **Pedidos internos**, **Fila (aprovados / em cumprimento)**, **Emitir**, **Encerramento parcial**, etc.
+2. **Conversas** (PT only) — replaced **fio/fios** with **conversa/conversas** in nav, cards, thread consoles, and PT manuals. EN **Threads** unchanged. Presentation decks left as-is.
+3. **Parle** (EN + PT) — user-visible rename of **Company Voice** / **Voz da Empresa** → **Parle** on feed, dashboards, branch card fallback. URLs/app id `company_voice` unchanged. Presentation decks left as-is.
+
+- Cache bumps: `preferences_bar.js?v=10`, `feed_i18n.js?v=3`, `console_i18n.js?v=23`, `catalog_i18n.js?v=10`, `purchase_orders_i18n.js?v=13`, `goods_receipts_i18n.js?v=10`, `cost_trends_i18n.js?v=3`; branch SW precache updated.
+- Manuals EN+PT updated (`01`, `04`, `05`, `06`, `08`, `09`); [`docs/i18n-pattern.md`](i18n-pattern.md) notes inline internal-requests i18n + Parle feed.
+- Locked decisions **D39** (PT **Conversas** for catalogue-gap threads) and **D40** (**Parle** product name, same in EN and PT).
+- **Still English:** admin-only `/manage/approval-limits/` and `/manage/branch-approval-limits/` (out of scope).
+- Plan: [`.cursor/plans/internal_requests_i18n_dcab0825.plan.md`](../.cursor/plans/internal_requests_i18n_dcab0825.plan.md). **Uncommitted** on working tree.
 
 ## This session (29 Aug 2026, late afternoon) — dashboard vs work-page chrome ✅
 

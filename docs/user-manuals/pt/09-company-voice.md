@@ -1,6 +1,6 @@
-# Voz da Empresa — manual do utilizador
+# Parle — manual do utilizador
 
-A Voz da Empresa é uma caixa de sugestões interna para todo o pessoal do CentCompras. Qualquer pessoa com sessão iniciada (armazém ou filial) pode publicar elogios, preocupações, sugestões ou desejos. Cada publicação pode ter um fio de resposta inline (um nível de sub-discussão).
+A Parle é uma caixa de sugestões interna para todo o pessoal do CentCompras. Qualquer pessoa com sessão iniciada (armazém ou filial) pode publicar elogios, preocupações, sugestões ou desejos. Cada publicação pode ter respostas inline (um nível de sub-discussão).
 
 **URL:** `/company-voice/`
 
@@ -24,7 +24,7 @@ Abra a engrenagem **Definições** (canto superior direito) para **Sessão inici
 
 ## 2. Publicar
 
-1. Abra **Voz da Empresa** no painel do pessoal (`/`) ou aceda a `/company-voice/`.
+1. Abra **Parle** no painel do pessoal (`/`) ou aceda a `/company-voice/`.
 2. Opcionalmente escolha uma **etiqueta**: Elogio, Preocupação, Sugestão ou Desejo (ou deixe sem etiqueta).
 3. Escreva a mensagem na área de texto (máx. **4000** caracteres).
 4. Opcionalmente marque **Publicar anonimamente** — outros utilizadores veem **Anonymous** / **Anónimo** em vez do seu nome de apresentação.
@@ -39,11 +39,11 @@ Use **Atualizar** para carregar publicações e respostas escritas por outras pe
 
 ---
 
-## 3. Respostas (sub-fios)
+## 3. Respostas (sub-conversas)
 
 - Clique em **Responder** (ou na contagem de respostas) sob uma publicação para expandir a discussão inline.
-- Qualquer pessoa pode adicionar o primeiro comentário — isso abre o único sub-fio dessa publicação.
-- Cada publicação de topo pode ter **no máximo um** sub-fio (sem aninhamento mais profundo).
+- Qualquer pessoa pode adicionar o primeiro comentário — isso abre o único respostas dessa publicação.
+- Cada publicação de topo pode ter **no máximo um** respostas (sem aninhamento mais profundo).
 - Os comentários suportam a mesma caixa **anónimo** que as publicações de topo.
 - A contagem de respostas é só de comentários **ativos** — comentários eliminados continuam visíveis como `[Eliminado pelo autor]` mas não entram na contagem.
 
@@ -56,7 +56,7 @@ Use **Atualizar** para carregar publicações e respostas escritas por outras pe
 | **Editar** | Só o autor | Nos **15 minutos** após publicar. A ligação Editar desaparece quando o prazo expira (mesmo com a página aberta). |
 | **Eliminar** | Só o autor | Eliminação suave — o conteúdo é substituído por `[Eliminado pelo autor]` |
 
-- Eliminar uma **publicação de topo** elimina também em suave todo o sub-fio e todos os comentários.
+- Eliminar uma **publicação de topo** elimina também em suave todo o respostas e todos os comentários.
 - Eliminar um **comentário** remove só esse comentário.
 - **(editado)** aparece junto à data/hora só após um guardar real — uma publicação nova nunca é marcada como editada.
 - Guardar uma edição quando outro separador já guardou a mesma mensagem devolve conflito; **Atualize** e tente de novo.
@@ -95,8 +95,8 @@ Não a partir do sítio. Os superutilizadores podem **inspecionar** registos na 
 **O feed é paginado?**  
 Não na primeira versão — todo o histórico carrega numa vista com scroll.
 
-**Em que difere dos Fios de pedido?**  
-Os Fios de pedido (`/branch/threads/`, `/manage/threads/`) são para artigos em falta no catálogo entre uma filial e o armazém. A Voz da Empresa é feedback à escala da empresa visível para todo o pessoal.
+**Em que difere dos Conversas de pedido?**  
+Os Conversas de pedido (`/branch/threads/`, `/manage/threads/`) são para artigos em falta no catálogo entre uma filial e o armazém. A Parle é feedback à escala da empresa visível para todo o pessoal.
 
 **Há registo de auditoria?**  
 Sim. Criar, editar e eliminar escrevem uma linha `VoiceChangeLog` (quem, ação, quando). Os logs rotativos da aplicação são extra, não a fonte de verdade.

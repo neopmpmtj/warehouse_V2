@@ -92,7 +92,7 @@ Pode pertencer a **uma filial, várias filiais ou a nenhuma**. Depois de iniciar
 | **Várias filiais** | Aterra em `/branch/select/` — escolha uma, depois continue para o painel. |
 | **Sem filial** | O seletor diz *"You have no active branch access."* (Não tem acesso ativo a nenhuma filial.) Peça ajuda ao administrador. |
 
-No painel, abra **Catálogo**, **Requisição interna**, **Fios**, **Receções** ou **Voz da Empresa** a partir dos cartões. Em **Catálogo**, **Pedidos**, **Receções** e **Fios**, a barra superior também tem **Início**, **Catálogo**, **Pedidos**, **Receções** e **Fios** (Fios é o último) — não no painel em si.
+No painel, abra **Catálogo**, **Requisição interna**, **Conversas**, **Receções** ou **Parle** a partir dos cartões. Em **Catálogo**, **Pedidos**, **Receções** e **Conversas**, a barra superior também tem **Início**, **Catálogo**, **Pedidos**, **Receções** e **Conversas** (Conversas é o último) — não no painel em si.
 
 **Mudar filial** só aparece quando pertence a **mais do que uma** filial. Se só viu uma filial na sua vida, essa ligação fica oculta — não pode consultar outras filiais.
 
@@ -204,7 +204,7 @@ Abra **`/manage/internal-requests/`**. Esta fila mostra requisições **approved
 1. Selecione uma requisição.
 2. Para cada linha que está a expedir agora, indique a **quantidade a emitir**.
 3. (Opcional) **Reference** (Referência — o número da sua *guia* / expedição) e **Notes** (Notas).
-4. Clique em **Issue** (Emitir).
+4. Clique em **Emitir**.
 
 Depois de uma emissão bem-sucedida, a página atualiza a fila. Se a requisição estiver totalmente expedida (ou deixar de estar na fila por outro motivo), o painel de detalhe limpa-se para só ver itens em fila. Emissões parciais mantêm a requisição selecionada com quantidades atualizadas.
 
@@ -225,7 +225,7 @@ Se outra filial estiver primeiro na fila para stock livre, não pode expedir par
 
 ### 7.2 Encerramento parcial no armazém
 
-Se não puder (ou não quiser) expedir o resto, clique em **Short close** (Encerramento parcial) e indique um **motivo**. O restante não expedido é dado como baixa e qualquer reserva sobre esse restante é **libertada** para a requisição seguinte em espera (primeiro `approved_at` mais antigo).
+Se não puder (ou não quiser) expedir o resto, clique em **Encerramento parcial** e indique um **motivo**. O restante não expedido é dado como baixa e qualquer reserva sobre esse restante é **libertada** para a requisição seguinte em espera (primeiro `approved_at` mais antigo).
 
 - Se **nada foi expedido ainda** (requisição ainda **approved**), a requisição passa a **closed** (fechada) — não há nada para a filial receber.
 - Se já **emitiu parcialmente** mercadoria (requisição **fulfilling**), a requisição passa a **shipped** para a filial poder receber o que foi enviado e encerrar parcialmente o restante.
@@ -256,7 +256,7 @@ Receber **incrementa o stock da filial** de imediato.
 
 ### 8.2 Encerramento parcial na filial
 
-Se o resto não chegar, clique em **Short close** (Encerramento parcial) e indique um **motivo**. O restante não recebido é dado como baixa e a requisição passa a **closed**. Só um **gestor ou administrador** pode fazer isto.
+Se o resto não chegar, clique em **Encerramento parcial** e indique um **motivo**. O restante não recebido é dado como baixa e a requisição passa a **closed**. Só um **gestor ou administrador** pode fazer isto.
 
 > 📷 **[CAPTURA DE ECRÃ — receção na filial com quantidades recebidas]**
 
@@ -370,7 +370,7 @@ Confirme a **quantidade recebida** que chegou de facto em `/branch/receipts/`. S
 **P6. Não vejo "Approve" — porquê?**
 É **operador** (operadores nunca aprovam), ou a requisição não está **submitted**. Peça a um gestor, ou submeta primeiro.
 
-**P7. Não vejo "Short close" — porquê?**
+**P7. Não vejo "Encerramento parcial" — porquê?**
 Encerramento parcial é só para gestor/administrador, tanto no armazém como na filial.
 
 **P8. Posso pedir o mesmo artigo duas vezes?**
