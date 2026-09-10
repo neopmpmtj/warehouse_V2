@@ -1,6 +1,6 @@
-# Company Voice — user manual
+# Parle — user manual
 
-Company Voice is an internal suggestion box for all CentCompras staff. Anyone logged in (warehouse or branch) can post praise, concerns, suggestions, or wishes. Each post can have one inline reply thread (one level of sub-discussion).
+Parle is an internal suggestion box for all CentCompras staff. Anyone logged in (warehouse or branch) can post praise, concerns, suggestions, or wishes. Each post can have one inline reply thread (one level of sub-discussion).
 
 **URL:** `/company-voice/`
 
@@ -24,7 +24,7 @@ Open the **Settings** gear (top-right) for **Signed in as** and a small **Sign o
 
 ## 2. Posting
 
-1. Open **Company Voice** from the staff dashboard (`/`) or go to `/company-voice/`.
+1. Open **Parle** from the staff dashboard (`/`) or go to `/company-voice/`.
 2. Optionally choose a **tag**: Praise, Concern, Suggestion, or Wish (or leave untagged).
 3. Write your message in the text area (max **4000** characters).
 4. Optionally tick **Post anonymously** — other users see **Anonymous** / **Anónimo** instead of your display name.
@@ -96,7 +96,7 @@ Not from the website. Superusers may **inspect** records in Django admin (`/admi
 Not in the first release — the full history loads in one scrollable view.
 
 **How is this different from Request threads?**  
-Request threads (`/branch/threads/`, `/manage/threads/`) are for catalogue-gap items between a branch and the warehouse. Company Voice is company-wide feedback visible to all staff.
+Request threads (`/branch/threads/`, `/manage/threads/`) are for catalogue-gap items between a branch and the warehouse. Parle is company-wide feedback visible to all staff.
 
 **Is there an audit trail?**  
 Yes. Create, edit, and delete write a `VoiceChangeLog` row (who, action, when). Rotating app logs are extra, not the source of truth.

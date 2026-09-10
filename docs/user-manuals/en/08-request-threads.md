@@ -71,7 +71,7 @@ The thread is a **conversation**, not a purchase order and not a requisição. T
 ## 2. Opening a thread (branch)
 
 1. Go to **`/branch/threads/`**.
-2. Click **New thread** (*Novo fio*).
+2. Click **New thread** (*Nova conversa*).
 3. **Subject** — a short title, e.g. *"Need a 25mm brass valve"*.
 4. **First message** — describe the item in your own words: what it is, what it's for, rough quantity. There is **no item picker** — the item does not exist yet.
 5. Click **Create**.

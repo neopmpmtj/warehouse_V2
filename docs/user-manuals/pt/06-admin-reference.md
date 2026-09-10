@@ -2,7 +2,7 @@
 
 **Administração do sítio** · Versão 1.0 · Para o **superutilizador do sítio** / sede
 
-> **Complemento dos manuais operacionais:** [Gestão de artigos](01-items.md) · [Encomendas de compra](02-purchase-orders.md) · [Receção de mercadorias e stock](03-goods-receipts.md) · [Filiais e Requisição interna](04-internal-requests.md) · [Casos limite e limites](05-edge-cases-and-limits.md) · [Catálogo do gestor](07-manager-catalog.md) · [Fios de pedido](08-request-threads.md) · [Voz da Empresa](09-company-voice.md).
+> **Complemento dos manuais operacionais:** [Gestão de artigos](01-items.md) · [Encomendas de compra](02-purchase-orders.md) · [Receção de mercadorias e stock](03-goods-receipts.md) · [Filiais e Requisição interna](04-internal-requests.md) · [Casos limite e limites](05-edge-cases-and-limits.md) · [Catálogo do gestor](07-manager-catalog.md) · [Conversas de pedido](08-request-threads.md) · [Parle](09-company-voice.md).
 
 Este guia cobre o trabalho **administrativo**: iniciar sessão no Django `/admin/`, criar utilizadores, atribuir funções e permissões, e gerir filiais e utilizadores de filial. **Não** trata das consolas do dia a dia — essas estão nos manuais 01–04 e 07.
 
@@ -19,7 +19,7 @@ A administração Django em **`/admin/`** é **apenas para superutilizadores**.
 | **Pessoal do armazém** (grupo de armazém) | ❌ | ✅ |
 | **Pessoal de filial** (membro de filial) | ❌ | ✅ (`/branch/…`) |
 
-O pessoal do armazém chega a **`/`** após o início de sessão. O pessoal só de filial chega a **`/branch/`** (painel da filial). Esse painel lista todas as ferramentas da filial (catálogo, requisição, fios, receções, Voz da Empresa). Em cada página de consola **`/manage/…`**, a etiqueta **CentCompras** acima do título da página liga de volta a **`/`** (painel do armazém). Nas páginas de filial, **CentCompras** liga de volta a **`/branch/`**. **Terminar sessão** é uma ligação pequena na linha do título **Definições** (engrenagem, canto superior direito). **Ajuda** é o ícone azul **?** junto à engrenagem (placeholder).
+O pessoal do armazém chega a **`/`** após o início de sessão. O pessoal só de filial chega a **`/branch/`** (painel da filial). Esse painel lista todas as ferramentas da filial (catálogo, requisição, conversas, receções, Parle). Em cada página de consola **`/manage/…`**, a etiqueta **CentCompras** acima do título da página liga de volta a **`/`** (painel do armazém). Nas páginas de filial, **CentCompras** liga de volta a **`/branch/`**. **Terminar sessão** é uma ligação pequena na linha do título **Definições** (engrenagem, canto superior direito). **Ajuda** é o ícone azul **?** junto à engrenagem (placeholder).
 
 Duas regras a recordar:
 
@@ -217,8 +217,8 @@ A maior parte das tabelas de negócio em `/admin/` é **só de leitura de propó
 | Goods receipts, stock movements | `/manage/goods-receipts/` |
 | Internal requests, goods issues | `/manage/internal-requests/` + `/branch/…` |
 | Branch receipts, branch stock | `/branch/receipts/` |
-| Fios de pedido | `/branch/threads/` + `/manage/threads/` (admin só inspeção) |
-| Voz da Empresa | `/company-voice/` (admin só inspeção; **sem eliminação permanente**) |
+| Conversas de pedido | `/branch/threads/` + `/manage/threads/` (admin só inspeção) |
+| Parle | `/company-voice/` (admin só inspeção; **sem eliminação permanente**) |
 | Change logs (todos os `*ChangeLog`) | Só leitura em todo o lado (auditoria) |
 
 As **únicas** tabelas que normalmente edita em `/admin/` são: **Users**, **Groups** (só adesão, ver §5), **Branches**, **Branch memberships** e **Branch commercial settings** (catálogo/requisição da filial sem preços vs com preços, em toda a empresa).

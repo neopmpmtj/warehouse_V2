@@ -47,7 +47,7 @@ The whole console works in two languages. Set **Language** on the staff dashboar
 - **English**
 - **Português**
 
-The choice is remembered in this browser and applies to every warehouse console, Company Voice, and request threads. Branch staff set the same control on the **branch dashboard** (`/branch/`). The **Settings** gear shows signed-in email, a small **Sign out** link, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear.
+The choice is remembered in this browser and applies to every warehouse console, Parle, and request threads. Branch staff set the same control on the **branch dashboard** (`/branch/`). The **Settings** gear shows signed-in email, a small **Sign out** link, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear.
 
 ### 1.4 Light / dark theme
 
