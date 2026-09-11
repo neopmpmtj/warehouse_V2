@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 10 September 2026, 10:40 WEST
-- **Current phase:** Phases 0–6 **complete** ✅. **Phase 7 next** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 11 September 2026, 09:40 WEST
+- **Current phase:** Phases 0–6 **complete** ✅. **Immediate next:** presentation slide 9 (closed-circuit graphic). **Then Phase 7** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
 ## Status vocabulary
@@ -111,8 +111,8 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D36 | Genesis primary supplier | New catalogue items (Genesis / `create_and_activate_item`) require an **active supplier** and **cost price > 0**; first `SupplierItemPrice` is always `primary=True`. One primary per item (D14) unchanged; promotion/demotion via `_clear_other_primaries` + audit. |
 | D37 | Branch commercial mode | Company-wide singleton `BranchCommercialSettings` (superuser `/admin/` only). Default **unpriced**: branch catalogue omits selling prices; requisição UI is quantity-only; manager approve is yes/no (EUR `BranchApprovalLimit` not applied). **Priced** restores today's selling prices + EUR caps. Buying cost never on the branch (lock 7). Warehouse `/manage/…` unchanged. PostgreSQL still snapshots `unit_price` / `approved_*`. No per-user or per-branch flag; no storefront. |
 | D38 | Dashboard vs work-page chrome | Language + theme **only** on `/` and `/branch/`. Sibling URL strips **only** on work pages (not dashboards). Branch strip: Home, Catalog, Requests, Receipts, Threads. Warehouse strip on `/manage/…`: Home, Items, Catalog, POs, Receipts, Requests, Threads. Parle **CentCompras** → `home_url_for_request` (`/` warehouse/dual, `/branch/` branch-only). Does **not** complete Phase 8 shared chrome. |
-| D39 | PT name for catalogue-gap threads | English **Threads** / **Request threads** unchanged. Portuguese UI + manuals: **Conversas** (nav), **Conversas de pedido** (page/card), **Conversa** / **Nova conversa** / **Fechar conversa**. Replaces **fio/fios**. Presentation PT slide 15 aligned (Sep 2026); EN slide 15 uses **New conversation**. |
-| D40 | Parle product name | User-visible rename of Company Voice / Voz da Empresa → **Parle** in **both** EN and PT. URLs (`/company-voice/`), Django app `company_voice`, and code identifiers unchanged. Presentation slide 16 still Company Voice / Voz da Empresa in deck. |
+| D39 | PT name for catalogue-gap threads | English **Threads** / **Request threads** unchanged. Portuguese UI + manuals: **Conversas** (nav), **Conversas de pedido** (page/card), **Conversa** / **Nova conversa** / **Fechar conversa**. Replaces **fio/fios**. Presentation PT **slide 3** aligned (Sep 2026); EN slide 3 uses **New conversation**. |
+| D40 | Parle product name | User-visible rename of Company Voice / Voz da Empresa → **Parle** in **both** EN and PT. URLs (`/company-voice/`), Django app `company_voice`, and code identifiers unchanged. Presentation **slide 12** still Company Voice / Voz da Empresa in deck. |
 | D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
@@ -150,7 +150,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (10 Sep 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 (chrome split) + D39 (Conversas) + D40 (Parle) landed. Warehouse internal-requests console i18n complete. Suite **593 OK**. **Next:** Phase 7 (production deployment readiness). OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
+**Current (11 Sep 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 (chrome split) + D39 (Conversas) + D40 (Parle) landed. Presentation deck reorder + slides 2–8 graphics (`deck.css?v=16`). Suite **605 OK**. **Immediate next:** presentation slide 9 (reuse visual-layout sub-agent). **Then:** Phase 7 (production deployment readiness). OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -569,7 +569,8 @@ Unify the **persistent shell** (header, nav, account controls) across warehouse,
 - [x] Phase 6 — offline catalogue + offline request queue + sync / PWA (#19)
 - [x] Phase 6 offline review fixes — P0/P1/P2 ([archive](archive/phase6-offline-review-2026-08-26-1009.md))
 - [x] Dashboard vs work-page chrome (D38) — prefs on dashboards only; sibling nav on work pages; warehouse strip; Company Voice brand → `home_url_for_request`
-- [ ] Phase 7 — production deployment readiness — **Next** ([`DEPLOYMENT.md`](DEPLOYMENT.md))
+- [x] Presentation deck v2.4 (11 Sep) — reorder (map = slide 2, missing-item = slide 3); slides 4–8 SVG graphics; **slide 9 next** (launch visual-layout generalPurpose sub-agent first)
+- [ ] Phase 7 — production deployment readiness — after the deck pass ([`DEPLOYMENT.md`](DEPLOYMENT.md))
 - [ ] Phase 8 — Google OAuth production rollout + shared chrome
 - [ ] Phase 9 — email automation (stub exists)
 

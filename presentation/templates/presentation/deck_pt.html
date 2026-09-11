@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Apresentação: dados, circuitos e circularidade">
     <title>CentCompras — Apresentação</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=14">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=18">
 </head>
 <body>
     <div class="deck" role="application" aria-label="Apresentação CentCompras">
@@ -22,8 +22,445 @@
                 <p class="slide-meta">Armazém central · Filiais satélite · PostgreSQL como fonte de verdade</p>
             </section>
 
-            <!-- Slide 2: Os dados são o novo petróleo -->
-            <section class="slide" data-slide="2" aria-label="Os dados são o novo petróleo">
+            <!-- Slide 2: Vista de conjunto -->
+            <section class="slide slide-worlds" data-slide="2" aria-label="Um sistema dois locais de trabalho">
+                <p class="slide-eyebrow">Vista de conjunto</p>
+                <h1>Um sistema, dois locais de trabalho</h1>
+                <p class="slide-subtitle">O software liga um armazém central e uma filial (filiais). A mesma aplicação — dois locais de trabalho.</p>
+                <div class="worlds-diagram diagram-wrap">
+                    <svg viewBox="0 -35 520 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Armazém central e filial ligados na mesma aplicação">
+                        <defs>
+                            <marker id="arrowhead-worlds-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                            <marker id="arrowhead-worlds-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                        </defs>
+                        <circle class="worlds-circle-warehouse" cx="310" cy="82" r="72"/>
+                        <text class="worlds-circle-label" x="310" y="88" text-anchor="middle">Armazém</text>
+                        <circle class="worlds-circle-branch" cx="95" cy="210" r="48"/>
+                        <text class="worlds-circle-label" x="95" y="216" text-anchor="middle">Filial</text>
+                        <line class="worlds-arrow-request" x1="142" y1="188" x2="252" y2="138"/>
+                        <rect class="worlds-arrow-label-border-warm" x="178" y="193" width="118" height="22" rx="4"/>
+                        <text class="worlds-arrow-label" x="237" y="208" text-anchor="middle">Precisamos disto</text>
+                        <path class="worlds-arrow-return" d="M 248 38 Q 165 -32 128 168"/>
+                        <rect class="worlds-arrow-label-border-teal" x="148" y="-8" width="68" height="22" rx="4"/>
+                        <text class="worlds-arrow-label" x="182" y="7" text-anchor="middle">Aqui está</text>
+                    </svg>
+                </div>
+                <div class="worlds-details slide-columns">
+                    <div>
+                        <h2>Armazém central</h2>
+                        <ul>
+                            <li>Guarda o catálogo e o stock</li>
+                            <li>Compra aos fornecedores</li>
+                            <li>Envia mercadorias à filial</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h2 class="worlds-heading-branch">Filial</h2>
+                        <ul>
+                            <li>Vê o que o armazém tem</li>
+                            <li>Pede o que precisa</li>
+                            <li>Confirma quando a mercadoria chega</li>
+                        </ul>
+                    </div>
+                </div>
+                <p><strong>A filial pede. O armazém entrega.</strong></p>
+            </section>
+
+            <!-- Slide 3: Circuito fechado -->
+            <section class="slide slide-process" data-slide="3" aria-label="Circuito fechado">
+                <h1>Do artigo ao stock na filial</h1>
+                <p class="slide-missing-item-subline">Exemplo: CEM-50 — Cimento 50 kg. Já está no catálogo; o circuito fecha na filial.</p>
+                <div class="slide-process-diagram slide-process-diagram-wide diagram-wrap">
+                    <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Circuito fechado: a filial pede CEM-50; se não há stock, a encomenda vira receção no armazém; depois o pedido expede e a filial confirma">
+                        <defs>
+                            <marker id="arrowhead-circuit-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                            <marker id="arrowhead-circuit-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                            <marker id="arrowhead-circuit-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
+                        </defs>
+                        <ellipse class="slide-process-arrow-neutral" cx="310" cy="178" rx="228" ry="120" fill="none"/>
+                        <text class="missing-item-satisfaction-label" x="535" y="16" text-anchor="middle">Armazém</text>
+                        <text class="missing-item-satisfaction-label" x="110" y="340" text-anchor="middle">Filial</text>
+                        <rect class="worlds-arrow-label-border-warm" x="40" y="108" width="86" height="22" rx="4"/>
+                        <text class="worlds-arrow-label" x="83" y="123" text-anchor="middle">CEM-50</text>
+                        <rect class="missing-item-node-warm" x="28" y="140" width="110" height="40" rx="8"/>
+                        <text class="missing-item-label" x="83" y="165" text-anchor="middle">Pede</text>
+                        <rect class="missing-item-node-teal" x="470" y="20" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="535" y="45" text-anchor="middle">Encomenda</text>
+                        <rect class="missing-item-node-teal" x="475" y="84" width="120" height="40" rx="8"/>
+                        <text class="missing-item-label" x="535" y="109" text-anchor="middle">Receção</text>
+                        <rect class="missing-item-node-teal" x="475" y="152" width="120" height="40" rx="8"/>
+                        <text class="missing-item-label" x="535" y="177" text-anchor="middle">Stock</text>
+                        <rect class="missing-item-node-teal" x="338" y="254" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="403" y="279" text-anchor="middle">Expedido</text>
+                        <rect class="missing-item-node-warm" x="68" y="252" width="155" height="40" rx="8"/>
+                        <text class="missing-item-label" x="145.5" y="277" text-anchor="middle">Confirma</text>
+                        <text class="missing-item-satisfaction-label" x="145.5" y="308" text-anchor="middle">fecha o circuito</text>
+                        <text class="missing-item-satisfaction-label" x="610" y="76" text-anchor="start">encomenda vira receção</text>
+                        <text class="missing-item-satisfaction-label" x="360" y="100" text-anchor="middle">Sem stock</text>
+                        <line class="slide-process-arrow-warm" x1="138" y1="160" x2="473" y2="172" marker-end="url(#arrowhead-circuit-warm)"/>
+                        <path class="slide-process-arrow-neutral" d="M 475 160 Q 340 80 470 48" stroke-dasharray="6,4" marker-end="url(#arrowhead-circuit-neutral)"/>
+                        <line class="slide-process-arrow-teal" x1="535" y1="60" x2="535" y2="82" marker-end="url(#arrowhead-circuit-teal)"/>
+                        <line class="slide-process-arrow-teal" x1="535" y1="124" x2="535" y2="150" marker-end="url(#arrowhead-circuit-teal)"/>
+                        <path class="slide-process-arrow-teal" d="M 535 192 Q 555 230 468 264" marker-end="url(#arrowhead-circuit-teal)"/>
+                        <line class="slide-process-arrow-teal" x1="338" y1="274" x2="225" y2="272" marker-end="url(#arrowhead-circuit-teal)"/>
+                    </svg>
+                </div>
+                <p>Cada etapa gera dados estruturados. O circuito só fecha quando a filial confirma a chegada.</p>
+            </section>
+
+            <!-- Slide 4: Requisição interna -->
+            <section class="slide slide-process" data-slide="4" aria-label="Requisição interna">
+                <h1>Requisição interna</h1>
+                <p class="slide-missing-item-subline">A filial pede; o armazém expede.</p>
+                <div class="slide-process-diagram slide-process-diagram-wide diagram-wrap">
+                    <svg viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Filial pede, armazém expede">
+                        <defs>
+                            <marker id="arrowhead-req-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                            <marker id="arrowhead-req-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                        </defs>
+                        <rect class="missing-item-node-warm" x="70" y="16" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="135" y="41" text-anchor="middle">Catálogo</text>
+                        <rect class="missing-item-node-warm" x="70" y="90" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="135" y="115" text-anchor="middle">Rascunho</text>
+                        <text class="missing-item-satisfaction-label" x="220" y="115" text-anchor="start">Offline: fila local</text>
+                        <rect class="missing-item-node-warm" x="70" y="164" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="135" y="189" text-anchor="middle">Submete</text>
+                        <line class="slide-process-arrow-warm" x1="135" y1="56" x2="135" y2="88" marker-end="url(#arrowhead-req-warm)"/>
+                        <line class="slide-process-arrow-warm" x1="135" y1="130" x2="135" y2="162" marker-end="url(#arrowhead-req-warm)"/>
+                        <rect class="missing-item-node-teal" x="430" y="16" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="495" y="41" text-anchor="middle">Fila</text>
+                        <rect class="missing-item-node-teal" x="430" y="90" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="495" y="115" text-anchor="middle">Emite</text>
+                        <text class="missing-item-satisfaction-label" x="575" y="115" text-anchor="start">parcial OK</text>
+                        <rect class="missing-item-node-teal" x="430" y="164" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="495" y="189" text-anchor="middle">Expedido</text>
+                        <line class="slide-process-arrow-teal" x1="495" y1="56" x2="495" y2="88" marker-end="url(#arrowhead-req-teal)"/>
+                        <line class="slide-process-arrow-teal" x1="495" y1="130" x2="495" y2="162" marker-end="url(#arrowhead-req-teal)"/>
+                        <path class="slide-process-arrow-warm" d="M 202 184 Q 320 184 320 50 L 428 36" marker-end="url(#arrowhead-req-warm)"/>
+                        <rect class="worlds-arrow-label-border-warm" x="276" y="96" width="88" height="22" rx="4"/>
+                        <text class="worlds-arrow-label" x="320" y="111" text-anchor="middle">Aprovado</text>
+                    </svg>
+                </div>
+                <div class="slide-process-details worlds-details slide-columns">
+                    <div>
+                        <h2 class="worlds-heading-branch">Filial</h2>
+                        <ul>
+                            <li>Gestor aprova o pedido</li>
+                            <li>Offline sincroniza ao reconectar</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h2>Armazém</h2>
+                        <ul>
+                            <li>Encerramento parcial com motivo</li>
+                            <li>Estado passa a <strong>expedido</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 5: Receção na filial -->
+            <section class="slide slide-process" data-slide="5" aria-label="Receção na filial">
+                <h1>Receção na filial</h1>
+                <div class="slide-process-diagram diagram-wrap">
+                    <svg viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Expedido chega à filial">
+                        <defs>
+                            <marker id="arrowhead-recv-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                            <marker id="arrowhead-recv-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                            <marker id="arrowhead-recv-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
+                        </defs>
+                        <rect class="missing-item-node-teal" x="340" y="16" width="130" height="36" rx="8"/>
+                        <text class="missing-item-label" x="405" y="39" text-anchor="middle">Expedido</text>
+                        <rect class="missing-item-node-warm" x="150" y="108" width="150" height="40" rx="8"/>
+                        <text class="missing-item-label" x="225" y="133" text-anchor="middle">Confirma qtd</text>
+                        <rect class="missing-item-node-warm" x="36" y="214" width="170" height="40" rx="8"/>
+                        <text class="missing-item-label" x="121" y="239" text-anchor="middle">Stock filial sobe</text>
+                        <rect class="missing-item-node-neutral" x="340" y="112" width="140" height="36" rx="8"/>
+                        <text class="missing-item-label" x="410" y="135" text-anchor="middle">Parcial / encerra</text>
+                        <rect class="missing-item-node-neutral" x="250" y="250" width="140" height="36" rx="8"/>
+                        <text class="missing-item-label" x="320" y="273" text-anchor="middle">Ajuste admin</text>
+                        <line class="slide-process-arrow-teal" x1="370" y1="52" x2="280" y2="106" marker-end="url(#arrowhead-recv-teal)"/>
+                        <line class="slide-process-arrow-warm" x1="190" y1="148" x2="150" y2="212" marker-end="url(#arrowhead-recv-warm)"/>
+                        <line class="slide-process-arrow-neutral" x1="300" y1="128" x2="338" y2="128" marker-end="url(#arrowhead-recv-neutral)"/>
+                        <line class="slide-process-arrow-neutral" x1="206" y1="254" x2="248" y2="266" marker-end="url(#arrowhead-recv-neutral)"/>
+                    </svg>
+                </div>
+                <p><strong>Circuito fechado:</strong> o artigo percorreu catálogo → compra → stock central → requisição → expedição → stock filial. Cada passo ficou registado.</p>
+            </section>
+
+            <!-- Slide 6: Catálogo -->
+            <section class="slide slide-process" data-slide="6" aria-label="Catálogo">
+                <h1>Catálogo e preços</h1>
+                <p class="slide-missing-item-subline">Só o armazém gere o catálogo.</p>
+                <div class="slide-process-diagram diagram-wrap">
+                    <svg viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Artigo no centro do catálogo">
+                        <defs>
+                            <marker id="arrowhead-cat-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                            <marker id="arrowhead-cat-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
+                        </defs>
+                        <rect class="missing-item-node-teal" x="200" y="108" width="150" height="48" rx="8"/>
+                        <text class="missing-item-label" x="275" y="137" text-anchor="middle">Artigo</text>
+                        <rect class="missing-item-node-neutral" x="36" y="28" width="120" height="36" rx="8"/>
+                        <text class="missing-item-label" x="96" y="51" text-anchor="middle">Família</text>
+                        <rect class="missing-item-node-teal" x="400" y="28" width="120" height="36" rx="8"/>
+                        <text class="missing-item-label" x="460" y="51" text-anchor="middle">Preços</text>
+                        <rect class="missing-item-node-neutral" x="36" y="210" width="140" height="36" rx="8"/>
+                        <text class="missing-item-label" x="106" y="233" text-anchor="middle">Fornecedor</text>
+                        <text class="missing-item-satisfaction-label" x="106" y="258" text-anchor="middle">1 principal</text>
+                        <rect class="missing-item-node-neutral" x="380" y="140" width="120" height="36" rx="8"/>
+                        <text class="missing-item-label" x="440" y="163" text-anchor="middle">Genesis</text>
+                        <rect class="missing-item-node-teal" x="400" y="214" width="120" height="36" rx="8"/>
+                        <text class="missing-item-label" x="460" y="237" text-anchor="middle">Activo</text>
+                        <line class="slide-process-arrow-neutral" x1="130" y1="64" x2="210" y2="116" marker-end="url(#arrowhead-cat-neutral)"/>
+                        <line class="slide-process-arrow-neutral" x1="400" y1="64" x2="340" y2="116" marker-end="url(#arrowhead-cat-neutral)"/>
+                        <line class="slide-process-arrow-neutral" x1="160" y1="216" x2="214" y2="156" marker-end="url(#arrowhead-cat-neutral)"/>
+                        <line class="slide-process-arrow-neutral" x1="350" y1="140" x2="378" y2="154" marker-end="url(#arrowhead-cat-neutral)"/>
+                        <line class="slide-process-arrow-teal" x1="440" y1="176" x2="440" y2="212" marker-end="url(#arrowhead-cat-teal)"/>
+                    </svg>
+                </div>
+                <ul>
+                    <li>Código interno não muda depois de criado</li>
+                    <li>Cada alteração fica registada</li>
+                </ul>
+                <p>Artigos novos começam <strong>inactivos</strong> até estarem prontos para o catálogo global.</p>
+            </section>
+
+            <!-- Slide 7: Aprovisionamento -->
+            <section class="slide slide-process" data-slide="7" aria-label="Aprovisionamento">
+                <h1>Aprovisionamento</h1>
+                <p class="slide-missing-item-subline">Do rascunho ao fechado.</p>
+                <div class="slide-process-diagram diagram-wrap">
+                    <svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Estados da encomenda de compra">
+                        <defs>
+                            <marker id="arrowhead-po-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                            <marker id="arrowhead-po-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                            <marker id="arrowhead-po-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
+                        </defs>
+                        <rect class="missing-item-node-warm" x="24" y="20" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="89" y="45" text-anchor="middle">Rascunho</text>
+                        <rect class="missing-item-node-neutral" x="300" y="20" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="365" y="45" text-anchor="middle">Validado</text>
+                        <rect class="missing-item-node-neutral" x="190" y="95" width="140" height="40" rx="8"/>
+                        <text class="missing-item-label" x="260" y="120" text-anchor="middle">Submetido</text>
+                        <rect class="missing-item-node-teal" x="168" y="205" width="184" height="40" rx="8"/>
+                        <text class="missing-item-label" x="260" y="230" text-anchor="middle">Aprovado</text>
+                        <text class="missing-item-satisfaction-label" x="260" y="258" text-anchor="middle">totais congelados</text>
+                        <rect class="missing-item-node-teal" x="310" y="295" width="180" height="40" rx="8"/>
+                        <text class="missing-item-label" x="400" y="320" text-anchor="middle">Recebido / Fechado</text>
+                        <text class="missing-item-satisfaction-label" x="400" y="347" text-anchor="middle">parcial OK</text>
+                        <line class="slide-process-arrow-warm" x1="156" y1="40" x2="298" y2="40" marker-end="url(#arrowhead-po-warm)"/>
+                        <path class="slide-process-arrow-neutral" d="M 365 60 L 365 115 L 332 115" marker-end="url(#arrowhead-po-neutral)"/>
+                        <line class="slide-process-arrow-neutral" x1="260" y1="137" x2="260" y2="203" marker-end="url(#arrowhead-po-neutral)"/>
+                        <path class="slide-process-arrow-neutral" d="M 352 225 L 400 225 L 400 293" marker-end="url(#arrowhead-po-neutral)"/>
+                    </svg>
+                </div>
+                <p>Sem preço de fornecedor, não há linha de compra — o catálogo tem de estar completo primeiro.</p>
+            </section>
+
+            <!-- Slide 8: Stock central -->
+            <section class="slide slide-process" data-slide="8" aria-label="Stock central">
+                <h1>Stock central</h1>
+                <p class="slide-missing-item-subline">A quantidade nunca se escreve à mão.</p>
+                <div class="slide-process-diagram diagram-wrap">
+                    <svg viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Físico menos reservado é o disponível">
+                        <defs>
+                            <marker id="arrowhead-stock-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                            <marker id="arrowhead-stock-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
+                        </defs>
+                        <rect class="missing-item-node-teal" x="16" y="100" width="110" height="40" rx="8"/>
+                        <text class="missing-item-label" x="71" y="125" text-anchor="middle">Receção</text>
+                        <rect class="stock-mass-physical" x="168" y="48" width="280" height="150" rx="16"/>
+                        <text class="missing-item-label" x="250" y="95" text-anchor="middle">Físico</text>
+                        <text class="worlds-arrow-label" x="250" y="148" text-anchor="middle">Disponível</text>
+                        <rect class="stock-mass-reserved" x="330" y="68" width="100" height="110" rx="12"/>
+                        <text class="missing-item-label" x="380" y="120" text-anchor="middle">Reservado</text>
+                        <text class="missing-item-satisfaction-label" x="380" y="142" text-anchor="middle">stock novo aloca-se</text>
+                        <line class="slide-process-arrow-teal" x1="128" y1="120" x2="166" y2="120" marker-end="url(#arrowhead-stock-teal)"/>
+                        <text class="missing-item-satisfaction-label" x="308" y="218" text-anchor="middle">Disponível = físico − reservado</text>
+                        <rect class="missing-item-node-neutral" x="200" y="232" width="160" height="36" rx="8"/>
+                        <text class="missing-item-label" x="280" y="255" text-anchor="middle">Ajuste + motivo</text>
+                        <line class="slide-process-arrow-neutral" x1="280" y1="200" x2="280" y2="230" marker-end="url(#arrowhead-stock-neutral)"/>
+                    </svg>
+                </div>
+                <ul>
+                    <li>Receção (parcial OK) fica registada</li>
+                    <li>Ajuste só com motivo, e só o administrador</li>
+                </ul>
+            </section>
+
+            <!-- Slide 9: Artigo em falta -->
+            <section class="slide slide-missing-item" data-slide="9" aria-label="Quando o artigo não existe no catálogo">
+                <h1>Quando o artigo não existe no catálogo</h1>
+                <p class="slide-missing-item-subline">Não é uma encomenda — uma conversa que fecha quando o artigo entra para o catálogo.</p>
+                <div class="missing-item-loop diagram-wrap">
+                    <svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fluxo conversa artigo em falta">
+                        <defs>
+                            <marker id="arrowhead-missing-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                            <marker id="arrowhead-missing-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                            <marker id="arrowhead-missing-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
+                        </defs>
+                        <rect class="missing-item-node-warm" x="24" y="20" width="162" height="40" rx="8"/>
+                        <text class="missing-item-label" x="105" y="45" text-anchor="middle">Não está no catálogo!!</text>
+                        <rect class="missing-item-node-neutral" x="300" y="20" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="365" y="45" text-anchor="middle">Nova conversa</text>
+                        <rect class="missing-item-node-neutral" x="190" y="95" width="140" height="40" rx="8"/>
+                        <text class="missing-item-label" x="260" y="120" text-anchor="middle">Entendimento</text>
+                        <rect class="missing-item-node-teal" x="168" y="205" width="184" height="40" rx="8"/>
+                        <text class="missing-item-label" x="260" y="230" text-anchor="middle">Inserido no catálogo</text>
+                        <rect class="missing-item-node-warm" x="360" y="295" width="140" height="40" rx="8"/>
+                        <text class="missing-item-label" x="430" y="320" text-anchor="middle">Fecha a conversa</text>
+                        <text class="missing-item-satisfaction-label" x="430" y="347" text-anchor="middle">Expressar satisfação</text>
+                        <text class="missing-item-star missing-item-star-on" x="398" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="414" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="430" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="446" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="462" y="367" text-anchor="middle">★</text>
+                        <line class="missing-item-arrow-warm" x1="188" y1="34" x2="298" y2="34"/>
+                        <line class="missing-item-arrow-teal" x1="298" y1="48" x2="188" y2="48"/>
+                        <path class="missing-item-arrow-neutral" d="M 365 60 L 365 115 L 330 115"/>
+                        <line class="missing-item-arrow-neutral" x1="260" y1="137" x2="260" y2="203"/>
+                        <path class="missing-item-arrow-neutral" d="M 352 225 L 430 225 L 430 295"/>
+                    </svg>
+                </div>
+            </section>
+
+            <!-- Slide 10: Visão futura gráficos -->
+            <section class="slide" data-slide="10" aria-label="Visão futura gráficos">
+                <p class="slide-eyebrow">Amanhã</p>
+                <h1>Visão futura: gráficos e decisões</h1>
+                <span class="future-badge">Visão futura — ilustrativo</span>
+                <div class="slide-columns">
+                    <div class="chart-panel">
+                        <h3>Stock ao longo do tempo</h3>
+                        <div class="mock-chart" aria-hidden="true">
+                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="40" y1="110" x2="300" y2="110" stroke="#334155" stroke-width="1"/>
+                                <line x1="40" y1="20" x2="40" y2="110" stroke="#334155" stroke-width="1"/>
+                                <polyline points="50,90 80,75 110,80 140,55 170,60 200,40 230,50 260,30 290,35" fill="none" stroke="#14b8a6" stroke-width="2.5"/>
+                                <circle cx="140" cy="55" r="4" fill="#14b8a6"/>
+                                <circle cx="260" cy="30" r="4" fill="#14b8a6"/>
+                                <text x="50" y="125" fill="#94a3b8" font-size="10">Jan</text>
+                                <text x="140" y="125" fill="#94a3b8" font-size="10">Abr</text>
+                                <text x="230" y="125" fill="#94a3b8" font-size="10">Jul</text>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="chart-panel">
+                        <h3>Requisições por filial</h3>
+                        <div class="mock-chart" aria-hidden="true">
+                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="60" y="50" width="50" height="60" fill="#0f766e" rx="4"/>
+                                <rect x="130" y="30" width="50" height="80" fill="#14b8a6" rx="4"/>
+                                <rect x="200" y="65" width="50" height="45" fill="#0f766e" opacity="0.7" rx="4"/>
+                                <text x="72" y="125" fill="#94a3b8" font-size="10">Norte</text>
+                                <text x="142" y="125" fill="#94a3b8" font-size="10">Sul</text>
+                                <text x="205" y="125" fill="#94a3b8" font-size="10">Lisboa</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <p style="margin-top:1rem">Estes gráficos <strong>ainda não existem na aplicação</strong> — mas cada transacção de hoje alimenta o relatório de amanhã.</p>
+            </section>
+
+            <!-- Slide 11: Chamada à ação -->
+            <section class="slide" data-slide="11" aria-label="O que precisamos de si">
+                <p class="slide-eyebrow">O que precisamos de si</p>
+                <h1>Comece hoje — os dados acumulam-se</h1>
+                <ul class="cta-list">
+                    <li>
+                        <span class="cta-num">1</span>
+                        <span><strong>Armazém:</strong> mantenha o catálogo actualizado; registe cada receção e expedição no sistema — não em papel paralelo.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">2</span>
+                        <span><strong>Filiais:</strong> faça requisições pelo <span class="url-tag">/branch/requests/</span>; use fios para artigos em falta; confirme recepções.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">3</span>
+                        <span><strong>Gestão:</strong> aprove com critério; os limites EUR protegem o fluxo de caixa e geram histórico de decisões.</span>
+                    </li>
+                    <li>
+                        <span class="cta-num">4</span>
+                        <span><strong>Todos:</strong> partilhe feedback na Voz da Empresa — melhoria contínua depende de vozes reais.</span>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Slide 12: Voz da Empresa -->
+            <section class="slide slide-finale" data-slide="12" aria-label="Voz da Empresa">
+                <p class="slide-eyebrow">Continue a falar</p>
+                <h1>Voz da Empresa — o seu canal permanente</h1>
+                <div class="slide-finale-layout slide-columns">
+                    <div class="slide-finale-copy">
+                        <p class="slide-subtitle">A sua voz molda a nossa melhoria. Transacções geram dados; conversas geram contexto.</p>
+                        <p class="url-tag">/company-voice/</p>
+                        <ul>
+                            <li><strong>Todos</strong> — pessoal de armazém e filial lê e publica</li>
+                            <li><strong>Etiquetas</strong> — elogio, preocupação, sugestão, desejo</li>
+                            <li><strong>Um sub-fio de resposta</strong> por publicação</li>
+                            <li><strong>Editar</strong> nos primeiros 15 min; eliminação suave pelo autor</li>
+                        </ul>
+                        <p><strong>Partilhe elogios, preocupações, sugestões e desejos</strong> — o feed nunca fecha; cada publicação enriquece o quadro.</p>
+                        <p class="slide-meta">Manuais: <span class="url-tag">docs/user-manuals/pt/</span> · Próxima fase: preparação para produção (Fase 7)</p>
+                    </div>
+                    <div class="voice-feed-panel" aria-label="Ilustração do feed contínuo">
+                        <h2>Feed contínuo</h2>
+                        <div class="voice-stream" aria-hidden="true">
+                            <div class="voice-post">Elogio — óptimo apoio!</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Sugestão — etiquetas mais rápidas</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Preocupação — atrasos de stock</div>
+                            <div class="voice-stream-arrow">↓</div>
+                            <div class="voice-post">Desejo — alertas no telemóvel</div>
+                        </div>
+                        <p class="voice-stream-label">Publicações não fecham — o stream continua</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 13: Os dados são o novo petróleo -->
+            <section class="slide" data-slide="13" aria-label="Os dados são o novo petróleo">
                 <p class="slide-eyebrow">Mensagem central</p>
                 <h1>Os dados são o novo petróleo</h1>
                 <p class="slide-subtitle">Quanto mais cedo começarmos a usar o sistema no dia a dia, mais cedo teremos combustível para decisões inteligentes.</p>
@@ -49,8 +486,8 @@
                 <p><strong>Não espere pelos gráficos.</strong> O petróleo só existe se alguém o extrair — comece hoje.</p>
             </section>
 
-            <!-- Slide 3: Cenário -->
-            <section class="slide" data-slide="3" aria-label="O cenário">
+            <!-- Slide 14: Cenário -->
+            <section class="slide" data-slide="14" aria-label="O cenário">
                 <p class="slide-eyebrow">Contexto</p>
                 <h1>O cenário de hoje</h1>
                 <p><strong>Um armazém central</strong> gere o catálogo mestre, compra a fornecedores e expede stock.</p>
@@ -64,8 +501,8 @@
                 </ul>
             </section>
 
-            <!-- Slide 4: O que já regista -->
-            <section class="slide" data-slide="4" aria-label="O que o sistema já regista">
+            <!-- Slide 15: O que já regista -->
+            <section class="slide" data-slide="15" aria-label="O que o sistema já regista">
                 <p class="slide-eyebrow">Hoje, sem gráficos</p>
                 <h1>O que o sistema já regista</h1>
                 <table class="data-table">
@@ -112,80 +549,12 @@
                 <p style="margin-top:0.75rem"><strong>Regra de ouro:</strong> a quantidade de stock nunca se digita — só resulta de movimentos no livro-razão.</p>
             </section>
 
-            <!-- Slide 5: Requisição interna -->
-            <section class="slide" data-slide="5" aria-label="Requisição interna">
-                <h1>Requisição interna</h1>
-                <div class="slide-columns">
-                    <div>
-                        <h2>Lado filial</h2>
-                        <p class="url-tag">/branch/requests/</p>
-                        <ol>
-                            <li>Consultar catálogo (custo oculto, indicação de stock)</li>
-                            <li>Criar rascunho e adicionar linhas</li>
-                            <li>Submeter → gestor aprova (congela totais)</li>
-                            <li><strong>Offline:</strong> rascunhos em fila local; sincronizam ao reconectar</li>
-                        </ol>
-                    </div>
-                    <div>
-                        <h2>Lado armazém</h2>
-                        <p class="url-tag">/manage/internal-requests/</p>
-                        <ol>
-                            <li>Fila de requisições aprovadas</li>
-                            <li>Emitir mercadoria (parcial OK) — stock central desce</li>
-                            <li>Encerramento parcial com motivo</li>
-                            <li>Estado passa a <strong>expedido</strong> → filial recebe</li>
-                        </ol>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Slide 6: Receção na filial -->
-            <section class="slide" data-slide="6" aria-label="Receção na filial">
-                <h1>Receção na filial</h1>
-                <p class="url-tag">/branch/receipts/</p>
-                <ul>
-                    <li>A filial confirma quantidades recebidas face à expedição</li>
-                    <li><strong>Stock da filial sobe</strong> via <code>BranchStockMovement</code></li>
-                    <li>Recepção parcial permitida; encerramento parcial com motivo (gestor+)</li>
-                    <li>Administrador de filial pode ajustar stock local</li>
-                </ul>
-                <p><strong>Circuito fechado:</strong> o artigo percorreu catálogo → compra → stock central → requisição → expedição → stock filial. Cada passo ficou registado.</p>
-            </section>
-
-            <!-- Slide 7: Catálogo -->
-            <section class="slide" data-slide="7" aria-label="Catálogo">
-                <h1>Catálogo e preços</h1>
-                <p class="url-tag">/manage/items/</p>
-                <ul>
-                    <li><strong>Famílias e sub-famílias</strong> — taxonomia de dois níveis</li>
-                    <li><strong>Artigo</strong> — código interno (imutável após criação), descrição, IVA, preços de venda (retalho, grosso, especial)</li>
-                    <li><strong>Fornecedores</strong> — preços de custo por artigo; um fornecedor <em>principal</em> por artigo</li>
-                    <li><strong>Genesis</strong> — activação exige preço de retalho &gt; 0 e qualificação</li>
-                    <li><strong>Auditoria</strong> — cada alteração fica em <code>ItemChangeLog</code></li>
-                </ul>
-                <p>Artigos novos começam <strong>inactivos</strong> até estarem prontos para o catálogo global.</p>
-            </section>
-
-            <!-- Slide 8: Aprovisionamento -->
-            <section class="slide" data-slide="8" aria-label="Aprovisionamento">
-                <h1>Aprovisionamento</h1>
-                <p class="url-tag">/manage/purchase-orders/</p>
-                <ul>
-                    <li><strong>Rascunho</strong> → escolher fornecedor, adicionar linhas com quantidade e descontos</li>
-                    <li><strong>Validação</strong> — linha rejeitada se o fornecedor não tiver preço para o artigo</li>
-                    <li><strong>Submetido</strong> → aguarda aprovação financeira</li>
-                    <li><strong>Aprovado</strong> — totais líquido/IVA/bruto congelados no momento da aprovação</li>
-                    <li><strong>Recebido / Fechado</strong> — após receção parcial ou total de mercadorias</li>
-                </ul>
-                <p>Sem preço de fornecedor, não há linha de compra — o catálogo tem de estar completo primeiro.</p>
-            </section>
-
-            <!-- Slide 9: Autorização -->
-            <section class="slide" data-slide="9" aria-label="Autorização">
+            <!-- Slide 16: Autorização -->
+            <section class="slide" data-slide="16" aria-label="Autorização">
                 <h1>Autorização e controlos</h1>
                 <div class="slide-columns">
                     <div>
-                        <h2>Armazém — encomendas de compra</h2>
+                        <h2 class="heading-warehouse">Armazém — encomendas de compra</h2>
                         <p class="url-tag">/manage/approval-limits/</p>
                         <ul>
                             <li><strong>Administrador</strong> — aprova qualquer montante</li>
@@ -194,264 +563,13 @@
                         </ul>
                     </div>
                     <div>
-                        <h2>Filial — requisições internas</h2>
+                        <h2 class="heading-branch">Filial — requisições internas</h2>
                         <p class="url-tag">/manage/branch-approval-limits/</p>
                         <ul>
                             <li><strong>Gestor</strong> — aprova dentro de tetos por filial</li>
                             <li><strong>Administrador filial</strong> — aprovação ilimitada</li>
                             <li>Rejeitar / encerrar parcial exige <strong>motivo escrito</strong></li>
                         </ul>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Slide 10: Stock central -->
-            <section class="slide" data-slide="10" aria-label="Stock central">
-                <h1>Stock central</h1>
-                <p class="url-tag">/manage/goods-receipts/</p>
-                <ul>
-                    <li><strong>Receção de mercadorias</strong> — parcial ou total; cada receção escreve <code>StockMovement</code></li>
-                    <li><strong>Quantidade em cache</strong> — <code>Item.quantity</code> actualiza-se só via movimentos</li>
-                    <li><strong>Disponível</strong> = físico − reservado (requisições aprovadas)</li>
-                    <li><strong>Reserva FIFO (D32)</strong> — ao aprovar requisição, reserva-se o que há; stock entrante aloca-se automaticamente</li>
-                    <li><strong>Ajuste de stock</strong> — só administrador de armazém, com motivo obrigatório</li>
-                </ul>
-            </section>
-
-            <!-- Slide 11: Circuito fechado -->
-            <section class="slide" data-slide="11" aria-label="Circuito fechado">
-                <p class="slide-eyebrow">Circuito fechado</p>
-                <h1>Do artigo ao stock na filial</h1>
-                <div class="diagram-wrap">
-                    <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama do circuito fechado">
-                        <defs>
-                            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
-                            </marker>
-                        </defs>
-                        <rect class="flow-node flow-node-accent" x="10" y="70" width="110" height="50" rx="8"/>
-                        <text class="flow-text" x="65" y="92" text-anchor="middle">Catálogo</text>
-                        <text class="flow-text-sm" x="65" y="108" text-anchor="middle">/manage/items/</text>
-
-                        <rect class="flow-node" x="140" y="70" width="110" height="50" rx="8"/>
-                        <text class="flow-text" x="195" y="92" text-anchor="middle">Compras</text>
-                        <text class="flow-text-sm" x="195" y="108" text-anchor="middle">purchase-orders</text>
-
-                        <rect class="flow-node" x="270" y="70" width="110" height="50" rx="8"/>
-                        <text class="flow-text" x="325" y="92" text-anchor="middle">Aprovação</text>
-                        <text class="flow-text-sm" x="325" y="108" text-anchor="middle">grau + limites</text>
-
-                        <rect class="flow-node" x="400" y="70" width="110" height="50" rx="8"/>
-                        <text class="flow-text" x="455" y="92" text-anchor="middle">Stock</text>
-                        <text class="flow-text-sm" x="455" y="108" text-anchor="middle">goods-receipts</text>
-
-                        <rect class="flow-node flow-node-accent" x="530" y="70" width="110" height="50" rx="8"/>
-                        <text class="flow-text" x="585" y="92" text-anchor="middle">Requisição</text>
-                        <text class="flow-text-sm" x="585" y="108" text-anchor="middle">branch/requests</text>
-
-                        <rect class="flow-node" x="660" y="70" width="110" height="50" rx="8"/>
-                        <text class="flow-text" x="715" y="92" text-anchor="middle">Expedição</text>
-                        <text class="flow-text-sm" x="715" y="108" text-anchor="middle">internal-requests</text>
-
-                        <rect class="flow-node flow-node-accent" x="790" y="70" width="100" height="50" rx="8"/>
-                        <text class="flow-text" x="840" y="92" text-anchor="middle">Receção</text>
-                        <text class="flow-text-sm" x="840" y="108" text-anchor="middle">branch/receipts</text>
-
-                        <line class="flow-arrow" x1="120" y1="95" x2="138" y2="95"/>
-                        <line class="flow-arrow" x1="250" y1="95" x2="268" y2="95"/>
-                        <line class="flow-arrow" x1="380" y1="95" x2="398" y2="95"/>
-                        <line class="flow-arrow" x1="510" y1="95" x2="528" y2="95"/>
-                        <line class="flow-arrow" x1="640" y1="95" x2="658" y2="95"/>
-                        <line class="flow-arrow" x1="770" y1="95" x2="788" y2="95"/>
-
-                        <path class="flow-arrow" d="M 840 120 Q 840 160 65 160 Q 65 130 65 122" stroke-dasharray="6,4"/>
-                        <text class="flow-text-sm" x="450" y="175" text-anchor="middle">Sem stock? Volta a Compras → Receção → disponível</text>
-                    </svg>
-                </div>
-                <p>Cada etapa gera dados estruturados. O circuito só fecha quando a filial confirma a chegada.</p>
-            </section>
-
-            <!-- Slide 12: Vista de conjunto -->
-            <section class="slide slide-worlds" data-slide="12" aria-label="Um sistema dois locais de trabalho">
-                <p class="slide-eyebrow">Vista de conjunto</p>
-                <h1>Um sistema, dois locais de trabalho</h1>
-                <p class="slide-subtitle">O software liga um armazém central e uma filial (filiais). A mesma aplicação — dois locais de trabalho.</p>
-                <div class="worlds-diagram diagram-wrap">
-                    <svg viewBox="0 -35 520 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Armazém central e filial ligados na mesma aplicação">
-                        <defs>
-                            <marker id="arrowhead-worlds-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
-                            </marker>
-                            <marker id="arrowhead-worlds-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
-                            </marker>
-                        </defs>
-                        <circle class="worlds-circle-warehouse" cx="310" cy="82" r="72"/>
-                        <text class="worlds-circle-label" x="310" y="88" text-anchor="middle">Armazém</text>
-                        <circle class="worlds-circle-branch" cx="95" cy="210" r="48"/>
-                        <text class="worlds-circle-label" x="95" y="216" text-anchor="middle">Filial</text>
-                        <line class="worlds-arrow-request" x1="142" y1="188" x2="252" y2="138"/>
-                        <rect class="worlds-arrow-label-border-warm" x="178" y="193" width="118" height="22" rx="4"/>
-                        <text class="worlds-arrow-label" x="237" y="208" text-anchor="middle">Precisamos disto</text>
-                        <path class="worlds-arrow-return" d="M 248 38 Q 165 -32 128 168"/>
-                        <rect class="worlds-arrow-label-border-teal" x="148" y="-8" width="68" height="22" rx="4"/>
-                        <text class="worlds-arrow-label" x="182" y="7" text-anchor="middle">Aqui está</text>
-                    </svg>
-                </div>
-                <div class="worlds-details slide-columns">
-                    <div>
-                        <h2>Armazém central</h2>
-                        <ul>
-                            <li>Guarda o catálogo e o stock</li>
-                            <li>Compra aos fornecedores</li>
-                            <li>Envia mercadorias à filial</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h2>Filial</h2>
-                        <ul>
-                            <li>Vê o que o armazém tem</li>
-                            <li>Pede o que precisa</li>
-                            <li>Confirma quando a mercadoria chega</li>
-                        </ul>
-                    </div>
-                </div>
-                <p><strong>A filial pede. O armazém entrega.</strong></p>
-            </section>
-
-            <!-- Slide 13: Visão futura gráficos -->
-            <section class="slide" data-slide="13" aria-label="Visão futura gráficos">
-                <p class="slide-eyebrow">Amanhã</p>
-                <h1>Visão futura: gráficos e decisões</h1>
-                <span class="future-badge">Visão futura — ilustrativo</span>
-                <div class="slide-columns">
-                    <div class="chart-panel">
-                        <h3>Stock ao longo do tempo</h3>
-                        <div class="mock-chart" aria-hidden="true">
-                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
-                                <line x1="40" y1="110" x2="300" y2="110" stroke="#334155" stroke-width="1"/>
-                                <line x1="40" y1="20" x2="40" y2="110" stroke="#334155" stroke-width="1"/>
-                                <polyline points="50,90 80,75 110,80 140,55 170,60 200,40 230,50 260,30 290,35" fill="none" stroke="#14b8a6" stroke-width="2.5"/>
-                                <circle cx="140" cy="55" r="4" fill="#14b8a6"/>
-                                <circle cx="260" cy="30" r="4" fill="#14b8a6"/>
-                                <text x="50" y="125" fill="#94a3b8" font-size="10">Jan</text>
-                                <text x="140" y="125" fill="#94a3b8" font-size="10">Abr</text>
-                                <text x="230" y="125" fill="#94a3b8" font-size="10">Jul</text>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="chart-panel">
-                        <h3>Requisições por filial</h3>
-                        <div class="mock-chart" aria-hidden="true">
-                            <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="60" y="50" width="50" height="60" fill="#0f766e" rx="4"/>
-                                <rect x="130" y="30" width="50" height="80" fill="#14b8a6" rx="4"/>
-                                <rect x="200" y="65" width="50" height="45" fill="#0f766e" opacity="0.7" rx="4"/>
-                                <text x="72" y="125" fill="#94a3b8" font-size="10">Norte</text>
-                                <text x="142" y="125" fill="#94a3b8" font-size="10">Sul</text>
-                                <text x="205" y="125" fill="#94a3b8" font-size="10">Lisboa</text>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <p style="margin-top:1rem">Estes gráficos <strong>ainda não existem na aplicação</strong> — mas cada transacção de hoje alimenta o relatório de amanhã.</p>
-            </section>
-
-            <!-- Slide 14: Chamada à ação -->
-            <section class="slide" data-slide="14" aria-label="O que precisamos de si">
-                <p class="slide-eyebrow">O que precisamos de si</p>
-                <h1>Comece hoje — os dados acumulam-se</h1>
-                <ul class="cta-list">
-                    <li>
-                        <span class="cta-num">1</span>
-                        <span><strong>Armazém:</strong> mantenha o catálogo actualizado; registe cada receção e expedição no sistema — não em papel paralelo.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">2</span>
-                        <span><strong>Filiais:</strong> faça requisições pelo <span class="url-tag">/branch/requests/</span>; use fios para artigos em falta; confirme recepções.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">3</span>
-                        <span><strong>Gestão:</strong> aprove com critério; os limites EUR protegem o fluxo de caixa e geram histórico de decisões.</span>
-                    </li>
-                    <li>
-                        <span class="cta-num">4</span>
-                        <span><strong>Todos:</strong> partilhe feedback na Voz da Empresa — melhoria contínua depende de vozes reais.</span>
-                    </li>
-                </ul>
-            </section>
-
-            <!-- Slide 15: Artigo em falta -->
-            <section class="slide slide-missing-item" data-slide="15" aria-label="Quando o artigo não existe no catálogo">
-                <h1>Quando o artigo não existe no catálogo</h1>
-                <p class="slide-missing-item-subline">Não é uma encomenda — uma conversa que fecha quando o artigo entra para o catálogo.</p>
-                <div class="missing-item-loop diagram-wrap">
-                    <svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fluxo conversa artigo em falta">
-                        <defs>
-                            <marker id="arrowhead-missing-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
-                            </marker>
-                            <marker id="arrowhead-missing-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
-                            </marker>
-                            <marker id="arrowhead-missing-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
-                            </marker>
-                        </defs>
-                        <rect class="missing-item-node-warm" x="24" y="20" width="162" height="40" rx="8"/>
-                        <text class="missing-item-label" x="105" y="45" text-anchor="middle">Não está no catálogo!!</text>
-                        <rect class="missing-item-node-neutral" x="300" y="20" width="130" height="40" rx="8"/>
-                        <text class="missing-item-label" x="365" y="45" text-anchor="middle">Nova conversa</text>
-                        <rect class="missing-item-node-neutral" x="190" y="95" width="140" height="40" rx="8"/>
-                        <text class="missing-item-label" x="260" y="120" text-anchor="middle">Entendimento</text>
-                        <rect class="missing-item-node-teal" x="168" y="205" width="184" height="40" rx="8"/>
-                        <text class="missing-item-label" x="260" y="230" text-anchor="middle">Inserido no catálogo</text>
-                        <rect class="missing-item-node-warm" x="360" y="295" width="140" height="40" rx="8"/>
-                        <text class="missing-item-label" x="430" y="320" text-anchor="middle">Fecha a conversa</text>
-                        <text class="missing-item-satisfaction-label" x="430" y="347" text-anchor="middle">Expressar satisfação</text>
-                        <text class="missing-item-star missing-item-star-on" x="398" y="367" text-anchor="middle">★</text>
-                        <text class="missing-item-star" x="414" y="367" text-anchor="middle">★</text>
-                        <text class="missing-item-star" x="430" y="367" text-anchor="middle">★</text>
-                        <text class="missing-item-star" x="446" y="367" text-anchor="middle">★</text>
-                        <text class="missing-item-star" x="462" y="367" text-anchor="middle">★</text>
-                        <line class="missing-item-arrow-warm" x1="188" y1="34" x2="298" y2="34"/>
-                        <line class="missing-item-arrow-teal" x1="298" y1="48" x2="188" y2="48"/>
-                        <path class="missing-item-arrow-neutral" d="M 365 60 L 365 115 L 330 115"/>
-                        <line class="missing-item-arrow-neutral" x1="260" y1="137" x2="260" y2="203"/>
-                        <path class="missing-item-arrow-neutral" d="M 352 225 L 430 225 L 430 295"/>
-                    </svg>
-                </div>
-            </section>
-
-            <!-- Slide 16: Voz da Empresa -->
-            <section class="slide slide-finale" data-slide="16" aria-label="Voz da Empresa">
-                <p class="slide-eyebrow">Continue a falar</p>
-                <h1>Voz da Empresa — o seu canal permanente</h1>
-                <div class="slide-finale-layout slide-columns">
-                    <div class="slide-finale-copy">
-                        <p class="slide-subtitle">A sua voz molda a nossa melhoria. Transacções geram dados; conversas geram contexto.</p>
-                        <p class="url-tag">/company-voice/</p>
-                        <ul>
-                            <li><strong>Todos</strong> — pessoal de armazém e filial lê e publica</li>
-                            <li><strong>Etiquetas</strong> — elogio, preocupação, sugestão, desejo</li>
-                            <li><strong>Um sub-fio de resposta</strong> por publicação</li>
-                            <li><strong>Editar</strong> nos primeiros 15 min; eliminação suave pelo autor</li>
-                        </ul>
-                        <p><strong>Partilhe elogios, preocupações, sugestões e desejos</strong> — o feed nunca fecha; cada publicação enriquece o quadro.</p>
-                        <p class="slide-meta">Manuais: <span class="url-tag">docs/user-manuals/pt/</span> · Próxima fase: preparação para produção (Fase 7)</p>
-                    </div>
-                    <div class="voice-feed-panel" aria-label="Ilustração do feed contínuo">
-                        <h2>Feed contínuo</h2>
-                        <div class="voice-stream" aria-hidden="true">
-                            <div class="voice-post">Elogio — óptimo apoio!</div>
-                            <div class="voice-stream-arrow">↓</div>
-                            <div class="voice-post">Sugestão — etiquetas mais rápidas</div>
-                            <div class="voice-stream-arrow">↓</div>
-                            <div class="voice-post">Preocupação — atrasos de stock</div>
-                            <div class="voice-stream-arrow">↓</div>
-                            <div class="voice-post">Desejo — alertas no telemóvel</div>
-                        </div>
-                        <p class="voice-stream-label">Publicações não fecham — o stream continua</p>
                     </div>
                 </div>
             </section>
@@ -469,7 +587,7 @@
                 </div>
                 <div class="credentials-columns slide-columns">
                     <div>
-                        <h2>Armazém central</h2>
+                        <h2 class="heading-warehouse">Armazém central</h2>
                         <table class="data-table credentials-table">
                             <thead>
                                 <tr>
@@ -488,11 +606,11 @@
                         </table>
                     </div>
                     <div>
-                        <h2>Filiais</h2>
+                        <h2 class="heading-branch">Filiais</h2>
                         <table class="data-table credentials-table">
                             <thead>
                                 <tr>
-                                    <th>Filial</th>
+                                    <th class="heading-branch">Filial</th>
                                     <th>Função</th>
                                     <th>Email</th>
                                 </tr>

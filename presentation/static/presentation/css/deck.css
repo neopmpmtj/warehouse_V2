@@ -275,6 +275,69 @@ body.deck-fullscreen:hover {
     fill: #f5a623;
 }
 
+/* Slides 4–9 — process graphics (same tokens as slides 2–3) */
+.slide-process .slide-missing-item-subline {
+    margin-bottom: 0.75rem;
+}
+
+.slide-process-diagram {
+    max-width: 640px;
+    margin: 0.25rem auto 0.5rem;
+}
+
+.slide-process-diagram-wide {
+    max-width: 720px;
+}
+
+.slide-process-arrow-warm {
+    stroke: var(--accent-warm);
+    stroke-width: 1.875;
+    fill: none;
+}
+
+.slide-process-arrow-teal {
+    stroke: var(--accent-light);
+    stroke-width: 1.875;
+    fill: none;
+}
+
+.slide-process-arrow-neutral {
+    stroke: var(--muted);
+    stroke-width: 1.875;
+    fill: none;
+}
+
+.slide-process-details {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.slide-process-details h2 {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    margin: 0 0 0.5rem;
+    color: var(--accent-light);
+}
+
+.slide-process-details .worlds-heading-branch {
+    color: var(--accent-warm);
+}
+
+.slide-process-details ul {
+    margin: 0;
+}
+
+.stock-mass-physical {
+    fill: rgba(15, 118, 110, 0.25);
+    stroke: var(--accent-light);
+    stroke-width: 1.875;
+}
+
+.stock-mass-reserved {
+    fill: rgba(245, 158, 11, 0.35);
+    stroke: var(--accent-warm);
+    stroke-width: 1.875;
+}
+
 /* Company Voice finale (slide 16 — text + feed panel) */
 .slide-finale-layout {
     width: 100%;
@@ -383,6 +446,18 @@ body.deck-fullscreen:hover {
     border-radius: 0.25rem;
 }
 
+.heading-warehouse {
+    color: var(--accent-light);
+}
+
+.heading-branch {
+    color: var(--accent-warm);
+}
+
+.data-table th.heading-branch {
+    color: var(--accent-warm);
+}
+
 .credentials-columns h2 {
     font-size: clamp(1rem, 2vw, 1.2rem);
     margin: 0 0 0.5rem;
@@ -453,42 +528,6 @@ body.deck-fullscreen:hover {
     display: block;
 }
 
-.flow-node {
-    fill: var(--surface);
-    stroke: var(--accent);
-    stroke-width: 2;
-}
-
-.flow-node-accent {
-    fill: rgba(15, 118, 110, 0.25);
-    stroke: var(--accent-light);
-}
-
-.flow-node-warm {
-    fill: rgba(245, 158, 11, 0.15);
-    stroke: var(--accent-warm);
-}
-
-.flow-text {
-    fill: var(--text);
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.flow-text-sm {
-    fill: var(--muted);
-    font-family: var(--font);
-    font-size: 11px;
-}
-
-.flow-arrow {
-    stroke: var(--muted);
-    stroke-width: 2;
-    fill: none;
-    marker-end: url(#arrowhead);
-}
-
 /* Slide 12 — warehouse / branch bird's-eye map */
 .slide-worlds .slide-subtitle {
     margin-bottom: 0.75rem;
@@ -508,6 +547,10 @@ body.deck-fullscreen:hover {
     font-size: clamp(1rem, 2vw, 1.25rem);
     margin: 0 0 0.5rem;
     color: var(--accent-light);
+}
+
+.worlds-details .worlds-heading-branch {
+    color: var(--accent-warm);
 }
 
 .worlds-details h2 + ul {

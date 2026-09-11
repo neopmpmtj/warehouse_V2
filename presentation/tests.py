@@ -3,6 +3,12 @@ from django.test import TestCase
 from presentation.views import DEMO_LOGIN_URL, DEMO_PASSWORD, SLIDE_COUNT
 
 
+def _slide_html(content, number):
+    start = content.index(f'data-slide="{number}"')
+    end = content.index("</section>", start)
+    return content[start:end]
+
+
 class PresentationDeckTests(TestCase):
     def test_presentation_pt_default_loads(self):
         response = self.client.get("/presentation/")
@@ -37,20 +43,45 @@ class PresentationDeckTests(TestCase):
         response = self.client.get("/presentation/en/")
         content = response.content.decode()
         self.assertLess(
-            content.index("Data is the new oil"),
-            content.index("Today's scenario"),
+            content.index('data-slide="2"'),
+            content.index("One system, two workplaces"),
+        )
+        self.assertLess(
+            content.index("One system, two workplaces"),
+            content.index("From item to branch stock"),
+        )
+        self.assertLess(
+            content.index("From item to branch stock"),
+            content.index("Internal request"),
+        )
+        self.assertLess(
+            content.index("Internal request"),
+            content.index("When the item is not in the catalogue"),
         )
         self.assertLess(
             content.index("Internal request"),
             content.index("Catalogue and pricing"),
         )
         self.assertLess(
-            content.index("Future vision: charts and decisions"),
-            content.index("Start today — data compounds"),
+            content.index("Company Voice — your ongoing channel"),
+            content.index("Data is the new oil"),
+        )
+        self.assertLess(
+            content.index("Data is the new oil"),
+            content.index("Today's scenario"),
+        )
+        self.assertLess(
+            content.index("What the system already records"),
+            content.index("Authorization and controls"),
+        )
+        self.assertLess(
+            content.index("Authorization and controls"),
+            content.index("Log in and explore"),
         )
 
-    def test_presentation_slide12_birds_eye(self):
+    def test_presentation_slide2_birds_eye(self):
         en = self.client.get("/presentation/en/")
+        self.assertContains(en, 'class="slide slide-worlds" data-slide="2"')
         self.assertContains(en, "One system, two workplaces")
         self.assertContains(en, "worlds-diagram")
         self.assertContains(en, "We need this")
@@ -62,6 +93,7 @@ class PresentationDeckTests(TestCase):
         self.assertNotContains(en, "Everyone works in the same software")
         self.assertNotContains(en, "Two worlds, one system")
         pt = self.client.get("/presentation/pt/")
+        self.assertContains(pt, 'class="slide slide-worlds" data-slide="2"')
         self.assertContains(pt, "Um sistema, dois locais de trabalho")
         self.assertContains(pt, "worlds-diagram")
         self.assertContains(pt, "Precisamos disto")
@@ -73,8 +105,9 @@ class PresentationDeckTests(TestCase):
         self.assertNotContains(pt, "Todos trabalham no mesmo software")
         self.assertNotContains(pt, "Dois mundos, um sistema")
 
-    def test_presentation_slide15_missing_item_loop(self):
+    def test_presentation_slide9_missing_item_loop(self):
         en = self.client.get("/presentation/en/")
+        self.assertContains(en, 'class="slide slide-missing-item" data-slide="9"')
         self.assertContains(en, "When the item is not in the catalogue")
         self.assertContains(en, "missing-item-loop")
         self.assertContains(en, "New conversation")
@@ -93,6 +126,7 @@ class PresentationDeckTests(TestCase):
         self.assertNotContains(en, "Order as usual")
         self.assertNotContains(en, "Next missing item")
         pt = self.client.get("/presentation/pt/")
+        self.assertContains(pt, 'class="slide slide-missing-item" data-slide="9"')
         self.assertNotContains(en, "When something is missing")
         self.assertContains(pt, "Quando o artigo não existe no catálogo")
         self.assertContains(pt, "missing-item-loop")
@@ -114,6 +148,129 @@ class PresentationDeckTests(TestCase):
         self.assertNotContains(pt, "/branch/threads/")
         self.assertNotContains(pt, "Pedido normal")
         self.assertNotContains(pt, "Quando falta algo")
+
+    def test_presentation_slides_4_to_8_graphics(self):
+        en = self.client.get("/presentation/en/")
+        pt = self.client.get("/presentation/pt/")
+        en_body = en.content.decode()
+        pt_body = pt.content.decode()
+        self.assertContains(en, 'class="slide slide-process" data-slide="4"')
+        self.assertContains(en, "The branch asks; the warehouse ships.")
+        self.assertContains(en, ">Catalogue</text>")
+        self.assertContains(en, ">Draft</text>")
+        self.assertContains(en, ">Submit</text>")
+        self.assertContains(en, ">Queue</text>")
+        self.assertContains(en, ">Issue</text>")
+        self.assertContains(en, ">Shipped</text>")
+        self.assertContains(en, "worlds-heading-branch")
+        self.assertContains(en, "Confirm qty")
+        self.assertContains(en, "Branch stock up")
+        self.assertContains(en, "Only the warehouse manages the catalogue.")
+        self.assertContains(en, "From draft to closed.")
+        self.assertContains(en, "Quantity is never typed by hand.")
+        self.assertContains(en, "Available = on hand − reserved")
+        self.assertContains(en, "stock-mass-reserved")
+        self.assertContains(pt, "A filial pede; o armazém expede.")
+        self.assertContains(pt, ">Catálogo</text>")
+        self.assertContains(pt, ">Rascunho</text>")
+        self.assertContains(pt, ">Submete</text>")
+        self.assertContains(pt, ">Emite</text>")
+        self.assertContains(pt, ">Expedido</text>")
+        self.assertContains(pt, "Confirma qtd")
+        self.assertContains(pt, "Stock filial sobe")
+        self.assertContains(pt, "Só o armazém gere o catálogo.")
+        self.assertContains(pt, "Do rascunho ao fechado.")
+        self.assertContains(pt, "A quantidade nunca se escreve à mão.")
+        self.assertContains(pt, "Disponível = físico − reservado")
+        gone = (
+            "/branch/requests/",
+            "/manage/internal-requests/",
+            "/branch/receipts/",
+            "/manage/purchase-orders/",
+            "/manage/goods-receipts/",
+            "BranchStockMovement",
+            "Item.quantity",
+            "D32",
+            "Lado filial",
+            "Branch side",
+        )
+        for number in range(4, 9):
+            chunk = _slide_html(en_body, number) + _slide_html(pt_body, number)
+            for token in gone:
+                self.assertNotIn(token, chunk)
+        self.assertContains(
+            pt,
+            "o artigo percorreu catálogo → compra → stock central → requisição → expedição → stock filial",
+        )
+        self.assertContains(
+            en,
+            "the item went catalogue → purchase → central stock → request → issue → branch stock",
+        )
+        self.assertContains(pt, "Artigos novos começam")
+        self.assertContains(en, "New items start")
+        self.assertContains(pt, "Sem preço de fornecedor")
+        self.assertContains(en, "No supplier price")
+
+    def test_presentation_slide3_closed_circuit(self):
+        en = self.client.get("/presentation/en/")
+        pt = self.client.get("/presentation/pt/")
+        en_body = en.content.decode()
+        pt_body = pt.content.decode()
+        en_slide = _slide_html(en_body, 3)
+        pt_slide = _slide_html(pt_body, 3)
+        self.assertContains(en, 'class="slide slide-process" data-slide="3"')
+        self.assertContains(en, "From item to branch stock")
+        self.assertContains(
+            en,
+            "Example: CEM-50 — Cement 50 kg. Already in the catalogue; the circuit closes at the branch.",
+        )
+        self.assertIn(">Asks</text>", en_slide)
+        self.assertIn(">Order</text>", en_slide)
+        self.assertIn(">Receipt</text>", en_slide)
+        self.assertIn(">Stock</text>", en_slide)
+        self.assertIn(">Shipped</text>", en_slide)
+        self.assertIn(">Confirm</text>", en_slide)
+        self.assertIn("CEM-50", en_slide)
+        self.assertIn("No stock", en_slide)
+        self.assertIn("order becomes a receipt", en_slide)
+        self.assertIn("closes the circuit", en_slide)
+        self.assertIn(
+            "Every step generates structured data. The circuit only closes when the branch confirms arrival.",
+            en_slide,
+        )
+        self.assertContains(pt, 'class="slide slide-process" data-slide="3"')
+        self.assertContains(pt, "Do artigo ao stock na filial")
+        self.assertContains(
+            pt,
+            "Exemplo: CEM-50 — Cimento 50 kg. Já está no catálogo; o circuito fecha na filial.",
+        )
+        self.assertIn(">Pede</text>", pt_slide)
+        self.assertIn(">Encomenda</text>", pt_slide)
+        self.assertIn(">Receção</text>", pt_slide)
+        self.assertIn(">Confirma</text>", pt_slide)
+        self.assertIn("CEM-50", pt_slide)
+        self.assertIn("Sem stock", pt_slide)
+        self.assertIn("encomenda vira receção", pt_slide)
+        self.assertIn("fecha o circuito", pt_slide)
+        self.assertIn(
+            "Cada etapa gera dados estruturados. O circuito só fecha quando a filial confirma a chegada.",
+            pt_slide,
+        )
+        gone = (
+            "/manage/",
+            "purchase-orders",
+            "goods-receipts",
+            "branch/requests",
+            "internal-requests",
+            "branch/receipts",
+            ">Approval</text>",
+            ">Aprovação</text>",
+            "slide-eyebrow",
+            "flow-node",
+        )
+        for token in gone:
+            self.assertNotIn(token, en_slide)
+            self.assertNotIn(token, pt_slide)
 
     def test_language_switcher_links(self):
         pt = self.client.get("/presentation/pt/")
@@ -140,3 +297,21 @@ class PresentationDeckTests(TestCase):
         self.assertContains(pt, "Experimente agora")
         self.assertContains(pt, "Aviso do browser esperado")
         self.assertContains(pt, DEMO_PASSWORD)
+
+    def test_presentation_slides_16_17_workplace_colours(self):
+        en = self.client.get("/presentation/en/")
+        pt = self.client.get("/presentation/pt/")
+        en16 = _slide_html(en.content.decode(), 16)
+        en17 = _slide_html(en.content.decode(), 17)
+        pt16 = _slide_html(pt.content.decode(), 16)
+        pt17 = _slide_html(pt.content.decode(), 17)
+        self.assertIn('class="heading-warehouse">Warehouse — purchase orders', en16)
+        self.assertIn('class="heading-branch">Branch — internal requests', en16)
+        self.assertIn('class="heading-warehouse">Central warehouse', en17)
+        self.assertIn('class="heading-branch">Branches', en17)
+        self.assertIn('class="heading-branch">Branch</th>', en17)
+        self.assertIn('class="heading-warehouse">Armazém — encomendas de compra', pt16)
+        self.assertIn('class="heading-branch">Filial — requisições internas', pt16)
+        self.assertIn('class="heading-warehouse">Armazém central', pt17)
+        self.assertIn('class="heading-branch">Filiais', pt17)
+        self.assertIn('class="heading-branch">Filial</th>', pt17)

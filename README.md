@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 10 September 2026, 10:40 WEST.*
+*Last updated: 11 September 2026, 09:40 WEST.*
 
-**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** feed name, EN+PT). Warehouse `/manage/internal-requests/` i18n complete. Full-tree production-readiness review **applied** (26 Aug 1205). **Phase 7 next** (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. Suite **593 OK**. See [`docs/handoff.md`](docs/handoff.md).
+**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** feed name, EN+PT). Warehouse `/manage/internal-requests/` i18n complete. Presentation deck v2.4 (slides 2–8 graphics). Full-tree production-readiness review **applied** (26 Aug 1205). **Pick up:** presentation **slide 9** (closed-circuit graphic — reuse the visual-layout sub-agent; see [`docs/handoff.md`](docs/handoff.md)). Then Phase 7 (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. Suite **605 OK**.
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -351,5 +351,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Production deployment readiness** (Phase 7 — **Next**) — [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - **Google OAuth production rollout + shared chrome** (Phase 8)
 - **Email automation** (Phase 9 — wire notify stubs to real email; stub exists today)
-- Integration tests (unit suites: **593 OK**)
+- Integration tests (unit suites: **605 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

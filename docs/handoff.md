@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 11 September 2026, 08:28 WEST.
+> **Read this first when resuming work.** Last updated: 11 September 2026, 09:40 WEST.
 
 ---
 
@@ -32,13 +32,30 @@
 | 8 — Google OAuth production rollout + shared chrome | ⏸ After Phase 7 |
 | 9 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Next:** **Phase 7** — production deployment readiness only ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8** (ideas in PROJECT-PLAN §15). Email = **Phase 9**.
+**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Immediate next:** presentation **slide 9** (closed-circuit graphic — reuse the visual-layout sub-agent). **Then:** **Phase 7** — production deployment readiness ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
 
-**Tests:** suite **593 OK** (10 Sep; i18n copy + Parle rename; `feed_i18n.js` exempt from EN≠PT title check).
+**Tests:** suite **605 OK** (11 Sep; presentation deck reorder + slides 4–8 graphics; includes `presentation`).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
 
-## This session (11 Sep 2026) — presentation slides 12 + 15 (first-time audience) ✅
+## This session (11 Sep 2026) — presentation deck: reorder + slides 4–8 graphics ✅
+
+Training deck at `/presentation/` (PT) and `/presentation/en/`. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.4, [`PLAN-pt-PT.md`](presentation/PLAN-pt-PT.md) v2.4. CSS `deck.css?v=16`.
+
+1. **Reorder** — bird's-eye map is **slide 2**; missing-item conversation is **slide 3**; operational graphics **4–8**; closed circuit **9**; charts **10**; CTA **11**; Company Voice **12**; data/oil **13**; scenario **14**; records **15**; authorization **16**; demo login **17**.
+2. **Slide 2** — **Filial** / **Branch** column heading uses mustard (`--accent-warm` / `#f59e0b`), same as the branch circle; warehouse heading stays teal.
+3. **Slides 4–8** — uncluttered SVGs in the same visual language as 2–3 (teal warehouse / mustard branch / gray). URL paths and code names (`BranchStockMovement`, `Item.quantity`, D32) removed from those slides. Footers kept. Graphic is the argument; short captions only.
+   - **4** Requisição: Filial Catálogo → Rascunho → Submete, mustard **Aprovado** into Armazém Fila → Emite → Expedido
+   - **5** Receção: Expedido → Confirma qtd → Stock filial sobe
+   - **6** Catálogo constellation (Artigo centre; Genesis → Activo)
+   - **7** PO zigzag: Rascunho → Validado → Submetido → Aprovado → Recebido / Fechado
+   - **8** Físico mass with mustard Reservado bite; **Disponível = físico − reservado**
+4. **Visual-layout sub-agent** — a **generalPurpose** design consultant was launched this session to propose SVG layouts for slides 4–8 before HTML was written ([Visual layout](0748cef2-9c52-4b6f-b63b-0403d19e6e3f)). **Use the same sub-agent role for slide 9** (closed circuit): launch it first with the slide 2–8 tokens, then implement. Do not restyle slide 9 from scratch without that pass.
+
+- Templates: `presentation/templates/presentation/deck_en.html`, `deck_pt.html`.
+- **Still deferred:** slide 12 still **Company Voice** / **Voz da Empresa** (Parle rename D40 not applied to the deck).
+
+## This session (11 Sep 2026, early) — presentation slides 2 + 3 (first-time audience) ✅
 
 Redesigned browser deck slides for training audiences who do not know the app yet. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.3, [`PLAN-pt-PT.md`](presentation/PLAN-pt-PT.md) v2.3.
 
@@ -50,17 +67,16 @@ Redesigned browser deck slides for training audiences who do not know the app ye
    - **Arrow geometry:** Nova conversa → Entendimento — **J** (down from bottom-centre of Nova conversa, then left into right edge of Entendimento). Entendimento → Inserido — vertical gray. Inserido → Fecha — **elbow** (right from right-centre of Inserido, then down into top-centre of Fecha); ~50px vertical gap Inserido→Fecha (tighter than Entendimento→Inserido row).
    - EN mirror: **Can't find it** ↔ **New conversation** → **Understanding reached** → **Inserted in catalogue** → **Conversation closes**.
 
-- Templates: `presentation/templates/presentation/deck_en.html`, `deck_pt.html`; CSS `deck.css?v=14` (`.missing-item-arrow-neutral`).
-- **`presentation/tests.py`:** slide 12 + slide 15 assertions updated (not re-run this pass — user skip).
-- **Not moved yet:** slide 12 still at position 12 (not slot 2); slide 16 still **Company Voice** / **Voz da Empresa** in deck (Parle rename deferred).
+- Templates: `presentation/templates/presentation/deck_en.html`, `deck_pt.html`; CSS later bumped to `deck.css?v=16` in the late-morning pass.
+- **Moved later the same day:** bird's-eye map → **slide 2**; missing-item conversation → **slide 3**. Slide 12 in the deck is now Company Voice (Parle rename still deferred).
 
 ## This session (10 Sep 2026) — warehouse i18n + product copy (Conversas / Parle) ✅
 
 Three related copy/i18n slices on top of D38 (language from dashboard `cc-lang`):
 
 1. **Internal requests** (`/manage/internal-requests/`) — inline `I18N` + `data-i18n` on page title, **Queue** / **Request** section headings, columns, buttons, and JS-generated detail/meta/status/prompt strings. PT: **Pedidos internos**, **Fila (aprovados / em cumprimento)**, **Emitir**, **Encerramento parcial**, etc.
-2. **Conversas** (PT only) — replaced **fio/fios** with **conversa/conversas** in nav, cards, thread consoles, and PT manuals. EN **Threads** unchanged. Presentation PT slide 15 uses **Nova conversa** / **Entendimento** (Sep 2026 deck refresh).
-3. **Parle** (EN + PT) — user-visible rename of **Company Voice** / **Voz da Empresa** → **Parle** on feed, dashboards, branch card fallback. URLs/app id `company_voice` unchanged. Presentation slide 16 still **Company Voice** / **Voz da Empresa** in deck.
+2. **Conversas** (PT only) — replaced **fio/fios** with **conversa/conversas** in nav, cards, thread consoles, and PT manuals. EN **Threads** unchanged. Presentation PT **slide 3** uses **Nova conversa** / **Entendimento** (Sep 2026 deck; was slot 15 before reorder).
+3. **Parle** (EN + PT) — user-visible rename of **Company Voice** / **Voz da Empresa** → **Parle** on feed, dashboards, branch card fallback. URLs/app id `company_voice` unchanged. Presentation **slide 12** still **Company Voice** / **Voz da Empresa** in deck.
 
 - Cache bumps: `preferences_bar.js?v=10`, `feed_i18n.js?v=3`, `console_i18n.js?v=23`, `catalog_i18n.js?v=10`, `purchase_orders_i18n.js?v=13`, `goods_receipts_i18n.js?v=10`, `cost_trends_i18n.js?v=3`; branch SW precache updated.
 - Manuals EN+PT updated (`01`, `04`, `05`, `06`, `08`, `09`); [`docs/i18n-pattern.md`](i18n-pattern.md) notes inline internal-requests i18n + Parle feed.
@@ -101,11 +117,12 @@ Company-wide **unpriced / priced** switch for the branch catalogue and requisiç
 
 ## Next session — do this
 
-1. **Start Phase 7 — production deployment readiness** — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). Follow the updated TLS order (`SECURE_SSL_REDIRECT=False` until certbot). **Do not** bundle OAuth or shared chrome in this phase.
-2. **Phase 8 (later)** — OAuth production rollout + shared chrome; contribute ideas to PROJECT-PLAN §15.2 before build.
-3. **Do not treat as a work queue:** Phase 6 leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8). The 1205 review is **applied**.
-4. **Do not start** Phase 9 email in passing.
-5. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+1. **Presentation slide 9 (closed circuit)** — restyle like slides 2–8 (uncluttered SVG, teal/mustard/gray, no URL clutter). **Launch the visual-layout sub-agent first** (same **generalPurpose** design-consultant role used for slides 4–8: [Visual layout](0748cef2-9c52-4b6f-b63b-0403d19e6e3f)). Ask it to propose the graphic against slides 2–8, then implement. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md).
+2. **Phase 7 — production deployment readiness** (after the deck pass, or if the deck is paused) — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). Follow the updated TLS order (`SECURE_SSL_REDIRECT=False` until certbot). **Do not** bundle OAuth or shared chrome in this phase.
+3. **Phase 8 (later)** — OAuth production rollout + shared chrome; contribute ideas to PROJECT-PLAN §15.2 before build.
+4. **Do not treat as a work queue:** Phase 6 leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8). The 1205 review is **applied**.
+5. **Do not start** Phase 9 email in passing.
+6. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
 
 ## This session (26 Aug 2026) — full-tree review fixes (1205) ✅
 

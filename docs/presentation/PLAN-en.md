@@ -1,6 +1,6 @@
 # CentCompras — Presentation plan (en)
 
-**Version:** 2.3 · **Date:** 11 September 2026  
+**Version:** 2.6 · **Date:** 11 September 2026  
 **URL:** `/presentation/en/` · **Language:** English — Portuguese at `/presentation/pt/`  
 **Audience:** Central warehouse, branch managers and operators, leadership
 
@@ -10,25 +10,25 @@
 
 Communicate four core messages:
 
-1. **Start today** — role-based call to action; data compounds with daily use (slide 14, before send-off).
-2. **Data is the new oil** — the sooner staff use CentCompras daily, the sooner the company has reliable information for charts and decisions.
+1. **Start today** — role-based call to action; data compounds with daily use (slide 11).
+2. **Data is the new oil** — the sooner staff use CentCompras daily, the sooner the company has reliable information for charts and decisions (slide 13).
 3. **Closed circuit** — from item to stock, through procurement, authorization, and shipment.
-4. **Two human channels** — request threads are **bounded conversations that close**; Company Voice is an **ongoing feed** that never closes.
+4. **Two human channels** — request threads are **bounded conversations that close** (slide 9); Company Voice is an **ongoing feed** that never closes (slide 12).
 
-The presentation is **informational** (no live data). Charts marked **future vision** are illustrative.
+The presentation is **informational** (no live data). Charts marked **future vision** are illustrative. An image is worth a thousand words: slides 2–9 lead with SVG; URL paths and code names stay off those slides.
 
 ---
 
-## Narrative (6 acts)
+## Narrative
 
 | Act | Slides | Message |
 |-----|--------|---------|
-| **I — Hook + why** | 1–4 | Title, data metaphor, scenario, what is recorded |
-| **II — Branch flow first** | 5–6 | Internal request + branch receipt |
-| **III — Warehouse steps** | 7–10 | Catalogue through central stock |
-| **IV — Architecture + vision** | 11–13 | Closed circuit diagram, bird's-eye map (slide 12), future charts |
-| **V — Call to action** | 14 | Role-based CTA (moved late) |
-| **VI — Human channels + hands-on** | 15–17 | Threads, Company Voice, demo login |
+| **I — Hook + orientation** | 1–3 | Title, bird's-eye map, closed circuit (CEM-50) |
+| **II — Operations (graphics)** | 4–8 | Request, branch receipt, catalogue, procurement, central stock |
+| **III — Gap + vision** | 9–10 | Missing-item conversation, future charts |
+| **IV — Call to action + remaining channel** | 11–12 | Role-based CTA, Company Voice |
+| **V — Why + what is recorded** | 13–15 | Data metaphor, scenario, ledger table |
+| **VI — Controls + demo** | 16–17 | Authorization, demo login |
 
 ---
 
@@ -39,87 +39,75 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - **Subtitle:** Data, circuits, and circularity
 - **Notes:** Present the system as a single platform (PostgreSQL = source of truth).
 
-### Slide 2 — Data is the new oil
-- Metaphor: crude vs refined oil; raw data vs decisions
-- **Notes:** Emphasize you do not need to wait for charts to start using the system.
-
-### Slide 3 — Today's scenario
-- Central warehouse + satellite branches; single-column list of modules (no card grid)
-- **Notes:** Not a prototype — phases 0–6 complete.
-
-### Slide 4 — What the system already records
-- Table: `StockMovement`, `ItemChangeLog`, PO states, `InternalRequest`, `ThreadMessage`, `VoicePost`
-- **Notes:** Golden rule — stock only via ledger movements.
-
-### Slide 5 — Internal request
-- Branch draft/offline + warehouse issue
-- **Notes:** Approve never fails for lack of stock.
-
-### Slide 6 — Branch receipt
-- `/branch/receipts/` — closes the operational circuit from the branch side
-- **Notes:** Every step recorded.
-
-### Slide 7 — Catalogue and pricing
-- `/manage/items/` — families, Genesis, audit
-- **Notes:** Item inactive until qualified.
-
-### Slide 8 — Procurement
-- `/manage/purchase-orders/` — draft through received/closed
-- **Notes:** No supplier price → no line.
-
-### Slide 9 — Authorization
-- PO limits + branch request caps
-- **Notes:** Operators never approve POs.
-
-### Slide 10 — Central stock
-- `/manage/goods-receipts/` → `StockMovement`; FIFO reservation (D32)
-- **Notes:** `Item.quantity` only via movements.
-
-### Slide 11 — Closed circuit (diagram)
-- SVG: Catalogue → Procurement → Approval → Stock → Request → Issue → Branch receipt
-- **Notes:** Bird's-eye view after operational step slides.
-
-### Slide 12 — One system, two workplaces
+### Slide 2 — One system, two workplaces
 - Eyebrow: **The big picture**; title: **One system, two workplaces**
 - Subtitle: central warehouse + a branch **(branches)** — same application, two workplaces
 - Bird's-eye SVG: large warehouse circle (top) + smaller branch circle (lower left)
-- Amber arrow + label **We need this** (branch → warehouse); teal return arch + label **Here it is** (warehouse → branch); thin amber/teal label borders
-- Unit bullets under diagram (no roles, no URLs)
+- Amber arrow + label **We need this** (branch → warehouse); teal return arch + label **Here it is** (warehouse → branch)
+- Unit bullets under diagram; **Branch** heading mustard (`#f59e0b`); warehouse heading teal
 - Footer: **The branch asks. The warehouse answers.**
-- **Notes:** First-look map for newcomers; permission circuits come later in the deck.
 
-### Slide 13 — Future vision: charts *(mock)*
-- Illustrative charts; label **Future vision — illustrative**
-- **Notes:** Honest about what exists vs what is coming.
+### Slide 3 — Closed circuit (diagram)
+- Title **From item to branch stock**; footer unchanged (circuit closes when the branch confirms)
+- Subline: *Example: CEM-50 — Cement 50 kg. Already in the catalogue; the circuit closes at the branch.*
+- Racetrack SVG (warehouse upper-right / branch lower-left): **Asks** (CEM-50 chip) → **Stock**; dashed **No stock** detour **Order → Receipt** (caption *order becomes a receipt*) back to Stock → **Shipped** → **Confirm** (latch)
+- No URL paths; no Approval node; no Catálogo box; coloured arrows stop at Confirm
 
-### Slide 14 — What we need from you (CTA)
-- Eyebrow: **What we need from you**
-- Four role-based actions: warehouse, branches, management, everyone
-- **Notes:** No manuals/Phase 7 footer here — urgency before send-off; foreshadows Company Voice (item 4).
+### Slide 4 — Internal request
+- Subline: *The branch asks; the warehouse ships.*
+- Two columns (not boxed): **Branch** mustard — Catalogue → Draft → Submit; **Warehouse** teal — Queue → Issue → Shipped; mustard **Approved** handoff
+- Two short bullets per column; no URL paths
 
-### Slide 15 — When the item does not exist
+### Slide 5 — Branch receipt
+- SVG: **Shipped** → **Confirm qty** → **Branch stock up**; gray **Partial / close** and **Admin adjust**
+- Keep closed-circuit footer; no bullets; no URL paths
+
+### Slide 6 — Catalogue and pricing
+- Subline: *Only the warehouse manages the catalogue.*
+- Constellation: **Item** centre; Family, Supplier, Prices, Genesis → Active
+- Two short lines + inactive-until-ready footer; no URL paths; no model names
+
+### Slide 7 — Procurement
+- Subline: *From draft to closed.*
+- Zigzag: Draft → Validated → Submitted → Approved → Received / Closed
+- Footer only (no supplier price = no line); no bullet list
+
+### Slide 8 — Central stock
+- Subline: *Quantity is never typed by hand.*
+- On-hand mass with mustard **Reserved** bite; **Available = on hand − reserved**
+- Two short lines; no ledger jargon / D32
+
+### Slide 9 — When the item does not exist
 - **Title:** When the item is not in the catalogue
-- **Subline (smaller):** *Not an order — a conversation that closes once the item enters the catalogue.*
-- Open 5-step vertical flow (no loop)
-- Nodes: **Can't find it** ↔ **New conversation** → **Understanding reached** → **Inserted in catalogue** → **Conversation closes**
-- Yellow/green arrows: first pair only (branch ↔ new conversation); rest of flow — gray arrows
-- Gray boxes: New conversation + Understanding reached; **Inserted in catalogue** — green border (warehouse)
-- Below close (no arrow): **Express satisfaction** + 1–5 stars (default 1★ highlighted — matches threads close dialog)
-- **Notes:** Item is added in the normal catalogue flow, not inside the chat — not Company Voice.
+- **Subline:** *Not an order — a conversation that closes once the item enters the catalogue.*
+- Open 5-step SVG: **Can't find it** ↔ **New conversation** → **Understanding reached** → **Inserted in catalogue** → **Conversation closes**
+- Warm/teal arrows on the first pair only; gray on the rest; 1★ highlighted under close
 
-### Slide 16 — Company Voice (finale)
-- Text copy (left) + ongoing feed panel illustration (right)
-- Eyebrow: **Keep talking**; emotional send-off
-- Footer: manuals · Phase 7
-- **Notes:** Stream never closes.
+### Slide 10 — Future vision: charts *(mock)*
+- Illustrative charts; label **Future vision — illustrative**
+
+### Slide 11 — What we need from you (CTA)
+- Four role-based actions: warehouse, branches, management, everyone
+
+### Slide 12 — Company Voice (finale)
+- Text + ongoing feed panel; still **Company Voice** in the deck (Parle rename D40 not applied here)
+
+### Slide 13 — Data is the new oil
+- Metaphor: crude vs refined oil; raw data vs decisions
+
+### Slide 14 — Today's scenario
+- Central warehouse + satellite branches; module list
+
+### Slide 15 — What the system already records
+- Table of models; golden rule — stock only via ledger movements
+
+### Slide 16 — Authorization
+- PO limits + branch request caps
+- Headings: **Warehouse** teal (`#14b8a6`); **Branch** mustard (`#f59e0b`)
 
 ### Slide 17 — Try the app (demo login)
-- Eyebrow: **Try it now**
-- HTTP demo alert (browser “Not secure” warning expected)
-- Login URL: from `presentation/views.py` (`DEMO_LOGIN_URL`)
-- Password: `devpass123` (all seeded users)
-- Two tables: warehouse (6) + branches (6 incl. dual)
-- **Notes:** Last slide — audience logs in immediately after the deck.
+- HTTP demo alert; `DEMO_LOGIN_URL`; password `devpass123`; warehouse + branch tables
+- **Central warehouse** heading teal; **Branches** heading and **Branch** column mustard
 
 ---
 
@@ -132,7 +120,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | Django app | `presentation/` |
 | PT template | `presentation/templates/presentation/deck_pt.html` |
 | EN template | `presentation/templates/presentation/deck_en.html` |
-| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=13`, `deck.js`) |
+| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=18`, `deck.js`) |
 | Routes | `/presentation/` and `/presentation/pt/` → PT · `/presentation/en/` → EN |
 
 ### Deck navigation
@@ -141,6 +129,9 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - `F` fullscreen; `?` help
 - Language switcher in footer
 - Responsive (projector + tablet)
+
+### Visual-layout sub-agent
+For slide graphics, launch a **generalPurpose** design consultant first (slides 4–9 used [Visual layout](0748cef2-9c52-4b6f-b63b-0403d19e6e3f) / [Visual layout](31643dbd-721a-469e-b694-8836bf6626d9)). Tokens: warehouse teal `#14b8a6`, branch mustard `#f59e0b`, gray `#94a3b8`; rounded nodes; no boxed columns; no URL paths; everyday words.
 
 ---
 

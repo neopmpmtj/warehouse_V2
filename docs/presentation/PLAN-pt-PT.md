@@ -1,6 +1,6 @@
 # CentCompras — Plano da apresentação (pt-PT)
 
-**Versão:** 2.3 · **Data:** 11 setembro 2026  
+**Versão:** 2.6 · **Data:** 11 setembro 2026  
 **URL:** `/presentation/pt/` (atalho: `/presentation/`) · **Inglês:** `/presentation/en/`  
 **Idioma:** Português (pt-PT) · Plano EN: [`PLAN-en.md`](PLAN-en.md)  
 **Público:** Armazém central, gestores e operadores de filial, direção
@@ -11,25 +11,25 @@
 
 Comunicar quatro mensagens centrais:
 
-1. **Comece hoje** — chamada à acção por papel (slide 14, antes da despedida); os dados acumulam-se com o uso diário.
-2. **Os dados são o novo petróleo** — quanto mais cedo o pessoal usar o CentCompras, mais cedo haverá informação fiável para gráficos e decisões.
+1. **Comece hoje** — chamada à acção por papel (slide 11); os dados acumulam-se com o uso diário.
+2. **Os dados são o novo petróleo** — quanto mais cedo o pessoal usar o CentCompras, mais cedo haverá informação fiável para gráficos e decisões (slide 13).
 3. **Circuito fechado** — do artigo ao stock, passando por aprovisionamento, autorização e expedição.
-4. **Dois canais humanos** — **Conversas** de pedido são **conversas limitadas que fecham**; a Voz da Empresa é um **feed contínuo** que nunca fecha.
+4. **Dois canais humanos** — **Conversas** de pedido são **conversas limitadas que fecham** (slide 9); a Voz da Empresa é um **feed contínuo** que nunca fecha (slide 12).
 
-A apresentação é **informativa** (não expõe dados reais). Gráficos marcados como **visão futura** são ilustrativos.
+A apresentação é **informativa** (não expõe dados reais). Gráficos marcados como **visão futura** são ilustrativos. Uma imagem vale mil palavras: os slides 2–9 lideram com SVG; sem caminhos URL nem nomes de código nesses slides.
 
 ---
 
-## Narrativa (6 actos)
+## Narrativa
 
 | Acto | Slides | Mensagem |
 |------|--------|----------|
-| **I — Gancho + porquê** | 1–4 | Capa, metáfora dos dados, cenário, registo |
-| **II — Fluxo filial primeiro** | 5–6 | Requisição interna + receção na filial |
-| **III — Passos armazém** | 7–10 | Catálogo até stock central |
-| **IV — Arquitectura + visão** | 11–13 | Diagrama circuito fechado, vista de conjunto (slide 12), gráficos futuros |
-| **V — Chamada à acção** | 14 | CTA por papel (adiada) |
-| **VI — Canais humanos + mãos à obra** | 15–17 | Conversas (artigo em falta), Voz da Empresa, login demo |
+| **I — Gancho + orientação** | 1–3 | Capa, vista de conjunto, circuito fechado (CEM-50) |
+| **II — Operações (gráficos)** | 4–8 | Requisição, receção na filial, catálogo, aprovisionamento, stock central |
+| **III — Falha + visão** | 9–10 | Conversa de artigo em falta, gráficos futuros |
+| **IV — Chamada à acção + canal restante** | 11–12 | CTA por papel, Voz da Empresa |
+| **V — Porquê + o que já se regista** | 13–15 | Metáfora dos dados, cenário, tabela de modelos |
+| **VI — Controlos + demo** | 16–17 | Autorização, login demo |
 
 ---
 
@@ -38,81 +38,70 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 ### Slide 1 — Capa
 - **Título:** CentCompras — Logística centralizada com filiais
 - **Subtítulo:** Dados, circuitos e circularidade
-- **Notas:** Plataforma única (PostgreSQL = fonte de verdade).
 
-### Slide 2 — Os dados são o novo petróleo
-- Metáfora petróleo bruto vs refinado
-- **Notas:** Não é preciso esperar por gráficos.
-
-### Slide 3 — O cenário de hoje
-- Armazém central + filiais; lista simples de módulos (sem grelha de cartões)
-- **Notas:** Fases 0–6 concluídas.
-
-### Slide 4 — O que o sistema já regista
-- Tabela de modelos; regra de ouro do stock
-- **Notas:** Zero digitação directa de quantidades.
-
-### Slide 5 — Requisição interna
-- Filial + armazém; offline PWA
-- **Notas:** Aprovar nunca falha por falta de stock.
-
-### Slide 6 — Receção na filial
-- Fecha o circuito operacional do lado da filial
-- **Notas:** Cada passo fica registado.
-
-### Slide 7 — Catálogo e preços
-- `/manage/items/` — Genesis, auditoria
-
-### Slide 8 — Aprovisionamento
-- `/manage/purchase-orders/`
-
-### Slide 9 — Autorização
-- Limites PO + tetos filial
-
-### Slide 10 — Stock central
-- `/manage/goods-receipts/`; reserva FIFO (D32)
-
-### Slide 11 — Circuito fechado (diagrama)
-- SVG do fluxo operacional completo
-- **Notas:** Vista de pássaro depois dos slides de passos.
-
-### Slide 12 — Um sistema, dois locais de trabalho
-- Sobretítulo: **Vista de conjunto**; título: **Um sistema, dois locais de trabalho**
-- Descrição: armazém central + filial **(filiais)** — a mesma aplicação, dois locais de trabalho
-- SVG vista de conjunto: círculo grande do armazém (topo) + círculo menor da filial (esquerda)
-- Seta âmbar + etiqueta **Precisamos disto** (filial → armazém); arco verde + etiqueta **Aqui está** (armazém → filial); bordas finas âmbar/verde nas etiquetas
-- Bullets por unidade (sem papéis, sem URLs)
+### Slide 2 — Um sistema, dois locais de trabalho
+- SVG vista de conjunto: círculo grande do armazém (topo, teal) + círculo menor da filial (esquerda, mostarda)
+- Seta âmbar **Precisamos disto**; arco verde **Aqui está**
+- Título **Filial** mostarda (`#f59e0b`); armazém teal
 - Rodapé: **A filial pede. O armazém entrega.**
-- **Notas:** Mapa para quem não conhece a app; circuitos de permissão vêm depois.
 
-### Slide 13 — Visão futura: gráficos *(mock)*
+### Slide 3 — Circuito fechado (diagrama)
+- Título **Do artigo ao stock na filial**; rodapé inalterado (o circuito fecha quando a filial confirma)
+- Linha secundária: *Exemplo: CEM-50 — Cimento 50 kg. Já está no catálogo; o circuito fecha na filial.*
+- SVG em oval (armazém canto superior direito / filial canto inferior esquerdo): **Pede** (chip CEM-50) → **Stock**; desvio tracejado **Sem stock** **Encomenda → Receção** (legenda *encomenda vira receção*) de volta ao Stock → **Expedido** → **Confirma** (fecho)
+- Sem caminhos URL; sem nó Aprovação; sem caixa Catálogo; setas a cores param em Confirma
+
+### Slide 4 — Requisição interna
+- *A filial pede; o armazém expede.*
+- Filial (mostarda): Catálogo → Rascunho → Submete; Armazém (teal): Fila → Emite → Expedido; seta **Aprovado**
+- Sem caminhos URL
+
+### Slide 5 — Receção na filial
+- Expedido → Confirma qtd → Stock filial sobe; cinzentos Parcial / encerra e Ajuste admin
+- Manter o rodapé do circuito fechado
+
+### Slide 6 — Catálogo e preços
+- *Só o armazém gere o catálogo.*
+- Constelação: **Artigo** no centro; Família, Fornecedor, Preços, Genesis → Activo
+
+### Slide 7 — Aprovisionamento
+- *Do rascunho ao fechado.*
+- Rascunho → Validado → Submetido → Aprovado → Recebido / Fechado
+- Só rodapé (sem preço de fornecedor = sem linha)
+
+### Slide 8 — Stock central
+- *A quantidade nunca se escreve à mão.*
+- Massa **Físico** com mordidela mostarda **Reservado**; **Disponível = físico − reservado**
+
+### Slide 9 — Quando o artigo não existe
+- Linha secundária: *Não é uma encomenda — uma conversa que fecha quando o artigo entra para o catálogo.*
+- Nós: **Não está no catálogo!!** ↔ **Nova conversa** → **Entendimento** → **Inserido no catálogo** → **Fecha a conversa**
+
+### Slide 10 — Visão futura: gráficos *(mock)*
 - Gráficos ilustrativos; etiqueta **Visão futura — ilustrativo**
 
-### Slide 14 — O que precisamos de si (CTA)
-- Quatro acções por papel: armazém, filiais, gestão, todos
-- **Notas:** Sem rodapé de manuais/Fase 7 aqui; antecipa Voz da Empresa (ponto 4).
+### Slide 11 — O que precisamos de si (CTA)
+- Quatro acções por papel
 
-### Slide 15 — Quando o artigo não existe
-- **Título:** Quando o artigo não existe no catálogo
-- **Linha secundária (menor):** *Não é uma encomenda — uma conversa que fecha quando o artigo entra para o catálogo.*
-- Fluxo aberto em 5 passos (vertical)
-- Nós: **Não está no catálogo!!** ↔ **Nova conversa** → **Entendimento** → **Inserido no catálogo** → **Fecha a conversa**
-- Setas amarela/verde: só no par inicial (filial ↔ nova conversa); resto do fluxo — setas cinzentas
-- Caixas cinzentas: Nova conversa + Entendimento; **Inserido no catálogo** — borda verde (armazém)
-- Abaixo do fecho (sem seta): **Expressar satisfação** + estrelas 1–5 (1★ por defeito — igual ao diálogo de fecho nas Conversas)
-- **Notas:** O artigo entra para o catálogo pelo fluxo normal, não dentro do chat — não é Voz da Empresa.
+### Slide 12 — Voz da Empresa (final)
+- Texto + painel do feed; ainda **Voz da Empresa** no deck (Parle D40 não aplicado aqui)
 
-### Slide 16 — Voz da Empresa (final)
-- Texto (esquerda) + painel do feed contínuo (direita)
-- **Continue a falar**; despedida com participação activa
-- Rodapé: manuais · Fase 7
-- **Notas:** O feed nunca fecha.
+### Slide 13 — Os dados são o novo petróleo
+- Metáfora petróleo bruto vs refinado
+
+### Slide 14 — O cenário de hoje
+- Armazém central + filiais; lista de módulos
+
+### Slide 15 — O que o sistema já regista
+- Tabela de modelos; regra de ouro do stock
+
+### Slide 16 — Autorização
+- Limites PO + tetos filial
+- Títulos: **Armazém** teal (`#14b8a6`); **Filial** mostarda (`#f59e0b`)
 
 ### Slide 17 — Experimente a aplicação (login demo)
-- **Experimente agora**; aviso HTTP; URL de `presentation/views.py` (`DEMO_LOGIN_URL`)
-- Palavra-passe `devpass123` para todas as contas seed
-- Tabelas armazém + filiais
-- **Notas:** Último slide — login imediato após a apresentação.
+- Aviso HTTP; `DEMO_LOGIN_URL`; palavra-passe `devpass123`
+- Título **Armazém central** teal; **Filiais** e coluna **Filial** mostarda
 
 ---
 
@@ -125,15 +114,12 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 | App Django | `presentation/` |
 | Template PT | `presentation/templates/presentation/deck_pt.html` |
 | Template EN | `presentation/templates/presentation/deck_en.html` |
-| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=13`), `js/deck.js` |
+| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=18`), `js/deck.js` |
 | Rota PT | `/presentation/` ou `/presentation/pt/` |
 | Rota EN | `/presentation/en/` |
 
-### Navegação do deck
-- Setas ← →, Espaço, Page Up/Down
-- Barra de progresso; contador de slides
-- `F` ecrã inteiro; `?` ajuda
-- Responsivo (projector + tablet)
+### Sub-agente visual
+Para gráficos de slides, lançar primeiro um consultor de design **generalPurpose** (slides 4–9: [Visual layout](0748cef2-9c52-4b6f-b63b-0403d19e6e3f) / [Visual layout](31643dbd-721a-469e-b694-8836bf6626d9)). Tokens: armazém teal `#14b8a6`, filial mostarda `#f59e0b`, cinzento `#94a3b8`; nós arredondados; sem colunas em caixa; sem URLs; palavras do dia a dia.
 
 ---
 
