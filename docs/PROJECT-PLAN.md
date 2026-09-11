@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 11 September 2026, 09:40 WEST
-- **Current phase:** Phases 0–6 **complete** ✅. **Immediate next:** presentation slide 9 (closed-circuit graphic). **Then Phase 7** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 11 September 2026, 18:10 WEST
+- **Current phase:** Phases 0–6 **complete** ✅. **Immediate next:** presentation deck cleanup (remove TEMP viewBox debug; optional slides 10–16 + Parle). **Then Phase 7** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
 ## Status vocabulary
@@ -150,7 +150,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (11 Sep 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 (chrome split) + D39 (Conversas) + D40 (Parle) landed. Presentation deck reorder + slides 2–8 graphics (`deck.css?v=16`). Suite **605 OK**. **Immediate next:** presentation slide 9 (reuse visual-layout sub-agent). **Then:** Phase 7 (production deployment readiness). OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
+**Current (11 Sep 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 (chrome split) + D39 (Conversas) + D40 (Parle) landed. Presentation deck v2.7: slides 2–9 SVGs; unified **710** viewBox on slides 3–5/7–9; in-box label sizes bumped (`deck.css?v=22` committed; **TEMP** viewBox debug + slide 8 arrow spacing on working tree at `?v=23`). Suite **607 OK**. **Immediate next:** remove viewBox debug; optional deck polish (10–16, Parle slide 12). **Then:** Phase 7. OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -569,7 +569,8 @@ Unify the **persistent shell** (header, nav, account controls) across warehouse,
 - [x] Phase 6 — offline catalogue + offline request queue + sync / PWA (#19)
 - [x] Phase 6 offline review fixes — P0/P1/P2 ([archive](archive/phase6-offline-review-2026-08-26-1009.md))
 - [x] Dashboard vs work-page chrome (D38) — prefs on dashboards only; sibling nav on work pages; warehouse strip; Company Voice brand → `home_url_for_request`
-- [x] Presentation deck v2.4 (11 Sep) — reorder (map = slide 2, missing-item = slide 3); slides 4–8 SVG graphics; **slide 9 next** (launch visual-layout generalPurpose sub-agent first)
+- [x] Presentation deck v2.7 (11 Sep) — reorder; slides 2–9 SVG graphics; unified 710 viewBox (3–5/7–9); larger in-box SVG labels; slide 8 arrow spacing; plan [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md)
+- [ ] Presentation deck polish — remove TEMP viewBox debug; slides 10–16 graphics; Parle on slide 12 (optional before Phase 7)
 - [ ] Phase 7 — production deployment readiness — after the deck pass ([`DEPLOYMENT.md`](DEPLOYMENT.md))
 - [ ] Phase 8 — Google OAuth production rollout + shared chrome
 - [ ] Phase 9 — email automation (stub exists)

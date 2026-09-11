@@ -538,6 +538,14 @@ body.deck-fullscreen:hover {
     display: block;
 }
 
+/* TEMP: viewBox debug outline — remove when done visualizing */
+.viewbox-debug {
+    fill: rgba(245, 158, 11, 0.06);
+    stroke: #f59e0b;
+    stroke-width: 2;
+    pointer-events: none;
+}
+
 /* Slide 12 — warehouse / branch bird's-eye map */
 .slide-worlds .slide-subtitle {
     margin-bottom: 0.75rem;

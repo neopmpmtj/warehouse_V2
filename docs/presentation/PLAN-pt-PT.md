@@ -115,7 +115,7 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 | App Django | `presentation/` |
 | Template PT | `presentation/templates/presentation/deck_pt.html` |
 | Template EN | `presentation/templates/presentation/deck_en.html` |
-| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=21`), `js/deck.js` |
+| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=23` na working tree — inclui TEMP `.viewbox-debug`; remover antes de apresentar), `js/deck.js` |
 | Rota PT | `/presentation/` ou `/presentation/pt/` |
 | Rota EN | `/presentation/en/` |
 

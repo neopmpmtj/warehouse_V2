@@ -120,7 +120,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | Django app | `presentation/` |
 | PT template | `presentation/templates/presentation/deck_pt.html` |
 | EN template | `presentation/templates/presentation/deck_en.html` |
-| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=21`, `deck.js`) |
+| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=23` on working tree — includes TEMP `.viewbox-debug`; remove before presenting), `deck.js` |
 | Routes | `/presentation/` and `/presentation/pt/` → PT · `/presentation/en/` → EN |
 
 ### Deck navigation

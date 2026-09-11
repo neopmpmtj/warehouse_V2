@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 11 September 2026, 09:40 WEST.
+> **Read this first when resuming work.** Last updated: 11 September 2026, 18:10 WEST.
 
 ---
 
@@ -32,11 +32,23 @@
 | 8 — Google OAuth production rollout + shared chrome | ⏸ After Phase 7 |
 | 9 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Immediate next:** presentation **slide 9** (closed-circuit graphic — reuse the visual-layout sub-agent). **Then:** **Phase 7** — production deployment readiness ([`DEPLOYMENT.md`](DEPLOYMENT.md)). OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
+**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Immediate next:** remove **TEMP** viewBox debug borders on the deck; optional slide 8 viewBox/content balance; then finish presentation polish (slides 10–16, Parle on slide 12) or pause for **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
 
-**Tests:** suite **605 OK** (11 Sep; presentation deck reorder + slides 4–8 graphics; includes `presentation`).
+**Tests:** suite **607 OK** (11 Sep; includes `presentation`).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (11 Sep 2026, afternoon) — presentation deck: SVG scale + readability + slide 8 ✅
+
+Training deck at `/presentation/` (PT) and `/presentation/en/`. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.7, [`PLAN-pt-PT.md`](presentation/PLAN-pt-PT.md) v2.7. CSS `deck.css?v=23` (committed through `?v=22`; debug pass bumps to **23** on working tree).
+
+1. **Unified SVG canvas (slides 3–5, 7–9)** — `viewBox` width **710** (same as slide 6) so diagram labels/strokes match slide 6 on-screen weight; drawings kept at original coordinates inside `<g transform="translate(75, 0)">` (slide 9: `translate(85, 0)`). `.missing-item-loop` max-width **640px** (same as `.slide-process-diagram`). Commits `c46af87`, plan v2.7.
+2. **Larger in-box SVG labels only** — `.missing-item-label` **15px**, `.missing-item-label-inner` **13px**, `.worlds-circle-label` **19px**, `.worlds-arrow-label` **15px** (HTML titles/body/bullets unchanged). Demo feedback: middle-aged audience found diagram text too small. Commit `a43b537`.
+3. **Slide 8** — grey vertical arrow **doubled** (y 200→264); **Adjust + reason** box moved down; `viewBox` height **312**. Reverted mistaken label/box re-centering (user wanted spacing only, not moving text inside nodes).
+4. **TEMP viewBox debug** — amber `.viewbox-debug` rects on slides **2–9** (EN+PT) + CSS rule for SVG learning session. **Remove before presenting** — still on **uncommitted** working tree with slide 8 arrow tweak + `?v=23`.
+5. **SVG lesson (no code)** — widening `viewBox` does not move/resize children; it zooms out when CSS display size is fixed. Slide 8 drawing sits **left inside** the 710-wide viewBox (~187px empty on the right) because `translate(75,0)` assumed a full 560-wide layout.
+
+- **Still deferred:** slide 12 **Company Voice** / **Voz da Empresa** (Parle D40 not applied to deck); slides **10–16** still mostly HTML copy (not slide 2–9 SVG language).
 
 ## This session (11 Sep 2026) — presentation deck: reorder + slides 4–8 graphics ✅
 
@@ -117,12 +129,13 @@ Company-wide **unpriced / priced** switch for the branch catalogue and requisiç
 
 ## Next session — do this
 
-1. **Presentation slide 9 (closed circuit)** — restyle like slides 2–8 (uncluttered SVG, teal/mustard/gray, no URL clutter). **Launch the visual-layout sub-agent first** (same **generalPurpose** design-consultant role used for slides 4–8: [Visual layout](0748cef2-9c52-4b6f-b63b-0403d19e6e3f)). Ask it to propose the graphic against slides 2–8, then implement. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md).
-2. **Phase 7 — production deployment readiness** (after the deck pass, or if the deck is paused) — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). Follow the updated TLS order (`SECURE_SSL_REDIRECT=False` until certbot). **Do not** bundle OAuth or shared chrome in this phase.
-3. **Phase 8 (later)** — OAuth production rollout + shared chrome; contribute ideas to PROJECT-PLAN §15.2 before build.
-4. **Do not treat as a work queue:** Phase 6 leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8). The 1205 review is **applied**.
-5. **Do not start** Phase 9 email in passing.
-6. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
+1. **Remove TEMP viewBox debug** — delete `.viewbox-debug` rects from `deck_en.html` / `deck_pt.html` and the CSS rule in `deck.css`; bump `?v=` on templates. Commit slide 8 arrow + any leftover deck changes if still uncommitted.
+2. **Presentation polish (optional before Phase 7)** — slide 8: reduce right-side empty viewBox (narrow width or shift `<g>` without moving label x inside boxes); slides **10–16** to match slides 2–9 graphic language; slide **12** → **Parle** (D40). Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.7.
+3. **Phase 7 — production deployment readiness** (after deck paused or done) — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). Follow the updated TLS order (`SECURE_SSL_REDIRECT=False` until certbot). **Do not** bundle OAuth or shared chrome in this phase.
+4. **Phase 8 (later)** — OAuth production rollout + shared chrome; contribute ideas to PROJECT-PLAN §15.2 before build.
+5. **Do not treat as a work queue:** Phase 6 leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8). The 1205 review is **applied**.
+6. **Do not start** Phase 9 email in passing.
+7. Recreate the test DB **without** `--keepdb` if it goes stale after schema changes.
 
 ## This session (26 Aug 2026) — full-tree review fixes (1205) ✅
 
