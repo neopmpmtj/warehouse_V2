@@ -221,7 +221,7 @@ body.deck-fullscreen:hover {
 .missing-item-label-inner {
     fill: var(--text);
     font-family: var(--font);
-    font-size: 10px;
+    font-size: 13px;
     font-weight: 600;
 }
 
@@ -246,7 +246,7 @@ body.deck-fullscreen:hover {
 .missing-item-label {
     fill: var(--text);
     font-family: var(--font);
-    font-size: 11px;
+    font-size: 15px;
     font-weight: 600;
 }
 
@@ -582,7 +582,7 @@ body.deck-fullscreen:hover {
 .worlds-circle-label {
     fill: var(--text);
     font-family: var(--font);
-    font-size: 15px;
+    font-size: 19px;
     font-weight: 700;
 }
 
@@ -603,7 +603,7 @@ body.deck-fullscreen:hover {
 .worlds-arrow-label {
     fill: var(--text);
     font-family: var(--font);
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 600;
 }
 
