@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Presentation: data, circuits, and circularity">
     <title>CentCompras — Presentation</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=20">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=21">
 </head>
 <body>
     <div class="deck" role="application" aria-label="CentCompras presentation">
@@ -75,7 +75,7 @@
                 <h1>From item to branch stock</h1>
                 <p class="slide-missing-item-subline">Example: CEM-50 — Cement 50 kg. Already in the catalogue; the circuit closes at the branch.</p>
                 <div class="slide-process-diagram diagram-wrap">
-                    <svg viewBox="0 0 560 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Closed circuit: branch asks for CEM-50; if no stock, order becomes a warehouse receipt, then the request ships and the branch confirms">
+                    <svg viewBox="0 0 710 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Closed circuit: branch asks for CEM-50; if no stock, order becomes a warehouse receipt, then the request ships and the branch confirms">
                         <defs>
                             <marker id="arrowhead-circuit-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                                 <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
@@ -87,6 +87,7 @@
                                 <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
                             </marker>
                         </defs>
+                        <g transform="translate(75, 0)">
                         <ellipse class="slide-process-arrow-neutral" cx="228" cy="178" rx="168" ry="120" fill="none"/>
                         <text class="missing-item-satisfaction-label" x="394" y="16" text-anchor="middle">Warehouse</text>
                         <text class="missing-item-satisfaction-label" x="81" y="340" text-anchor="middle">Branch</text>
@@ -113,6 +114,7 @@
                         <line class="slide-process-arrow-teal" x1="394" y1="124" x2="394" y2="150" marker-end="url(#arrowhead-circuit-teal)"/>
                         <path class="slide-process-arrow-teal" d="M 394 192 Q 409 230 345 264" marker-end="url(#arrowhead-circuit-teal)"/>
                         <line class="slide-process-arrow-teal" x1="249" y1="274" x2="166" y2="272" marker-end="url(#arrowhead-circuit-teal)"/>
+                        </g>
                     </svg>
                 </div>
                 <p>Every step generates structured data. The circuit only closes when the branch confirms arrival.</p>
@@ -123,7 +125,7 @@
                 <h1>Internal request</h1>
                 <p class="slide-missing-item-subline">The branch asks; the warehouse ships.</p>
                 <div class="slide-process-diagram diagram-wrap">
-                    <svg viewBox="0 0 560 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Branch asks, warehouse ships from queue; shipping sets status to shipped">
+                    <svg viewBox="0 0 710 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Branch asks, warehouse ships from queue; shipping sets status to shipped">
                         <defs>
                             <marker id="arrowhead-req-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                                 <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
@@ -132,6 +134,7 @@
                                 <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
                             </marker>
                         </defs>
+                        <g transform="translate(75, 0)">
                         <rect class="missing-item-node-warm" x="50" y="16" width="93" height="40" rx="8"/>
                         <text class="missing-item-label" x="97" y="41" text-anchor="middle">Catalogue</text>
                         <rect class="missing-item-node-warm" x="50" y="90" width="93" height="40" rx="8"/>
@@ -154,6 +157,7 @@
                         <path class="slide-process-arrow-warm" d="M 145 184 Q 319 184 319 50 L 397 36" marker-end="url(#arrowhead-req-warm)"/>
                         <rect class="worlds-arrow-label-border-warm" x="288" y="96" width="63" height="22" rx="4"/>
                         <text class="worlds-arrow-label" x="319" y="111" text-anchor="middle">Approved</text>
+                        </g>
                     </svg>
                 </div>
                 <div class="slide-process-details worlds-details slide-columns">
@@ -178,7 +182,7 @@
             <section class="slide slide-process" data-slide="5" aria-label="Branch receipt">
                 <h1>Branch receipt</h1>
                 <div class="slide-process-diagram diagram-wrap">
-                    <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Shipped goods arrive at the branch">
+                    <svg viewBox="0 0 710 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Shipped goods arrive at the branch">
                         <defs>
                             <marker id="arrowhead-recv-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                                 <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
@@ -190,6 +194,7 @@
                                 <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
                             </marker>
                         </defs>
+                        <g transform="translate(75, 0)">
                         <rect class="missing-item-node-teal" x="340" y="16" width="130" height="40" rx="8"/>
                         <text class="missing-item-label" x="405" y="41" text-anchor="middle">Shipped</text>
                         <rect class="missing-item-node-warm" x="150" y="108" width="150" height="40" rx="8"/>
@@ -204,6 +209,7 @@
                         <line class="slide-process-arrow-warm" x1="190" y1="148" x2="150" y2="212" marker-end="url(#arrowhead-recv-warm)"/>
                         <line class="slide-process-arrow-neutral" x1="300" y1="130" x2="338" y2="130" marker-end="url(#arrowhead-recv-neutral)"/>
                         <line class="slide-process-arrow-neutral" x1="206" y1="254" x2="248" y2="266" marker-end="url(#arrowhead-recv-neutral)"/>
+                        </g>
                     </svg>
                 </div>
                 <p><strong>Closed circuit:</strong> the item went catalogue → purchase → central stock → request → issue → branch stock. Every step was recorded.</p>
@@ -255,7 +261,7 @@
                 <h1>Procurement</h1>
                 <p class="slide-missing-item-subline">From draft to closed.</p>
                 <div class="slide-process-diagram diagram-wrap">
-                    <svg viewBox="0 0 560 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Purchase order states">
+                    <svg viewBox="0 0 710 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Purchase order states">
                         <defs>
                             <marker id="arrowhead-po-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                                 <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
@@ -267,6 +273,7 @@
                                 <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
                             </marker>
                         </defs>
+                        <g transform="translate(75, 0)">
                         <rect class="missing-item-node-warm" x="24" y="20" width="130" height="40" rx="8"/>
                         <text class="missing-item-label" x="89" y="45" text-anchor="middle">Draft</text>
                         <rect class="missing-item-node-neutral" x="300" y="20" width="130" height="40" rx="8"/>
@@ -283,6 +290,7 @@
                         <path class="slide-process-arrow-neutral" d="M 365 60 L 365 115 L 332 115" marker-end="url(#arrowhead-po-neutral)"/>
                         <line class="slide-process-arrow-neutral" x1="260" y1="137" x2="260" y2="203" marker-end="url(#arrowhead-po-neutral)"/>
                         <path class="slide-process-arrow-neutral" d="M 352 225 L 400 225 L 400 293" marker-end="url(#arrowhead-po-neutral)"/>
+                        </g>
                     </svg>
                 </div>
                 <p>No supplier price means no purchase line — the catalogue must be complete first.</p>
@@ -293,7 +301,7 @@
                 <h1>Central stock</h1>
                 <p class="slide-missing-item-subline">Quantity is never typed by hand.</p>
                 <div class="slide-process-diagram diagram-wrap">
-                    <svg viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="On hand minus reserved is available">
+                    <svg viewBox="0 0 710 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="On hand minus reserved is available">
                         <defs>
                             <marker id="arrowhead-stock-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                                 <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
@@ -302,6 +310,7 @@
                                 <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
                             </marker>
                         </defs>
+                        <g transform="translate(75, 0)">
                         <rect class="missing-item-node-teal" x="16" y="100" width="110" height="40" rx="8"/>
                         <text class="missing-item-label" x="71" y="125" text-anchor="middle">Receipt</text>
                         <rect class="stock-mass-physical" x="168" y="48" width="280" height="150" rx="16"/>
@@ -315,6 +324,7 @@
                         <rect class="missing-item-node-neutral" x="200" y="232" width="160" height="40" rx="8"/>
                         <text class="missing-item-label" x="280" y="257" text-anchor="middle">Adjust + reason</text>
                         <line class="slide-process-arrow-neutral" x1="280" y1="200" x2="280" y2="232" marker-end="url(#arrowhead-stock-neutral)"/>
+                        </g>
                     </svg>
                 </div>
                 <ul>
@@ -328,7 +338,7 @@
                 <h1>When the item is not in the catalogue</h1>
                 <p class="slide-missing-item-subline">Not an order — a conversation that closes once the item enters the catalogue.</p>
                 <div class="missing-item-loop diagram-wrap">
-                    <svg viewBox="0 0 540 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Missing item conversation flow">
+                    <svg viewBox="0 0 710 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Missing item conversation flow">
                         <defs>
                             <marker id="arrowhead-missing-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                                 <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
@@ -340,6 +350,7 @@
                                 <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
                             </marker>
                         </defs>
+                        <g transform="translate(85, 0)">
                         <rect class="missing-item-node-warm" x="24" y="20" width="148" height="40" rx="8"/>
                         <text class="missing-item-label" x="98" y="45" text-anchor="middle">Can't find it</text>
                         <rect class="missing-item-node-group" x="268" y="10" width="240" height="102" rx="8"/>
@@ -366,6 +377,7 @@
                         <path class="missing-item-arrow-neutral" d="M 388 112 L 388 167 L 352 167"/>
                         <line class="missing-item-arrow-neutral" x1="260" y1="189" x2="260" y2="255"/>
                         <path class="missing-item-arrow-neutral" d="M 352 277 L 430 277 L 430 347"/>
+                        </g>
                     </svg>
                 </div>
             </section>

@@ -1,6 +1,6 @@
 # CentCompras — Plano da apresentação (pt-PT)
 
-**Versão:** 2.6 · **Data:** 11 setembro 2026  
+**Versão:** 2.7 · **Data:** 11 setembro 2026  
 **URL:** `/presentation/pt/` (atalho: `/presentation/`) · **Inglês:** `/presentation/en/`  
 **Idioma:** Português (pt-PT) · Plano EN: [`PLAN-en.md`](PLAN-en.md)  
 **Público:** Armazém central, gestores e operadores de filial, direção
@@ -115,9 +115,12 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 | App Django | `presentation/` |
 | Template PT | `presentation/templates/presentation/deck_pt.html` |
 | Template EN | `presentation/templates/presentation/deck_en.html` |
-| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=20`), `js/deck.js` |
+| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=21`), `js/deck.js` |
 | Rota PT | `/presentation/` ou `/presentation/pt/` |
 | Rota EN | `/presentation/en/` |
+
+### Canvas SVG (gráficos dos slides 3–9)
+Os slides **3–5, 7–8 e 9** usam `viewBox` com largura **710** (igual ao slide 6) para que etiquetas e traços tenham o mesmo peso visual em ecrã quando escalados a `max-width: 640px`. Os desenhos mantêm as coordenadas originais dentro de `<g transform="translate(75, 0)">` (slide 9: `translate(85, 0)`). O slide 2 mantém o canvas `520` da vista de conjunto.
 
 ### Sub-agente visual
 Para gráficos de slides, lançar primeiro um consultor de design **generalPurpose** (slides 4–9: [Visual layout](0748cef2-9c52-4b6f-b63b-0403d19e6e3f) / [Visual layout](31643dbd-721a-469e-b694-8836bf6626d9)). Tokens: armazém teal `#14b8a6`, filial mostarda `#f59e0b`, cinzento `#94a3b8`; nós arredondados; sem colunas em caixa; sem URLs; palavras do dia a dia.

@@ -1,6 +1,6 @@
 # CentCompras — Presentation plan (en)
 
-**Version:** 2.6 · **Date:** 11 September 2026  
+**Version:** 2.7 · **Date:** 11 September 2026  
 **URL:** `/presentation/en/` · **Language:** English — Portuguese at `/presentation/pt/`  
 **Audience:** Central warehouse, branch managers and operators, leadership
 
@@ -120,7 +120,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | Django app | `presentation/` |
 | PT template | `presentation/templates/presentation/deck_pt.html` |
 | EN template | `presentation/templates/presentation/deck_en.html` |
-| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=20`, `deck.js`) |
+| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=21`, `deck.js`) |
 | Routes | `/presentation/` and `/presentation/pt/` → PT · `/presentation/en/` → EN |
 
 ### Deck navigation
@@ -129,6 +129,9 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - `F` fullscreen; `?` help
 - Language switcher in footer
 - Responsive (projector + tablet)
+
+### SVG canvas (slides 3–9 process graphics)
+Slides **3–5, 7–8, and 9** use a **710-wide** `viewBox` (same as slide 6) so labels and strokes render at the same on-screen weight when scaled to `max-width: 640px`. Drawings stay in their original coordinates inside `<g transform="translate(75, 0)">` (slide 9: `translate(85, 0)`). Slide 2 keeps its own `520` bird's-eye canvas.
 
 ### Visual-layout sub-agent
 For slide graphics, launch a **generalPurpose** design consultant first (slides 4–9 used [Visual layout](0748cef2-9c52-4b6f-b63b-0403d19e6e3f) / [Visual layout](31643dbd-721a-469e-b694-8836bf6626d9)). Tokens: warehouse teal `#14b8a6`, branch mustard `#f59e0b`, gray `#94a3b8`; rounded nodes; no boxed columns; no URL paths; everyday words.
