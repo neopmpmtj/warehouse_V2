@@ -1,6 +1,6 @@
 # CentCompras — Plano da apresentação (pt-PT)
 
-**Versão:** 2.7 · **Data:** 11 setembro 2026  
+**Versão:** 2.8 · **Data:** 11 setembro 2026  
 **URL:** `/presentation/pt/` (atalho: `/presentation/`) · **Inglês:** `/presentation/en/`  
 **Idioma:** Português (pt-PT) · Plano EN: [`PLAN-en.md`](PLAN-en.md)  
 **Público:** Armazém central, gestores e operadores de filial, direção
@@ -30,6 +30,9 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 | **IV — Chamada à acção + canal restante** | 11–12 | CTA por papel, Voz da Empresa |
 | **V — Porquê + o que já se regista** | 13–15 | Metáfora dos dados, cenário, tabela de modelos |
 | **VI — Controlos + demo** | 16–17 | Autorização, login demo |
+| **VII — Parte II referência** | 18–26 | Divisor + URLs/fluxos verbosos (complemento aos gráficos da Parte I) |
+
+A Parte I (slides 1–17) é **visual** — SVG nos slides 2–9, sem caminhos URL nos gráficos operacionais. A Parte II (slides 18–26) é **texto** — os mesmos temas com URLs, nomes de modelos e diagramas `flow-node` para quem quer detalhe após a visão geral.
 
 ---
 
@@ -84,8 +87,8 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 ### Slide 11 — O que precisamos de si (CTA)
 - Quatro acções por papel
 
-### Slide 12 — Voz da Empresa (final)
-- Texto + painel do feed; ainda **Voz da Empresa** no deck (Parle D40 não aplicado aqui)
+### Slide 12 — Parle (final)
+- Texto + painel do feed; título **Parle — o seu canal permanente** (D40)
 
 ### Slide 13 — Os dados são o novo petróleo
 - Metáfora petróleo bruto vs refinado
@@ -104,6 +107,34 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 - Aviso HTTP; `DEMO_LOGIN_URL`; palavra-passe `devpass123`
 - Título **Armazém central** teal; **Filiais** e coluna **Filial** mostarda
 
+### Slide 18 — Divisor Parte II
+- Sobretítulo **Parte II**; título **Referência detalhada**
+- Linha secundária: URLs, fluxos e detalhe técnico — complemento à Parte I
+
+### Slide 19 — Requisição interna (detalhe)
+- Colunas filial `/branch/requests/` + armazém `/manage/internal-requests/`; nota offline
+
+### Slide 20 — Receção na filial (detalhe)
+- `/branch/receipts/`; `BranchStockMovement`; rodapé circuito fechado
+
+### Slide 21 — Catálogo e preços (detalhe)
+- `/manage/items/`; famílias, Genesis, `ItemChangeLog`
+
+### Slide 22 — Aprovisionamento (detalhe)
+- `/manage/purchase-orders/`; rascunho → fechado; regra preço fornecedor
+
+### Slide 23 — Stock central (detalhe)
+- `/manage/goods-receipts/`; `StockMovement`, reserva FIFO D32
+
+### Slide 24 — Circuito fechado (detalhe)
+- SVG horizontal `flow-node` com URLs em cada nó; legenda sem stock
+
+### Slide 25 — Dois mundos, um sistema (detalhe)
+- Pílulas de função; listas armazém vs filial; independência de permissões
+
+### Slide 26 — Conversas / circularidade (detalhe)
+- SVG circuito da conversa; estados, `ThreadReadState`; legenda conversa que fecha (**Conversas** D39)
+
 ---
 
 ## Recursos técnicos
@@ -115,7 +146,7 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 | App Django | `presentation/` |
 | Template PT | `presentation/templates/presentation/deck_pt.html` |
 | Template EN | `presentation/templates/presentation/deck_en.html` |
-| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=23` na working tree — inclui TEMP `.viewbox-debug`; remover antes de apresentar), `js/deck.js` |
+| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=24` — estilos `flow-node` Parte II; TEMP `.viewbox-debug` nos slides 2–9; remover antes de apresentar), `js/deck.js` |
 | Rota PT | `/presentation/` ou `/presentation/pt/` |
 | Rota EN | `/presentation/en/` |
 

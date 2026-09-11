@@ -27,7 +27,7 @@ class PresentationDeckTests(TestCase):
         self.assertContains(response, "Data is the new oil")
         self.assertContains(response, "What we need from you")
         self.assertContains(response, "Start today — data compounds")
-        self.assertContains(response, "Company Voice — your ongoing channel")
+        self.assertContains(response, "Parle — your ongoing channel")
         self.assertContains(response, "missing-item-loop")
         self.assertContains(response, "voice-feed-panel")
         self.assertNotContains(response, "circularity-zones")
@@ -37,7 +37,7 @@ class PresentationDeckTests(TestCase):
         response = self.client.get("/presentation/pt/")
         self.assertContains(response, "O que precisamos de si")
         self.assertContains(response, "Comece hoje — os dados acumulam-se")
-        self.assertContains(response, "Voz da Empresa — o seu canal permanente")
+        self.assertContains(response, "Parle — o seu canal permanente")
 
     def test_presentation_en_slide_order(self):
         response = self.client.get("/presentation/en/")
@@ -63,7 +63,7 @@ class PresentationDeckTests(TestCase):
             content.index("Catalogue and pricing"),
         )
         self.assertLess(
-            content.index("Company Voice — your ongoing channel"),
+            content.index("Parle — your ongoing channel"),
             content.index("Data is the new oil"),
         )
         self.assertLess(
@@ -91,7 +91,8 @@ class PresentationDeckTests(TestCase):
             "The branch asks. The warehouse answers.",
         )
         self.assertNotContains(en, "Everyone works in the same software")
-        self.assertNotContains(en, "Two worlds, one system")
+        en_slide2 = _slide_html(en.content.decode(), 2)
+        self.assertNotIn("Two worlds, one system", en_slide2)
         pt = self.client.get("/presentation/pt/")
         self.assertContains(pt, 'class="slide slide-worlds" data-slide="2"')
         self.assertContains(pt, "Um sistema, dois locais de trabalho")
@@ -103,7 +104,8 @@ class PresentationDeckTests(TestCase):
             "A filial pede. O armazém entrega.",
         )
         self.assertNotContains(pt, "Todos trabalham no mesmo software")
-        self.assertNotContains(pt, "Dois mundos, um sistema")
+        pt_slide2 = _slide_html(pt.content.decode(), 2)
+        self.assertNotIn("Dois mundos, um sistema", pt_slide2)
 
     def test_presentation_slide9_missing_item_loop(self):
         en = self.client.get("/presentation/en/")
@@ -128,10 +130,10 @@ class PresentationDeckTests(TestCase):
         self.assertNotIn('x1="298" y1="48" x2="174" y2="48"', en_slide9)
         self.assertIn('x1="174" y1="40" x2="266" y2="40"', en_slide9)
         self.assertIn('d="M 388 112 L 388 167 L 352 167"', en_slide9)
-        self.assertNotContains(en, "ThreadReadState")
-        self.assertNotContains(en, "/branch/threads/")
-        self.assertNotContains(en, "Order as usual")
-        self.assertNotContains(en, "Next missing item")
+        self.assertNotIn("ThreadReadState", en_slide9)
+        self.assertNotIn("/branch/threads/", en_slide9)
+        self.assertNotIn("Order as usual", en_slide9)
+        self.assertNotIn("Next missing item", en_slide9)
         pt = self.client.get("/presentation/pt/")
         self.assertContains(pt, 'class="slide slide-missing-item" data-slide="9"')
         self.assertNotContains(en, "When something is missing")
@@ -155,11 +157,11 @@ class PresentationDeckTests(TestCase):
         pt_slide9 = _slide_html(pt.content.decode(), 9)
         self.assertNotIn('x1="298" y1="48" x2="188" y2="48"', pt_slide9)
         self.assertIn('d="M 388 112 L 388 167 L 330 167"', pt_slide9)
-        self.assertNotContains(pt, ">Conversa</text>")
-        self.assertNotContains(pt, "ThreadReadState")
-        self.assertNotContains(pt, "/branch/threads/")
-        self.assertNotContains(pt, "Pedido normal")
-        self.assertNotContains(pt, "Quando falta algo")
+        self.assertNotIn(">Conversa</text>", pt_slide9)
+        self.assertNotIn("ThreadReadState", pt_slide9)
+        self.assertNotIn("/branch/threads/", pt_slide9)
+        self.assertNotIn("Pedido normal", pt_slide9)
+        self.assertNotIn("Quando falta algo", pt_slide9)
 
     def test_presentation_slides_4_to_8_graphics(self):
         en = self.client.get("/presentation/en/")
@@ -304,7 +306,7 @@ class PresentationDeckTests(TestCase):
         self.assertContains(response, "presentation/js/deck.js")
 
     def test_presentation_demo_login_slide(self):
-        self.assertEqual(SLIDE_COUNT, 17)
+        self.assertEqual(SLIDE_COUNT, 26)
         en = self.client.get("/presentation/en/")
         self.assertContains(en, 'data-slide="17"')
         self.assertContains(en, "Log in and explore")
@@ -317,6 +319,58 @@ class PresentationDeckTests(TestCase):
         self.assertContains(pt, "Experimente agora")
         self.assertContains(pt, "Aviso do browser esperado")
         self.assertContains(pt, DEMO_PASSWORD)
+
+    def test_presentation_part2_slides(self):
+        en = self.client.get("/presentation/en/")
+        pt = self.client.get("/presentation/pt/")
+        en_body = en.content.decode()
+        pt_body = pt.content.decode()
+
+        self.assertContains(en, 'data-slide="18"')
+        self.assertContains(en, "Detailed reference")
+        self.assertContains(pt, "Referência detalhada")
+
+        self.assertContains(en, 'data-slide="19"')
+        self.assertContains(en, 'data-slide="26"')
+        self.assertContains(pt, 'data-slide="26"')
+        self.assertNotContains(en, 'data-slide="27"')
+
+        en19 = _slide_html(en_body, 19)
+        self.assertIn("/branch/requests/", en19)
+        self.assertIn("/manage/internal-requests/", en19)
+        self.assertIn("Internal request", en19)
+
+        en21 = _slide_html(en_body, 21)
+        self.assertIn("/manage/items/", en21)
+        self.assertIn("ItemChangeLog", en21)
+
+        en24 = _slide_html(en_body, 24)
+        self.assertIn("flow-node", en24)
+        self.assertIn("arrowhead-circuit-p2", en24)
+
+        en26 = _slide_html(en_body, 26)
+        self.assertIn("ThreadReadState", en26)
+        self.assertIn("arrowhead-thread-p2", en26)
+
+        en12 = _slide_html(en_body, 12)
+        self.assertIn("Parle — your ongoing channel", en12)
+        self.assertNotIn("Company Voice — your ongoing channel", en12)
+
+        pt12 = _slide_html(pt_body, 12)
+        self.assertIn("Parle — o seu canal permanente", pt12)
+        self.assertNotIn("Voz da Empresa", pt12)
+
+        pt19 = _slide_html(pt_body, 19)
+        self.assertIn("Requisição interna", pt19)
+
+        pt26 = _slide_html(pt_body, 26)
+        self.assertIn("Abrir conversa", pt26)
+        self.assertNotIn("Abrir fio", pt26)
+        self.assertNotIn(">fio<", pt26.lower())
+
+        for number in range(19, 27):
+            self.assertIn(f'data-slide="{number}"', en_body)
+            self.assertIn(f'data-slide="{number}"', pt_body)
 
     def test_presentation_slides_16_17_workplace_colours(self):
         en = self.client.get("/presentation/en/")

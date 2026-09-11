@@ -538,6 +538,70 @@ body.deck-fullscreen:hover {
     display: block;
 }
 
+/* Part II — flow-node reference diagrams */
+.flow-node {
+    fill: var(--surface);
+    stroke: var(--accent);
+    stroke-width: 2;
+}
+
+.flow-node-accent {
+    fill: rgba(15, 118, 110, 0.25);
+    stroke: var(--accent-light);
+}
+
+.flow-node-warm {
+    fill: rgba(245, 158, 11, 0.15);
+    stroke: var(--accent-warm);
+}
+
+.flow-text {
+    fill: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.flow-text-sm {
+    fill: var(--muted);
+    font-family: var(--font);
+    font-size: 11px;
+}
+
+.flow-arrow {
+    stroke: var(--muted);
+    stroke-width: 2;
+    fill: none;
+}
+
+.part2-circuit-diagram .flow-arrow {
+    marker-end: url(#arrowhead-circuit-p2);
+}
+
+.part2-thread-diagram .flow-arrow-warm {
+    stroke: var(--accent-warm);
+    marker-end: url(#arrowhead-thread-p2);
+}
+
+.part2-thread-diagram .flow-arrow-teal {
+    stroke: var(--accent-light);
+    marker-end: url(#arrowhead-thread-p2);
+}
+
+.part2-thread-diagram .flow-arrow-dashed {
+    stroke-dasharray: 6, 4;
+}
+
+.thread-circuit-details {
+    margin-top: 0.75rem;
+}
+
+.thread-circuit-caption {
+    color: var(--muted);
+    font-size: var(--small-size);
+    margin: 0;
+}
+
 /* TEMP: viewBox debug outline — remove when done visualizing */
 .viewbox-debug {
     fill: rgba(245, 158, 11, 0.06);

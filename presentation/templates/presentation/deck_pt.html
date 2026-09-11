@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Apresentação: dados, circuitos e circularidade">
     <title>CentCompras — Apresentação</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=23">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=24">
 </head>
 <body>
     <div class="deck" role="application" aria-label="Apresentação CentCompras">
@@ -452,10 +452,10 @@
                 </ul>
             </section>
 
-            <!-- Slide 12: Voz da Empresa -->
-            <section class="slide slide-finale" data-slide="12" aria-label="Voz da Empresa">
+            <!-- Slide 12: Parle -->
+            <section class="slide slide-finale" data-slide="12" aria-label="Parle">
                 <p class="slide-eyebrow">Continue a falar</p>
-                <h1>Voz da Empresa — o seu canal permanente</h1>
+                <h1>Parle — o seu canal permanente</h1>
                 <div class="slide-finale-layout slide-columns">
                     <div class="slide-finale-copy">
                         <p class="slide-subtitle">A sua voz molda a nossa melhoria. Transacções geram dados; conversas geram contexto.</p>
@@ -653,6 +653,249 @@
                     </div>
                 </div>
                 <p class="slide-meta">A mesma palavra-passe para todas as contas — escolha qualquer função para explorar.</p>
+            </section>
+
+            <!-- Slide 18: Divisor Parte II -->
+            <section class="slide" data-slide="18" aria-label="Parte II">
+                <p class="slide-eyebrow">Parte II</p>
+                <h1>Referência detalhada</h1>
+                <p class="slide-subtitle">URLs, fluxos de trabalho e detalhe técnico — o complemento à visão visual da Parte I.</p>
+            </section>
+
+            <!-- Slide 19: Requisição interna (detalhe) -->
+            <section class="slide" data-slide="19" aria-label="Requisição interna detalhe">
+                <h1>Requisição interna</h1>
+                <div class="slide-columns">
+                    <div>
+                        <h2>Lado filial</h2>
+                        <p class="url-tag">/branch/requests/</p>
+                        <ol>
+                            <li>Consultar catálogo (custo oculto, indicação de stock)</li>
+                            <li>Criar rascunho e adicionar linhas</li>
+                            <li>Submeter → gestor aprova (congela totais)</li>
+                            <li><strong>Offline:</strong> rascunhos em fila local; sincronizam ao reconectar</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h2>Lado armazém</h2>
+                        <p class="url-tag">/manage/internal-requests/</p>
+                        <ol>
+                            <li>Fila de requisições aprovadas</li>
+                            <li>Emitir mercadoria (parcial OK) — stock central desce</li>
+                            <li>Encerramento parcial com motivo</li>
+                            <li>Estado passa a <strong>expedido</strong> → filial recebe</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 20: Receção na filial (detalhe) -->
+            <section class="slide" data-slide="20" aria-label="Receção na filial detalhe">
+                <h1>Receção na filial</h1>
+                <p class="url-tag">/branch/receipts/</p>
+                <ul>
+                    <li>A filial confirma quantidades recebidas face à expedição</li>
+                    <li><strong>Stock da filial sobe</strong> via <code>BranchStockMovement</code></li>
+                    <li>Recepção parcial permitida; encerramento parcial com motivo (gestor+)</li>
+                    <li>Administrador de filial pode ajustar stock local</li>
+                </ul>
+                <p><strong>Circuito fechado:</strong> o artigo percorreu catálogo → compra → stock central → requisição → expedição → stock filial. Cada passo ficou registado.</p>
+            </section>
+
+            <!-- Slide 21: Catálogo (detalhe) -->
+            <section class="slide" data-slide="21" aria-label="Catálogo detalhe">
+                <h1>Catálogo e preços</h1>
+                <p class="url-tag">/manage/items/</p>
+                <ul>
+                    <li><strong>Famílias e sub-famílias</strong> — taxonomia de dois níveis</li>
+                    <li><strong>Artigo</strong> — código interno (imutável após criação), descrição, IVA, preços de venda (retalho, grosso, especial)</li>
+                    <li><strong>Fornecedores</strong> — preços de custo por artigo; um fornecedor <em>principal</em> por artigo</li>
+                    <li><strong>Genesis</strong> — activação exige preço de retalho &gt; 0 e qualificação</li>
+                    <li><strong>Auditoria</strong> — cada alteração fica em <code>ItemChangeLog</code></li>
+                </ul>
+                <p>Artigos novos começam <strong>inactivos</strong> até estarem prontos para o catálogo global.</p>
+            </section>
+
+            <!-- Slide 22: Aprovisionamento (detalhe) -->
+            <section class="slide" data-slide="22" aria-label="Aprovisionamento detalhe">
+                <h1>Aprovisionamento</h1>
+                <p class="url-tag">/manage/purchase-orders/</p>
+                <ul>
+                    <li><strong>Rascunho</strong> → escolher fornecedor, adicionar linhas com quantidade e descontos</li>
+                    <li><strong>Validação</strong> — linha rejeitada se o fornecedor não tiver preço para o artigo</li>
+                    <li><strong>Submetido</strong> → aguarda aprovação financeira</li>
+                    <li><strong>Aprovado</strong> — totais líquido/IVA/bruto congelados no momento da aprovação</li>
+                    <li><strong>Recebido / Fechado</strong> — após receção parcial ou total de mercadorias</li>
+                </ul>
+                <p>Sem preço de fornecedor, não há linha de compra — o catálogo tem de estar completo primeiro.</p>
+            </section>
+
+            <!-- Slide 23: Stock central (detalhe) -->
+            <section class="slide" data-slide="23" aria-label="Stock central detalhe">
+                <h1>Stock central</h1>
+                <p class="url-tag">/manage/goods-receipts/</p>
+                <ul>
+                    <li><strong>Receção de mercadorias</strong> — parcial ou total; cada receção escreve <code>StockMovement</code></li>
+                    <li><strong>Quantidade em cache</strong> — <code>Item.quantity</code> actualiza-se só via movimentos</li>
+                    <li><strong>Disponível</strong> = físico − reservado (requisições aprovadas)</li>
+                    <li><strong>Reserva FIFO (D32)</strong> — ao aprovar requisição, reserva-se o que há; stock entrante aloca-se automaticamente</li>
+                    <li><strong>Ajuste de stock</strong> — só administrador de armazém, com motivo obrigatório</li>
+                </ul>
+            </section>
+
+            <!-- Slide 24: Circuito fechado (detalhe) -->
+            <section class="slide" data-slide="24" aria-label="Circuito fechado detalhe">
+                <p class="slide-eyebrow">Circuito fechado</p>
+                <h1>Do artigo ao stock na filial</h1>
+                <div class="diagram-wrap part2-circuit-diagram">
+                    <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama do circuito fechado">
+                        <defs>
+                            <marker id="arrowhead-circuit-p2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
+                        </defs>
+                        <rect class="flow-node flow-node-accent" x="10" y="70" width="110" height="50" rx="8"/>
+                        <text class="flow-text" x="65" y="92" text-anchor="middle">Catálogo</text>
+                        <text class="flow-text-sm" x="65" y="108" text-anchor="middle">/manage/items/</text>
+
+                        <rect class="flow-node" x="140" y="70" width="110" height="50" rx="8"/>
+                        <text class="flow-text" x="195" y="92" text-anchor="middle">Compras</text>
+                        <text class="flow-text-sm" x="195" y="108" text-anchor="middle">purchase-orders</text>
+
+                        <rect class="flow-node" x="270" y="70" width="110" height="50" rx="8"/>
+                        <text class="flow-text" x="325" y="92" text-anchor="middle">Aprovação</text>
+                        <text class="flow-text-sm" x="325" y="108" text-anchor="middle">grau + limites</text>
+
+                        <rect class="flow-node" x="400" y="70" width="110" height="50" rx="8"/>
+                        <text class="flow-text" x="455" y="92" text-anchor="middle">Stock</text>
+                        <text class="flow-text-sm" x="455" y="108" text-anchor="middle">goods-receipts</text>
+
+                        <rect class="flow-node flow-node-accent" x="530" y="70" width="110" height="50" rx="8"/>
+                        <text class="flow-text" x="585" y="92" text-anchor="middle">Requisição</text>
+                        <text class="flow-text-sm" x="585" y="108" text-anchor="middle">branch/requests</text>
+
+                        <rect class="flow-node" x="660" y="70" width="110" height="50" rx="8"/>
+                        <text class="flow-text" x="715" y="92" text-anchor="middle">Expedição</text>
+                        <text class="flow-text-sm" x="715" y="108" text-anchor="middle">internal-requests</text>
+
+                        <rect class="flow-node flow-node-accent" x="790" y="70" width="100" height="50" rx="8"/>
+                        <text class="flow-text" x="840" y="92" text-anchor="middle">Receção</text>
+                        <text class="flow-text-sm" x="840" y="108" text-anchor="middle">branch/receipts</text>
+
+                        <line class="flow-arrow" x1="120" y1="95" x2="138" y2="95"/>
+                        <line class="flow-arrow" x1="250" y1="95" x2="268" y2="95"/>
+                        <line class="flow-arrow" x1="380" y1="95" x2="398" y2="95"/>
+                        <line class="flow-arrow" x1="510" y1="95" x2="528" y2="95"/>
+                        <line class="flow-arrow" x1="640" y1="95" x2="658" y2="95"/>
+                        <line class="flow-arrow" x1="770" y1="95" x2="788" y2="95"/>
+
+                        <path class="flow-arrow" d="M 840 120 Q 840 160 65 160 Q 65 130 65 122" stroke-dasharray="6,4"/>
+                        <text class="flow-text-sm" x="450" y="175" text-anchor="middle">Sem stock? Volta a Compras → Receção → disponível</text>
+                    </svg>
+                </div>
+                <p>Cada etapa gera dados estruturados. O circuito só fecha quando a filial confirma a chegada.</p>
+            </section>
+
+            <!-- Slide 25: Dois mundos (detalhe) -->
+            <section class="slide" data-slide="25" aria-label="Dois mundos um sistema detalhe">
+                <p class="slide-eyebrow">Arquitectura</p>
+                <h1>Dois mundos, um sistema</h1>
+                <div class="slide-columns">
+                    <div>
+                        <h2>Armazém central</h2>
+                        <p class="url-tag">/manage/…</p>
+                        <div class="role-pills">
+                            <span class="role-pill">Administrador</span>
+                            <span class="role-pill">Gestor (grau 1–3)</span>
+                            <span class="role-pill">Operador</span>
+                        </div>
+                        <ul>
+                            <li>Gestão de artigos e fornecedores</li>
+                            <li>Encomendas de compra e aprovação</li>
+                            <li>Receção de mercadorias e stock</li>
+                            <li>Expedição para filiais</li>
+                            <li>Conversas (lado armazém)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h2>Filiais satélite</h2>
+                        <p class="url-tag">/branch/…</p>
+                        <div class="role-pills">
+                            <span class="role-pill branch">Administrador</span>
+                            <span class="role-pill branch">Gestor</span>
+                            <span class="role-pill branch">Operador</span>
+                        </div>
+                        <ul>
+                            <li>Catálogo só de leitura (custo oculto)</li>
+                            <li>Requisição interna (+ offline)</li>
+                            <li>Conversas (artigo inexistente)</li>
+                            <li>Receção na filial</li>
+                            <li>Parle</li>
+                        </ul>
+                    </div>
+                </div>
+                <p><strong>Importante:</strong> grupo de armazém ≠ função de filial. São circuitos de permissão independentes.</p>
+            </section>
+
+            <!-- Slide 26: Conversas / circularidade (detalhe) -->
+            <section class="slide" data-slide="26" aria-label="Circularidade detalhe">
+                <p class="slide-eyebrow">Circularidade</p>
+                <h1>Quando o artigo não existe</h1>
+                <p class="slide-subtitle">Conversa — uma conversa que fecha</p>
+                <div class="diagram-wrap thread-circuit-diagram part2-thread-diagram">
+                    <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama do circuito da conversa">
+                        <defs>
+                            <marker id="arrowhead-thread-p2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                        </defs>
+                        <rect class="flow-node flow-node-warm" x="275" y="8" width="350" height="44" rx="8"/>
+                        <text class="flow-text" x="450" y="28" text-anchor="middle">Artigo não está no catálogo</text>
+                        <text class="flow-text-sm" x="450" y="44" text-anchor="middle">lacuna no catálogo</text>
+
+                        <rect class="flow-node flow-node-warm" x="20" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="95" y="98" text-anchor="middle">Abrir conversa</text>
+                        <text class="flow-text-sm" x="95" y="116" text-anchor="middle">/branch/threads/</text>
+
+                        <rect class="flow-node" x="200" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="275" y="98" text-anchor="middle">Diálogo</text>
+                        <text class="flow-text-sm" x="275" y="116" text-anchor="middle">filial ↔ armazém</text>
+
+                        <rect class="flow-node" x="380" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="455" y="98" text-anchor="middle">Criar artigo</text>
+                        <text class="flow-text-sm" x="455" y="116" text-anchor="middle">/manage/items/</text>
+
+                        <rect class="flow-node" x="560" y="78" width="150" height="50" rx="8"/>
+                        <text class="flow-text" x="635" y="98" text-anchor="middle">Ligar à conversa</text>
+                        <text class="flow-text-sm" x="635" y="116" text-anchor="middle">/manage/threads/</text>
+
+                        <rect class="flow-node flow-node-accent" x="140" y="158" width="200" height="50" rx="8"/>
+                        <text class="flow-text" x="240" y="178" text-anchor="middle">Requisição normal</text>
+                        <text class="flow-text-sm" x="240" y="196" text-anchor="middle">entra no circuito fechado</text>
+
+                        <rect class="flow-node flow-node-warm" x="480" y="158" width="200" height="50" rx="8"/>
+                        <text class="flow-text" x="580" y="178" text-anchor="middle">Fechar conversa</text>
+                        <text class="flow-text-sm" x="580" y="196" text-anchor="middle">motivo + satisfação</text>
+
+                        <line class="flow-arrow flow-arrow-warm" x1="450" y1="52" x2="95" y2="76"/>
+                        <line class="flow-arrow flow-arrow-warm" x1="170" y1="103" x2="198" y2="103"/>
+                        <line class="flow-arrow flow-arrow-warm" x1="350" y1="103" x2="378" y2="103"/>
+                        <line class="flow-arrow flow-arrow-warm" x1="530" y1="103" x2="558" y2="103"/>
+                        <line class="flow-arrow flow-arrow-teal" x1="635" y1="128" x2="240" y2="156"/>
+                        <line class="flow-arrow flow-arrow-warm" x1="340" y1="183" x2="478" y2="183"/>
+                        <path class="flow-arrow flow-arrow-warm flow-arrow-dashed" d="M 580 208 Q 580 218 450 218 Q 120 218 120 103"/>
+                        <text class="flow-text-sm" x="450" y="214" text-anchor="middle">Próxima lacuna no catálogo → nova conversa</text>
+                    </svg>
+                </div>
+                <div class="thread-circuit-details slide-columns">
+                    <ul>
+                        <li>Estados: a aguardar armazém / a aguardar filial / <strong>fechado</strong></li>
+                        <li>Só quem abriu fecha (motivo + satisfação)</li>
+                        <li>Administrador armazém pode forçar fecho</li>
+                        <li>Badges de não lidos via <code>ThreadReadState</code></li>
+                    </ul>
+                    <p class="thread-circuit-caption">A conversa é uma <strong>conversa que fecha</strong>, não uma encomenda. O artigo nasce no fluxo normal do catálogo — nunca dentro da conversa.</p>
+                </div>
             </section>
 
         </div></div>

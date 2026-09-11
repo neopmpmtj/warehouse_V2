@@ -1,6 +1,6 @@
 # CentCompras — Presentation plan (en)
 
-**Version:** 2.7 · **Date:** 11 September 2026  
+**Version:** 2.8 · **Date:** 11 September 2026  
 **URL:** `/presentation/en/` · **Language:** English — Portuguese at `/presentation/pt/`  
 **Audience:** Central warehouse, branch managers and operators, leadership
 
@@ -29,6 +29,9 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | **IV — Call to action + remaining channel** | 11–12 | Role-based CTA, Company Voice |
 | **V — Why + what is recorded** | 13–15 | Data metaphor, scenario, ledger table |
 | **VI — Controls + demo** | 16–17 | Authorization, demo login |
+| **VII — Part II reference** | 18–26 | Divider + verbose URLs/workflows (companion to Part I graphics) |
+
+Part I (slides 1–17) is **visual-first** — SVG on slides 2–9, no URL paths on operational graphics. Part II (slides 18–26) is **text-first** — the same topics with URLs, model names, and `flow-node` reference diagrams for staff who want detail after the overview.
 
 ---
 
@@ -89,8 +92,8 @@ The presentation is **informational** (no live data). Charts marked **future vis
 ### Slide 11 — What we need from you (CTA)
 - Four role-based actions: warehouse, branches, management, everyone
 
-### Slide 12 — Company Voice (finale)
-- Text + ongoing feed panel; still **Company Voice** in the deck (Parle rename D40 not applied here)
+### Slide 12 — Parle (finale)
+- Text + ongoing feed panel; title **Parle — your ongoing channel** (D40)
 
 ### Slide 13 — Data is the new oil
 - Metaphor: crude vs refined oil; raw data vs decisions
@@ -109,6 +112,34 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - HTTP demo alert; `DEMO_LOGIN_URL`; password `devpass123`; warehouse + branch tables
 - **Central warehouse** heading teal; **Branches** heading and **Branch** column mustard
 
+### Slide 18 — Part II divider
+- Eyebrow **Part II**; title **Detailed reference**
+- Subtitle: URLs, workflows, and technical detail — companion to Part I's visual overview
+
+### Slide 19 — Internal request (detail)
+- Branch `/branch/requests/` + warehouse `/manage/internal-requests/` columns; offline note
+
+### Slide 20 — Branch receipt (detail)
+- `/branch/receipts/`; `BranchStockMovement`; closed-circuit footer
+
+### Slide 21 — Catalogue and pricing (detail)
+- `/manage/items/`; families, Genesis, `ItemChangeLog`
+
+### Slide 22 — Procurement (detail)
+- `/manage/purchase-orders/`; draft → closed workflow; supplier price rule
+
+### Slide 23 — Central stock (detail)
+- `/manage/goods-receipts/`; `StockMovement`, D32 FIFO reservation
+
+### Slide 24 — Closed circuit (detail)
+- Horizontal `flow-node` SVG with URL paths on each node; out-of-stock loop caption
+
+### Slide 25 — Two worlds, one system (detail)
+- Role pills; warehouse vs branch feature lists; permission independence note
+
+### Slide 26 — Threads / circularity (detail)
+- Horizontal thread-circuit SVG; states, `ThreadReadState`; conversation closes caption
+
 ---
 
 ## Technical resources
@@ -120,7 +151,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | Django app | `presentation/` |
 | PT template | `presentation/templates/presentation/deck_pt.html` |
 | EN template | `presentation/templates/presentation/deck_en.html` |
-| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=23` on working tree — includes TEMP `.viewbox-debug`; remove before presenting), `deck.js` |
+| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=24` — Part II `flow-node` styles; TEMP `.viewbox-debug` on slides 2–9; remove before presenting), `deck.js` |
 | Routes | `/presentation/` and `/presentation/pt/` → PT · `/presentation/en/` → EN |
 
 ### Deck navigation

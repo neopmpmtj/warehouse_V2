@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-SLIDE_COUNT = 17
+SLIDE_COUNT = 26
 DEMO_LOGIN_URL = "http://169.58.240.120/accounts/login/"
 DEMO_PASSWORD = "devpass123"
 

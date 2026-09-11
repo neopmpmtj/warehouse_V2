@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 11 September 2026, 18:10 WEST.
+> **Read this first when resuming work.** Last updated: 11 September 2026, 18:55 WEST.
 
 ---
 
@@ -32,11 +32,24 @@
 | 8 — Google OAuth production rollout + shared chrome | ⏸ After Phase 7 |
 | 9 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Immediate next:** remove **TEMP** viewBox debug borders on the deck; optional slide 8 viewBox/content balance; then finish presentation polish (slides 10–16, Parle on slide 12) or pause for **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
+**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Presentation deck v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26); slide **12** → **Parle** (D40). **Immediate next:** remove **TEMP** viewBox debug borders; optional slides 10–16 / slide 8 viewBox polish — then **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
 
-**Tests:** suite **607 OK** (11 Sep; includes `presentation`).
+**Tests:** suite **608 OK** (11 Sep evening; includes `presentation`).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (11 Sep 2026, evening) — presentation deck Part II + Parle slide 12 ✅
+
+Training deck at `/presentation/` (PT) and `/presentation/en/`. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.8, [`PLAN-pt-PT.md`](presentation/PLAN-pt-PT.md) v2.8. CSS `deck.css?v=24`.
+
+1. **Part II (slides 18–26)** — divider slide 18; nine verbose reference slides ported from archived deck: internal request, branch receipt, catalogue, procurement, central stock, closed-circuit `flow-node` diagram (URLs), two worlds architecture, threads/circularity diagram, threads detail. Part I slides 1–17 unchanged (visual-first).
+2. **Removed slide 27** — duplicate of slide 12 (Parle finale).
+3. **Slide 12 → Parle (D40)** — title **Parle — your ongoing channel** / **Parle — o seu canal permanente** (EN+PT).
+4. **CSS** — restored Part II `flow-node` / thread-circuit styles; unique SVG marker ids (`arrowhead-circuit-p2`, `arrowhead-thread-p2`). PT Part II uses **Conversas** (D39), not fio/fios.
+5. **`SLIDE_COUNT = 26`**; `presentation` tests extended (`test_presentation_part2_slides`). Archived temp folder `previous_slides_temp_discard_when_finished/` **deleted** by user after merge.
+6. **Still on working tree:** TEMP `.viewbox-debug` on slides 2–9; slides **10–16** mostly HTML (optional graphic polish).
+
+- **Git:** branch `cursor/add-17-text-slides`; presentation + plan changes **uncommitted** (do not commit `.env.example` if touched locally).
 
 ## This session (11 Sep 2026, afternoon) — presentation deck: SVG scale + readability + slide 8 ✅
 
@@ -129,8 +142,8 @@ Company-wide **unpriced / priced** switch for the branch catalogue and requisiç
 
 ## Next session — do this
 
-1. **Remove TEMP viewBox debug** — delete `.viewbox-debug` rects from `deck_en.html` / `deck_pt.html` and the CSS rule in `deck.css`; bump `?v=` on templates. Commit slide 8 arrow + any leftover deck changes if still uncommitted.
-2. **Presentation polish (optional before Phase 7)** — slide 8: reduce right-side empty viewBox (narrow width or shift `<g>` without moving label x inside boxes); slides **10–16** to match slides 2–9 graphic language; slide **12** → **Parle** (D40). Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.7.
+1. **Remove TEMP viewBox debug** — delete `.viewbox-debug` rects from `deck_en.html` / `deck_pt.html` and the CSS rule in `deck.css`; bump `?v=` on templates. Commit Part II deck + plan v2.8 when ready.
+2. **Presentation polish (optional before Phase 7)** — slide 8: reduce right-side empty viewBox; slides **10–16** to match slides 2–9 graphic language. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.8.
 3. **Phase 7 — production deployment readiness** (after deck paused or done) — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). Follow the updated TLS order (`SECURE_SSL_REDIRECT=False` until certbot). **Do not** bundle OAuth or shared chrome in this phase.
 4. **Phase 8 (later)** — OAuth production rollout + shared chrome; contribute ideas to PROJECT-PLAN §15.2 before build.
 5. **Do not treat as a work queue:** Phase 6 leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8). The 1205 review is **applied**.
