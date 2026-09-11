@@ -75,7 +75,8 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 
 ### Slide 9 — Quando o artigo não existe
 - Linha secundária: *Não é uma encomenda — uma conversa que fecha quando o artigo entra para o catálogo.*
-- Nós: **Não está no catálogo!!** ↔ **Nova conversa** → **Entendimento** → **Inserido no catálogo** → **Fecha a conversa**
+- Nós: **Não está no catálogo!!** → **Nova conversa** (caixa exterior com **Filial** ↔ **Armazém** dentro) → **Entendimento** → **Inserido no catálogo** → **Fecha a conversa**
+- Seta mostarda só de Não está no catálogo para Nova conversa; ida-e-volta dentro da caixa; cinzento abaixo para nas bordas
 
 ### Slide 10 — Visão futura: gráficos *(mock)*
 - Gráficos ilustrativos; etiqueta **Visão futura — ilustrativo**
@@ -114,7 +115,7 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 | App Django | `presentation/` |
 | Template PT | `presentation/templates/presentation/deck_pt.html` |
 | Template EN | `presentation/templates/presentation/deck_en.html` |
-| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=18`), `js/deck.js` |
+| CSS / JS | `presentation/static/presentation/css/deck.css` (`?v=20`), `js/deck.js` |
 | Rota PT | `/presentation/` ou `/presentation/pt/` |
 | Rota EN | `/presentation/en/` |
 

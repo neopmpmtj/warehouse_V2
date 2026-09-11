@@ -208,8 +208,21 @@ body.deck-fullscreen:hover {
 }
 
 .missing-item-loop {
-    max-width: 520px;
+    max-width: 560px;
     margin: 0.25rem auto 0;
+}
+
+.missing-item-node-group {
+    fill: rgba(148, 163, 184, 0.08);
+    stroke: var(--muted);
+    stroke-width: 1.875;
+}
+
+.missing-item-label-inner {
+    fill: var(--text);
+    font-family: var(--font);
+    font-size: 10px;
+    font-weight: 600;
 }
 
 .missing-item-node-warm {
@@ -280,13 +293,10 @@ body.deck-fullscreen:hover {
     margin-bottom: 0.75rem;
 }
 
-.slide-process-diagram {
+.slide-process-diagram,
+.slide-process-diagram-wide {
     max-width: 640px;
     margin: 0.25rem auto 0.5rem;
-}
-
-.slide-process-diagram-wide {
-    max-width: 720px;
 }
 
 .slide-process-arrow-warm {

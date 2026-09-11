@@ -80,8 +80,8 @@ The presentation is **informational** (no live data). Charts marked **future vis
 ### Slide 9 — When the item does not exist
 - **Title:** When the item is not in the catalogue
 - **Subline:** *Not an order — a conversation that closes once the item enters the catalogue.*
-- Open 5-step SVG: **Can't find it** ↔ **New conversation** → **Understanding reached** → **Inserted in catalogue** → **Conversation closes**
-- Warm/teal arrows on the first pair only; gray on the rest; 1★ highlighted under close
+- Open 5-step SVG: **Can't find it** → **New conversation** (outer box with **Branch** ↔ **Warehouse** inside) → **Understanding reached** → **Inserted in catalogue** → **Conversation closes**
+- Mustard arrow only from Can't find it to New conversation; to-and-fro arrows are inside the conversation box; gray spine below stops at box borders
 
 ### Slide 10 — Future vision: charts *(mock)*
 - Illustrative charts; label **Future vision — illustrative**
@@ -120,7 +120,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | Django app | `presentation/` |
 | PT template | `presentation/templates/presentation/deck_pt.html` |
 | EN template | `presentation/templates/presentation/deck_en.html` |
-| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=18`, `deck.js`) |
+| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=20`, `deck.js`) |
 | Routes | `/presentation/` and `/presentation/pt/` → PT · `/presentation/en/` → EN |
 
 ### Deck navigation
