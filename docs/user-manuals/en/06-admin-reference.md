@@ -264,7 +264,7 @@ The **email** you enter becomes their login. In production this **must equal the
 
 ### 12.2 Signing in — dev vs production (Google OAuth)
 
-- **Development:** users sign in with **email + password** at `/accounts/login/`.
+- **Development / demo:** users sign in with **email + password** at `/accounts/login/`. The demo login page lists every seeded warehouse and branch account plus the shared password (`devpass123`).
 - **Production (Phase 7):** users sign in with **Google OAuth** — their Google account, e.g. `xpt-user@gmail.com` — for **increased security** (strong Google authentication, no app-stored passwords). Dev already has login-only Google OAuth; production rollout is Phase 7.
 
 ### 12.3 How OAuth and permissions interact

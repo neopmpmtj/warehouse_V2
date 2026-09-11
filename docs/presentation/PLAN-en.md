@@ -1,6 +1,6 @@
 # CentCompras — Presentation plan (en)
 
-**Version:** 2.2 · **Date:** 29 August 2026  
+**Version:** 2.3 · **Date:** 11 September 2026  
 **URL:** `/presentation/en/` · **Language:** English — Portuguese at `/presentation/pt/`  
 **Audience:** Central warehouse, branch managers and operators, leadership
 
@@ -26,7 +26,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | **I — Hook + why** | 1–4 | Title, data metaphor, scenario, what is recorded |
 | **II — Branch flow first** | 5–6 | Internal request + branch receipt |
 | **III — Warehouse steps** | 7–10 | Catalogue through central stock |
-| **IV — Architecture + vision** | 11–13 | Closed circuit diagram, two worlds, future charts |
+| **IV — Architecture + vision** | 11–13 | Closed circuit diagram, bird's-eye map (slide 12), future charts |
 | **V — Call to action** | 14 | Role-based CTA (moved late) |
 | **VI — Human channels + hands-on** | 15–17 | Threads, Company Voice, demo login |
 
@@ -79,9 +79,14 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - SVG: Catalogue → Procurement → Approval → Stock → Request → Issue → Branch receipt
 - **Notes:** Bird's-eye view after operational step slides.
 
-### Slide 12 — Two worlds, one system
-- Warehouse (`/manage/…`) vs branch (`/branch/…`)
-- **Notes:** Warehouse groups ≠ branch roles.
+### Slide 12 — One system, two workplaces
+- Eyebrow: **The big picture**; title: **One system, two workplaces**
+- Subtitle: central warehouse + a branch **(branches)** — same application, two workplaces
+- Bird's-eye SVG: large warehouse circle (top) + smaller branch circle (lower left)
+- Amber arrow + label **We need this** (branch → warehouse); teal return arch + label **Here it is** (warehouse → branch); thin amber/teal label borders
+- Unit bullets under diagram (no roles, no URLs)
+- Footer: **The branch asks. The warehouse answers.**
+- **Notes:** First-look map for newcomers; permission circuits come later in the deck.
 
 ### Slide 13 — Future vision: charts *(mock)*
 - Illustrative charts; label **Future vision — illustrative**
@@ -92,11 +97,15 @@ The presentation is **informational** (no live data). Charts marked **future vis
 - Four role-based actions: warehouse, branches, management, everyone
 - **Notes:** No manuals/Phase 7 footer here — urgency before send-off; foreshadows Company Voice (item 4).
 
-### Slide 15 — Circularity (thread circuit only)
-- Full-width thread circuit diagram (catalogue gap → open → dialogue → create → link → normal request → close)
-- Loop label: next catalogue gap → new thread
-- Thread bullets + caption below (two columns)
-- **Notes:** No Company Voice on this slide — circularity is only for missing items.
+### Slide 15 — When the item does not exist
+- **Title:** When the item is not in the catalogue
+- **Subline (smaller):** *Not an order — a conversation that closes once the item enters the catalogue.*
+- Open 5-step vertical flow (no loop)
+- Nodes: **Can't find it** ↔ **New conversation** → **Understanding reached** → **Inserted in catalogue** → **Conversation closes**
+- Yellow/green arrows: first pair only (branch ↔ new conversation); rest of flow — gray arrows
+- Gray boxes: New conversation + Understanding reached; **Inserted in catalogue** — green border (warehouse)
+- Below close (no arrow): **Express satisfaction** + 1–5 stars (default 1★ highlighted — matches threads close dialog)
+- **Notes:** Item is added in the normal catalogue flow, not inside the chat — not Company Voice.
 
 ### Slide 16 — Company Voice (finale)
 - Text copy (left) + ongoing feed panel illustration (right)
@@ -123,7 +132,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 | Django app | `presentation/` |
 | PT template | `presentation/templates/presentation/deck_pt.html` |
 | EN template | `presentation/templates/presentation/deck_en.html` |
-| Shared CSS / JS | `presentation/static/presentation/` |
+| Shared CSS / JS | `presentation/static/presentation/` (`deck.css?v=13`, `deck.js`) |
 | Routes | `/presentation/` and `/presentation/pt/` → PT · `/presentation/en/` → EN |
 
 ### Deck navigation

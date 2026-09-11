@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 10 September 2026, 10:40 WEST.
+> **Read this first when resuming work.** Last updated: 11 September 2026, 08:28 WEST.
 
 ---
 
@@ -38,13 +38,29 @@
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
 
+## This session (11 Sep 2026) — presentation slides 12 + 15 (first-time audience) ✅
+
+Redesigned browser deck slides for training audiences who do not know the app yet. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.3, [`PLAN-pt-PT.md`](presentation/PLAN-pt-PT.md) v2.3.
+
+1. **Slide 12 — bird's-eye map** — warehouse + branch circles; **Precisamos disto** / **We need this** (amber) and **Aqui está** / **Here it is** (teal return arch); unit bullets; no roles/URLs. PT footer **A filial pede. O armazém entrega.** EN footer **The branch asks. The warehouse answers.** Subtitle hints **filial (filiais)** / **branch (branches)**.
+2. **Slide 15 — missing item / Conversas flow** — open 5-step vertical SVG (no loop):
+   - **Title + subline (top):** PT *Não é uma encomenda — uma conversa que fecha quando o artigo entra para o catálogo.*
+   - **Nodes:** **Não está no catálogo!!** ↔ **Nova conversa** → **Entendimento** → **Inserido no catálogo** → **Fecha a conversa** (+ **Expressar satisfação** / **Express satisfaction** + 1–5 stars below close; 1★ highlighted — matches threads close dialog).
+   - **Colour:** warm/teal arrows **only** on the first bidirectional pair (branch concern ↔ new conversation). Gray neutral boxes for **Nova conversa** + **Entendimento**; **Inserido no catálogo** — **teal border** (warehouse inserts item). Gray arrows on the rest of the spine.
+   - **Arrow geometry:** Nova conversa → Entendimento — **J** (down from bottom-centre of Nova conversa, then left into right edge of Entendimento). Entendimento → Inserido — vertical gray. Inserido → Fecha — **elbow** (right from right-centre of Inserido, then down into top-centre of Fecha); ~50px vertical gap Inserido→Fecha (tighter than Entendimento→Inserido row).
+   - EN mirror: **Can't find it** ↔ **New conversation** → **Understanding reached** → **Inserted in catalogue** → **Conversation closes**.
+
+- Templates: `presentation/templates/presentation/deck_en.html`, `deck_pt.html`; CSS `deck.css?v=14` (`.missing-item-arrow-neutral`).
+- **`presentation/tests.py`:** slide 12 + slide 15 assertions updated (not re-run this pass — user skip).
+- **Not moved yet:** slide 12 still at position 12 (not slot 2); slide 16 still **Company Voice** / **Voz da Empresa** in deck (Parle rename deferred).
+
 ## This session (10 Sep 2026) — warehouse i18n + product copy (Conversas / Parle) ✅
 
 Three related copy/i18n slices on top of D38 (language from dashboard `cc-lang`):
 
 1. **Internal requests** (`/manage/internal-requests/`) — inline `I18N` + `data-i18n` on page title, **Queue** / **Request** section headings, columns, buttons, and JS-generated detail/meta/status/prompt strings. PT: **Pedidos internos**, **Fila (aprovados / em cumprimento)**, **Emitir**, **Encerramento parcial**, etc.
-2. **Conversas** (PT only) — replaced **fio/fios** with **conversa/conversas** in nav, cards, thread consoles, and PT manuals. EN **Threads** unchanged. Presentation decks left as-is.
-3. **Parle** (EN + PT) — user-visible rename of **Company Voice** / **Voz da Empresa** → **Parle** on feed, dashboards, branch card fallback. URLs/app id `company_voice` unchanged. Presentation decks left as-is.
+2. **Conversas** (PT only) — replaced **fio/fios** with **conversa/conversas** in nav, cards, thread consoles, and PT manuals. EN **Threads** unchanged. Presentation PT slide 15 uses **Nova conversa** / **Entendimento** (Sep 2026 deck refresh).
+3. **Parle** (EN + PT) — user-visible rename of **Company Voice** / **Voz da Empresa** → **Parle** on feed, dashboards, branch card fallback. URLs/app id `company_voice` unchanged. Presentation slide 16 still **Company Voice** / **Voz da Empresa** in deck.
 
 - Cache bumps: `preferences_bar.js?v=10`, `feed_i18n.js?v=3`, `console_i18n.js?v=23`, `catalog_i18n.js?v=10`, `purchase_orders_i18n.js?v=13`, `goods_receipts_i18n.js?v=10`, `cost_trends_i18n.js?v=3`; branch SW precache updated.
 - Manuals EN+PT updated (`01`, `04`, `05`, `06`, `08`, `09`); [`docs/i18n-pattern.md`](i18n-pattern.md) notes inline internal-requests i18n + Parle feed.

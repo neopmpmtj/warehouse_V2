@@ -197,29 +197,82 @@ body.deck-fullscreen:hover {
     }
 }
 
-/* Thread circuit slide (slide 15 — full width) */
-.thread-circuit-diagram {
-    max-width: 950px;
-    margin: 0.75rem 0 1rem;
-}
-
-.thread-circuit-details {
-    max-width: 950px;
-    margin-top: 0.5rem;
-}
-
-.thread-circuit-details ul {
-    margin: 0;
-}
-
-.thread-circuit-caption {
-    margin: 0;
+/* Slide 15 — missing item flow */
+.slide-missing-item-subline {
     font-size: var(--small-size);
+    font-weight: 400;
+    line-height: 1.5;
+    margin: 0 0 1rem;
+    max-width: 44rem;
     color: var(--muted);
 }
 
-.thread-circuit-caption strong {
-    color: var(--text);
+.missing-item-loop {
+    max-width: 520px;
+    margin: 0.25rem auto 0;
+}
+
+.missing-item-node-warm {
+    fill: rgba(245, 158, 11, 0.15);
+    stroke: var(--accent-warm);
+    stroke-width: 1.875;
+}
+
+.missing-item-node-neutral {
+    fill: rgba(148, 163, 184, 0.12);
+    stroke: var(--muted);
+    stroke-width: 1.875;
+}
+
+.missing-item-node-teal {
+    fill: rgba(15, 118, 110, 0.25);
+    stroke: var(--accent-light);
+    stroke-width: 1.875;
+}
+
+.missing-item-label {
+    fill: var(--text);
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.missing-item-arrow-warm {
+    stroke: var(--accent-warm);
+    stroke-width: 1.875;
+    fill: none;
+    marker-end: url(#arrowhead-missing-warm);
+}
+
+.missing-item-arrow-teal {
+    stroke: var(--accent-light);
+    stroke-width: 1.875;
+    fill: none;
+    marker-end: url(#arrowhead-missing-teal);
+}
+
+.missing-item-arrow-neutral {
+    stroke: var(--muted);
+    stroke-width: 1.875;
+    fill: none;
+    marker-end: url(#arrowhead-missing-neutral);
+}
+
+.missing-item-satisfaction-label {
+    fill: var(--muted);
+    font-family: var(--font);
+    font-size: 9px;
+    font-weight: 500;
+}
+
+.missing-item-star {
+    fill: #64748b;
+    font-family: var(--font);
+    font-size: 14px;
+}
+
+.missing-item-star-on {
+    fill: #f5a623;
 }
 
 /* Company Voice finale (slide 16 — text + feed panel) */
@@ -434,6 +487,96 @@ body.deck-fullscreen:hover {
     stroke-width: 2;
     fill: none;
     marker-end: url(#arrowhead);
+}
+
+/* Slide 12 — warehouse / branch bird's-eye map */
+.slide-worlds .slide-subtitle {
+    margin-bottom: 0.75rem;
+}
+
+.worlds-diagram {
+    max-width: 520px;
+    margin: 0.25rem auto 0.75rem;
+}
+
+.worlds-details {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.worlds-details h2 {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    margin: 0 0 0.5rem;
+    color: var(--accent-light);
+}
+
+.worlds-details h2 + ul {
+    margin-top: 0;
+}
+
+.worlds-circle-warehouse {
+    fill: rgba(15, 118, 110, 0.25);
+    stroke: var(--accent-light);
+    stroke-width: 1.875;
+}
+
+.worlds-circle-branch {
+    fill: rgba(245, 158, 11, 0.15);
+    stroke: var(--accent-warm);
+    stroke-width: 1.875;
+}
+
+.worlds-circle-label {
+    fill: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.worlds-arrow-request {
+    stroke: var(--accent-warm);
+    stroke-width: 1.875;
+    fill: none;
+    marker-end: url(#arrowhead-worlds-warm);
+}
+
+.worlds-arrow-return {
+    stroke: var(--accent-light);
+    stroke-width: 1.875;
+    fill: none;
+    marker-end: url(#arrowhead-worlds-teal);
+}
+
+.worlds-arrow-label {
+    fill: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.worlds-arrow-label-bg {
+    fill: var(--bg-slide);
+    stroke: var(--border);
+    stroke-width: 1;
+    rx: 4;
+}
+
+.worlds-arrow-label-border-warm {
+    fill: none;
+    stroke: var(--accent-warm);
+    stroke-width: 0.75;
+}
+
+.worlds-arrow-label-border-teal {
+    fill: none;
+    stroke: var(--accent-light);
+    stroke-width: 0.75;
+}
+
+@media (max-width: 768px) {
+    .worlds-details {
+        max-width: 100%;
+    }
 }
 
 /* Mock charts */

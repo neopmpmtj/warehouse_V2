@@ -200,6 +200,15 @@ class LoginViewTests(TestCase):
         assign_warehouse_group(self.user, GROUP_ADMINS)
         self.client = Client()
 
+    def test_login_page_shows_demo_credentials(self):
+        response = self.client.get(reverse("login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Central de Compras — demonstração")
+        self.assertContains(response, "CentCompras — Login")
+        self.assertContains(response, "devpass123")
+        self.assertContains(response, "armazem.admin@centcompras.dev")
+        self.assertContains(response, "filial.dual@centcompras.dev")
+
     def test_login_with_valid_credentials(self):
         response = self.client.post(
             reverse("login"),

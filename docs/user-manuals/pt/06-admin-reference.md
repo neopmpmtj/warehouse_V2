@@ -264,7 +264,7 @@ O **email** que introduzir é o login deles. Em produção **tem de ser igual à
 
 ### 12.2 Início de sessão — desenvolvimento vs produção (Google OAuth)
 
-- **Desenvolvimento:** os utilizadores iniciam sessão com **email + palavra-passe** em `/accounts/login/`.
+- **Desenvolvimento / demonstração:** os utilizadores iniciam sessão com **email + palavra-passe** em `/accounts/login/`. A página de login da demonstração lista todas as contas de seed do armazém e das filiais, mais a palavra-passe partilhada (`devpass123`).
 - **Produção (Fase 7):** os utilizadores iniciam sessão com **Google OAuth** — a conta Google, p. ex. `xpt-user@gmail.com` — para **maior segurança** (autenticação forte do Google, sem palavras-passe guardadas na aplicação). O OAuth só para login já existe em desenvolvimento; a implementação em produção é a Fase 7.
 
 ### 12.3 Como o OAuth e as permissões interagem

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Presentation: data, circuits, and circularity">
     <title>CentCompras — Presentation</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=14">
 </head>
 <body>
     <div class="deck" role="application" aria-label="CentCompras presentation">
@@ -271,45 +271,52 @@
                 <p>Every step generates structured data. The circuit only closes when the branch confirms arrival.</p>
             </section>
 
-            <!-- Slide 12: Two worlds -->
-            <section class="slide" data-slide="12" aria-label="Two worlds one system">
-                <p class="slide-eyebrow">Architecture</p>
-                <h1>Two worlds, one system</h1>
-                <div class="slide-columns">
+            <!-- Slide 12: Bird's-eye map -->
+            <section class="slide slide-worlds" data-slide="12" aria-label="One system two workplaces">
+                <p class="slide-eyebrow">The big picture</p>
+                <h1>One system, two workplaces</h1>
+                <p class="slide-subtitle">The software connects a central warehouse and a branch (branches). Same application — two workplaces.</p>
+                <div class="worlds-diagram diagram-wrap">
+                    <svg viewBox="0 -35 520 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Central warehouse and branch connected in one application">
+                        <defs>
+                            <marker id="arrowhead-worlds-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                            <marker id="arrowhead-worlds-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                        </defs>
+                        <circle class="worlds-circle-warehouse" cx="310" cy="82" r="72"/>
+                        <text class="worlds-circle-label" x="310" y="88" text-anchor="middle">Warehouse</text>
+                        <circle class="worlds-circle-branch" cx="95" cy="210" r="48"/>
+                        <text class="worlds-circle-label" x="95" y="216" text-anchor="middle">Branch</text>
+                        <line class="worlds-arrow-request" x1="142" y1="188" x2="252" y2="138"/>
+                        <rect class="worlds-arrow-label-border-warm" x="198" y="193" width="98" height="22" rx="4"/>
+                        <text class="worlds-arrow-label" x="247" y="208" text-anchor="middle">We need this</text>
+                        <path class="worlds-arrow-return" d="M 248 38 Q 165 -32 128 168"/>
+                        <rect class="worlds-arrow-label-border-teal" x="158" y="-8" width="78" height="22" rx="4"/>
+                        <text class="worlds-arrow-label" x="197" y="7" text-anchor="middle">Here it is</text>
+                    </svg>
+                </div>
+                <div class="worlds-details slide-columns">
                     <div>
                         <h2>Central warehouse</h2>
-                        <p class="url-tag">/manage/…</p>
-                        <div class="role-pills">
-                            <span class="role-pill">Admin</span>
-                            <span class="role-pill">Manager (grade 1–3)</span>
-                            <span class="role-pill">Operator</span>
-                        </div>
                         <ul>
-                            <li>Item and supplier management</li>
-                            <li>Purchase orders and approval</li>
-                            <li>Goods receipt and stock</li>
-                            <li>Shipment to branches</li>
-                            <li>Request threads (warehouse side)</li>
+                            <li>Holds the catalogue and the stock</li>
+                            <li>Buys from suppliers</li>
+                            <li>Sends goods to the branch</li>
                         </ul>
                     </div>
                     <div>
-                        <h2>Satellite branches</h2>
-                        <p class="url-tag">/branch/…</p>
-                        <div class="role-pills">
-                            <span class="role-pill branch">Admin</span>
-                            <span class="role-pill branch">Manager</span>
-                            <span class="role-pill branch">Operator</span>
-                        </div>
+                        <h2>Branch</h2>
                         <ul>
-                            <li>Read-only catalogue (cost hidden)</li>
-                            <li>Internal request (+ offline)</li>
-                            <li>Request threads (missing items)</li>
-                            <li>Branch receipt</li>
-                            <li>Company Voice</li>
+                            <li>Sees what the warehouse has</li>
+                            <li>Asks for what it needs</li>
+                            <li>Confirms when goods arrive</li>
                         </ul>
                     </div>
                 </div>
-                <p><strong>Important:</strong> warehouse group ≠ branch role. These are independent permission circuits.</p>
+                <p><strong>The branch asks. The warehouse answers.</strong></p>
             </section>
 
             <!-- Slide 13: Future vision charts -->
@@ -374,64 +381,45 @@
                 </ul>
             </section>
 
-            <!-- Slide 15: Circularity -->
-            <section class="slide" data-slide="15" aria-label="Circularity">
-                <p class="slide-eyebrow">Circularity</p>
-                <h1>When the item does not exist</h1>
-                <p class="slide-subtitle">Request thread — a conversation that closes</p>
-                <div class="diagram-wrap thread-circuit-diagram">
-                    <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Thread circuit diagram">
+            <!-- Slide 15: Missing item flow -->
+            <section class="slide slide-missing-item" data-slide="15" aria-label="When the item is not in the catalogue">
+                <h1>When the item is not in the catalogue</h1>
+                <p class="slide-missing-item-subline">Not an order — a conversation that closes once the item enters the catalogue.</p>
+                <div class="missing-item-loop diagram-wrap">
+                    <svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Missing item conversation flow">
                         <defs>
-                            <marker id="arrowhead-thread" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                            <marker id="arrowhead-missing-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                                 <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
                             </marker>
+                            <marker id="arrowhead-missing-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                            <marker id="arrowhead-missing-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
                         </defs>
-                        <rect class="flow-node flow-node-warm" x="275" y="8" width="350" height="44" rx="8"/>
-                        <text class="flow-text" x="450" y="28" text-anchor="middle">Item not in catalogue</text>
-                        <text class="flow-text-sm" x="450" y="44" text-anchor="middle">catalogue gap</text>
-
-                        <rect class="flow-node flow-node-warm" x="20" y="78" width="150" height="50" rx="8"/>
-                        <text class="flow-text" x="95" y="98" text-anchor="middle">Open thread</text>
-                        <text class="flow-text-sm" x="95" y="116" text-anchor="middle">/branch/threads/</text>
-
-                        <rect class="flow-node" x="200" y="78" width="150" height="50" rx="8"/>
-                        <text class="flow-text" x="275" y="98" text-anchor="middle">Dialogue</text>
-                        <text class="flow-text-sm" x="275" y="116" text-anchor="middle">branch ↔ warehouse</text>
-
-                        <rect class="flow-node" x="380" y="78" width="150" height="50" rx="8"/>
-                        <text class="flow-text" x="455" y="98" text-anchor="middle">Create item</text>
-                        <text class="flow-text-sm" x="455" y="116" text-anchor="middle">/manage/items/</text>
-
-                        <rect class="flow-node" x="560" y="78" width="150" height="50" rx="8"/>
-                        <text class="flow-text" x="635" y="98" text-anchor="middle">Link to thread</text>
-                        <text class="flow-text-sm" x="635" y="116" text-anchor="middle">/manage/threads/</text>
-
-                        <rect class="flow-node flow-node-accent" x="140" y="158" width="200" height="50" rx="8"/>
-                        <text class="flow-text" x="240" y="178" text-anchor="middle">Normal request</text>
-                        <text class="flow-text-sm" x="240" y="196" text-anchor="middle">joins the closed circuit</text>
-
-                        <rect class="flow-node flow-node-warm" x="480" y="158" width="200" height="50" rx="8"/>
-                        <text class="flow-text" x="580" y="178" text-anchor="middle">Close thread</text>
-                        <text class="flow-text-sm" x="580" y="196" text-anchor="middle">reason + satisfaction</text>
-
-                        <line class="flow-arrow" x1="450" y1="52" x2="95" y2="76" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="170" y1="103" x2="198" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="350" y1="103" x2="378" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="530" y1="103" x2="558" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="635" y1="128" x2="240" y2="156" stroke="#14b8a6" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="340" y1="183" x2="478" y2="183" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <path class="flow-arrow" d="M 580 208 Q 580 218 450 218 Q 120 218 120 103" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead-thread)"/>
-                        <text class="flow-text-sm" x="450" y="214" text-anchor="middle">Next catalogue gap → new thread</text>
+                        <rect class="missing-item-node-warm" x="24" y="20" width="148" height="40" rx="8"/>
+                        <text class="missing-item-label" x="98" y="45" text-anchor="middle">Can't find it</text>
+                        <rect class="missing-item-node-neutral" x="300" y="20" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="365" y="45" text-anchor="middle">New conversation</text>
+                        <rect class="missing-item-node-neutral" x="168" y="95" width="184" height="40" rx="8"/>
+                        <text class="missing-item-label" x="260" y="120" text-anchor="middle">Understanding reached</text>
+                        <rect class="missing-item-node-teal" x="168" y="205" width="184" height="40" rx="8"/>
+                        <text class="missing-item-label" x="260" y="230" text-anchor="middle">Inserted in catalogue</text>
+                        <rect class="missing-item-node-warm" x="360" y="295" width="140" height="40" rx="8"/>
+                        <text class="missing-item-label" x="430" y="320" text-anchor="middle">Conversation closes</text>
+                        <text class="missing-item-satisfaction-label" x="430" y="347" text-anchor="middle">Express satisfaction</text>
+                        <text class="missing-item-star missing-item-star-on" x="398" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="414" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="430" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="446" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="462" y="367" text-anchor="middle">★</text>
+                        <line class="missing-item-arrow-warm" x1="174" y1="34" x2="298" y2="34"/>
+                        <line class="missing-item-arrow-teal" x1="298" y1="48" x2="174" y2="48"/>
+                        <path class="missing-item-arrow-neutral" d="M 365 60 L 365 115 L 330 115"/>
+                        <line class="missing-item-arrow-neutral" x1="260" y1="137" x2="260" y2="203"/>
+                        <path class="missing-item-arrow-neutral" d="M 352 225 L 430 225 L 430 295"/>
                     </svg>
-                </div>
-                <div class="thread-circuit-details slide-columns">
-                    <ul>
-                        <li>States: awaiting warehouse / awaiting branch / <strong>closed</strong></li>
-                        <li>Only the opener closes (reason + satisfaction)</li>
-                        <li>Warehouse admin can force-close</li>
-                        <li>Unread badges via <code>ThreadReadState</code></li>
-                    </ul>
-                    <p class="thread-circuit-caption">A thread is a <strong>conversation that closes</strong>, not an order. The item is born in the normal catalogue flow — never inside the thread.</p>
                 </div>
             </section>
 

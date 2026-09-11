@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="CentCompras — Apresentação: dados, circuitos e circularidade">
     <title>CentCompras — Apresentação</title>
-    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'presentation/css/deck.css' %}?v=14">
 </head>
 <body>
     <div class="deck" role="application" aria-label="Apresentação CentCompras">
@@ -271,45 +271,52 @@
                 <p>Cada etapa gera dados estruturados. O circuito só fecha quando a filial confirma a chegada.</p>
             </section>
 
-            <!-- Slide 12: Dois mundos -->
-            <section class="slide" data-slide="12" aria-label="Dois mundos um sistema">
-                <p class="slide-eyebrow">Arquitectura</p>
-                <h1>Dois mundos, um sistema</h1>
-                <div class="slide-columns">
+            <!-- Slide 12: Vista de conjunto -->
+            <section class="slide slide-worlds" data-slide="12" aria-label="Um sistema dois locais de trabalho">
+                <p class="slide-eyebrow">Vista de conjunto</p>
+                <h1>Um sistema, dois locais de trabalho</h1>
+                <p class="slide-subtitle">O software liga um armazém central e uma filial (filiais). A mesma aplicação — dois locais de trabalho.</p>
+                <div class="worlds-diagram diagram-wrap">
+                    <svg viewBox="0 -35 520 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Armazém central e filial ligados na mesma aplicação">
+                        <defs>
+                            <marker id="arrowhead-worlds-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
+                            </marker>
+                            <marker id="arrowhead-worlds-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                        </defs>
+                        <circle class="worlds-circle-warehouse" cx="310" cy="82" r="72"/>
+                        <text class="worlds-circle-label" x="310" y="88" text-anchor="middle">Armazém</text>
+                        <circle class="worlds-circle-branch" cx="95" cy="210" r="48"/>
+                        <text class="worlds-circle-label" x="95" y="216" text-anchor="middle">Filial</text>
+                        <line class="worlds-arrow-request" x1="142" y1="188" x2="252" y2="138"/>
+                        <rect class="worlds-arrow-label-border-warm" x="178" y="193" width="118" height="22" rx="4"/>
+                        <text class="worlds-arrow-label" x="237" y="208" text-anchor="middle">Precisamos disto</text>
+                        <path class="worlds-arrow-return" d="M 248 38 Q 165 -32 128 168"/>
+                        <rect class="worlds-arrow-label-border-teal" x="148" y="-8" width="68" height="22" rx="4"/>
+                        <text class="worlds-arrow-label" x="182" y="7" text-anchor="middle">Aqui está</text>
+                    </svg>
+                </div>
+                <div class="worlds-details slide-columns">
                     <div>
                         <h2>Armazém central</h2>
-                        <p class="url-tag">/manage/…</p>
-                        <div class="role-pills">
-                            <span class="role-pill">Administrador</span>
-                            <span class="role-pill">Gestor (grau 1–3)</span>
-                            <span class="role-pill">Operador</span>
-                        </div>
                         <ul>
-                            <li>Gestão de artigos e fornecedores</li>
-                            <li>Encomendas de compra e aprovação</li>
-                            <li>Receção de mercadorias e stock</li>
-                            <li>Expedição para filiais</li>
-                            <li>Fios de pedido (lado armazém)</li>
+                            <li>Guarda o catálogo e o stock</li>
+                            <li>Compra aos fornecedores</li>
+                            <li>Envia mercadorias à filial</li>
                         </ul>
                     </div>
                     <div>
-                        <h2>Filiais satélite</h2>
-                        <p class="url-tag">/branch/…</p>
-                        <div class="role-pills">
-                            <span class="role-pill branch">Administrador</span>
-                            <span class="role-pill branch">Gestor</span>
-                            <span class="role-pill branch">Operador</span>
-                        </div>
+                        <h2>Filial</h2>
                         <ul>
-                            <li>Catálogo só de leitura (custo oculto)</li>
-                            <li>Requisição interna (+ offline)</li>
-                            <li>Fios de pedido (artigo inexistente)</li>
-                            <li>Receção na filial</li>
-                            <li>Voz da Empresa</li>
+                            <li>Vê o que o armazém tem</li>
+                            <li>Pede o que precisa</li>
+                            <li>Confirma quando a mercadoria chega</li>
                         </ul>
                     </div>
                 </div>
-                <p><strong>Importante:</strong> grupo de armazém ≠ função de filial. São circuitos de permissão independentes.</p>
+                <p><strong>A filial pede. O armazém entrega.</strong></p>
             </section>
 
             <!-- Slide 13: Visão futura gráficos -->
@@ -374,64 +381,45 @@
                 </ul>
             </section>
 
-            <!-- Slide 15: Circularidade -->
-            <section class="slide" data-slide="15" aria-label="Circularidade">
-                <p class="slide-eyebrow">Circularidade</p>
-                <h1>Quando o artigo não existe</h1>
-                <p class="slide-subtitle">Fio de pedido — uma conversa que fecha</p>
-                <div class="diagram-wrap thread-circuit-diagram">
-                    <svg viewBox="0 0 900 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama do circuito do fio">
+            <!-- Slide 15: Artigo em falta -->
+            <section class="slide slide-missing-item" data-slide="15" aria-label="Quando o artigo não existe no catálogo">
+                <h1>Quando o artigo não existe no catálogo</h1>
+                <p class="slide-missing-item-subline">Não é uma encomenda — uma conversa que fecha quando o artigo entra para o catálogo.</p>
+                <div class="missing-item-loop diagram-wrap">
+                    <svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fluxo conversa artigo em falta">
                         <defs>
-                            <marker id="arrowhead-thread" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                            <marker id="arrowhead-missing-warm" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                                 <polygon points="0 0, 8 3, 0 6" fill="#f59e0b"/>
                             </marker>
+                            <marker id="arrowhead-missing-teal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#14b8a6"/>
+                            </marker>
+                            <marker id="arrowhead-missing-neutral" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                            </marker>
                         </defs>
-                        <rect class="flow-node flow-node-warm" x="275" y="8" width="350" height="44" rx="8"/>
-                        <text class="flow-text" x="450" y="28" text-anchor="middle">Artigo não está no catálogo</text>
-                        <text class="flow-text-sm" x="450" y="44" text-anchor="middle">lacuna no catálogo</text>
-
-                        <rect class="flow-node flow-node-warm" x="20" y="78" width="150" height="50" rx="8"/>
-                        <text class="flow-text" x="95" y="98" text-anchor="middle">Abrir fio</text>
-                        <text class="flow-text-sm" x="95" y="116" text-anchor="middle">/branch/threads/</text>
-
-                        <rect class="flow-node" x="200" y="78" width="150" height="50" rx="8"/>
-                        <text class="flow-text" x="275" y="98" text-anchor="middle">Diálogo</text>
-                        <text class="flow-text-sm" x="275" y="116" text-anchor="middle">filial ↔ armazém</text>
-
-                        <rect class="flow-node" x="380" y="78" width="150" height="50" rx="8"/>
-                        <text class="flow-text" x="455" y="98" text-anchor="middle">Criar artigo</text>
-                        <text class="flow-text-sm" x="455" y="116" text-anchor="middle">/manage/items/</text>
-
-                        <rect class="flow-node" x="560" y="78" width="150" height="50" rx="8"/>
-                        <text class="flow-text" x="635" y="98" text-anchor="middle">Ligar ao fio</text>
-                        <text class="flow-text-sm" x="635" y="116" text-anchor="middle">/manage/threads/</text>
-
-                        <rect class="flow-node flow-node-accent" x="140" y="158" width="200" height="50" rx="8"/>
-                        <text class="flow-text" x="240" y="178" text-anchor="middle">Requisição normal</text>
-                        <text class="flow-text-sm" x="240" y="196" text-anchor="middle">entra no circuito fechado</text>
-
-                        <rect class="flow-node flow-node-warm" x="480" y="158" width="200" height="50" rx="8"/>
-                        <text class="flow-text" x="580" y="178" text-anchor="middle">Fechar fio</text>
-                        <text class="flow-text-sm" x="580" y="196" text-anchor="middle">motivo + satisfação</text>
-
-                        <line class="flow-arrow" x1="450" y1="52" x2="95" y2="76" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="170" y1="103" x2="198" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="350" y1="103" x2="378" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="530" y1="103" x2="558" y2="103" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="635" y1="128" x2="240" y2="156" stroke="#14b8a6" marker-end="url(#arrowhead-thread)"/>
-                        <line class="flow-arrow" x1="340" y1="183" x2="478" y2="183" stroke="#f59e0b" marker-end="url(#arrowhead-thread)"/>
-                        <path class="flow-arrow" d="M 580 208 Q 580 218 450 218 Q 120 218 120 103" stroke="#f59e0b" stroke-dasharray="6,4" marker-end="url(#arrowhead-thread)"/>
-                        <text class="flow-text-sm" x="450" y="214" text-anchor="middle">Próxima lacuna no catálogo → novo fio</text>
+                        <rect class="missing-item-node-warm" x="24" y="20" width="162" height="40" rx="8"/>
+                        <text class="missing-item-label" x="105" y="45" text-anchor="middle">Não está no catálogo!!</text>
+                        <rect class="missing-item-node-neutral" x="300" y="20" width="130" height="40" rx="8"/>
+                        <text class="missing-item-label" x="365" y="45" text-anchor="middle">Nova conversa</text>
+                        <rect class="missing-item-node-neutral" x="190" y="95" width="140" height="40" rx="8"/>
+                        <text class="missing-item-label" x="260" y="120" text-anchor="middle">Entendimento</text>
+                        <rect class="missing-item-node-teal" x="168" y="205" width="184" height="40" rx="8"/>
+                        <text class="missing-item-label" x="260" y="230" text-anchor="middle">Inserido no catálogo</text>
+                        <rect class="missing-item-node-warm" x="360" y="295" width="140" height="40" rx="8"/>
+                        <text class="missing-item-label" x="430" y="320" text-anchor="middle">Fecha a conversa</text>
+                        <text class="missing-item-satisfaction-label" x="430" y="347" text-anchor="middle">Expressar satisfação</text>
+                        <text class="missing-item-star missing-item-star-on" x="398" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="414" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="430" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="446" y="367" text-anchor="middle">★</text>
+                        <text class="missing-item-star" x="462" y="367" text-anchor="middle">★</text>
+                        <line class="missing-item-arrow-warm" x1="188" y1="34" x2="298" y2="34"/>
+                        <line class="missing-item-arrow-teal" x1="298" y1="48" x2="188" y2="48"/>
+                        <path class="missing-item-arrow-neutral" d="M 365 60 L 365 115 L 330 115"/>
+                        <line class="missing-item-arrow-neutral" x1="260" y1="137" x2="260" y2="203"/>
+                        <path class="missing-item-arrow-neutral" d="M 352 225 L 430 225 L 430 295"/>
                     </svg>
-                </div>
-                <div class="thread-circuit-details slide-columns">
-                    <ul>
-                        <li>Estados: a aguardar armazém / a aguardar filial / <strong>fechado</strong></li>
-                        <li>Só quem abriu fecha (motivo + satisfação)</li>
-                        <li>Administrador armazém pode forçar fecho</li>
-                        <li>Badges de não lidos via <code>ThreadReadState</code></li>
-                    </ul>
-                    <p class="thread-circuit-caption">O fio é uma <strong>conversa que fecha</strong>, não uma encomenda. O artigo nasce no fluxo normal do catálogo — nunca dentro do fio.</p>
                 </div>
             </section>
 
