@@ -55,7 +55,7 @@ The presentation is **informational** (no live data). Charts marked **future vis
 
 ### Slide 4 — Internal request
 - Subline: *The branch asks; the warehouse ships.*
-- Two columns (not boxed): **Branch** mustard — Catalogue → Draft → Submit; **Warehouse** teal — Queue → Issue → Shipped; mustard **Approved** handoff
+- Two columns (not boxed): **Branch** mustard — Catalogue → Draft → Submit; **Warehouse** teal — Queue → Ship → **status → shipped** (double vertical bar between Ship and status, no arrow); mustard **Approved** handoff
 - Two short bullets per column; no URL paths
 
 ### Slide 5 — Branch receipt

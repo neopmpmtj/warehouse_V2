@@ -53,7 +53,7 @@ A apresentação é **informativa** (não expõe dados reais). Gráficos marcado
 
 ### Slide 4 — Requisição interna
 - *A filial pede; o armazém expede.*
-- Filial (mostarda): Catálogo → Rascunho → Submete; Armazém (teal): Fila → Emite → Expedido; seta **Aprovado**
+- Filial (mostarda): Catálogo → Rascunho → Submete; Armazém (teal): Fila → Expede → **estado → expedido** (duas barras verticais entre Expede e estado, sem seta); seta **Aprovado**
 - Sem caminhos URL
 
 ### Slide 5 — Receção na filial
