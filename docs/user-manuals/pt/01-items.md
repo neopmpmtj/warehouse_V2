@@ -137,7 +137,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 ### 5.1 Criar um novo artigo
 
 1. Clique em **Novo artigo**.
-2. Preencha o formulário (campos abaixo). **Código interno** e **descrição** (marcados com * no formulário) são obrigatórios. **Família** começa sem seleção (`-----------`) — tem de escolher uma antes de Guardar.
+2. Preencha o formulário (campos abaixo). **Código interno**, **descrição** e **família** (marcados com * no formulário) são obrigatórios. **Família** começa sem seleção (`-----------`) — tem de escolher uma antes de Guardar.
 3. Clique em **Guardar**.
 4. Se **família**, **preço de retalho > 0** e **preço de custo > 0** estiverem todos preenchidos, confirme **Génese** — o artigo é criado e ativado. Caso contrário, Guardar cria um artigo **inativo** sem diálogo de Génese.
 
@@ -151,7 +151,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 |-------|:---:|-------|
 | **Código interno** * | Sim (novos artigos) | A sua referência, por exemplo `CEM-50` ou `CABLE-2.5`. Tem de ser **único** (sem distinção entre maiúsculas e minúsculas). Apenas **letras, algarismos, pontos (`.`), hífens (`-`) e sublinhados (`_`)** — sem espaços nem outros símbolos. Máximo **64** caracteres. **Guardado em maiúsculas** (`cem-50` torna-se `CEM-50`). **Não pode ser alterado depois do primeiro guardar** (artigos antigos com código vazio podem definir o código uma vez). |
 | **Descrição** * | Sim | O que é o artigo. |
-| **Família** | Sim | O grupo a que pertence (ver §7). Um artigo novo começa com `-----------` — escolha uma família antes de Guardar. |
+| **Família** * | Sim | O grupo a que pertence (ver §7). Um artigo novo começa com `-----------` — escolha uma família antes de Guardar. |
 | **Sub-família** | Não | Agrupamento opcional mais fino sob a família (ver §7). Deixe vazio para nenhuma. |
 | **Unidade** | Sim | peça / kg / g / m / m² / m³ / l |
 | **Taxa de IVA** | Sim | 1%, 3%, 7%, 16%, Isento |

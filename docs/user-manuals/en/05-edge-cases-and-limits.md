@@ -56,7 +56,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 **Sub-family names and parent family are immutable** after create — same pattern as families. Deactivate and create a new sub-family if the label was wrong.
 
-**New items:** **Internal code** and **description** are required (marked * on the form). **Family** starts unselected (`-----------`) and is required before Save. **Genesis** (activate) runs only when family, **retail price > 0**, and **cost price > 0** are filled; otherwise Save creates an **inactive** item. A **primary supplier price** is created only when both supplier and cost **> 0** are filled together at Genesis. Code is immutable after save; add more supplier prices later from the supplier drawer.
+**New items:** **Internal code**, **description**, and **family** are required (marked * on the form). **Family** starts unselected (`-----------`) and is required before Save. **Genesis** (activate) runs only when family, **retail price > 0**, and **cost price > 0** are filled; otherwise Save creates an **inactive** item. A **primary supplier price** is created only when both supplier and cost **> 0** are filled together at Genesis. Code is immutable after save; add more supplier prices later from the supplier drawer.
 
 **Manager catalog (`/manage/catalog/`)** — read-only stock + prices for warehouse staff. See [Manager catalog](07-manager-catalog.md).
 

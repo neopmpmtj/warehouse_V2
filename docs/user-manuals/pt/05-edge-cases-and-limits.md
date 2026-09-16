@@ -56,7 +56,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 
 **Os nomes de sub-família e a família-mãe são imutáveis** após criar — o mesmo padrão das famílias. Desative e crie uma sub-família nova se a etiqueta estiver errada.
 
-**Artigos novos:** **Código interno** e **descrição** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----------`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família, **preço de retalho > 0** e **preço de custo > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos na Génese. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
+**Artigos novos:** **Código interno**, **descrição** e **família** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----------`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família, **preço de retalho > 0** e **preço de custo > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos na Génese. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
 
 **Catálogo do gestor (`/manage/catalog/`)** — stock + preços só de leitura para o pessoal do armazém. Ver [Catálogo do gestor](07-manager-catalog.md).
 

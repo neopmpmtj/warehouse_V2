@@ -137,7 +137,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 ### 5.1 Creating a new item
 
 1. Click **New item** (*Novo artigo*).
-2. Fill the form (fields below). **Internal code** and **description** (marked * on the form) are required. **Family** starts unselected (`-----------`) — you must choose one before Save.
+2. Fill the form (fields below). **Internal code**, **description**, and **family** (marked * on the form) are required. **Family** starts unselected (`-----------`) — you must choose one before Save.
 3. Click **Save** (*Guardar*).
 4. If **family**, **retail price > 0**, and **cost price > 0** are all filled, confirm **Genesis** — the item is created and activated. Otherwise Save creates an **inactive** item with no Genesis dialog.
 
@@ -151,7 +151,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 |-------|:---:|-------|
 | **Internal code** * | Yes (new items) | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). Only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. **Saved as uppercase** (`cem-50` becomes `CEM-50`). **Cannot be changed after the first save** (legacy items with an empty code may set it once). |
 | **Description** * | Yes | What the item is. |
-| **Family** | Yes | The group it belongs to (see §7). New item starts with `-----------` — pick a family before Save. |
+| **Family** * | Yes | The group it belongs to (see §7). New item starts with `-----------` — pick a family before Save. |
 | **Sub-family** | No | Optional finer grouping under the family (see §7). Leave empty for none. |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
 | **VAT rate** | Yes | 1%, 3%, 7%, 16%, Exempt |

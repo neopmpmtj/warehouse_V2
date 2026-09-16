@@ -181,8 +181,10 @@
             </label>
             <div class="field-with-action">
                 <label>
-                    <span data-i18n="family">Family</span>
-                    <select id="field-family"></select>
+                    <span class="field-label">
+                        <span data-i18n="family">Family</span><span class="required-star" aria-hidden="true"> *</span>
+                    </span>
+                    <select id="field-family" aria-required="true"></select>
                 </label>
                 <button type="button" id="new-family-inline" class="btn" data-i18n="newFamily">New family</button>
             </div>
