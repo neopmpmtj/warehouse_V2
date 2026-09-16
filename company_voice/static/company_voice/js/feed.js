@@ -5,13 +5,13 @@
 
     function readLang() {
         try {
-            const raw = localStorage.getItem(LANG_KEY) || "en";
-            if (raw.toLowerCase().startsWith("pt")) {
-                return "pt";
+            const raw = localStorage.getItem(LANG_KEY) || "pt";
+            if (raw.toLowerCase().startsWith("en")) {
+                return "en";
             }
-            return "en";
+            return "pt";
         } catch (error) {
-            return "en";
+            return "pt";
         }
     }
 

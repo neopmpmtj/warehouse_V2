@@ -42,10 +42,10 @@ Open the **Settings** gear (top-right of the console). **Sign out** is a small l
 
 ### 1.3 Language
 
-The whole console works in two languages. Set **Language** on the staff dashboard (`/`) — the control sits in the top-right bar, next to theme:
+The whole console works in two languages. **Português is the default** (the site is used in Portugal). Set **Language** on the staff dashboard (`/`) — the control sits in the top-right bar, next to theme:
 
+- **Português** (default)
 - **English**
-- **Português**
 
 The choice is remembered in this browser and applies to every warehouse console, Parle, and request threads. Branch staff set the same control on the **branch dashboard** (`/branch/`). The **Settings** gear shows signed-in email, a small **Sign out** link, and **Sign out other devices**. **Help** is the blue **?** icon next to the gear.
 
@@ -293,7 +293,7 @@ This is your safety net: nothing is ever silently overwritten.
 
 - **Dates** are shown as **DD/MM/YYYY** (day, month, year), with a 24-hour time — e.g. `20/08/2026 10:30`.
 - **Timezone:** times are shown in *your* local time, wherever you are. A colleague in Singapore sees the same event in Singapore time; you see it in Portugal time. (The system stores everything in UTC and converts automatically.) New users default to **Europe/Lisbon**.
-- **Language:** English / Português — set on the staff dashboard (`/`) or branch dashboard (`/branch/`); remembered in this browser.
+- **Language:** defaults to **Português**; English is optional — set on the staff dashboard (`/`) or branch dashboard (`/branch/`); remembered in this browser.
 - **Theme:** light / dark — same bar as language; remembered.
 
 ---

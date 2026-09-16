@@ -42,10 +42,10 @@ Abra o ícone **Definições** (canto superior direito da consola). **Terminar s
 
 ### 1.3 Idioma
 
-A consola completa funciona em dois idiomas. Defina **Idioma** no painel do pessoal (`/`) — o controlo está na barra superior direita, ao lado do tema:
+A consola completa funciona em dois idiomas. **Português é o idioma por defeito** (o sítio é usado em Portugal). Defina **Idioma** no painel do pessoal (`/`) — o controlo está na barra superior direita, ao lado do tema:
 
+- **Português** (por defeito)
 - **Inglês**
-- **Português**
 
 A escolha é memorizada neste navegador e aplica-se a todas as consolas de armazém, Parle e conversas de pedido. O pessoal de filial usa o mesmo controlo no **painel da filial** (`/branch/`). O ícone **Definições** mostra o email com sessão iniciada, uma ligação pequena **Terminar sessão** e **Terminar sessão noutros dispositivos**. **Ajuda** é o ícone **?** azul ao lado do ícone.
 
@@ -293,7 +293,7 @@ Cada alteração é registada — **quem** fez, **o que** mudou e **quando** (co
 
 - **Datas** são mostradas como **DD/MM/AAAA** (dia, mês, ano), com hora em 24 horas — por exemplo `20/08/2026 10:30`.
 - **Fuso horário:** as horas são mostradas no *seu* horário local, onde quer que esteja. Um colega em Singapura vê o mesmo evento no horário de Singapura; você vê no horário de Portugal. (O sistema guarda tudo em UTC e converte automaticamente.) Novos utilizadores usam por defeito **Europe/Lisbon**.
-- **Idioma:** Inglês / Português — definido no painel do pessoal (`/`) ou no painel da filial (`/branch/`); memorizado neste navegador.
+- **Idioma:** por defeito **Português**; o inglês é opcional — definido no painel do pessoal (`/`) ou no painel da filial (`/branch/`); memorizado neste navegador.
 - **Tema:** claro / escuro — mesma barra que o idioma; memorizado.
 
 ---

@@ -177,4 +177,4 @@ Net is before VAT; Gross is net + VAT — the amount you actually pay.
 If **nothing** was received yet, open the PO and **Cancel order** with a reason. If you already booked a **partial** delivery, use **Short close** (from the PO drawer or the goods receipt dialog) and give a reason — the remaining quantity is written off.
 
 **Q7. Dates and timezone?**
-Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). **Sign out** is a small link on the Settings title row; **Help** is the blue **?** icon next to the gear (placeholder). Press **Escape** to close Settings. **Language** (English / Português) and **theme** are set on the staff dashboard (`/`) and remembered in this browser.
+Dates show as DD/MM/YYYY, in your local timezone (default Europe/Lisbon). **Sign out** is a small link on the Settings title row; **Help** is the blue **?** icon next to the gear (placeholder). Press **Escape** to close Settings. **Language** defaults to **Português**; English is optional — set on the staff dashboard (`/`) and remembered in this browser.

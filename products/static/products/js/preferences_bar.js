@@ -4,9 +4,10 @@
    cc-theme), so a choice made here is already applied when the user
    navigates to any console page.
 
-   Language codes: the dashboard <select> stores "en" / "pt". Warehouse
-   console dictionaries were keyed as "pt-PT" (the old Settings popover
-   value). Normalize so both stored values apply.
+   Language codes: the dashboard <select> stores "en" / "pt". Default is
+   Portuguese (Portugal). Warehouse console dictionaries were keyed as
+   "pt-PT" (the old Settings popover value). Normalize so both stored
+   values apply.
 */
 (function () {
     const LANG_KEY = "cc-lang";
@@ -186,15 +187,26 @@
         }
     }
 
-    function normalizeLang(raw) {
-        if (raw && String(raw).toLowerCase().startsWith("pt")) {
-            return "pt";
+    function seedPortugueseDefault() {
+        try {
+            if (!localStorage.getItem("cc-lang-default-pt")) {
+                localStorage.setItem(LANG_KEY, "pt");
+                localStorage.setItem("cc-lang-default-pt", "1");
+            }
+        } catch (error) {
+            /* ignore */
         }
-        return "en";
+    }
+
+    function normalizeLang(raw) {
+        if (raw && String(raw).toLowerCase().startsWith("en")) {
+            return "en";
+        }
+        return "pt";
     }
 
     function currentLang() {
-        return normalizeLang(safeGet(LANG_KEY, "en"));
+        return normalizeLang(safeGet(LANG_KEY, "pt"));
     }
 
     function currentTheme() {
@@ -236,8 +248,9 @@
     }
 
     function bind() {
+        seedPortugueseDefault();
         const canonical = currentLang();
-        if (safeGet(LANG_KEY, "en") !== canonical) {
+        if (safeGet(LANG_KEY, "pt") !== canonical) {
             safeSet(LANG_KEY, canonical);
         }
         const select = document.getElementById("pref-language");

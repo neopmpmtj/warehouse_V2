@@ -9,10 +9,10 @@
     <script>
         (function () {
             var theme = "light";
-            var lang = "en";
+            var lang = "pt";
             try {
                 theme = localStorage.getItem("cc-theme") || "light";
-                lang = localStorage.getItem("cc-lang") || "en";
+                lang = localStorage.getItem("cc-lang") || "pt";
             } catch (e) {
                 /* ignore */
             }
@@ -169,10 +169,10 @@
 
             function lang() {
                 try {
-                    var raw = localStorage.getItem(LANG_KEY) || "en";
-                    return raw.toLowerCase().indexOf("pt") === 0 ? "pt" : "en";
+                    var raw = localStorage.getItem(LANG_KEY) || "pt";
+                    return raw.toLowerCase().indexOf("en") === 0 ? "en" : "pt";
                 } catch (e) {
-                    return "en";
+                    return "pt";
                 }
             }
 
@@ -366,7 +366,7 @@
             load().catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=10"></script>
-    <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=11"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

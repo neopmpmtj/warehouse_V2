@@ -39,7 +39,7 @@ let poDetailRequestId = 0;
 let historyRequestId = 0;
 
 function currentLang() {
-    return safeGetStorage(LANG_KEY, "en");
+    return safeGetStorage(LANG_KEY, "pt");
 }
 
 function currentTheme() {

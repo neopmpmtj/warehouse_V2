@@ -2,7 +2,7 @@
 
 > **Audience:** developers and coding agents porting or extending CentCompras, or replicating the same bilingual setup in a new project.
 >
-> **Last updated:** 31 August 2026.
+> **Last updated:** 16 September 2026.
 
 This document describes how CentCompras implements **English + Portuguese (Portugal)** in the staff and branch consoles. The UI is **not** translated with Django gettext `.po` files. Translation lives in **vanilla JavaScript dictionaries** applied at runtime in the browser.
 
@@ -26,17 +26,19 @@ Django settings (`config/settings/base.py`) set `USE_I18N = True` and `LANGUAGE_
 
 | UI code | Meaning | `document.documentElement.lang` |
 |---------|---------|----------------------------------|
-| `en` | English (default) | `en` |
-| `pt` | Portuguese (Portugal) | `pt-PT` |
+| `en` | English | `en` |
+| `pt` | Portuguese (Portugal) — **site default** | `pt-PT` |
 
-The dashboard language `<select>` stores `en` or `pt`. Older code stored `pt-PT`; all readers **normalize** any value starting with `pt` to `pt`.
+The dashboard language `<select>` stores `en` or `pt`. Older code stored `pt-PT`. Readers **normalize** any value starting with `en` to `en`; everything else (including missing / `pt` / `pt-PT`) is Portuguese.
+
+A one-time stamp `cc-lang-default-pt` writes `cc-lang=pt` on first visit (login or any console) so browsers that only had English because it used to be the default switch to Portuguese once. After that, a staff choice of English is kept.
 
 ```javascript
 function normalizeLang(raw) {
-    if (raw && String(raw).toLowerCase().startsWith("pt")) {
-        return "pt";
+    if (raw && String(raw).toLowerCase().startsWith("en")) {
+        return "en";
     }
-    return "en";
+    return "pt";
 }
 ```
 
@@ -161,8 +163,8 @@ Keep **error-code keys** identical to the stable `code` strings returned by the 
 const LANG_KEY = "cc-lang";
 
 function currentLang() {
-    const raw = safeGet(LANG_KEY, "en");
-    return String(raw).toLowerCase().startsWith("pt") ? "pt" : "en";
+    const raw = safeGet(LANG_KEY, "pt");
+    return String(raw).toLowerCase().startsWith("en") ? "en" : "pt";
 }
 
 function t(key, vars) {
@@ -227,10 +229,10 @@ Every themed/i18n page should set `lang` and `data-theme` before CSS paints:
 <script>
 (function () {
     var theme = "light";
-    var lang = "en";
+    var lang = "pt";
     try {
         theme = localStorage.getItem("cc-theme") || "light";
-        lang = localStorage.getItem("cc-lang") || "en";
+        lang = localStorage.getItem("cc-lang") || "pt";
     } catch (e) { /* blocked storage */ }
     if (String(lang).toLowerCase().indexOf("pt") === 0) {
         lang = "pt-PT";
@@ -352,7 +354,7 @@ Stack: Django + PostgreSQL backend; plain HTML templates + vanilla JS (no SPA fr
 Languages: English (en) and Portuguese Portugal (pt, alias pt-PT).
 
 Requirements:
-1. localStorage keys: cc-lang (en|pt), cc-theme (light|dark).
+1. localStorage keys: cc-lang (en|pt, **default pt**), cc-theme (light|dark).
 2. One *_i18n.js per page/module: { en: {...}, "pt-PT": {...} }; set .pt = ["pt-PT"].
 3. t(key, vars?) with English fallback and {name} interpolation.
 4. Templates: English default text + data-i18n / data-i18n-placeholder / data-i18n-aria.

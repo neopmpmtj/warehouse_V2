@@ -177,4 +177,4 @@ Líquido é antes do IVA; Bruto é líquido + IVA — o montante que efetivament
 Se **nada** foi recebido, abra a encomenda e **Cancele a encomenda** com um motivo. Se já registou uma entrega **parcial**, use **Encerramento parcial** (no painel lateral ou no diálogo de receção) com um motivo — a quantidade restante é dada como baixa.
 
 **P7. Datas e fuso horário?**
-As datas aparecem como DD/MM/AAAA, no seu fuso horário local (por defeito Europe/Lisbon). **Terminar sessão** é uma ligação pequena na linha do título Definições; **Ajuda** é o ícone **?** azul ao lado do ícone (placeholder). Pressione **Escape** para fechar Definições. **Idioma** (Inglês / Português) e **tema** são definidos no painel do pessoal (`/`) e memorizados neste navegador.
+As datas aparecem como DD/MM/AAAA, no seu fuso horário local (por defeito Europe/Lisbon). **Terminar sessão** é uma ligação pequena na linha do título Definições; **Ajuda** é o ícone **?** azul ao lado do ícone (placeholder). Pressione **Escape** para fechar Definições. **Idioma** (Português por defeito; inglês opcional) e **tema** são definidos no painel do pessoal (`/`) e memorizados neste navegador.

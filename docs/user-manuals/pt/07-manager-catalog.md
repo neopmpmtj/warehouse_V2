@@ -175,7 +175,7 @@ A lista pendente de famílias pode incluir famílias **inativas** (reutiliza a l
 
 Igual às outras consolas do armazém:
 
-- **Idioma:** English / Português — definido no painel do pessoal (`/`) ou no painel da filial (`/branch/`); memorizado neste browser.
+- **Idioma:** por defeito **Português**; o inglês é opcional — definido no painel do pessoal (`/`) ou no painel da filial (`/branch/`); memorizado neste browser.
 - **Tema:** claro / escuro — mesma barra que o idioma; memorizado. O realce de linhas abaixo do ponto de encomenda segue o tema (não é amarelo pálido fixo).
 - **Datas** não aparecem nesta página (sem coluna criado/atualizado). Quantidade e dinheiro usam formato decimal simples.
 

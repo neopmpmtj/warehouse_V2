@@ -3812,7 +3812,9 @@ process.stdout.write(JSON.stringify(ctx.__export));
             settings.BASE_DIR / "products/static/products/js/preferences_bar.js"
         ).read_text()
         self.assertIn("function normalizeLang", source)
-        self.assertIn('startsWith("pt")', source)
+        self.assertIn('startsWith("en")', source)
+        self.assertIn("cc-lang-default-pt", source)
+        self.assertIn('safeGet(LANG_KEY, "pt")', source)
 
     def test_preferences_bar_includes_dashboard_card_keys(self):
         source = (

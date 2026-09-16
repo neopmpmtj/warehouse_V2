@@ -29,7 +29,7 @@ function safeGetStorage(key, fallback) {
 }
 
 function currentLang() {
-    const raw = safeGetStorage(LANG_KEY, "en");
+    const raw = safeGetStorage(LANG_KEY, "pt");
     return String(raw).toLowerCase().indexOf("pt") === 0 ? "pt-PT" : "en";
 }
 

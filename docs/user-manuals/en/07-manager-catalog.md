@@ -168,7 +168,7 @@ The family dropdown can include **inactive** families (it reuses the families li
 
 Same as the other warehouse consoles:
 
-- **Language:** English / Português — set on the staff dashboard (`/`) or branch dashboard (`/branch/`); remembered in this browser.
+- **Language:** defaults to **Português**; English is optional — set on the staff dashboard (`/`) or branch dashboard (`/branch/`); remembered in this browser.
 - **Theme:** light / dark — same bar as language; remembered. Below-reorder row highlighting follows the theme (it is not a fixed pale yellow).
 - **Dates** are not shown on this page (no created/updated column). Quantity and money use a plain decimal format.
 

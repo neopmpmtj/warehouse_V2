@@ -16,7 +16,7 @@ Parle is an internal suggestion box for all CentCompras staff. Anyone logged in 
 
 No branch selection is required. Warehouse and branch users share the same feed.
 
-Open the **Settings** gear (top-right) for **Signed in as** and a small **Sign out** link on the title row. **Help** is the blue **?** icon next to the gear (placeholder). **Language** (English / Português) is set on the staff dashboard (`/`) or the branch dashboard (`/branch/`) and remembered in this browser.
+Open the **Settings** gear (top-right) for **Signed in as** and a small **Sign out** link on the title row. **Help** is the blue **?** icon next to the gear (placeholder). **Language** defaults to **Português** (English is optional) and is set on the staff dashboard (`/`) or the branch dashboard (`/branch/`) and remembered in this browser.
 
 **CentCompras** (top-left) returns you to your dashboard: **`/`** for warehouse staff, **`/branch/`** for branch-only staff. It does not send branch staff to `/` (that page requires a warehouse catalogue permission).
 

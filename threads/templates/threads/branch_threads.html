@@ -157,10 +157,10 @@
 
             function lang() {
                 try {
-                    var raw = localStorage.getItem(LANG_KEY) || "en";
-                    return raw.toLowerCase().indexOf("pt") === 0 ? "pt" : "en";
+                    var raw = localStorage.getItem(LANG_KEY) || "pt";
+                    return raw.toLowerCase().indexOf("en") === 0 ? "en" : "pt";
                 } catch (e) {
-                    return "en";
+                    return "pt";
                 }
             }
             function t(key) { var d = I18N[lang()] || I18N.en; return d[key] !== undefined ? d[key] : (I18N.en[key] || key); }
@@ -420,7 +420,7 @@
             loadThreads().catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=10"></script>
-    <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=11"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

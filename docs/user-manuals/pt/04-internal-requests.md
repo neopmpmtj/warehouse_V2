@@ -336,7 +336,7 @@ Igual às outras consolas:
 
 - **Datas:** DD/MM/AAAA, hora 24 h (ex.: `20/08/2026 14:05`).
 - **Fuso horário:** hora local (novos utilizadores têm por defeito **Europe/Lisbon**).
-- **Idioma:** English / Português — defina no painel do pessoal (`/`) ou no painel da filial (`/branch/`); fica memorizado neste browser.
+- **Idioma:** por defeito **Português**; o inglês é opcional — defina no painel do pessoal (`/`) ou no painel da filial (`/branch/`); fica memorizado neste browser.
 - **Tema:** claro / escuro — mesma barra que o idioma nessas páginas de entrada; fica memorizado.
 
 ---

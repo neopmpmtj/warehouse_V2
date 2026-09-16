@@ -41,7 +41,7 @@ const state = {
 };
 
 function currentLang() {
-    return safeGetStorage(LANG_KEY, "en");
+    return safeGetStorage(LANG_KEY, "pt");
 }
 
 function currentTheme() {

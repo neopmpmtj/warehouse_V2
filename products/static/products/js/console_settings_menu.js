@@ -1,4 +1,13 @@
 (function () {
+    try {
+        if (!localStorage.getItem("cc-lang-default-pt")) {
+            localStorage.setItem("cc-lang", "pt");
+            localStorage.setItem("cc-lang-default-pt", "1");
+        }
+    } catch (_) {
+        /* ignore */
+    }
+
     function bindSettingsMenu() {
         const toggle = document.getElementById("settings-toggle");
         const popover = document.getElementById("settings-popover");
@@ -48,16 +57,16 @@
     };
 
     function currentHelpLang() {
-        let lang = "en";
+        let lang = "pt";
         try {
-            lang = localStorage.getItem("cc-lang") || "en";
+            lang = localStorage.getItem("cc-lang") || "pt";
         } catch (_) {
             /* ignore */
         }
-        if (String(lang).toLowerCase().startsWith("pt")) {
-            return "pt";
+        if (String(lang).toLowerCase().startsWith("en")) {
+            return "en";
         }
-        return "en";
+        return "pt";
     }
 
     function helpT(key) {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -168,6 +168,20 @@
             color: #5b6776;
         }
     </style>
+    <script>
+        (function () {
+            try {
+                if (!localStorage.getItem("cc-lang-default-pt")) {
+                    localStorage.setItem("cc-lang", "pt");
+                    localStorage.setItem("cc-lang-default-pt", "1");
+                } else if (!localStorage.getItem("cc-lang")) {
+                    localStorage.setItem("cc-lang", "pt");
+                }
+            } catch (e) {
+                /* ignore blocked storage */
+            }
+        })();
+    </script>
 </head>
 <body>
     <div class="login-page">
