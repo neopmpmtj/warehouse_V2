@@ -70,7 +70,7 @@ A encomenda começa como **Rascunho**.
 1. Abra a encomenda (clique na linha).
 2. Clique em **Adicionar linha**.
 3. Escolha o **Artigo** e introduza uma **Quantidade**.
-4. **Preço automático** está **ligado** por defeito, na mesma linha que *(desmarque para introduzir um custo unitário)*. O campo de custo unitário fica oculto enquanto o automático está ligado; a linha usa a lista de preços do fornecedor. Desmarque para mostrar o campo e introduzir um custo unitário.
+4. **Preço automático** está **ligado** por defeito, na mesma linha que *(desmarque para introduzir um custo unitário)*. O campo de custo unitário fica oculto enquanto o automático está ligado; a linha usa a lista de preços do fornecedor. Desmarque para mostrar o campo e introduzir um custo unitário. Uma nota vermelha no formulário diz **O fornecedor tem de ter preço.**
 5. (Opcional) defina os três descontos (ver §5).
 6. **Guardar**.
 
