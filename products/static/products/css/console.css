@@ -534,18 +534,8 @@ label.checkbox-inline,
     color: var(--muted);
 }
 
-.drawer-help-small {
-    font-size: 0.85rem;
-}
-
-.form-warning {
-    margin: 0;
-    padding: 0.4rem 0.55rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--danger);
-    background: var(--danger-bg);
-    border-radius: 6px;
+.dialog label[hidden] {
+    display: none !important;
 }
 
 .history ul {

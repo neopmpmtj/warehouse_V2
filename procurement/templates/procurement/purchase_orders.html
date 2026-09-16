@@ -20,7 +20,7 @@
             document.documentElement.setAttribute("lang", lang);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=22">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=23">
     <link rel="stylesheet" href="{% static 'procurement/css/purchase_orders.css' %}?v=1">
 </head>
 <body
@@ -179,7 +179,6 @@
             <span data-i18n="unitCost">Unit cost</span>
             <input type="number" id="line-unit-cost" step="0.01" min="0" disabled>
         </label>
-        <p class="form-warning" data-i18n="unitCostSupplierWarning">Supplier must have a price.</p>
         <label>
             <span data-i18n="discountCommercial">Commercial discount %</span>
             <input type="number" id="line-discount-commercial" step="0.01" min="0" max="100" value="0">
@@ -199,7 +198,7 @@
         </div>
     </div>
 
-    <script src="{% static 'procurement/js/purchase_orders_i18n.js' %}?v=16"></script>
+    <script src="{% static 'procurement/js/purchase_orders_i18n.js' %}?v=17"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
     <script src="{% static 'products/js/console_escape_close.js' %}?v=1"></script>
     <script src="{% static 'procurement/js/purchase_orders.js' %}?v=10"></script>
