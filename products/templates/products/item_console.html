@@ -20,7 +20,7 @@
             document.documentElement.setAttribute("lang", lang);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=20">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=21">
 </head>
 <body
     data-can-add-item="{% if catalog_flags.add_item %}true{% else %}false{% endif %}"
@@ -168,17 +168,21 @@
         <form id="item-form" class="drawer-body">
             <input type="hidden" id="field-id">
             <label>
-                <span data-i18n="internalCode">Internal code</span><span class="required-star" aria-hidden="true"> *</span>
+                <span class="field-label">
+                    <span data-i18n="internalCode">Internal code</span><span class="required-star" aria-hidden="true"> *</span>
+                </span>
                 <input type="text" id="field-internal-code" maxlength="64" pattern="[A-Za-z0-9._-]+" autocomplete="off" aria-required="true">
             </label>
             <label>
-                <span data-i18n="description">Description</span><span class="required-star" aria-hidden="true"> *</span>
+                <span class="field-label">
+                    <span data-i18n="description">Description</span><span class="required-star" aria-hidden="true"> *</span>
+                </span>
                 <input type="text" id="field-description" maxlength="255" aria-required="true">
             </label>
             <div class="field-with-action">
                 <label>
                     <span data-i18n="family">Family</span>
-                    <select id="field-family" required></select>
+                    <select id="field-family"></select>
                 </label>
                 <button type="button" id="new-family-inline" class="btn" data-i18n="newFamily">New family</button>
             </div>
@@ -459,9 +463,9 @@
         </div>
     </div>
 
-    <script src="{% static 'products/js/console_i18n.js' %}?v=24"></script>
+    <script src="{% static 'products/js/console_i18n.js' %}?v=25"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
     <script src="{% static 'products/js/console_escape_close.js' %}?v=2"></script>
-    <script src="{% static 'products/js/console.js' %}?v=24"></script>
+    <script src="{% static 'products/js/console.js' %}?v=25"></script>
 </body>
 </html>

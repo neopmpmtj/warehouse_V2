@@ -132,7 +132,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D26 | Dashboard permission list | Shown only to superusers / `DEBUG` |
 | D27 | Login rate limiting | **Done** — DB-backed `LoginFailure` throttle (`accounts/throttle.py`); 5 failures / 15 min (configurable) |
 | D28 | Money rounding | `ROUND_HALF_UP` (half away from zero) via `procurement.models.round_money` — unit costs to 4 dp first, then monetary amounts to 2 dp |
-| D29 | `internal_code` lifecycle (Phases 1–2 ✅) | Charset `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive; **immutable after first save** (set-if-empty once); console create = mandatory Genesis; **internal code** + **description** required; retail/supplier/cost optional |
+| D29 | `internal_code` lifecycle (Phases 1–2 ✅) | Charset `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive; **immutable after first save** (set-if-empty once); console save activates (Genesis) only when family + retail > 0 + cost > 0; otherwise inactive draft; **internal code** + **description** + family required |
 | D30 | Server-side item drafts | **Deferred** — localStorage autosave first if needed |
 | D31 | Warehouse short-close (zero dispatch) | `approved` with no `GoodsIssue` → **closed** (not `shipped`) |
 | D32 | Warehouse stock reservation | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO by `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `StockMovement.Type.RESERVE` (D5 unchanged). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |
@@ -397,7 +397,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | **Phase 1** | ✅ Done | Format validation (`A–Z` `a–z` `0–9` `.` `-` `_`); API error codes; i18n; user manuals |
 | **Phase 2** | ✅ Done | Lock `internal_code` on first save; mandatory Genesis (atomic create); qualification gates; console UI |
 
-**Locked decisions:** draft = new-item form before first POST; Genesis requires `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`; retail/supplier/cost optional (primary SIP when both supplier and cost > 0); server-side drafts **deferred** (D30).
+**Locked decisions:** draft = new-item form before first POST; console Save activates (Genesis) only when family + retail > 0 + cost > 0 (internal code, description, unit, VAT also required); otherwise creates an inactive item; family select starts blank (`-----------`); primary SIP when both supplier and cost > 0 at Genesis; server-side drafts **deferred** (D30).
 
 ### 12.2 Warehouse FIFO stock reservation ✅
 

@@ -513,6 +513,8 @@ input[type="search"] {
     width: min(40rem, calc(100% - 2rem));
 }
 
+label.checkbox-inline,
+.dialog label.checkbox-inline,
 .supplier-price-form label.checkbox-inline {
     display: flex;
     flex-direction: row;
@@ -520,6 +522,20 @@ input[type="search"] {
     gap: 0.4rem;
     font-weight: 400;
     color: var(--text);
+}
+
+.checkbox-inline-text {
+    display: inline;
+}
+
+.checkbox-hint {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.drawer-help-small {
+    font-size: 0.85rem;
 }
 
 .history ul {
@@ -561,6 +577,10 @@ input[type="search"] {
 
 .dialog-backdrop {
     z-index: 12;
+}
+
+.field-label {
+    display: block;
 }
 
 .required-star {

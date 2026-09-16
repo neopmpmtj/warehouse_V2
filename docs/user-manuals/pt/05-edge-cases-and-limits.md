@@ -30,7 +30,9 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Este código interno já está em uso.` | Os códigos internos são únicos, **sem distinção de maiúsculas/minúsculas** | Use outro código |
 | `O código interno só pode conter letras, algarismos, pontos, hífens e sublinhados.` | O código contém um **espaço** ou um **carácter não permitido** (só `A–Z`, `a–z`, `0–9`, `.`, `-`, `_` são permitidos) | Corrija o código (ex.: `CEM-50`, `CABLE-2.5`) |
 | `O código interno não pode ser alterado depois de o artigo ser guardado.` | Tentou renomear um código num artigo existente | Os códigos ficam bloqueados após o primeiro guardar (códigos vazios antigos podem ser definidos uma vez) |
-| `O artigo não pode ser ativado (Génese): faltam …` | A primeira ativação (Génese) exige código interno, descrição, unidade, IVA e família ativa (guardar na consola, ação em lote **Reativar** no Django admin, ou `add_item --activate`) | Complete os campos antes de ativar |
+| `O artigo não pode ser ativado (Génese): faltam …` | A primeira ativação (Génese) ainda exige código interno, descrição, unidade, IVA e família ativa (ação em lote **Reativar** no Django admin, ou `add_item --activate`) | Complete os campos antes de ativar |
+| `Escolha uma família.` | **Novo artigo** na consola com família ainda em `-----------` | Escolha uma família |
+| `family_id is required.` | POST **Novo artigo** na consola sem família | Escolha uma família |
 | `O código interno é obrigatório para novos artigos.` | POST **Novo artigo** na consola sem código interno | Introduza um código |
 | `A descrição é obrigatória.` | POST **Novo artigo** na consola com descrição vazia ou só espaços | Introduza uma descrição |
 | `Fornecedor e preço de custo têm de ser preenchidos em conjunto, ou ambos vazios.` | **Novo artigo** na consola com só fornecedor ou só custo | Preencha ambos ou limpe ambos |
@@ -54,7 +56,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 
 **Os nomes de sub-família e a família-mãe são imutáveis** após criar — o mesmo padrão das famílias. Desative e crie uma sub-família nova se a etiqueta estiver errada.
 
-**Artigos novos:** confirme **Génese** ao guardar — criar e ativar são atómicos (sem órfão inativo se cancelar). **Código interno** e **descrição** são obrigatórios (marcados com * no formulário). **Preço de retalho**, **fornecedor** e **preço de custo** são opcionais; um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
+**Artigos novos:** **Código interno** e **descrição** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----------`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família, **preço de retalho > 0** e **preço de custo > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos na Génese. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
 
 **Catálogo do gestor (`/manage/catalog/`)** — stock + preços só de leitura para o pessoal do armazém. Ver [Catálogo do gestor](07-manager-catalog.md).
 
@@ -228,7 +230,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | **Taxa de IVA** | `Decimal(5,4)` | fração `0 … 1` | ex.: `0.16` = 16% |
 | **Nível de reposição** | `Decimal(12,3)` | `≥ 0` | 0 = "sem disparo de encomenda" |
 | **Código interno** | `CharField` máx. **64** | obrigatório na criação na consola; só letras, algarismos, `.`, `-`, `_`; **guardado em maiúsculas**; **imutável após guardar** (definir-se-vazio uma vez para legado) | único, sem distinção maiúsculas/minúsculas |
-| **Preço de retalho (Génese)** | `Decimal(12,2)` | `≥ 0` na criação na consola / primeira ativação | grossista/especial podem ficar 0 |
+| **Preço de retalho (Génese)** | `Decimal(12,2)` | A Génese na consola exige **> 0**; guardar inativo permite **≥ 0** | grossista/especial podem ficar 0 |
 | **Motivo / notas (campos de motivo)** | `CharField` / `TextField` | motivo ≤ **255 carateres** | motivo demasiado longo rejeitado |
 | **Email** | `EmailField` | email válido | fornecedor e utilizador |
 | **Saldos de stock** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | não pode ficar negativo |

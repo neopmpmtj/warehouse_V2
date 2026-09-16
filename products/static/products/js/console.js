@@ -530,7 +530,7 @@ function fillFormLookups() {
     fillSelect(
         familySelect,
         familyOptions,
-        familyOptions.length ? null : t("noFamilies")
+        t("chooseFamily")
     );
     fillSelect(
         document.getElementById("field-unit"),
@@ -823,11 +823,6 @@ function closeDrawer() {
     state.editingId = null;
     itemSupplierPriceRequestId += 1;
     renderItemSupplierPrices([]);
-}
-
-function firstActiveFamilyId() {
-    const family = state.families.find((item) => item.is_active);
-    return family ? family.id : null;
 }
 
 function sortFamilies() {
@@ -1665,16 +1660,7 @@ async function startNewItem() {
     if (!catalogPermissions().addItem) {
         return;
     }
-    const activeId = firstActiveFamilyId();
-    if (activeId) {
-        await openDrawer(null, activeId);
-        return;
-    }
-    const family = await promptCreateFamily(true);
-    if (!family) {
-        return;
-    }
-    await openDrawer(null, family.id);
+    await openDrawer(null);
 }
 
 async function createFamilyFromItemForm() {
@@ -1709,8 +1695,14 @@ function showFieldValidity(fieldId, message) {
     return false;
 }
 
-function validateNewItemBeforeGenesis() {
-    clearFieldValidity("field-internal-code", "field-description", "field-supplier", "field-cost-price");
+function validateNewItemFields() {
+    clearFieldValidity(
+        "field-internal-code",
+        "field-description",
+        "field-family",
+        "field-supplier",
+        "field-cost-price"
+    );
     const codeField = document.getElementById("field-internal-code");
     const descriptionField = document.getElementById("field-description");
     const internalCode = codeField.value.trim();
@@ -1729,6 +1721,10 @@ function validateNewItemBeforeGenesis() {
         showBanner(t("description_required"), true);
         return showFieldValidity("field-description", t("description_required"));
     }
+    if (!document.getElementById("field-family").value) {
+        showBanner(t("family_required"), true);
+        return showFieldValidity("field-family", t("family_required"));
+    }
     const supplierId = document.getElementById("field-supplier").value;
     const costRaw = document.getElementById("field-cost-price").value.trim();
     const hasSupplier = Boolean(supplierId);
@@ -1739,6 +1735,13 @@ function validateNewItemBeforeGenesis() {
         return showFieldValidity(targetId, t("genesis_supplier_cost_pair"));
     }
     return true;
+}
+
+function isGenesisReady() {
+    const familyId = document.getElementById("field-family").value;
+    const retail = Number.parseFloat(document.getElementById("field-retail-price").value);
+    const cost = Number.parseFloat(document.getElementById("field-cost-price").value);
+    return Boolean(familyId) && retail > 0 && cost > 0;
 }
 
 function formPayload(isPatch) {
@@ -2239,9 +2242,10 @@ async function openDrawer(item, selectFamilyId) {
         document.getElementById("stock-figure").hidden = true;
         itemSupplierPriceRequestId += 1;
         renderItemSupplierPrices([]);
-        const familyId = selectFamilyId || firstActiveFamilyId();
-        if (familyId) {
-            document.getElementById("field-family").value = String(familyId);
+        if (selectFamilyId) {
+            document.getElementById("field-family").value = String(selectFamilyId);
+        } else {
+            document.getElementById("field-family").value = "";
         }
         if (state.units.length) {
             document.getElementById("field-unit").value = state.units[0].value;
@@ -2311,15 +2315,22 @@ async function saveItem(event) {
             showBanner(t("saved"));
             await loadHistory(data.item.id);
         } else {
-            if (!validateNewItemBeforeGenesis()) {
+            if (!validateNewItemFields()) {
                 return;
             }
-            const reason = await askLifecycleReason("genesis");
-            if (reason === null) {
-                return;
+            const activate = isGenesisReady();
+            let reason = "";
+            if (activate) {
+                reason = await askLifecycleReason("genesis");
+                if (reason === null) {
+                    return;
+                }
             }
             const payload = formPayload(false);
-            payload.reason = reason;
+            payload.activate = activate;
+            if (activate) {
+                payload.reason = reason;
+            }
             data = await api(API_ROOT, {
                 method: "POST",
                 body: JSON.stringify(payload),
@@ -2327,7 +2338,7 @@ async function saveItem(event) {
             replaceItem(data.item);
             closeDrawer();
             renderTable();
-            showBanner(t("activated"));
+            showBanner(activate ? t("activated") : t("createdInactive"));
         }
         renderTable();
         refreshDrawerLabels();

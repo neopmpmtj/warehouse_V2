@@ -137,11 +137,11 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 ### 5.1 Creating a new item
 
 1. Click **New item** (*Novo artigo*).
-2. Fill the form (fields below). **Internal code** and **description** (marked * on the form) are required before Genesis. Retail price, supplier, and cost price are optional.
+2. Fill the form (fields below). **Internal code** and **description** (marked * on the form) are required. **Family** starts unselected (`-----------`) — you must choose one before Save.
 3. Click **Save** (*Guardar*).
-4. Confirm **Genesis** in the dialog — the item is created and activated in one step.
+4. If **family**, **retail price > 0**, and **cost price > 0** are all filled, confirm **Genesis** — the item is created and activated. Otherwise Save creates an **inactive** item with no Genesis dialog.
 
-> **Important:** you cannot skip Genesis. If you cancel the dialog, nothing is saved. There is no inactive orphan row.
+> **Important:** Genesis only runs when family, retail price, and cost price are filled. If you cancel the Genesis dialog, nothing is saved. Saving without those prices creates an inactive row you can activate later.
 
 > 📷 **[SCREENSHOT — "Confirm Genesis" dialog (before save)]**
 
@@ -151,7 +151,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 |-------|:---:|-------|
 | **Internal code** * | Yes (new items) | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). Only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. **Saved as uppercase** (`cem-50` becomes `CEM-50`). **Cannot be changed after the first save** (legacy items with an empty code may set it once). |
 | **Description** * | Yes | What the item is. |
-| **Family** | Yes | The group it belongs to (see §7). |
+| **Family** | Yes | The group it belongs to (see §7). New item starts with `-----------` — pick a family before Save. |
 | **Sub-family** | No | Optional finer grouping under the family (see §7). Leave empty for none. |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
 | **VAT rate** | Yes | 1%, 3%, 7%, 16%, Exempt |
@@ -323,7 +323,7 @@ That's the European convention used across the app. `05/08/2026` means **5 Augus
 No. Times adapt to each viewer's local timezone automatically. The system stores UTC and converts on display.
 
 **Q5. I created an item but it says "Inactive" — why?**
-New items are created **active** when you confirm **Genesis** on save. If you cancel the Genesis dialog, nothing is saved. To add an inactive row for testing, use Django admin (superuser) or the `add_item` CLI without `--activate`. With `--activate`, only **internal code** and **description** are required; pass `--supplier` and `--cost-price` together if you want a primary buying-price row.
+Save without Genesis creates an **inactive** item. Genesis (activate) only runs when **family**, **retail price > 0**, and **cost price > 0** are filled. If you cancel the Genesis dialog, nothing is saved. You can also add an inactive row with Django admin (superuser) or the `add_item` CLI without `--activate`. With `--activate`, only **internal code** and **description** are required; pass `--supplier` and `--cost-price` together if you want a primary buying-price row.
 
 **Q6. I can't see the edit button / checkboxes — why?**
 Your role is **operator** (read-only), or you don't have edit permission. Check §2. Ask your administrator if you think your role is wrong.

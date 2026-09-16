@@ -30,7 +30,9 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Internal code "X" is already used by another item.` | Internal codes are unique, **case-insensitive** | Use a different code |
 | `Internal code may only contain letters, digits, dots, hyphens, and underscores.` | The code contains a **space** or a **disallowed character** (only `A–Z`, `a–z`, `0–9`, `.`, `-`, `_` are allowed) | Fix the code (e.g. `CEM-50`, `CABLE-2.5`) |
 | `Internal code cannot be changed after the item is saved.` | You tried to rename a code on an existing item | Codes are locked after first save (legacy empty codes may be set once) |
-| `Item cannot be activated (Genesis): missing …` | First activation (Genesis) needs internal code, description, unit, VAT, and active family (console save, Django admin **Reactivate** bulk action, or `add_item --activate`) | Complete the fields before activating |
+| `Choose a family.` | Console **New item** Save with family still on `-----------` | Pick a family |
+| `family_id is required.` | Console **New item** POST without a family | Choose a family |
+| `Item cannot be activated (Genesis): missing …` | First activation (Genesis) still needs internal code, description, unit, VAT, and active family (Django admin **Reactivate**, or `add_item --activate`) | Complete the fields before activating |
 | `Internal code is required for new items.` | Console **New item** POST with an empty internal code | Enter a code |
 | `Description is required.` | Console **New item** POST with an empty or whitespace-only description | Enter a description |
 | `Supplier and cost price must both be provided together, or both left empty.` | Console **New item** with only supplier or only cost filled | Fill both or clear both |
@@ -54,7 +56,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 **Sub-family names and parent family are immutable** after create — same pattern as families. Deactivate and create a new sub-family if the label was wrong.
 
-**New items:** confirm **Genesis** on save — create and activation are atomic (no inactive orphan if you cancel). **Internal code** and **description** are required (marked * on the form). **Retail price**, **supplier**, and **cost price** are optional; a **primary supplier price** is created only when both supplier and cost **> 0** are filled together. Code is immutable after save; add more supplier prices later from the supplier drawer.
+**New items:** **Internal code** and **description** are required (marked * on the form). **Family** starts unselected (`-----------`) and is required before Save. **Genesis** (activate) runs only when family, **retail price > 0**, and **cost price > 0** are filled; otherwise Save creates an **inactive** item. A **primary supplier price** is created only when both supplier and cost **> 0** are filled together at Genesis. Code is immutable after save; add more supplier prices later from the supplier drawer.
 
 **Manager catalog (`/manage/catalog/`)** — read-only stock + prices for warehouse staff. See [Manager catalog](07-manager-catalog.md).
 
@@ -228,7 +230,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | **VAT rate** | `Decimal(5,4)` | fraction `0 … 1` | e.g. `0.16` = 16% |
 | **Reorder level** | `Decimal(12,3)` | `≥ 0` | 0 = "no reorder trigger" |
 | **Internal code** | `CharField` max **64** | required on console create; letters, digits, `.`, `-`, `_` only; **stored uppercase**; **immutable after save** (set-if-empty once for legacy) | unique, case-insensitive |
-| **Retail price (Genesis)** | `Decimal(12,2)` | `≥ 0` on console create / first activation | wholesale/special may stay 0 |
+| **Retail price (Genesis)** | `Decimal(12,2)` | Console Genesis needs **> 0**; inactive save allows **≥ 0** | wholesale/special may stay 0 |
 | **Reason / notes (reason fields)** | `CharField` / `TextField` | reason ≤ **255 chars** | over-long reason rejected |
 | **Email** | `EmailField` | valid email | supplier & user |
 | **Stock balances** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | can't go negative |

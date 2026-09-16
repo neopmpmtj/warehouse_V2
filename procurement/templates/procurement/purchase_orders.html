@@ -20,7 +20,7 @@
             document.documentElement.setAttribute("lang", lang);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=20">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=21">
     <link rel="stylesheet" href="{% static 'procurement/css/purchase_orders.css' %}?v=1">
 </head>
 <body
@@ -168,15 +168,18 @@
             <span data-i18n="quantity">Quantity</span>
             <input type="number" id="line-quantity" step="0.001" min="0" required>
         </label>
-        <label>
+        <label class="checkbox-inline">
+            <input type="checkbox" id="line-automatic-price" checked>
+            <span class="checkbox-inline-text">
+                <span data-i18n="automaticPrice">Automatic price</span>
+                <span class="checkbox-hint" data-i18n="automaticPriceHint"> (uncheck to type a unit cost)</span>
+            </span>
+        </label>
+        <label id="line-unit-cost-wrap" hidden>
             <span data-i18n="unitCost">Unit cost</span>
             <input type="number" id="line-unit-cost" step="0.01" min="0" disabled>
         </label>
-        <label class="checkbox-inline">
-            <input type="checkbox" id="line-automatic-price" checked>
-            <span data-i18n="automaticPrice">Automatic price</span>
-        </label>
-        <p class="drawer-help" data-i18n="unitCostHint">Uses the supplier price list when automatic price is on. Uncheck to type a unit cost. The line is rejected if the supplier has no price for the item.</p>
+        <p class="drawer-help drawer-help-small" data-i18n="unitCostSupplierWarning">The line is rejected if the supplier has no price for the item.</p>
         <label>
             <span data-i18n="discountCommercial">Commercial discount %</span>
             <input type="number" id="line-discount-commercial" step="0.01" min="0" max="100" value="0">
@@ -196,9 +199,9 @@
         </div>
     </div>
 
-    <script src="{% static 'procurement/js/purchase_orders_i18n.js' %}?v=14"></script>
+    <script src="{% static 'procurement/js/purchase_orders_i18n.js' %}?v=15"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=3"></script>
     <script src="{% static 'products/js/console_escape_close.js' %}?v=1"></script>
-    <script src="{% static 'procurement/js/purchase_orders.js' %}?v=9"></script>
+    <script src="{% static 'procurement/js/purchase_orders.js' %}?v=10"></script>
 </body>
 </html>

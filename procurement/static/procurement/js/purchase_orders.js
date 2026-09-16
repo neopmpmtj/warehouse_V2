@@ -790,11 +790,15 @@ async function createNewPo() {
 function setLineUnitCostAutomatic(automatic) {
     const input = document.getElementById("line-unit-cost");
     const checkbox = document.getElementById("line-automatic-price");
+    const wrap = document.getElementById("line-unit-cost-wrap");
     if (!input || !checkbox) {
         return;
     }
     checkbox.checked = automatic;
     input.disabled = automatic;
+    if (wrap) {
+        wrap.hidden = automatic;
+    }
 }
 
 function openLineDialog(po, line) {

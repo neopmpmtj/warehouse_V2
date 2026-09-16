@@ -53,6 +53,7 @@ from .services import (
     catalog_buying_price,
     create_family,
     create_and_activate_item,
+    create_item,
     create_sub_family,
     create_supplier,
     create_supplier_item_price,
@@ -435,7 +436,7 @@ def manage_item_list(request):
         if not internal_code:
             raise InternalCodeRequiredError()
         family_id = payload.get("family_id")
-        if family_id is None:
+        if family_id in (None, "", 0):
             raise ValidationError("family_id is required.")
         vat_rate_id = payload.get("vat_rate_id")
         if vat_rate_id is None:
@@ -446,34 +447,43 @@ def manage_item_list(request):
             supplier = _parse_int_id(payload["supplier_id"], "supplier_id")
         if "cost_price" in payload and str(payload.get("cost_price", "")).strip() != "":
             cost_price = _parse_decimal(payload, "cost_price")
-        item = create_and_activate_item(
-            request.user,
-            family=_parse_int_id(family_id, "family_id"),
-            description=description,
-            unit_of_measure=_parse_unit(payload),
-            vat_rate=_parse_int_id(vat_rate_id, "vat_rate_id"),
-            supplier=supplier,
-            cost_price=cost_price,
-            internal_code=internal_code,
-            reorder_level=_parse_decimal(payload, "reorder_level")
+        activate = payload.get("activate") is True
+        create_kwargs = {
+            "family": _parse_int_id(family_id, "family_id"),
+            "description": description,
+            "unit_of_measure": _parse_unit(payload),
+            "vat_rate": _parse_int_id(vat_rate_id, "vat_rate_id"),
+            "internal_code": internal_code,
+            "reorder_level": _parse_decimal(payload, "reorder_level")
             if "reorder_level" in payload
             else "0",
-            retail_price=_parse_decimal(payload, "retail_price")
+            "retail_price": _parse_decimal(payload, "retail_price")
             if "retail_price" in payload
             else "0",
-            wholesale_price=_parse_decimal(payload, "wholesale_price")
+            "wholesale_price": _parse_decimal(payload, "wholesale_price")
             if "wholesale_price" in payload
             else "0",
-            special_price=_parse_decimal(payload, "special_price")
+            "special_price": _parse_decimal(payload, "special_price")
             if "special_price" in payload
             else "0",
-            reason=str(payload.get("reason", "")),
-            sub_family=_parse_optional_id(
+            "reason": str(payload.get("reason", "")),
+            "sub_family": _parse_optional_id(
                 payload.get("sub_family_id"), "sub_family_id"
             )
             if "sub_family_id" in payload
             else None,
-        )
+        }
+        if activate:
+            item = create_and_activate_item(
+                request.user,
+                supplier=supplier,
+                cost_price=cost_price,
+                **create_kwargs,
+            )
+        else:
+            if (supplier is None) != (cost_price is None):
+                raise GenesisSupplierCostPairError()
+            item = create_item(request.user, **create_kwargs)
     except (
         DescriptionRequiredError,
         DuplicateInternalCodeError,

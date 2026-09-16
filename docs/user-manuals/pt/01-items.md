@@ -137,11 +137,11 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 ### 5.1 Criar um novo artigo
 
 1. Clique em **Novo artigo**.
-2. Preencha o formulário (campos abaixo). **Código interno** e **descrição** (marcados com * no formulário) são obrigatórios antes da Génese. Preço de retalho, fornecedor e preço de custo são opcionais.
+2. Preencha o formulário (campos abaixo). **Código interno** e **descrição** (marcados com * no formulário) são obrigatórios. **Família** começa sem seleção (`-----------`) — tem de escolher uma antes de Guardar.
 3. Clique em **Guardar**.
-4. Confirme **Génese** no diálogo — o artigo é criado e ativado num único passo.
+4. Se **família**, **preço de retalho > 0** e **preço de custo > 0** estiverem todos preenchidos, confirme **Génese** — o artigo é criado e ativado. Caso contrário, Guardar cria um artigo **inativo** sem diálogo de Génese.
 
-> **Importante:** não pode ignorar a Génese. Se cancelar o diálogo, nada é guardado. Não há linha órfã inativa.
+> **Importante:** a Génese só corre quando família, preço de retalho e preço de custo estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Guardar sem esses preços cria uma linha inativa que pode ativar mais tarde.
 
 > 📷 **[CAPTURA DE ECRÃ — diálogo "Confirmar Génese" (antes de guardar)]**
 
@@ -151,7 +151,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 |-------|:---:|-------|
 | **Código interno** * | Sim (novos artigos) | A sua referência, por exemplo `CEM-50` ou `CABLE-2.5`. Tem de ser **único** (sem distinção entre maiúsculas e minúsculas). Apenas **letras, algarismos, pontos (`.`), hífens (`-`) e sublinhados (`_`)** — sem espaços nem outros símbolos. Máximo **64** caracteres. **Guardado em maiúsculas** (`cem-50` torna-se `CEM-50`). **Não pode ser alterado depois do primeiro guardar** (artigos antigos com código vazio podem definir o código uma vez). |
 | **Descrição** * | Sim | O que é o artigo. |
-| **Família** | Sim | O grupo a que pertence (ver §7). |
+| **Família** | Sim | O grupo a que pertence (ver §7). Um artigo novo começa com `-----------` — escolha uma família antes de Guardar. |
 | **Sub-família** | Não | Agrupamento opcional mais fino sob a família (ver §7). Deixe vazio para nenhuma. |
 | **Unidade** | Sim | peça / kg / g / m / m² / m³ / l |
 | **Taxa de IVA** | Sim | 1%, 3%, 7%, 16%, Isento |
@@ -323,7 +323,7 @@ Os preços de venda (retalho / grossista / especial) são o que *vendemos por* �
 Não. As horas adaptam-se automaticamente ao fuso horário local de cada utilizador. O sistema guarda UTC e converte na apresentação.
 
 **P5. Criei um artigo mas diz "Inativo" — porquê?**
-Os novos artigos são criados **ativos** quando confirma **Génese** ao guardar. Se cancela o diálogo de Génese, nada é guardado. Para adicionar uma linha inativa para testes, use o admin Django (superutilizador) ou a CLI `add_item` sem `--activate`. Com `--activate`, só **código interno** e **descrição** são obrigatórios; passe `--supplier` e `--cost-price` em conjunto se quiser uma linha principal de preço de compra.
+Guardar sem Génese cria um artigo **inativo**. A Génese (ativar) só corre quando **família**, **preço de retalho > 0** e **preço de custo > 0** estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Também pode adicionar uma linha inativa no admin Django (superutilizador) ou na CLI `add_item` sem `--activate`. Com `--activate`, só **código interno** e **descrição** são obrigatórios; passe `--supplier` e `--cost-price` em conjunto se quiser uma linha principal de preço de compra.
 
 **P6. Não vejo o botão editar / caixas de seleção — porquê?**
 O seu papel é **operador** (só leitura) ou não tem permissão de edição. Consulte §2. Peça ao administrador se acha que o papel está errado.

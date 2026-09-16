@@ -163,6 +163,7 @@ class ItemTestCaseMixin:
             "internal_code": "GEN-API-1",
             "retail_price": "10.00",
             "vat_rate_id": vat_rate.id,
+            "activate": True,
         }
         if include_supplier_price:
             supplier = getattr(self, "supplier", None) or self.create_test_supplier()
@@ -1826,6 +1827,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
                 unit_of_measure=Item.UnitOfMeasure.KG,
                 internal_code="ZERO-1",
                 retail_price="0",
+                activate=True,
             )),
             content_type="application/json",
         )
@@ -1834,6 +1836,37 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         item = Item.objects.get(internal_code="ZERO-1")
         self.assertTrue(item.is_active)
         self.assertFalse(SupplierItemPrice.objects.filter(item=item).exists())
+
+    def test_console_create_without_activate_creates_inactive(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps(self.genesis_create_payload(
+                include_supplier_price=False,
+                internal_code="DRAFT-1",
+                retail_price="0",
+                activate=False,
+            )),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        item = Item.objects.get(internal_code="DRAFT-1")
+        self.assertFalse(item.is_active)
+        self.assertFalse(SupplierItemPrice.objects.filter(item=item).exists())
+
+    def test_console_create_missing_family_is_rejected(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps(self.genesis_create_payload(family_id=0)),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("family_id is required", response.json()["error"])
 
     def test_console_create_without_supplier_or_cost_succeeds(self):
         self.client.force_login(self.staff_user)
