@@ -108,7 +108,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D8 | Rappel | simple per-line % now; shape later |
 | D9 | Email automation | deferred to **Phase 9** (late phase); model a stub seam now (`on_commit`) |
 | D35 | Phase sequencing after offline | **Phase 6** = offline (done). **Phase 7** = production deployment readiness only. **Phase 8** = OAuth production + shared chrome. **Phase 9** = email. Do not bundle deploy with OAuth/chrome. |
-| D36 | Genesis primary supplier | New catalogue items (Genesis / `create_and_activate_item`) require an **active supplier** and **cost price > 0**; first `SupplierItemPrice` is always `primary=True`. One primary per item (D14) unchanged; promotion/demotion via `_clear_other_primaries` + audit. |
+| D36 | Genesis primary supplier | Optional at Genesis: when **both** an active **supplier** and **cost price > 0** are provided, `create_and_activate_item` creates the first `SupplierItemPrice` as `primary=True`. One primary per item (D14) unchanged; promotion/demotion via `_clear_other_primaries` + audit. |
 | D37 | Branch commercial mode | Company-wide singleton `BranchCommercialSettings` (superuser `/admin/` only). Default **unpriced**: branch catalogue omits selling prices; requisição UI is quantity-only; manager approve is yes/no (EUR `BranchApprovalLimit` not applied). **Priced** restores today's selling prices + EUR caps. Buying cost never on the branch (lock 7). Warehouse `/manage/…` unchanged. PostgreSQL still snapshots `unit_price` / `approved_*`. No per-user or per-branch flag; no storefront. |
 | D38 | Dashboard vs work-page chrome | Language + theme **only** on `/` and `/branch/`. Sibling URL strips **only** on work pages (not dashboards). Branch strip: Home, Catalog, Requests, Receipts, Threads. Warehouse strip on `/manage/…`: Home, Items, Catalog, POs, Receipts, Requests, Threads. Parle **CentCompras** → `home_url_for_request` (`/` warehouse/dual, `/branch/` branch-only). Does **not** complete Phase 8 shared chrome. |
 | D39 | PT name for catalogue-gap threads | English **Threads** / **Request threads** unchanged. Portuguese UI + manuals: **Conversas** (nav), **Conversas de pedido** (page/card), **Conversa** / **Nova conversa** / **Fechar conversa**. Replaces **fio/fios**. Presentation PT **slide 3** aligned (Sep 2026); EN slide 3 uses **New conversation**. |
@@ -132,7 +132,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D26 | Dashboard permission list | Shown only to superusers / `DEBUG` |
 | D27 | Login rate limiting | **Done** — DB-backed `LoginFailure` throttle (`accounts/throttle.py`); 5 failures / 15 min (configurable) |
 | D28 | Money rounding | `ROUND_HALF_UP` (half away from zero) via `procurement.models.round_money` — unit costs to 4 dp first, then monetary amounts to 2 dp |
-| D29 | `internal_code` lifecycle (Phases 1–2 ✅) | Charset `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive; **immutable after first save** (set-if-empty once); console create = mandatory Genesis with `retail_price > 0` |
+| D29 | `internal_code` lifecycle (Phases 1–2 ✅) | Charset `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive; **immutable after first save** (set-if-empty once); console create = mandatory Genesis; **internal code** + **description** required; retail/supplier/cost optional |
 | D30 | Server-side item drafts | **Deferred** — localStorage autosave first if needed |
 | D31 | Warehouse short-close (zero dispatch) | `approved` with no `GoodsIssue` → **closed** (not `shipped`) |
 | D32 | Warehouse stock reservation | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO by `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `StockMovement.Type.RESERVE` (D5 unchanged). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |
@@ -397,7 +397,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 | **Phase 1** | ✅ Done | Format validation (`A–Z` `a–z` `0–9` `.` `-` `_`); API error codes; i18n; user manuals |
 | **Phase 2** | ✅ Done | Lock `internal_code` on first save; mandatory Genesis (atomic create); qualification gates; console UI |
 
-**Locked decisions:** draft = new-item form before first POST; Genesis requires `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`, `retail_price > 0`; server-side drafts **deferred** (D30).
+**Locked decisions:** draft = new-item form before first POST; Genesis requires `internal_code`, `description`, `unit_of_measure`, `vat_rate`, `family`; retail/supplier/cost optional (primary SIP when both supplier and cost > 0); server-side drafts **deferred** (D30).
 
 ### 12.2 Warehouse FIFO stock reservation ✅
 

@@ -787,6 +787,16 @@ async function createNewPo() {
     }
 }
 
+function setLineUnitCostAutomatic(automatic) {
+    const input = document.getElementById("line-unit-cost");
+    const checkbox = document.getElementById("line-automatic-price");
+    if (!input || !checkbox) {
+        return;
+    }
+    checkbox.checked = automatic;
+    input.disabled = automatic;
+}
+
 function openLineDialog(po, line) {
     if (!po || po.status !== "draft" || !poPermissions().change) {
         return;
@@ -796,6 +806,7 @@ function openLineDialog(po, line) {
     document.getElementById("line-confirm").textContent = t("save");
     document.getElementById("line-error").hidden = true;
     document.getElementById("line-quantity").value = line ? line.quantity : "1";
+    setLineUnitCostAutomatic(true);
     document.getElementById("line-unit-cost").value = line ? line.unit_cost : "";
     document.getElementById("line-discount-commercial").value = line ? line.discount_commercial : "0";
     document.getElementById("line-discount-financial").value = line ? line.discount_financial : "0";
@@ -838,19 +849,27 @@ async function onLineConfirm() {
         error.hidden = false;
         return;
     }
+    const automaticPrice = document.getElementById("line-automatic-price").checked;
+    if (!automaticPrice) {
+        const unitCost = document.getElementById("line-unit-cost").value.trim();
+        if (!unitCost) {
+            error.textContent = t("unitCostRequired");
+            error.hidden = false;
+            return;
+        }
+    }
     const confirmButton = document.getElementById("line-confirm");
     confirmButton.disabled = true;
     state.busy = true;
     try {
-        const unitCost = document.getElementById("line-unit-cost").value;
         const base = {
             quantity,
             discount_commercial: document.getElementById("line-discount-commercial").value || "0",
             discount_financial: document.getElementById("line-discount-financial").value || "0",
             rappel: document.getElementById("line-rappel").value || "0",
         };
-        if (unitCost !== "") {
-            base.unit_cost = unitCost;
+        if (!automaticPrice) {
+            base.unit_cost = document.getElementById("line-unit-cost").value.trim();
         }
         let data;
         const lineId = state.editingLineId;
@@ -941,6 +960,12 @@ function bindEvents() {
     document.getElementById("line-confirm").addEventListener("click", onLineConfirm);
     document.getElementById("line-cancel").addEventListener("click", closeLineDialog);
     document.getElementById("line-dialog-backdrop").addEventListener("click", closeLineDialog);
+    const automaticPriceToggle = document.getElementById("line-automatic-price");
+    if (automaticPriceToggle) {
+        automaticPriceToggle.addEventListener("change", (event) => {
+            setLineUnitCostAutomatic(event.target.checked);
+        });
+    }
 }
 
 async function loadPurchaseOrders() {

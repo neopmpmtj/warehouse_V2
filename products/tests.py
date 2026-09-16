@@ -39,6 +39,7 @@ from products.services import (
     DeactivateReasonRequiredError,
     CostPriceGenesisRequiredError,
     DescriptionRequiredError,
+    GenesisSupplierCostPairError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
     DuplicateSubFamilyNameError,
@@ -52,6 +53,7 @@ from products.services import (
     InvalidCostPriceError,
     InvalidInternalCodeError,
     InternalCodeImmutableError,
+    InternalCodeRequiredError,
     ItemGenesisNotReadyError,
     InvalidReorderLevelError,
     InvalidSellingPriceError,
@@ -151,8 +153,7 @@ class ItemTestCaseMixin:
         item = create_item(user, **defaults)
         return item
 
-    def genesis_create_payload(self, **overrides):
-        supplier = getattr(self, "supplier", None) or self.create_test_supplier()
+    def genesis_create_payload(self, *, include_supplier_price=True, **overrides):
         family = getattr(self, "family", None) or self.create_test_family()
         vat_rate = getattr(self, "vat_rate", None) or VatRate.objects.get(code="VAT16")
         payload = {
@@ -162,9 +163,11 @@ class ItemTestCaseMixin:
             "internal_code": "GEN-API-1",
             "retail_price": "10.00",
             "vat_rate_id": vat_rate.id,
-            "supplier_id": supplier.id,
-            "cost_price": "5.00",
         }
+        if include_supplier_price:
+            supplier = getattr(self, "supplier", None) or self.create_test_supplier()
+            payload["supplier_id"] = supplier.id
+            payload["cost_price"] = "5.00"
         payload.update(overrides)
         return payload
 
@@ -483,18 +486,43 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
             create_and_activate_item(
                 self.user,
                 family=self.family,
-                description="No retail",
+                description="No code",
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+                internal_code="",
+            )
+
+        self.assertFalse(Item.objects.filter(description="No code").exists())
+
+    def test_create_and_activate_item_without_supplier_or_cost(self):
+        item = create_and_activate_item(
+            self.user,
+            family=self.family,
+            description="No prices",
+            unit_of_measure=Item.UnitOfMeasure.PIECE,
+            vat_rate=self.vat_rate,
+            internal_code="GEN-NO-PRICE",
+            retail_price="0",
+        )
+
+        self.assertTrue(item.is_active)
+        self.assertFalse(SupplierItemPrice.objects.filter(item=item).exists())
+
+    def test_create_and_activate_item_rejects_partial_supplier_cost_pair(self):
+        with self.assertRaises(GenesisSupplierCostPairError):
+            create_and_activate_item(
+                self.user,
+                family=self.family,
+                description="Partial pair",
                 unit_of_measure=Item.UnitOfMeasure.PIECE,
                 vat_rate=self.vat_rate,
                 supplier=self.supplier,
-                cost_price="5.00",
-                internal_code="GEN-2",
-                retail_price="0",
+                internal_code="GEN-PARTIAL",
             )
 
-        self.assertFalse(Item.objects.filter(internal_code="GEN-2").exists())
+        self.assertFalse(Item.objects.filter(internal_code="GEN-PARTIAL").exists())
 
-    def test_create_and_activate_item_requires_positive_cost(self):
+    def test_create_and_activate_item_requires_positive_cost_when_supplier_set(self):
         with self.assertRaises(CostPriceGenesisRequiredError):
             create_and_activate_item(
                 self.user,
@@ -968,7 +996,7 @@ class ItemAdminAccessTests(TestCase):
         item = create_item(
             user=self.superuser,
             family=family,
-            internal_code="ADMIN-INCOMPLETE",
+            internal_code="",
             description="Needs genesis",
             unit_of_measure="piece",
             vat_rate=vat,
@@ -990,7 +1018,7 @@ class ItemAdminAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         message_text = " ".join(str(message) for message in get_messages(response.wsgi_request))
-        self.assertIn("retail price greater than 0", message_text)
+        self.assertIn("internal code", message_text)
         item.refresh_from_db()
         self.assertFalse(item.is_active)
 
@@ -1000,22 +1028,36 @@ class AddItemCommandTests(TestCase):
         self.family = create_family("CLI family")
         self.supplier = create_supplier(name="CLI Supplier")
 
-    def test_add_item_activate_zero_retail_raises_without_creating_row(self):
+    def test_add_item_activate_zero_retail_without_supplier_creates_active(self):
+        call_command(
+            "add_item",
+            "Orphan test",
+            family=self.family.name,
+            vat_rate="VAT16",
+            internal_code="CLI-ORPHAN",
+            retail_price="0",
+            activate=True,
+            verbosity=0,
+        )
+
+        item = Item.objects.get(internal_code="CLI-ORPHAN")
+        self.assertTrue(item.is_active)
+        self.assertFalse(SupplierItemPrice.objects.filter(item=item).exists())
+
+    def test_add_item_activate_pair_incomplete_raises(self):
         with self.assertRaises(CommandError) as raised:
             call_command(
                 "add_item",
-                "Orphan test",
+                "Pair test",
                 family=self.family.name,
                 vat_rate="VAT16",
-                internal_code="CLI-ORPHAN",
-                retail_price="0",
+                internal_code="CLI-PAIR",
                 supplier=self.supplier.name,
-                cost_price="5.00",
                 activate=True,
             )
 
-        self.assertIn("retail-price must be greater than 0", str(raised.exception))
-        self.assertFalse(Item.objects.filter(internal_code="CLI-ORPHAN").exists())
+        self.assertIn("both --supplier and --cost-price", str(raised.exception))
+        self.assertFalse(Item.objects.filter(internal_code="CLI-PAIR").exists())
 
     def test_add_item_activate_creates_active_item(self):
         call_command(
@@ -1770,15 +1812,16 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
 
         self.assertEqual(response.status_code, 400)
         payload = response.json()
-        self.assertEqual(payload["code"], "item_genesis_not_ready")
+        self.assertEqual(payload["code"], "internal_code_required")
         self.assertFalse(Item.objects.filter(description="No code item").exists())
 
-    def test_console_create_with_zero_retail_price_is_rejected(self):
+    def test_console_create_with_zero_retail_price_succeeds_without_supplier(self):
         self.client.force_login(self.staff_user)
 
         response = self.client.post(
             reverse("manage_item_list"),
             data=json.dumps(self.genesis_create_payload(
+                include_supplier_price=False,
                 description="Zero retail item",
                 unit_of_measure=Item.UnitOfMeasure.KG,
                 internal_code="ZERO-1",
@@ -1787,10 +1830,55 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
             content_type="application/json",
         )
 
+        self.assertEqual(response.status_code, 200)
+        item = Item.objects.get(internal_code="ZERO-1")
+        self.assertTrue(item.is_active)
+        self.assertFalse(SupplierItemPrice.objects.filter(item=item).exists())
+
+    def test_console_create_without_supplier_or_cost_succeeds(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps(self.genesis_create_payload(
+                include_supplier_price=False,
+                internal_code="NO-SUP-1",
+            )),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        item = Item.objects.get(internal_code="NO-SUP-1")
+        self.assertTrue(item.is_active)
+
+    def test_console_create_rejects_partial_supplier_cost_pair(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps(self.genesis_create_payload(
+                include_supplier_price=False,
+                internal_code="PAIR-1",
+                supplier_id=self.supplier.id,
+            )),
+            content_type="application/json",
+        )
+
         self.assertEqual(response.status_code, 400)
-        payload = response.json()
-        self.assertEqual(payload["code"], "item_genesis_not_ready")
-        self.assertFalse(Item.objects.filter(internal_code="ZERO-1").exists())
+        self.assertEqual(response.json()["code"], "genesis_supplier_cost_pair")
+        self.assertFalse(Item.objects.filter(internal_code="PAIR-1").exists())
+
+    def test_console_create_rejects_empty_description(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("manage_item_list"),
+            data=json.dumps(self.genesis_create_payload(description="   ")),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "description_required")
 
     def test_console_update_rejects_internal_code_change(self):
         item = self.create_test_item(

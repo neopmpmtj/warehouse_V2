@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from products.models import FamilyProduct, Item, SubFamily, Supplier, VatRate
 from products.services import (
+    GenesisSupplierCostPairError,
     ItemGenesisNotReadyError,
     create_and_activate_item,
     create_item,
@@ -49,7 +50,7 @@ class Command(BaseCommand):
             "--retail-price",
             dest="retail_price",
             default="0",
-            help="Retail price (required > 0 when --activate)",
+            help="Retail selling price (default: 0)",
         )
         parser.add_argument(
             "--reorder-level",
@@ -60,13 +61,13 @@ class Command(BaseCommand):
         parser.add_argument(
             "--supplier",
             default="",
-            help="Supplier name for Genesis primary (required when --activate)",
+            help="Optional supplier name for Genesis primary buying-price row",
         )
         parser.add_argument(
             "--cost-price",
             dest="cost_price",
             default="",
-            help="Buying cost for Genesis primary (required > 0 when --activate)",
+            help="Optional buying cost for Genesis primary (requires --supplier)",
         )
         parser.add_argument(
             "--activate",
@@ -125,44 +126,29 @@ class Command(BaseCommand):
 
         if options["activate"]:
             supplier_name = (options.get("supplier") or "").strip()
-            if not supplier_name:
-                raise CommandError(
-                    "--supplier is required when using --activate."
-                )
-            supplier = Supplier.objects.filter(name__iexact=supplier_name).first()
-            if supplier is None:
-                available = ", ".join(
-                    Supplier.objects.filter(is_active=True)
-                    .order_by("name")
-                    .values_list("name", flat=True)
-                )
-                raise CommandError(
-                    f"Supplier '{supplier_name}' not found. Active: {available}"
-                )
             cost_price_raw = (options.get("cost_price") or "").strip()
-            if not cost_price_raw:
+            has_supplier = bool(supplier_name)
+            has_cost = bool(cost_price_raw)
+            if has_supplier != has_cost:
                 raise CommandError(
-                    "--cost-price is required when using --activate."
+                    "Pass both --supplier and --cost-price together, or omit both."
                 )
-            try:
-                retail_price = Decimal(str(options["retail_price"]))
-                cost_price = Decimal(str(cost_price_raw))
-            except (InvalidOperation, TypeError):
-                retail_price = Decimal("0")
-                cost_price = Decimal("0")
-            if retail_price <= 0:
-                raise CommandError(
-                    "--retail-price must be greater than 0 when using --activate."
-                )
-            if cost_price <= 0:
-                raise CommandError(
-                    "--cost-price must be greater than 0 when using --activate."
-                )
-            item_kwargs["supplier"] = supplier
-            item_kwargs["cost_price"] = cost_price_raw
+            if has_supplier:
+                supplier = Supplier.objects.filter(name__iexact=supplier_name).first()
+                if supplier is None:
+                    available = ", ".join(
+                        Supplier.objects.filter(is_active=True)
+                        .order_by("name")
+                        .values_list("name", flat=True)
+                    )
+                    raise CommandError(
+                        f"Supplier '{supplier_name}' not found. Active: {available}"
+                    )
+                item_kwargs["supplier"] = supplier
+                item_kwargs["cost_price"] = cost_price_raw
             try:
                 item = create_and_activate_item(**item_kwargs)
-            except ItemGenesisNotReadyError as exc:
+            except (ItemGenesisNotReadyError, GenesisSupplierCostPairError) as exc:
                 raise CommandError(exc.messages[0]) from exc
         else:
             item = create_item(**item_kwargs)

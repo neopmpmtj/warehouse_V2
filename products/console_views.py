@@ -25,11 +25,14 @@ from .models import FamilyProduct, Item, SubFamily, Supplier, SupplierItemPrice
 from .permissions import catalog_permissions, catalog_required, deny_unless
 from .services import (
     DeactivateReasonRequiredError,
+    DescriptionRequiredError,
     DuplicateFamilyNameError,
     DuplicateInternalCodeError,
     DuplicateSubFamilyNameError,
+    GenesisSupplierCostPairError,
     InvalidInternalCodeError,
     InternalCodeImmutableError,
+    InternalCodeRequiredError,
     ItemGenesisNotReadyError,
     CostPriceGenesisRequiredError,
     DuplicateSupplierItemPriceError,
@@ -427,27 +430,31 @@ def manage_item_list(request):
         payload = _parse_json(request)
         description = str(payload.get("description", "")).strip()
         if not description:
-            raise ValidationError("description is required.")
+            raise DescriptionRequiredError()
+        internal_code = str(payload.get("internal_code", "")).strip()
+        if not internal_code:
+            raise InternalCodeRequiredError()
         family_id = payload.get("family_id")
         if family_id is None:
             raise ValidationError("family_id is required.")
         vat_rate_id = payload.get("vat_rate_id")
         if vat_rate_id is None:
             raise ValidationError("vat_rate_id is required.")
-        supplier_id = payload.get("supplier_id")
-        if supplier_id is None:
-            raise ValidationError("supplier_id is required.")
-        if "cost_price" not in payload:
-            raise ValidationError("cost_price is required.")
+        supplier = None
+        cost_price = None
+        if payload.get("supplier_id") not in (None, ""):
+            supplier = _parse_int_id(payload["supplier_id"], "supplier_id")
+        if "cost_price" in payload and str(payload.get("cost_price", "")).strip() != "":
+            cost_price = _parse_decimal(payload, "cost_price")
         item = create_and_activate_item(
             request.user,
             family=_parse_int_id(family_id, "family_id"),
             description=description,
             unit_of_measure=_parse_unit(payload),
             vat_rate=_parse_int_id(vat_rate_id, "vat_rate_id"),
-            supplier=_parse_int_id(supplier_id, "supplier_id"),
-            cost_price=_parse_decimal(payload, "cost_price"),
-            internal_code=str(payload.get("internal_code", "")),
+            supplier=supplier,
+            cost_price=cost_price,
+            internal_code=internal_code,
             reorder_level=_parse_decimal(payload, "reorder_level")
             if "reorder_level" in payload
             else "0",
@@ -468,8 +475,11 @@ def manage_item_list(request):
             else None,
         )
     except (
+        DescriptionRequiredError,
         DuplicateInternalCodeError,
+        GenesisSupplierCostPairError,
         InvalidInternalCodeError,
+        InternalCodeRequiredError,
         ItemGenesisNotReadyError,
         CostPriceGenesisRequiredError,
         InactiveFamilyError,

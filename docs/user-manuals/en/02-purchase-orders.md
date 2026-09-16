@@ -69,8 +69,8 @@ The order starts as a **Draft**.
 
 1. Open the order (click its row).
 2. Click **Add line** (*Adicionar linha*).
-3. Pick the **Item**, enter a **Quantity**, and (optionally) a **Unit cost**.
-4. Leave **Unit cost blank** to auto-fill it from the supplier's price list.
+3. Pick the **Item** and enter a **Quantity**.
+4. **Automatic price** (*Preço automático*) is **on** by default — the unit cost field is disabled and the line uses the supplier's price list. Uncheck to type a unit cost yourself.
 5. (Optional) set the three discounts (see §5).
 6. **Save**.
 
@@ -162,7 +162,7 @@ Every action is recorded — who did it and when: created, line added/updated/re
 The supplier on this order has no price for that item (see §4). Add the price in the item console first, or pick a different supplier.
 
 **Q2. What does "Primary" mean on a supplier price?**
-It marks the supplier as the *preferred* supplier for that item. **New items:** Genesis requires a supplier and cost price — that first row is saved as **Primary**. If you later mark another supplier price as primary, the previous one is automatically unchecked (one primary per item). On a purchase order, the cost comes from **this order's supplier's** price — never another supplier's.
+It marks the supplier as the *preferred* supplier for that item. **New items:** if you fill **supplier** and **cost price > 0** together at Genesis, that first row is saved as **Primary** (optional). If you later mark another supplier price as primary, the previous one is automatically unchecked (one primary per item). On a purchase order, the cost comes from **this order's supplier's** price — never another supplier's.
 
 **Q3. Why can't I edit a line?**
 Lines are editable only while the order is a **Draft**. After **Submit** they're locked.

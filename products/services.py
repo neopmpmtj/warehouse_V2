@@ -69,6 +69,22 @@ class InternalCodeImmutableError(ValidationError):
         )
 
 
+class InternalCodeRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Internal code is required for new items.",
+            code="internal_code_required",
+        )
+
+
+class GenesisSupplierCostPairError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Supplier and cost price must both be provided together, or both left empty.",
+            code="genesis_supplier_cost_pair",
+        )
+
+
 class ItemGenesisNotReadyError(ValidationError):
     def __init__(self, missing):
         labels = ", ".join(missing)
@@ -324,16 +340,6 @@ def validate_item_genesis_ready(
         missing.append("family")
     elif not family.is_active:
         missing.append("active family")
-    try:
-        retail_price = (
-            item.retail_price
-            if isinstance(item.retail_price, Decimal)
-            else Decimal(str(item.retail_price or 0))
-        )
-    except (InvalidOperation, TypeError):
-        retail_price = Decimal("0")
-    if retail_price <= 0:
-        missing.append("retail price greater than 0")
     if supplier is not _GENESIS_UNSET:
         if supplier is None:
             missing.append("supplier")
@@ -530,6 +536,12 @@ def create_item(
     return item
 
 
+def _genesis_supplier_cost_pair_requested(supplier, cost_price):
+    has_supplier = supplier is not None
+    has_cost = cost_price is not None and str(cost_price).strip() != ""
+    return has_supplier, has_cost
+
+
 @transaction.atomic
 def create_and_activate_item(
     user,
@@ -537,8 +549,8 @@ def create_and_activate_item(
     description,
     unit_of_measure,
     vat_rate,
-    supplier,
-    cost_price,
+    supplier=None,
+    cost_price=None,
     internal_code="",
     reorder_level="0",
     retail_price="0",
@@ -547,9 +559,9 @@ def create_and_activate_item(
     reason="",
     sub_family=None,
 ):
-    supplier = _resolve_supplier(supplier)
-    _ensure_supplier_active(supplier)
-    cost_price = _validate_genesis_cost_price(cost_price)
+    has_supplier, has_cost = _genesis_supplier_cost_pair_requested(supplier, cost_price)
+    if has_supplier != has_cost:
+        raise GenesisSupplierCostPairError()
 
     item = create_item(
         user,
@@ -565,15 +577,23 @@ def create_and_activate_item(
         reason=reason,
         sub_family=sub_family,
     )
-    validate_item_genesis_ready(item, supplier=supplier, cost_price=cost_price)
-    reactivate_item(user, item, reason="Genesis")
-    create_supplier_item_price(
-        supplier,
-        item,
-        cost_price,
-        primary=True,
-        user=user,
-    )
+    activation_reason = (reason or "").strip() or "Genesis"
+    if has_supplier and has_cost:
+        supplier = _resolve_supplier(supplier)
+        _ensure_supplier_active(supplier)
+        cost_price = _validate_genesis_cost_price(cost_price)
+        validate_item_genesis_ready(item, supplier=supplier, cost_price=cost_price)
+        reactivate_item(user, item, reason=activation_reason)
+        create_supplier_item_price(
+            supplier,
+            item,
+            cost_price,
+            primary=True,
+            user=user,
+        )
+    else:
+        validate_item_genesis_ready(item)
+        reactivate_item(user, item, reason=activation_reason)
     item.refresh_from_db()
     return item
 

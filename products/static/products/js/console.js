@@ -5,6 +5,7 @@ const SUPPLIER_API = "/api/manage/suppliers/";
 const SUPPLIER_PRICE_API = "/api/manage/supplier-prices/";
 const THEME_KEY = "cc-theme";
 const LANG_KEY = "cc-lang";
+const INTERNAL_CODE_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 function safeGetStorage(key, fallback) {
     try {
@@ -799,6 +800,10 @@ function refreshDrawerLabels() {
         itemSupplierPrices.hidden = isNew;
     }
     setItemFormEditable(canSave, isNew, item);
+    const internalCodeField = document.getElementById("field-internal-code");
+    if (internalCodeField) {
+        internalCodeField.title = t("invalid_internal_code");
+    }
     const lifeButton = document.getElementById("drawer-lifecycle");
     if (isNew || !perms.changeItem) {
         lifeButton.hidden = true;
@@ -1684,6 +1689,58 @@ async function createFamilyFromItemForm() {
     fillSubFamilyField({ reset: true });
 }
 
+function clearFieldValidity(...ids) {
+    ids.forEach((id) => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.setCustomValidity("");
+        }
+    });
+}
+
+function showFieldValidity(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    if (!field) {
+        return false;
+    }
+    field.setCustomValidity(message);
+    field.reportValidity();
+    field.focus();
+    return false;
+}
+
+function validateNewItemBeforeGenesis() {
+    clearFieldValidity("field-internal-code", "field-description", "field-supplier", "field-cost-price");
+    const codeField = document.getElementById("field-internal-code");
+    const descriptionField = document.getElementById("field-description");
+    const internalCode = codeField.value.trim();
+    const description = descriptionField.value.trim();
+    codeField.value = internalCode;
+    descriptionField.value = description;
+    if (!internalCode) {
+        showBanner(t("internal_code_required"), true);
+        return showFieldValidity("field-internal-code", t("internal_code_required"));
+    }
+    if (!INTERNAL_CODE_PATTERN.test(internalCode)) {
+        showBanner(t("invalid_internal_code"), true);
+        return showFieldValidity("field-internal-code", t("invalid_internal_code"));
+    }
+    if (!description) {
+        showBanner(t("description_required"), true);
+        return showFieldValidity("field-description", t("description_required"));
+    }
+    const supplierId = document.getElementById("field-supplier").value;
+    const costRaw = document.getElementById("field-cost-price").value.trim();
+    const hasSupplier = Boolean(supplierId);
+    const hasCost = costRaw !== "" && Number.parseFloat(costRaw) > 0;
+    if (hasSupplier !== hasCost) {
+        showBanner(t("genesis_supplier_cost_pair"), true);
+        const targetId = hasSupplier ? "field-cost-price" : "field-supplier";
+        return showFieldValidity(targetId, t("genesis_supplier_cost_pair"));
+    }
+    return true;
+}
+
 function formPayload(isPatch) {
     const payload = {
         family_id: Number(document.getElementById("field-family").value),
@@ -1691,7 +1748,7 @@ function formPayload(isPatch) {
             const value = document.getElementById("field-sub-family").value;
             return value ? Number(value) : null;
         })(),
-        description: document.getElementById("field-description").value,
+        description: document.getElementById("field-description").value.trim(),
         unit_of_measure: document.getElementById("field-unit").value,
         reorder_level: document.getElementById("field-reorder").value,
         vat_rate_id: Number(document.getElementById("field-vat-rate").value),
@@ -1701,9 +1758,13 @@ function formPayload(isPatch) {
         reason: document.getElementById("field-reason").value,
     };
     if (!isPatch) {
-        payload.internal_code = document.getElementById("field-internal-code").value;
-        payload.supplier_id = Number(document.getElementById("field-supplier").value);
-        payload.cost_price = document.getElementById("field-cost-price").value;
+        payload.internal_code = document.getElementById("field-internal-code").value.trim();
+        const supplierId = document.getElementById("field-supplier").value;
+        const costPrice = document.getElementById("field-cost-price").value.trim();
+        if (supplierId && costPrice) {
+            payload.supplier_id = Number(supplierId);
+            payload.cost_price = costPrice;
+        }
     } else {
         const itemId = document.getElementById("field-id").value;
         const item = state.items.find((entry) => String(entry.id) === itemId);
@@ -2188,10 +2249,7 @@ async function openDrawer(item, selectFamilyId) {
         if (state.vat_rates.length) {
             document.getElementById("field-vat-rate").value = String(state.vat_rates[0].id);
         }
-        const activeSupplier = (state.suppliers || []).find((supplier) => supplier.is_active);
-        if (activeSupplier) {
-            document.getElementById("field-supplier").value = String(activeSupplier.id);
-        }
+        document.getElementById("field-supplier").value = "";
         fillSubFamilyField({ reset: true });
         refreshDrawerLabels();
         return;
@@ -2241,10 +2299,10 @@ async function saveItem(event) {
     const saveButton = document.getElementById("item-save");
     saveButton.disabled = true;
     state.busy = true;
-    const payload = formPayload(Boolean(itemId));
     try {
         let data;
         if (itemId) {
+            const payload = formPayload(true);
             data = await api(`${API_ROOT}${itemId}/`, {
                 method: "PATCH",
                 body: JSON.stringify(payload),
@@ -2253,34 +2311,15 @@ async function saveItem(event) {
             showBanner(t("saved"));
             await loadHistory(data.item.id);
         } else {
-            const internalCode = document.getElementById("field-internal-code").value.trim();
-            if (!internalCode) {
-                showBanner(t("internal_code_required"), true);
-                return;
-            }
-            const retailPrice = Number.parseFloat(
-                document.getElementById("field-retail-price").value || "0",
-            );
-            if (!(retailPrice > 0)) {
-                showBanner(t("retail_price_genesis_required"), true);
-                return;
-            }
-            const supplierId = document.getElementById("field-supplier").value;
-            if (!supplierId) {
-                showBanner(t("supplier_genesis_required"), true);
-                return;
-            }
-            const costPrice = Number.parseFloat(
-                document.getElementById("field-cost-price").value || "0",
-            );
-            if (!(costPrice > 0)) {
-                showBanner(t("cost_price_genesis_required"), true);
+            if (!validateNewItemBeforeGenesis()) {
                 return;
             }
             const reason = await askLifecycleReason("genesis");
             if (reason === null) {
                 return;
             }
+            const payload = formPayload(false);
+            payload.reason = reason;
             data = await api(API_ROOT, {
                 method: "POST",
                 body: JSON.stringify(payload),

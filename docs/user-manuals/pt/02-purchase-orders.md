@@ -69,8 +69,8 @@ A encomenda começa como **Rascunho**.
 
 1. Abra a encomenda (clique na linha).
 2. Clique em **Adicionar linha**.
-3. Escolha o **Artigo**, introduza uma **Quantidade** e (opcionalmente) um **Custo unitário**.
-4. Deixe **Custo unitário em branco** para preencher automaticamente da lista de preços do fornecedor.
+3. Escolha o **Artigo** e introduza uma **Quantidade**.
+4. **Preço automático** está **ligado** por defeito — o campo de custo unitário fica desativado e a linha usa a lista de preços do fornecedor. Desmarque para introduzir um custo unitário manualmente.
 5. (Opcional) defina os três descontos (ver §5).
 6. **Guardar**.
 
@@ -162,7 +162,7 @@ Cada ação é registada — quem fez e quando: criação, linha adicionada/atua
 O fornecedor desta encomenda não tem preço para esse artigo (ver §4). Adicione o preço na Gestão de artigos primeiro, ou escolha outro fornecedor.
 
 **P2. O que significa "Principal" num preço de fornecedor?**
-Marca o fornecedor como o fornecedor *preferido* para esse artigo. **Artigos novos:** a Génese exige fornecedor e preço de custo — essa primeira linha fica **Principal**. Se mais tarde marcar outro preço de fornecedor como principal, o anterior é automaticamente desmarcado (só um principal por artigo). Na encomenda de compra, o custo vem do preço do fornecedor **desta encomenda** — nunca de outro fornecedor.
+Marca o fornecedor como o fornecedor *preferido* para esse artigo. **Artigos novos:** se preencher **fornecedor** e **preço de custo > 0** em conjunto na Génese, essa primeira linha fica **Principal** (opcional). Se mais tarde marcar outro preço de fornecedor como principal, o anterior é automaticamente desmarcado (só um principal por artigo). Na encomenda de compra, o custo vem do preço do fornecedor **desta encomenda** — nunca de outro fornecedor.
 
 **P3. Porque não posso editar uma linha?**
 As linhas só são editáveis enquanto a encomenda é **Rascunho**. Depois de **Submeter** ficam bloqueadas.
