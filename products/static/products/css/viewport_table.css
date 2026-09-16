@@ -1,0 +1,49 @@
+/* Keep the main table's horizontal scrollbar at the page footer so staff
+   can pan columns without first scrolling to the last row. Loaded only on
+   the manager catalog and item console. */
+
+html,
+body {
+    height: 100%;
+}
+
+body.viewport-fill-table {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.viewport-fill-table .topbar {
+    flex-shrink: 0;
+}
+
+body.viewport-fill-table .page {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0.75rem;
+    overflow: auto;
+}
+
+body.viewport-fill-table .toolbar,
+body.viewport-fill-table .result-count,
+body.viewport-fill-table .pagination,
+body.viewport-fill-table #catalog-empty {
+    flex-shrink: 0;
+}
+
+body.viewport-fill-table .page > .table-wrap {
+    flex: 1 1 auto;
+    min-height: 12rem;
+}
+
+body.viewport-fill-table .page > .table-wrap .grid {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+body.viewport-fill-table .page > .table-wrap .grid th {
+    z-index: 1;
+    box-shadow: 0 1px 0 var(--border);
+}

@@ -104,6 +104,8 @@ Os filtros combinam-se. Pesquisa, família, sub-família e **Só abaixo do ponto
 
 As linhas no ou abaixo do ponto de encomenda ficam realçadas com um tom de aviso **e** uma pílula de Estado (salvo se o artigo estiver inativo). Artigos desativados e artigos sob família inativa usam texto de linha discreto. O tom segue o tema: âmbar claro no claro, âmbar escuro no escuro, para o texto da linha se manter legível.
 
+Quando a tabela é mais larga do que a janela, a **barra de deslocamento horizontal fica no fundo da página** (não a seguir à última linha). Desloque dentro da tabela para subir e descer; os cabeçalhos das colunas mantêm-se visíveis no topo da tabela.
+
 ---
 
 ## 4. Stock e «abaixo do ponto de encomenda»
@@ -210,6 +212,9 @@ Não — os códigos são únicos (sem distinção de maiúsculas/minúsculas) e
 
 **P10. Porque estão algumas linhas com tom âmbar?**
 Esses artigos estão **Abaixo do ponto de encomenda**. Estado **OK** mantém o fundo normal da tabela. O tom segue o tema (âmbar claro no claro, âmbar escuro no escuro) para o texto se manter legível.
+
+**P11. Não consigo ver as colunas à direita sem ir primeiro até ao último artigo.**
+Use a barra horizontal no **fundo da janela**. A tabela preenche a página, por isso essa barra fica lá tanto na primeira linha como na última. O deslocamento vertical acontece dentro da tabela; a página em si não desce.
 
 ---
 

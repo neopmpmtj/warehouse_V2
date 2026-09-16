@@ -21,8 +21,10 @@
         })();
     </script>
     <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=23">
+    <link rel="stylesheet" href="{% static 'products/css/viewport_table.css' %}?v=3">
 </head>
 <body
+    class="viewport-fill-table"
     data-can-add-item="{% if catalog_flags.add_item %}true{% else %}false{% endif %}"
     data-can-change-item="{% if catalog_flags.change_item %}true{% else %}false{% endif %}"
     data-can-add-family="{% if catalog_flags.add_family %}true{% else %}false{% endif %}"

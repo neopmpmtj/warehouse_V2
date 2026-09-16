@@ -201,10 +201,10 @@ Open **`/manage/internal-requests/`**. This queue shows **approved** and **fulfi
 
 ### 7.1 Issue goods
 
-1. Select a request.
+1. Select a request from the queue on the left. **Issue** without a selected request shows *Enter at least one approved internal request.*
 2. For each line you are shipping now, type the **issue quantity**.
 3. (Optional) **Reference** (your *guia* / dispatch number) and **Notes**.
-4. Click **Issue** (*Emitir*).
+4. Click **Issue** (*Emitir*). *Enter at least one issue quantity.* appears only when a request is selected but every issue quantity is empty.
 
 After a successful issue, the page refreshes the queue. If the request is fully shipped (or otherwise no longer in the queue), the detail panel clears so you only see queued items. Partial issues keep the request selected with updated quantities.
 

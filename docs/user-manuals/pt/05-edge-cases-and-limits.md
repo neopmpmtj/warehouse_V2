@@ -121,6 +121,8 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Issued quantity X exceeds remaining Y for request line N.` (Quantidade emitida X excede o restante Y da linha N.) | Sobre-emissão face à requisição | Reduza |
 | `Cannot issue X of 'Y': Z reserved for this request.` (Não é possível emitir X de 'Y': Z reservados para esta requisição.) | Sobre-emissão face à reserva desta requisição | Emita só a quantidade reservada, ou aguarde alocação de stock entrante |
 | `Insufficient stock for 'X': N requested, M on hand.` (Stock insuficiente para 'X': N pedidos, M em armazém.) | Sobre-emissão face ao stock em armazém (rede de segurança) | O armazém tem de comprar primeiro |
+| `Enter at least one approved internal request.` (Indique pelo menos um pedido interno aprovado.) | **Emitir** ou **Encerramento parcial** sem requisição selecionada na fila | Clique primeiro numa linha à esquerda |
+| `Enter at least one issue quantity.` (Indique pelo menos uma quantidade a emitir.) | Uma requisição está selecionada mas todas as quantidades a emitir estão vazias | Indique uma quantidade em pelo menos uma linha |
 | `No lines to issue.` (Sem linhas para emitir.) | Emissão vazia | Adicione uma linha |
 | `A reason is required to short-close a request.` (É obrigatório indicar um motivo para encerrar parcialmente uma requisição.) | Encerramento parcial no armazém exige motivo | Escreva um |
 

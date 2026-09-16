@@ -100,6 +100,7 @@ The console is one screen, split into three areas.
 - **Actions** is **Edit** (or **View** if you cannot change items). Deactivate / Reactivate is not on the row — open the item drawer, or use **Bulk action** for several items.
 - A checkbox column (if your role can edit) for bulk actions
 - Click any row to open it
+- When the table is wider than the window, the **horizontal scrollbar stays at the bottom of the page** (just above Prev / Next). Scroll inside the table to move up and down; column headers stay visible at the top of the table.
 
 **Close a panel:** press **Escape** to dismiss the front-most overlay — the **Master data** menu, the Settings gear, a dialog (**Cancel**), or a drawer (**Close**). If a dialog is open on top of a drawer, the first Escape closes the dialog; a second Escape closes the drawer.
 
@@ -345,6 +346,9 @@ No — after the item is saved, the code is locked. Plan the code before Genesis
 
 **Q12. On hand and Available differ — which one is the shelf?**
 **On hand** is physical warehouse stock (the ledger). **Available** is what is still free to promise after approved requisições have held their share. You cannot type either number here — change stock with a [goods receipt](03-goods-receipts.md) or (admin) Adjust stock. See [Branches & Requisição interna](04-internal-requests.md) §7.
+
+**Q13. I cannot see columns on the right without scrolling to the last item first.**
+Use the horizontal bar at the **bottom of the window**, just above **Prev** / **Next**. The table fills the page, so that bar stays there for the first row as well as the last. Vertical scrolling happens inside the table; the page itself does not scroll.
 
 ---
 

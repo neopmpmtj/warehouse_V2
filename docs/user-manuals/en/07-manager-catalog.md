@@ -104,6 +104,8 @@ Filters combine. Search, family, sub-family, and **Below reorder only** run in t
 
 Rows at or below reorder are highlighted with a warning tint **and** a Status pill (unless the item is inactive). Deactivated items and items under an inactive family use muted row text. The tint follows the theme: pale amber on light, dark amber on dark, so the row text stays readable.
 
+When the table is wider than the window, the **horizontal scrollbar stays at the bottom of the page** (not after the last row). Scroll inside the table to move up and down; column headers stay visible at the top of the table.
+
 ---
 
 ## 4. Stock and “below reorder”
@@ -203,6 +205,9 @@ No — codes are unique (case-insensitive) and stored **uppercase**. That rule i
 
 **Q10. Why are some rows tinted amber?**
 Those items are **Below reorder**. Status **OK** keeps the normal table background. The tint follows the theme (pale amber in light, dark amber in dark) so the text stays readable.
+
+**Q11. I cannot see columns on the right without scrolling to the last item first.**
+Use the horizontal bar at the **bottom of the window**. The table fills the page, so that bar stays there for the first row as well as the last. Vertical scrolling happens inside the table; the page itself does not scroll.
 
 ---
 

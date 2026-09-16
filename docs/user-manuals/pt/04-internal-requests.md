@@ -201,10 +201,10 @@ Abra **`/manage/internal-requests/`**. Esta fila mostra requisições **approved
 
 ### 7.1 Emitir mercadoria
 
-1. Selecione uma requisição.
+1. Selecione uma requisição na fila à esquerda. **Emitir** sem uma requisição selecionada mostra *Indique pelo menos um pedido interno aprovado.*
 2. Para cada linha que está a expedir agora, indique a **quantidade a emitir**.
 3. (Opcional) **Reference** (Referência — o número da sua *guia* / expedição) e **Notes** (Notas).
-4. Clique em **Emitir**.
+4. Clique em **Emitir**. *Indique pelo menos uma quantidade a emitir.* aparece só quando uma requisição está selecionada mas todas as quantidades a emitir estão vazias.
 
 Depois de uma emissão bem-sucedida, a página atualiza a fila. Se a requisição estiver totalmente expedida (ou deixar de estar na fila por outro motivo), o painel de detalhe limpa-se para só ver itens em fila. Emissões parciais mantêm a requisição selecionada com quantidades atualizadas.
 

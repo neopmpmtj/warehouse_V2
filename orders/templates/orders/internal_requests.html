@@ -100,6 +100,7 @@
                     shortClose: "Short close",
                     cancel: "Cancel",
                     errorGeneric: "Request failed.",
+                    errorNoRequestSelected: "Enter at least one approved internal request.",
                     errorNoIssueQty: "Enter at least one issue quantity.",
                     shortClosePrompt: "Reason for short-close:",
                     statusApproved: "approved",
@@ -143,6 +144,7 @@
                     shortClose: "Encerramento parcial",
                     cancel: "Cancelar",
                     errorGeneric: "O pedido falhou.",
+                    errorNoRequestSelected: "Indique pelo menos um pedido interno aprovado.",
                     errorNoIssueQty: "Indique pelo menos uma quantidade a emitir.",
                     shortClosePrompt: "Motivo do encerramento parcial:",
                     statusApproved: "aprovado",
@@ -328,6 +330,10 @@
 
             function issue() {
                 clearError();
+                if (!state.selectedId) {
+                    showError(t("errorNoRequestSelected"));
+                    return;
+                }
                 var lines = [];
                 lineBody.querySelectorAll("input[data-line-id]").forEach(function (input) {
                     if (input.value) lines.push({ line_id: parseInt(input.dataset.lineId, 10), quantity_issued: input.value });
@@ -342,6 +348,10 @@
 
             function shortClose() {
                 clearError();
+                if (!state.selectedId) {
+                    showError(t("errorNoRequestSelected"));
+                    return;
+                }
                 var reason = prompt(t("shortClosePrompt"));
                 if (reason === null) return;
                 api("/api/manage/internal-requests/" + state.selectedId + "/short-close/", "POST", { reason: reason })

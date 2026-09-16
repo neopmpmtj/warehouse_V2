@@ -121,7 +121,8 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Issued quantity X exceeds remaining Y for request line N.` | Over-issue vs the request | Lower it |
 | `Cannot issue X of 'Y': Z reserved for this request.` | Over-issue vs this request's hold | Issue only the reserved qty, or wait for incoming stock to be allocated |
 | `Insufficient stock for 'X': N requested, M on hand.` | Over-issue vs on-hand (safety net) | The warehouse must procure first |
-| `No lines to issue.` | Empty issue | Add a line |
+| `Enter at least one approved internal request.` | **Issue** or **Short close** with no request selected in the queue | Click a row on the left first |
+| `Enter at least one issue quantity.` | A request is selected but every issue quantity is empty | Type a quantity on at least one line |
 | `A reason is required to short-close a request.` | Warehouse short-close needs a reason | Type one |
 
 **Branch receipt & branch stock (`/branch/receipts/`)**

@@ -100,6 +100,7 @@ A consola é uma única página, dividida em três áreas.
 - **Ações** é **Editar** (ou **Ver** se não pode alterar artigos). Desativar / Reativar não está na linha — abra o painel do artigo ou use **Ação em lote** para vários artigos.
 - Uma coluna de caixas de seleção (se o seu papel pode editar) para ações em lote
 - Clique em qualquer linha para abrir
+- Quando a tabela é mais larga do que a janela, a **barra de deslocamento horizontal fica no fundo da página** (logo acima de Anterior / Seguinte). Desloque dentro da tabela para subir e descer; os cabeçalhos das colunas mantêm-se visíveis no topo da tabela.
 
 **Fechar um painel:** pressione **Escape** para fechar a sobreposição mais à frente — o menu **Dados mestres**, o ícone Definições, um diálogo (**Cancelar**) ou um painel lateral (**Fechar**). Se um diálogo está aberto sobre um painel lateral, o primeiro Escape fecha o diálogo; um segundo Escape fecha o painel lateral.
 
@@ -345,6 +346,9 @@ Não — depois de o artigo ser guardado, o código fica bloqueado. Planeie o c�
 
 **P12. Em armazém e Disponível diferem — qual é o stock na prateleira?**
 **Em armazém** é o stock físico de armazém (o livro-razão). **Disponível** é o que ainda está livre para prometer depois de requisições aprovadas ter reservado a sua parte. Não pode digitar qualquer dos números aqui — altere o stock com uma [receção de mercadorias](03-goods-receipts.md) ou (administrador) Ajustar stock. Consulte [Filiais e requisição interna](04-internal-requests.md) §7.
+
+**P13. Não consigo ver as colunas à direita sem ir primeiro até ao último artigo.**
+Use a barra horizontal no **fundo da janela**, logo acima de **Anterior** / **Seguinte**. A tabela preenche a página, por isso essa barra fica lá tanto na primeira linha como na última. O deslocamento vertical acontece dentro da tabela; a página em si não desce.
 
 ---
 
