@@ -51,6 +51,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `…reorder level must be zero or greater.` | Reorder level can't be negative | Enter 0 or a positive number |
 | `Pass both --supplier and --cost-price together, or omit both.` | `add_item --activate` with only one of `--supplier` / `--cost-price` | Pass both flags together or omit both |
 | `Cost price must be greater than zero for Genesis.` | Console Genesis or `create_and_activate_item` with a supplier but cost price ≤ 0 | Enter a cost price greater than zero |
+| `Cannot use inactive supplier 'X'.` | Supplier-price create (`Suppliers` → **Supplier prices**) used a deactivated supplier | Reactivate the supplier, or pick an active one. Inactive **items** can still receive a new cost; POs and requisição still reject inactive items |
 
 **Family names are immutable** — the console has no "rename". If a name is wrong, deactivate it and create a new family (items keep the old family; you can't add new items to an inactive family).
 

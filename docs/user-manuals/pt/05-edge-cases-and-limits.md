@@ -51,6 +51,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `…reorder level must be zero or greater.` (…o nível de reposição tem de ser zero ou superior.) | O nível de reposição não pode ser negativo | Indique 0 ou um número positivo |
 | `Pass both --supplier and --cost-price together, or omit both.` (Passe `--supplier` e `--cost-price` em conjunto, ou omita ambos.) | `add_item --activate` com só um de `--supplier` / `--cost-price` | Passe as duas flags em conjunto ou omita ambas |
 | `Cost price must be greater than zero for Genesis.` | Génese na consola ou `create_and_activate_item` com fornecedor mas preço de custo ≤ 0 | Introduza preço de custo superior a zero |
+| `Cannot use inactive supplier 'X'.` (Não é possível usar fornecedor inativo 'X'.) | Criação de preço de fornecedor (`Fornecedores` → **Preços de fornecedor**) usou um fornecedor desativado | Reative o fornecedor, ou escolha um ativo. Artigos **inativos** podem receber um custo novo; encomendas de compra e requisições continuam a recusar artigos inativos |
 
 **Os nomes de família são imutáveis** — a consola não tem "renomear". Se o nome estiver errado, desative e crie uma família nova (os artigos mantêm a família antiga; não pode acrescentar artigos novos a uma família inativa).
 

@@ -10,8 +10,6 @@ const NUMERIC_SORT_KEYS = new Set([
     "reorder_level",
     "buying_price",
     "retail_price",
-    "wholesale_price",
-    "special_price",
 ]);
 
 function safeGetStorage(key, fallback) {
@@ -214,13 +212,6 @@ function subFamilyLabel(subFamily, familyId) {
     return `${familyName} / ${name}`;
 }
 
-function statusLabel(item) {
-    if (!item.is_active) {
-        return t("statusInactive");
-    }
-    return item.below_reorder ? t("statusBelowReorder") : t("statusOk");
-}
-
 function filteredItems() {
     let rows = state.items;
     if (state.familyId) {
@@ -285,14 +276,8 @@ function sortValue(item, key) {
             return numericSortValue(item.buying_price);
         case "retail_price":
             return numericSortValue(item.retail_price);
-        case "wholesale_price":
-            return numericSortValue(item.wholesale_price);
-        case "special_price":
-            return numericSortValue(item.special_price);
         case "suppliers":
             return renderSuppliers(item);
-        case "status":
-            return statusLabel(item);
         default:
             return item.id;
     }
@@ -398,24 +383,7 @@ function renderCatalog() {
         row.appendChild(textTd(formatQty(item.reorder_level)));
         row.appendChild(textTd(formatCost(item.buying_price)));
         row.appendChild(textTd(formatCost(item.retail_price)));
-        row.appendChild(textTd(formatCost(item.wholesale_price)));
-        row.appendChild(textTd(formatCost(item.special_price)));
         row.appendChild(textTd(renderSuppliers(item)));
-
-        const status = document.createElement("td");
-        const pill = document.createElement("span");
-        if (!item.is_active) {
-            pill.className = "pill pill-muted";
-            pill.textContent = t("statusInactive");
-        } else if (item.below_reorder) {
-            pill.className = "pill pill-warn";
-            pill.textContent = t("statusBelowReorder");
-        } else {
-            pill.className = "pill pill-ok";
-            pill.textContent = t("statusOk");
-        }
-        status.appendChild(pill);
-        row.appendChild(status);
 
         body.appendChild(row);
     });

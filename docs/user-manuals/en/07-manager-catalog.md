@@ -4,7 +4,7 @@
 
 > **Also available:** [Item Console](01-items.md) at `/manage/items/` · [Purchase orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Edge cases & limits](05-edge-cases-and-limits.md) · [Admin & Superuser Reference](06-admin-reference.md).
 
-This is the warehouse **read-only** overview: stock, reorder level, selling prices, buying price, and suppliers on one page. You do **not** edit items here — that is the [Item Console](01-items.md).
+This is the warehouse **read-only** overview: stock, reorder level, retail selling price, buying price, and suppliers on one page. You do **not** edit items here — that is the [Item Console](01-items.md).
 
 ---
 
@@ -55,7 +55,7 @@ Manager catalog (/manage/catalog/)  →  read the joined picture
 | Show **active** items in **active** families by default | Let you edit items, prices, or stock |
 | Show deactivated items and items under inactive families when **Include inactive** is ticked | Open a drawer or history |
 | Show the **cached** on-hand quantity | Raise a purchase order (use [purchase orders](02-purchase-orders.md)) |
-| Show buying + three selling prices | |
+| Show buying + retail selling price | |
 | Flag items at or below reorder | |
 | List suppliers that have a price for the item (primary listed first, marked ★) | |
 | Sort any column by clicking its header | |
@@ -98,11 +98,10 @@ Filters combine. Search, family, sub-family, and **Below reorder only** run in t
 | **Available** | On hand minus reserved — what is still free to ship today |
 | **Reorder** | Reorder level set on the item |
 | **Buying** | Cost we pay — see §5 |
-| **Retail / Wholesale / Special** | The three **manual** selling prices |
+| **Retail** | The **manual** retail selling price (wholesale and special stay on the item console) |
 | **Suppliers** | Active suppliers that have a price for this item; the **primary** is listed **first** and marked ★ |
-| **Status** | **Inactive** (muted pill) for deactivated items; otherwise **Below reorder** (warning pill) or **OK** |
 
-Rows at or below reorder are highlighted with a warning tint **and** a Status pill (unless the item is inactive). Deactivated items and items under an inactive family use muted row text. The tint follows the theme: pale amber on light, dark amber on dark, so the row text stays readable.
+Rows at or below reorder are highlighted with a warning tint. Deactivated items and items under an inactive family use muted row text. The tint follows the theme: pale amber on light, dark amber on dark, so the row text stays readable.
 
 When the table is wider than the window, the **horizontal scrollbar stays at the bottom of the page** (not after the last row). Scroll inside the table to move up and down; column headers stay visible at the top of the table.
 
@@ -117,7 +116,7 @@ When the table is wider than the window, the **horizontal scrollbar stays at the
 - the item’s **reorder level is greater than zero**, **and**
 - **available ≤ reorder level**.
 
-A reorder level of **0** means “no reorder trigger” — the status stays **OK** even if available is 0.
+A reorder level of **0** means “no reorder trigger” — the row stays untinted even if available is 0.
 
 Use **Below reorder only** when you want a shortlist of items that need procuring.
 
@@ -125,7 +124,7 @@ Use **Below reorder only** when you want a shortlist of items that need procurin
 
 ## 5. Buying price and suppliers
 
-Selling prices (retail / wholesale / special) are **manual** — they come from the item. Buying price is **dynamic** — it comes from the supplier price list.
+Selling prices (retail / wholesale / special) are **manual** — they come from the item. This page shows **Retail** only; wholesale and special are on the item console. Buying price is **dynamic** — it comes from the supplier price list.
 
 The **Buying** column is one number per item:
 
@@ -191,8 +190,8 @@ Deliberate. Warehouse staff see on-hand, reserved, and available here. Branch st
 **Q5. I deactivated an item and it vanished from this list — is it deleted?**
 No. Deactivated items (and items whose family is inactive) are excluded from the default view. Tick **Include inactive** to see them again, or reactivate in the item console.
 
-**Q6. On hand is 0 but Status says OK — is that a bug?**
-Not if **Reorder** is 0. A zero reorder level means “do not flag”. Set a reorder level greater than 0 on the item if you want the warning. Status uses **available**, so 10 on hand with 10 reserved also flags as below reorder when reorder > 0.
+**Q6. On hand is 0 and the row is not amber — is that a bug?**
+Not if **Reorder** is 0. A zero reorder level means “do not flag”. Set a reorder level greater than 0 on the item if you want the warning. The tint uses **available**, so 10 on hand with 10 reserved also flags as below reorder when reorder > 0.
 
 **Q7. On hand is 10 but Available is 0 — where did the stock go?**
 It is **reserved** for approved requisições. The warehouse queue at `/manage/internal-requests/` shows who holds it.
@@ -204,7 +203,7 @@ Yes. Every warehouse group that can open this page sees buying price. Cost is hi
 No — codes are unique (case-insensitive) and stored **uppercase**. That rule is enforced in the item console, not here. See [Item Console](01-items.md) FAQ.
 
 **Q10. Why are some rows tinted amber?**
-Those items are **Below reorder**. Status **OK** keeps the normal table background. The tint follows the theme (pale amber in light, dark amber in dark) so the text stays readable.
+Those items are **Below reorder**. Other rows keep the normal table background. The tint follows the theme (pale amber in light, dark amber in dark) so the text stays readable.
 
 **Q11. I cannot see columns on the right without scrolling to the last item first.**
 Use the horizontal bar at the **bottom of the window**. The table fills the page, so that bar stays there for the first row as well as the last. Vertical scrolling happens inside the table; the page itself does not scroll.

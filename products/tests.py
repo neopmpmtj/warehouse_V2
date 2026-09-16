@@ -47,7 +47,6 @@ from products.services import (
     DuplicateSupplierNameError,
     FamilyNameRequiredError,
     InactiveFamilyError,
-    InactiveItemError,
     InactiveSubFamilyError,
     InactiveSupplierError,
     InvalidCostPriceError,
@@ -3126,11 +3125,15 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
         with self.assertRaises(InactiveSupplierError):
             create_supplier_item_price(self.supplier, self.item, "12.50")
 
-    def test_create_supplier_item_price_rejects_inactive_item(self):
+    def test_create_supplier_item_price_allows_inactive_item(self):
         deactivate_item(self.user, self.item, reason="discontinued")
 
-        with self.assertRaises(InactiveItemError):
-            create_supplier_item_price(self.supplier, self.item, "12.50")
+        sip = create_supplier_item_price(self.supplier, self.item, "12.50")
+
+        self.assertEqual(sip.item_id, self.item.id)
+        self.assertEqual(sip.cost_price, Decimal("12.50"))
+        self.item.refresh_from_db()
+        self.assertFalse(self.item.is_active)
 
     def test_update_supplier_item_price_writes_audit_and_diff(self):
         sip = create_supplier_item_price(self.supplier, self.item, "12.50")
@@ -3385,6 +3388,40 @@ class SupplierItemPriceConsoleTests(ItemTestCaseMixin, TestCase):
         )
         self.assertEqual(negative.status_code, 400)
         self.assertEqual(negative.json()["code"], "invalid_cost_price")
+
+    def test_console_allows_supplier_price_for_inactive_item(self):
+        self.client.force_login(self.staff_user)
+        deactivate_item(self.staff_user, self.item, reason="discontinued")
+
+        response = self.client.post(
+            reverse("manage_supplier_item_price_list"),
+            data=json.dumps({
+                "supplier_id": self.supplier.id,
+                "item_id": self.item.id,
+                "cost_price": "12.50",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        sip = response.json()["supplier_item_price"]
+        self.assertEqual(sip["item_id"], self.item.id)
+        self.assertEqual(sip["cost_price"], "12.50")
+
+    def test_console_rejects_supplier_price_for_inactive_supplier(self):
+        self.client.force_login(self.staff_user)
+        update_supplier(self.supplier, user=self.staff_user, is_active=False)
+
+        response = self.client.post(
+            reverse("manage_supplier_item_price_list"),
+            data=json.dumps({
+                "supplier_id": self.supplier.id,
+                "item_id": self.item.id,
+                "cost_price": "12.50",
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Cannot use inactive supplier", response.json()["error"])
 
     def test_operator_cannot_create_supplier_item_price(self):
         operator = make_warehouse_user("op-sip@example.com", group_name=GROUP_OPERATORS)
@@ -3688,8 +3725,12 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="catalog-include-inactive"')
         self.assertContains(response, "th-sortable")
         self.assertContains(response, 'data-sort="internal_code"')
-        self.assertContains(response, "catalog.js?v=7")
+        self.assertContains(response, "catalog.js?v=9")
         self.assertContains(response, "catalog_i18n.js?v=10")
+        self.assertContains(response, 'data-sort="retail_price"')
+        self.assertNotContains(response, 'data-sort="wholesale_price"')
+        self.assertNotContains(response, 'data-sort="special_price"')
+        self.assertNotContains(response, 'data-sort="status"')
 
 
 class LanguageCodeContractTests(SimpleTestCase):

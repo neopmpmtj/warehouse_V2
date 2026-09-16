@@ -4,7 +4,7 @@
 
 > **Também disponível:** [Gestão de artigos](01-items.md) em `/manage/items/` · [Encomendas de compra](02-purchase-orders.md) · [Receção de mercadorias e stock](03-goods-receipts.md) · [Filiais e Requisição interna](04-internal-requests.md) · [Casos limite e limites](05-edge-cases-and-limits.md) · [Referência de administração e superutilizador](06-admin-reference.md).
 
-Esta é a vista **só de leitura** do armazém: stock, ponto de encomenda, preços de venda, preço de compra e fornecedores numa só página. **Não** edita artigos aqui — isso é na [Gestão de artigos](01-items.md).
+Esta é a vista **só de leitura** do armazém: stock, ponto de encomenda, preço de retalho, preço de compra e fornecedores numa só página. **Não** edita artigos aqui — isso é na [Gestão de artigos](01-items.md).
 
 ---
 
@@ -55,7 +55,7 @@ Catálogo do gestor (/manage/catalog/)  →  ler o quadro conjunto
 | Mostrar artigos **ativos** em famílias **ativas** por defeito | Deixar editar artigos, preços ou stock |
 | Mostrar artigos desativados e artigos cuja família está inativa quando **Incluir inativos** está marcado | Abrir gaveta ou histórico |
 | Mostrar a quantidade **em cache** em armazém | Criar encomenda de compra (use [encomendas de compra](02-purchase-orders.md)) |
-| Mostrar compra + três preços de venda | |
+| Mostrar compra + preço de retalho | |
 | Sinalizar artigos no ou abaixo do ponto de encomenda | |
 | Listar fornecedores com preço para o artigo (principal em primeiro, marcado com ★) | |
 | Ordenar qualquer coluna ao clicar no cabeçalho | |
@@ -98,11 +98,10 @@ Os filtros combinam-se. Pesquisa, família, sub-família e **Só abaixo do ponto
 | **Disponível** | Em armazém menos reservado — o que ainda está livre para expedir hoje |
 | **Encomenda** | Ponto de encomenda definido no artigo |
 | **Compra** | Custo que pagamos — ver §5 |
-| **Retalho / Grossista / Especial** | Os três preços de venda **manuais** |
+| **Retalho** | O preço de venda **manual** de retalho (grossista e especial ficam na gestão de artigos) |
 | **Fornecedores** | Fornecedores ativos com preço para este artigo; o **principal** aparece **em primeiro** e está marcado com ★ |
-| **Estado** | **Inativo** (pílula discreta) para artigos desativados; caso contrário **Abaixo do ponto de encomenda** (pílula de aviso) ou **OK** |
 
-As linhas no ou abaixo do ponto de encomenda ficam realçadas com um tom de aviso **e** uma pílula de Estado (salvo se o artigo estiver inativo). Artigos desativados e artigos sob família inativa usam texto de linha discreto. O tom segue o tema: âmbar claro no claro, âmbar escuro no escuro, para o texto da linha se manter legível.
+As linhas no ou abaixo do ponto de encomenda ficam realçadas com um tom de aviso. Artigos desativados e artigos sob família inativa usam texto de linha discreto. O tom segue o tema: âmbar claro no claro, âmbar escuro no escuro, para o texto da linha se manter legível.
 
 Quando a tabela é mais larga do que a janela, a **barra de deslocamento horizontal fica no fundo da página** (não a seguir à última linha). Desloque dentro da tabela para subir e descer; os cabeçalhos das colunas mantêm-se visíveis no topo da tabela.
 
@@ -117,7 +116,7 @@ Quando a tabela é mais larga do que a janela, a **barra de deslocamento horizon
 - o **ponto de encomenda do artigo é maior que zero**, **e**
 - **disponível ≤ ponto de encomenda**.
 
-Um ponto de encomenda de **0** significa «sem disparador de encomenda» — o estado mantém-se **OK** mesmo que disponível seja 0.
+Um ponto de encomenda de **0** significa «sem disparador de encomenda» — a linha fica sem tom mesmo que disponível seja 0.
 
 Use **Só abaixo do ponto de encomenda** quando quiser uma lista curta de artigos a reabastecer.
 
@@ -125,7 +124,7 @@ Use **Só abaixo do ponto de encomenda** quando quiser uma lista curta de artigo
 
 ## 5. Preço de compra e fornecedores
 
-Os preços de venda (retalho / grossista / especial) são **manuais** — vêm do artigo. O preço de compra é **dinâmico** — vem da lista de preços do fornecedor.
+Os preços de venda (retalho / grossista / especial) são **manuais** — vêm do artigo. Esta página mostra só **Retalho**; grossista e especial ficam na gestão de artigos. O preço de compra é **dinâmico** — vem da lista de preços do fornecedor.
 
 A coluna **Compra** é um número por artigo:
 
@@ -198,8 +197,8 @@ De propósito. O pessoal do armazém vê em armazém, reservado e disponível aq
 **P5. Desativei um artigo e desapareceu desta lista — foi eliminado?**
 Não. Artigos desativados (e artigos cuja família está inativa) ficam de fora da vista por defeito. Marque **Incluir inativos** para os ver de novo, ou reative na gestão de artigos.
 
-**P6. Em armazém é 0 mas o Estado diz OK — é um bug?**
-Não se **Encomenda** for 0. Ponto de encomenda zero significa «não sinalizar». Defina ponto de encomenda maior que 0 no artigo se quiser o aviso. O estado usa **disponível**, por isso 10 em armazém com 10 reservados também sinaliza abaixo do ponto de encomenda quando encomenda > 0.
+**P6. Em armazém é 0 e a linha não está âmbar — é um bug?**
+Não se **Encomenda** for 0. Ponto de encomenda zero significa «não sinalizar». Defina ponto de encomenda maior que 0 no artigo se quiser o aviso. O tom usa **disponível**, por isso 10 em armazém com 10 reservados também sinaliza abaixo do ponto de encomenda quando encomenda > 0.
 
 **P7. Em armazém é 10 mas Disponível é 0 — para onde foi o stock?**
 Está **reservado** para requisições aprovadas. A fila do armazém em `/manage/internal-requests/` mostra quem o retém.
@@ -211,7 +210,7 @@ Sim. Todos os grupos de armazém que podem abrir esta página veem o preço de c
 Não — os códigos são únicos (sem distinção de maiúsculas/minúsculas) e guardados em **maiúsculas**. Essa regra aplica-se na gestão de artigos, não aqui. Ver FAQ da [Gestão de artigos](01-items.md).
 
 **P10. Porque estão algumas linhas com tom âmbar?**
-Esses artigos estão **Abaixo do ponto de encomenda**. Estado **OK** mantém o fundo normal da tabela. O tom segue o tema (âmbar claro no claro, âmbar escuro no escuro) para o texto se manter legível.
+Esses artigos estão **Abaixo do ponto de encomenda**. As outras linhas mantêm o fundo normal da tabela. O tom segue o tema (âmbar claro no claro, âmbar escuro no escuro) para o texto se manter legível.
 
 **P11. Não consigo ver as colunas à direita sem ir primeiro até ao último artigo.**
 Use a barra horizontal no **fundo da janela**. A tabela preenche a página, por isso essa barra fica lá tanto na primeira linha como na última. O deslocamento vertical acontece dentro da tabela; a página em si não desce.

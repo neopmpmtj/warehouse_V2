@@ -1335,7 +1335,6 @@ def create_supplier_item_price(supplier, item, cost_price, primary=False, user=N
     supplier = _resolve_supplier(supplier)
     item = _resolve_item(item)
     _ensure_supplier_active(supplier)
-    _ensure_item_active(item)
     cost_price = _validate_cost_price(cost_price)
     primary = bool(primary)
 

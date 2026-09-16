@@ -260,6 +260,8 @@ Cada par fornecedor × artigo pode ter um **preço de custo** — quanto esse fo
 4. Escolha o **Artigo**, introduza o **Preço de custo** e, opcionalmente, marque **Principal**.
 5. Guarde.
 
+Pode adicionar um custo a um **artigo inativo**. Encomendas de compra e requisições continuam a não poder usar esse artigo até o reativar. Adicionar um preço a um **fornecedor inativo** continua a ser recusado.
+
 ### 9.2 O indicador "Principal" — o que significa
 
 **Principal** marca este fornecedor como o **fornecedor preferido para esse artigo**.

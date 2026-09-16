@@ -260,6 +260,8 @@ Each supplier × item pair can have a **cost price** — how much that supplier 
 4. Pick the **Item**, enter the **Cost price**, and optionally tick **Primary**.
 5. Save.
 
+You can add a cost for an **inactive item**. Purchase orders and requisição still cannot use that item until it is reactivated. Adding a price on an **inactive supplier** is still rejected.
+
 ### 9.2 The "Primary" flag — what it means
 
 **Primary** marks this supplier as the **preferred supplier for that item**.
