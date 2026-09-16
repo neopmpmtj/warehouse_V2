@@ -97,8 +97,8 @@ Filters combine. Search, family, sub-family, and **Below reorder only** run in t
 | **Reserved** | Quantity held for approved / fulfilling requisições |
 | **Available** | On hand minus reserved — what is still free to ship today |
 | **Reorder** | Reorder level set on the item |
-| **Buying** | Cost we pay — see §5 |
-| **Retail** | The **manual** retail selling price (wholesale and special stay on the item console) |
+| **Buying Price** | Cost we pay — see §5 |
+| **Selling Price** | The **manual** retail selling price (wholesale and special stay on the item console) |
 | **Suppliers** | Active suppliers that have a price for this item; the **primary** is listed **first** and marked ★ |
 
 Rows at or below reorder are highlighted with a warning tint. Deactivated items and items under an inactive family use muted row text. The tint follows the theme: pale amber on light, dark amber on dark, so the row text stays readable.
@@ -124,13 +124,13 @@ Use **Below reorder only** when you want a shortlist of items that need procurin
 
 ## 5. Buying price and suppliers
 
-Selling prices (retail / wholesale / special) are **manual** — they come from the item. This page shows **Retail** only; wholesale and special are on the item console. Buying price is **dynamic** — it comes from the supplier price list.
+Selling prices (retail / wholesale / special) are **manual** — they come from the item. This page shows **Selling Price** only; wholesale and special are on the item console. Buying price is **dynamic** — it comes from the supplier price list.
 
-The **Buying** column is one number per item:
+The **Buying Price** column is one number per item:
 
 1. If the item has a **primary** supplier (★) that is still active, that supplier’s cost is shown.
 2. Otherwise the **cheapest** cost among **active** suppliers is shown.
-3. If no active supplier has a price, Buying is **—**.
+3. If no active supplier has a price, Buying Price is **—**.
 
 The **Suppliers** column lists names (comma-separated). The **primary** supplier is always **first**, then the rest alphabetically. Deactivated suppliers are omitted. **—** means no active supplier price yet — add one in the item console before you can raise a purchase order for that supplier.
 
@@ -178,11 +178,11 @@ Same as the other warehouse consoles:
 **Q1. Why can’t I edit a price or the stock number here?**
 This page is an overview. Change selling prices and supplier costs in the [item console](01-items.md). Change stock with a [goods receipt](03-goods-receipts.md) or (admin only) **Adjust stock**.
 
-**Q2. Why is Buying “—” when I know we have a supplier?**
+**Q2. Why is Buying Price “—” when I know we have a supplier?**
 That supplier is **inactive**, or there is no supplier price for this item. Add an active supplier price in the item console (Suppliers → Supplier prices).
 
 **Q3. What does the star (★) on a supplier mean?**
-That supplier is the item’s **primary** (preferred). Its cost is the Buying figure. Only one primary per item.
+That supplier is the item’s **primary** (preferred). Its cost is the Buying Price figure. Only one primary per item.
 
 **Q4. Why does this page show exact stock but the branch catalogue does not?**
 Deliberate. Warehouse staff see on-hand, reserved, and available here. Branch staff see only **In stock / Low / None** on `/branch/catalog/` (from **available**, not raw on-hand) — see [Branches & Requisição interna](04-internal-requests.md) §3.

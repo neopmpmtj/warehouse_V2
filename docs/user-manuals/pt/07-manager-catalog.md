@@ -97,8 +97,8 @@ Os filtros combinam-se. Pesquisa, família, sub-família e **Só abaixo do ponto
 | **Reservado** | Quantidade retida para requisições aprovadas / em cumprimento |
 | **Disponível** | Em armazém menos reservado — o que ainda está livre para expedir hoje |
 | **Encomenda** | Ponto de encomenda definido no artigo |
-| **Compra** | Custo que pagamos — ver §5 |
-| **Retalho** | O preço de venda **manual** de retalho (grossista e especial ficam na gestão de artigos) |
+| **Preço de compra** | Custo que pagamos — ver §5 |
+| **Preço de venda** | O preço de venda **manual** de retalho (grossista e especial ficam na gestão de artigos) |
 | **Fornecedores** | Fornecedores ativos com preço para este artigo; o **principal** aparece **em primeiro** e está marcado com ★ |
 
 As linhas no ou abaixo do ponto de encomenda ficam realçadas com um tom de aviso. Artigos desativados e artigos sob família inativa usam texto de linha discreto. O tom segue o tema: âmbar claro no claro, âmbar escuro no escuro, para o texto da linha se manter legível.
@@ -124,13 +124,13 @@ Use **Só abaixo do ponto de encomenda** quando quiser uma lista curta de artigo
 
 ## 5. Preço de compra e fornecedores
 
-Os preços de venda (retalho / grossista / especial) são **manuais** — vêm do artigo. Esta página mostra só **Retalho**; grossista e especial ficam na gestão de artigos. O preço de compra é **dinâmico** — vem da lista de preços do fornecedor.
+Os preços de venda (retalho / grossista / especial) são **manuais** — vêm do artigo. Esta página mostra só **Preço de venda**; grossista e especial ficam na gestão de artigos. O preço de compra é **dinâmico** — vem da lista de preços do fornecedor.
 
-A coluna **Compra** é um número por artigo:
+A coluna **Preço de compra** é um número por artigo:
 
 1. Se o artigo tiver um fornecedor **principal** (★) ainda ativo, mostra-se o custo desse fornecedor.
 2. Caso contrário mostra-se o custo **mais barato** entre fornecedores **ativos**.
-3. Se nenhum fornecedor ativo tiver preço, Compra é **—**.
+3. Se nenhum fornecedor ativo tiver preço, Preço de compra é **—**.
 
 A coluna **Fornecedores** lista nomes (separados por vírgula). O fornecedor **principal** aparece sempre **em primeiro**, depois os restantes por ordem alfabética. Fornecedores desativados são omitidos. **—** significa que ainda não há preço de fornecedor ativo — adicione um na gestão de artigos antes de poder criar encomenda de compra para esse fornecedor.
 
@@ -185,11 +185,11 @@ Igual às outras consolas do armazém:
 **P1. Porque não consigo editar um preço ou o número de stock aqui?**
 Esta página é uma vista geral. Altere preços de venda e custos de fornecedor na [gestão de artigos](01-items.md). Altere stock com uma [receção de mercadorias](03-goods-receipts.md) ou (só admin) **Ajustar stock**.
 
-**P2. Porque é que Compra é «—» quando sei que temos fornecedor?**
+**P2. Porque é que Preço de compra é «—» quando sei que temos fornecedor?**
 Esse fornecedor está **inativo**, ou não há preço de fornecedor para este artigo. Adicione um preço de fornecedor ativo na gestão de artigos (Fornecedores → Preços de fornecedor).
 
 **P3. O que significa a estrela (★) num fornecedor?**
-Esse fornecedor é o **principal** (preferido) do artigo. O custo dele é o valor de Compra. Só um principal por artigo.
+Esse fornecedor é o **principal** (preferido) do artigo. O custo dele é o valor de Preço de compra. Só um principal por artigo.
 
 **P4. Porque é que esta página mostra stock exato mas o catálogo da filial não?**
 De propósito. O pessoal do armazém vê em armazém, reservado e disponível aqui. O pessoal de filial vê só **Em stock / Baixo / Nenhum** em `/branch/catalog/` (a partir do **disponível**, não do em armazém bruto) — ver [Filiais e Requisição interna](04-internal-requests.md) §3.

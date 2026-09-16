@@ -3726,7 +3726,7 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, "th-sortable")
         self.assertContains(response, 'data-sort="internal_code"')
         self.assertContains(response, "catalog.js?v=9")
-        self.assertContains(response, "catalog_i18n.js?v=10")
+        self.assertContains(response, "catalog_i18n.js?v=11")
         self.assertContains(response, 'data-sort="retail_price"')
         self.assertNotContains(response, 'data-sort="wholesale_price"')
         self.assertNotContains(response, 'data-sort="special_price"')
