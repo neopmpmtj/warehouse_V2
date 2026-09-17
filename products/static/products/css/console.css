@@ -513,6 +513,16 @@ input[type="search"] {
     width: min(40rem, calc(100% - 2rem));
 }
 
+.supplier-prices-dialog .supplier-price-form {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.supplier-prices-dialog .table-wrap {
+    max-height: calc(100vh - 20rem);
+    overflow: auto;
+}
+
 label.checkbox-inline,
 .dialog label.checkbox-inline,
 .supplier-price-form label.checkbox-inline {
