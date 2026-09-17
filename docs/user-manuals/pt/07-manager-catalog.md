@@ -82,7 +82,7 @@ Clicar numa linha não faz nada — não há gaveta de detalhe.
 | Caixa de verificação | **Below reorder only** | **Só abaixo do ponto de encomenda** | Oculta artigos OK |
 | Caixa de verificação | **Include inactive** | **Incluir inativos** | Recarrega a lista com artigos desativados e artigos cuja família está inativa (desligado por defeito) |
 
-Os filtros combinam-se. Pesquisa, família, sub-família e **Só abaixo do ponto de encomenda** correm no browser sobre a lista carregada — não precisa de clicar em Pesquisar. **Incluir inativos** recarrega a partir do servidor.
+Os filtros combinam-se. Pesquisa, família, sub-família e **Só abaixo do ponto de encomenda** correm no browser sobre a lista carregada — não precisa de clicar em Pesquisar. **Incluir inativos** recarrega a partir do servidor. As listas de família e sub-família estão **A–Z pelo nome visível** (*Todas as famílias* / *Todas as sub-famílias* ficam no topo).
 
 **C. Colunas da tabela** — clique em qualquer cabeçalho para ordenar (clique de novo para inverter). A ordem por defeito é **Descrição** (ascendente).
 

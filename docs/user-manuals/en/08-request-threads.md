@@ -137,7 +137,7 @@ The override still requires a reason, and the thread history records **who** for
 Warehouse staff see **all** branches' threads in one queue:
 
 - **Open (awaiting)** is the default view — threads awaiting the warehouse are listed **oldest first** so nothing rots. Closed threads are filtered out.
-- Filters: **status** (open / awaiting warehouse / awaiting branch / closed) and **branch**.
+- Filters: **status** (open / awaiting warehouse / awaiting branch / closed) and **branch** (A–Z by name; *All branches* first).
 - Threads from an **inactive branch** still appear, flagged as *inactive branch* — the conversation can still be finished, just no new work.
 - **Cancel** (shown when a thread is open in the detail pane) clears the draft reply, closes any open link/close dialogs, and deselects the thread so the detail pane is empty. Click a row in the queue to continue.
 

@@ -57,7 +57,7 @@ Enquanto a encomenda é **Rascunho**, a lista mostra **Descartar Rascunho** junt
 ## 3. Criar uma encomenda de compra
 
 1. Clique em **Nova encomenda**.
-2. Escolha o **Fornecedor**.
+2. Escolha o **Fornecedor** (A–Z pelo nome).
 3. (Opcional) adicione **Ref. fornecedor** e **Notas**.
 4. Clique em **Criar**.
 
@@ -69,7 +69,7 @@ A encomenda começa como **Rascunho**.
 
 1. Abra a encomenda (clique na linha).
 2. Clique em **Adicionar linha**.
-3. Escolha o **Artigo** e introduza uma **Quantidade**.
+3. Escolha o **Artigo** (A–Z pelo código — descrição visível) e introduza uma **Quantidade**.
 4. **Preço automático** está **ligado** por defeito, na mesma linha que *(desmarque para introduzir um custo unitário)*. O campo de custo unitário fica oculto enquanto o automático está ligado; a linha usa a lista de preços do fornecedor. Desmarque para mostrar o campo e introduzir um custo unitário.
 5. (Opcional) defina os três descontos (ver §5).
 6. **Guardar**.

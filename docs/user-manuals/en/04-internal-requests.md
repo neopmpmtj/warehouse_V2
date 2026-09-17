@@ -134,7 +134,7 @@ Open **`/branch/requests/`**.
 
 ### 4.2 Add lines
 
-1. In the line form, pick an **item** from the catalogue picker.
+1. In the line form, pick an **item** from the catalogue picker (A–Z by the code — description shown).
 2. Enter the **quantity** (greater than zero).
 3. Click **Add**.
 

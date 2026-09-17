@@ -639,6 +639,12 @@ class FamilyProductServiceTests(TestCase):
 
         self.assertEqual(names, ["Active Family"])
 
+    def test_get_families_orders_by_name(self):
+        create_family("Zebra Mix")
+        create_family("Alpha Cement")
+        names = list(get_families().values_list("name", flat=True))
+        self.assertEqual(names, ["Alpha Cement", "Zebra Mix"])
+
     def test_update_family_rejects_name_change(self):
         family = create_family("Original")
 
@@ -1354,6 +1360,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, "item-form")
         self.assertContains(response, "item-table-body")
         self.assertContains(response, "supplier-table-body")
+        self.assertContains(response, "select_fill.js?v=1")
+        self.assertContains(response, "console.js?v=27")
         self.assertContains(response, "colVatRate")
         self.assertNotContains(response, "product-table-body")
         self.assertNotContains(response, "colPrice")
@@ -3725,8 +3733,9 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'id="catalog-include-inactive"')
         self.assertContains(response, "th-sortable")
         self.assertContains(response, 'data-sort="internal_code"')
-        self.assertContains(response, "catalog.js?v=9")
+        self.assertContains(response, "catalog.js?v=10")
         self.assertContains(response, "catalog_i18n.js?v=11")
+        self.assertContains(response, "select_fill.js?v=1")
         self.assertContains(response, 'data-sort="retail_price"')
         self.assertNotContains(response, 'data-sort="wholesale_price"')
         self.assertNotContains(response, 'data-sort="special_price"')

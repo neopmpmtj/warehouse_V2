@@ -137,7 +137,7 @@ O override exige na mesma um motivo, e o histórico da conversa regista **quem**
 O pessoal do armazém vê **todos** as conversas de todas as filiais numa fila:
 
 - **Abertos (a aguardar)** é a vista predefinida — conversas a aguardar o armazém listados **do mais antigo primeiro** para nada ficar esquecido. Conversas fechados ficam de fora.
-- Filtros: **estado** (aberto / a aguardar armazém / a aguardar filial / fechado) e **filial**.
+- Filtros: **estado** (aberto / a aguardar armazém / a aguardar filial / fechado) e **filial** (A–Z pelo nome; *Todas as filiais* primeiro).
 - Conversas de filial **inativa** ainda aparecem, marcados como *filial inativa* — a conversa pode terminar, só não há trabalho novo.
 - **Cancelar** (mostrado quando uma conversa está aberto no painel de detalhe) limpa o rascunho de resposta, fecha diálogos de ligação/fecho abertos e desseleciona a conversa para o painel de detalhe ficar vazio. Clique numa linha da fila para continuar.
 

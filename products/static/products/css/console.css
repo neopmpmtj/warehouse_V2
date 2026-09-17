@@ -592,7 +592,7 @@ label.checkbox-inline,
     position: fixed;
     top: 0;
     right: 0;
-    width: min(48rem, 100%);
+    width: min(calc(48rem + 15px), 100%);
     height: 100%;
     background: var(--surface);
     border-left: 1px solid var(--border);
@@ -635,11 +635,22 @@ label.checkbox-inline,
     grid-template-columns: 1fr auto;
     gap: 0.5rem;
     align-items: end;
+    min-width: 0;
 }
 
 .field-with-action label {
     display: grid;
     gap: 0.3rem;
+    min-width: 0;
+}
+
+.field-with-action select {
+    min-width: 0;
+    width: 100%;
+}
+
+.field-with-action .btn {
+    white-space: nowrap;
 }
 
 .drawer-help {
@@ -650,7 +661,12 @@ label.checkbox-inline,
 
 .drawer-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
+}
+
+.drawer .table-wrap {
+    min-width: 0;
 }
 
 .history h3 {

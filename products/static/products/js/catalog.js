@@ -166,20 +166,6 @@ function setLanguage(lang) {
     renderCatalog();
 }
 
-function fillSelect(select, options) {
-    const current = select.value;
-    select.replaceChildren();
-    options.forEach((option) => {
-        const node = document.createElement("option");
-        node.value = option.value;
-        node.textContent = option.label;
-        select.appendChild(node);
-    });
-    if ([...select.options].some((option) => option.value === current)) {
-        select.value = current;
-    }
-}
-
 function textTd(value) {
     const td = document.createElement("td");
     td.textContent = value;

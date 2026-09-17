@@ -85,13 +85,15 @@
 
     function populateItemPicker(items) {
         state.items = items || [];
-        lineItem.textContent = "";
-        state.items.forEach(function (item) {
-            var opt = document.createElement("option");
-            opt.value = item.id;
-            opt.textContent = (item.internal_code || "") + " — " + item.description;
-            lineItem.appendChild(opt);
-        });
+        fillSelect(
+            lineItem,
+            state.items.map(function (item) {
+                return {
+                    value: String(item.id),
+                    label: (item.internal_code || "") + " — " + item.description,
+                };
+            })
+        );
     }
 
     function loadItems() {

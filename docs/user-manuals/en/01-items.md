@@ -95,6 +95,8 @@ The console is one screen, split into three areas.
 | **Bulk action** + **Apply** | Deactivate/reactivate several items at once |
 | **New item** | Create a new item |
 
+Family, sub-family, unit, VAT, supplier, and item lists are **A–Z by the text shown** (*All…* / *Choose…* stay first). Status and bulk-action keep their workflow order.
+
 **C. Items table**
 - One row per item, with columns: **Code, Description, Family, Sub-family, Unit, Reorder, VAT, Status, Actions**
 - **Actions** is **Edit** (or **View** if you cannot change items). Deactivate / Reactivate is not on the row — open the item drawer, or use **Bulk action** for several items.

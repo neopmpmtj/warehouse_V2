@@ -17,7 +17,7 @@
             document.documentElement.setAttribute("data-theme", theme);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=23">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=24">
     <link rel="stylesheet" href="{% static 'threads/css/warehouse_threads.css' %}?v=2">
 </head>
 <body>
@@ -97,6 +97,7 @@
         </section>
     </main>
 
+    <script src="{% static 'products/js/select_fill.js' %}?v=1"></script>
     <script>
         (function () {
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
@@ -263,17 +264,13 @@
                     state.threads = data.threads || [];
                     var seen = {};
                     state.threads.forEach(function (th) { seen[th.branch_id] = th.branch_name; });
-                    var current = filterBranch.value;
-                    filterBranch.textContent = "";
-                    var allOpt = document.createElement("option");
-                    allOpt.value = ""; allOpt.textContent = t("allBranches");
-                    filterBranch.appendChild(allOpt);
-                    Object.keys(seen).sort().forEach(function (bid) {
-                        var opt = document.createElement("option");
-                        opt.value = bid; opt.textContent = seen[bid];
-                        if (String(bid) === String(current)) opt.selected = true;
-                        filterBranch.appendChild(opt);
-                    });
+                    fillSelect(
+                        filterBranch,
+                        Object.keys(seen).map(function (bid) {
+                            return { value: String(bid), label: seen[bid] };
+                        }),
+                        t("allBranches")
+                    );
                     renderList();
                     if (state.selectedId) {
                         var still = state.threads.some(function (th) { return th.id === state.selectedId; });

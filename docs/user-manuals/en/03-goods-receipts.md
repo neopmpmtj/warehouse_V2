@@ -99,7 +99,7 @@ The receipts list is a log. There is no “open / edit” drawer on a receipt ro
 | **Reason** | Filled on adjustments |
 | **By** / **When** | Who and when |
 
-Use the **item filter** (*All items* / *Todos os artigos*) above the movements table to see one item’s history.
+Use the **item filter** (*All items* / *Todos os artigos*) above the movements table to see one item’s history. Items in that list (and in **Adjust stock**) are **A–Z by the code — description shown**.
 
 ---
 
@@ -110,7 +110,7 @@ You can only receive against a purchase order that is **Approved** or already **
 ### 4.1 From this console
 
 1. Click **New receipt** (*Nova receção*).
-2. Choose the **Purchase order** (*Encomenda de compra*) — shown as `#12 — Supplier name`.
+2. Choose the **Purchase order** (*Encomenda de compra*) — shown as `#12 — Supplier name`, listed **A–Z by supplier name** (then PO number).
 3. The lines of that order appear with **Ordered / Received / Remaining / To receive**.
 4. **To receive** is pre-filled with the **remaining** quantity. Change it if this delivery is only part of the order. Set a line to **0** (or clear it) to skip it on this receipt.
 5. (Optional) **Reference (delivery note)** (*Referência — guia de entrega*) — the supplier’s GR / *guia* number. Recommended: it appears on the receipt row and on the stock movement.

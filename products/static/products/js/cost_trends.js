@@ -127,19 +127,13 @@ function renderItemOptions() {
         return;
     }
     const previous = state.itemId;
-    select.innerHTML = "";
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = t("itemPlaceholder");
-    placeholder.disabled = true;
-    select.appendChild(placeholder);
-
-    state.items.forEach((item) => {
-        const option = document.createElement("option");
-        option.value = String(item.id);
-        option.textContent = itemLabel(item);
-        select.appendChild(option);
-    });
+    fillSelect(select, [
+        { value: "", label: t("itemPlaceholder"), disabled: true },
+        ...state.items.map((item) => ({
+            value: String(item.id),
+            label: itemLabel(item),
+        })),
+    ]);
 
     const defaultItem = state.items.find(
         (item) => (item.internal_code || "").toUpperCase() === DEFAULT_ITEM_CODE
@@ -150,12 +144,15 @@ function renderItemOptions() {
     } else if (defaultItem) {
         select.value = String(defaultItem.id);
         state.itemId = String(defaultItem.id);
-    } else if (state.items.length) {
-        select.value = String(state.items[0].id);
-        state.itemId = String(state.items[0].id);
     } else {
-        select.value = "";
-        state.itemId = "";
+        const first = [...select.options].find((option) => option.value);
+        if (first) {
+            select.value = first.value;
+            state.itemId = first.value;
+        } else {
+            select.value = "";
+            state.itemId = "";
+        }
     }
 }
 

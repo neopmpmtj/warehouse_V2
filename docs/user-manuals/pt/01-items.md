@@ -95,6 +95,8 @@ A consola é uma única página, dividida em três áreas.
 | **Ação em lote** + **Aplicar** | Desativar/reativar vários artigos de uma vez |
 | **Novo artigo** | Criar um novo artigo |
 
+As listas de família, sub-família, unidade, IVA, fornecedor e artigo estão **A–Z pelo texto visível** (*Todas…* / *Escolher…* ficam no topo). Estado e ação em lote mantêm a ordem do fluxo de trabalho.
+
 **C. Tabela de artigos**
 - Uma linha por artigo, com colunas: **Código, Descrição, Família, Sub-família, Unidade, Reposição, IVA, Estado, Ações**
 - **Ações** é **Editar** (ou **Ver** se não pode alterar artigos). Desativar / Reativar não está na linha — abra o painel do artigo ou use **Ação em lote** para vários artigos.

@@ -99,7 +99,7 @@ A lista de receções é um registo. Não há painel lateral "abrir / editar" nu
 | **Motivo** | Preenchido nos ajustes |
 | **Por** / **Quando** | Quem e quando |
 
-Use o **filtro de artigo** (*Todos os artigos*) acima da tabela de movimentos para ver o histórico de um artigo.
+Use o **filtro de artigo** (*Todos os artigos*) acima da tabela de movimentos para ver o histórico de um artigo. Os artigos nessa lista (e em **Ajustar stock**) estão **A–Z pelo código — descrição visível**.
 
 ---
 
@@ -110,7 +110,7 @@ Só pode receber contra uma encomenda de compra **Aprovada** ou já **Recebida**
 ### 4.1 Nesta consola
 
 1. Clique em **Nova receção**.
-2. Escolha a **Encomenda de compra** — mostrada como `#12 — Nome do fornecedor`.
+2. Escolha a **Encomenda de compra** — mostrada como `#12 — Nome do fornecedor`, listada **A–Z pelo nome do fornecedor** (depois o número da encomenda).
 3. As linhas dessa encomenda aparecem com **Encomendado / Recebido / Em falta / A receber**.
 4. **A receber** é pré-preenchido com a quantidade **em falta**. Altere se esta entrega é só parte da encomenda. Defina uma linha como **0** (ou limpe) para ignorá-la nesta receção.
 5. (Opcional) **Referência (guia de entrega)** — o número da GR / *guia* do fornecedor. Recomendado: aparece na linha da receção e no movimento de stock.

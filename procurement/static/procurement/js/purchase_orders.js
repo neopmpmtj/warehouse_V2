@@ -212,26 +212,6 @@ function statusPillClass(status) {
     }
 }
 
-function fillSelect(select, options, placeholder) {
-    const current = select.value;
-    select.replaceChildren();
-    if (placeholder) {
-        const empty = document.createElement("option");
-        empty.value = "";
-        empty.textContent = placeholder;
-        select.appendChild(empty);
-    }
-    options.forEach((option) => {
-        const node = document.createElement("option");
-        node.value = option.value;
-        node.textContent = option.label;
-        select.appendChild(node);
-    });
-    if ([...select.options].some((option) => option.value === current)) {
-        select.value = current;
-    }
-}
-
 function textTd(value) {
     const td = document.createElement("td");
     td.textContent = value;

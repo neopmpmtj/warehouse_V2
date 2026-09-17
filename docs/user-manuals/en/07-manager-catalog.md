@@ -82,7 +82,7 @@ Clicking a row does nothing — there is no detail drawer.
 | Checkbox | **Below reorder only** | **Só abaixo do ponto de encomenda** | Hide items that are OK |
 | Checkbox | **Include inactive** | **Incluir inativos** | Reload the list with deactivated items and items whose family is inactive (off by default) |
 
-Filters combine. Search, family, sub-family, and **Below reorder only** run in the browser on the loaded list — you do not need to click Search. **Include inactive** reloads from the server.
+Filters combine. Search, family, sub-family, and **Below reorder only** run in the browser on the loaded list — you do not need to click Search. **Include inactive** reloads from the server. Family and sub-family dropdowns are **A–Z by the name shown** (*All families* / *All sub-families* stay first).
 
 **C. Table columns** — click any column header to sort (click again to reverse). Default order is **Description** (ascending).
 
