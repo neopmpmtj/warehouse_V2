@@ -111,7 +111,13 @@ Abra **`/branch/catalog/`**. É o mesmo catálogo de produtos que o armazém ger
 
 O pessoal do armazém vê stock exato **e** custo no [catálogo do gestor](07-manager-catalog.md) em `/manage/catalog/`.
 
-### 3.1 A indicação de disponibilidade
+### 3.1 Filtros e ordenação
+
+A barra de filtros permanece visível enquanto desloca a tabela. Pesquisa, família e sub-família combinam-se à medida que escreve ou escolhe. As listas de família e sub-família estão **A–Z** (*Todas as famílias* / *Todas as sub-famílias* ficam no topo). Clique no título de uma coluna para ordenar; clique de novo para inverter. A ordem por omissão é **Descrição** (A–Z). Os títulos das colunas ficam visíveis no topo da tabela.
+
+O pessoal de filial **não** tem **Só abaixo do ponto de encomenda** nem **Incluir inativos**. O catálogo mostra só artigos **ativos**. Nunca vê quantidades de encomenda, stock exacto, reservado, disponível, custo de compra nem fornecedores.
+
+### 3.2 A indicação de disponibilidade
 
 | Indicação | Significado |
 |------|---------|
@@ -135,12 +141,12 @@ Abra **`/branch/requests/`**.
 ### 4.2 Adicionar linhas
 
 1. No formulário de linha, escolha um **artigo** no seletor do catálogo (A–Z pelo código — descrição visível).
-2. Indique a **quantidade** (maior que zero).
+2. Indique a **quantidade** como um **número inteiro** da unidade do artigo (maior que zero; sem casas decimais).
 3. Clique em **Add** (Adicionar).
 
 Uma linha é **rejeitada** se:
 
-- o artigo **não tiver preço de grossista**, ou
+- o artigo **não tiver preço de retalho**, ou
 - o artigo **já** estiver nesta requisição (edite a linha existente), ou
 - o artigo (ou a respetiva família) estiver **inativo**.
 
@@ -151,7 +157,7 @@ Pode **remover** uma linha enquanto a requisição for rascunho.
 Quando a requisição tiver pelo menos uma linha e tudo estiver ativo, clique em **Submit** (Submeter). A requisição passa a **submitted** (submetida) e aguarda um gestor.
 
 - Já não pode editar linhas depois de submeter.
-- Um **rascunho** pode ser **cancelado** por qualquer função de filial (sem motivo).
+- Um **rascunho** pode ser **cancelado** por qualquer função de filial (sem motivo). Clique em **Cancel Internal Request** (Cancelar requisição interna) e confirme — o cancelamento é **permanente** e não pode ser anulado.
 
 ---
 
@@ -162,10 +168,10 @@ Abra uma requisição **submitted** (submetida).
 ### 5.1 Aprovar
 
 1. Clique em **Approve** (Aprovar).
-2. Confirme. No modo **sem preços** (omissão) a confirmação é sobre as **quantidades**, não um total em euros. No modo **com preços** a confirmação mostra o **bruto** (grossista × quantidade + IVA).
+2. Confirme. No modo **sem preços** (omissão) a confirmação é sobre as **quantidades**, não um total em euros. No modo **com preços** a confirmação mostra o **bruto** (retalho × quantidade + IVA).
 3. Confirme.
 
-Em ambos os modos o armazém **congela os totais** internamente (instantâneo de grossista + IVA) para alterações de preço posteriores não reescreverem o histórico. O pessoal da filial só **vê** esses números quando o modo com preços está ligado.
+Em ambos os modos o armazém **congela os totais** internamente (instantâneo de retalho + IVA) para alterações de preço posteriores não reescreverem o histórico. O pessoal da filial só **vê** esses números quando o modo com preços está ligado.
 
 Aprovar também **reserva o stock de armazém atualmente livre** para esta requisição (ver §7). Uma filial posterior não pode levar essas unidades. Se o hub tiver menos do que pediu, a requisição continua aprovada: a parte livre fica reservada e o resto aguarda stock entrante (primeiro aprovado ganha).
 
@@ -184,10 +190,12 @@ Clique em **Reject** (Rejeitar) e indique um **motivo**. A requisição termina 
 
 ## 6. Cancelar uma requisição
 
+Clique em **Cancel Internal Request** (Cancelar requisição interna). Confirme o diálogo (`Cancel internal request #… permanently? This cannot be undone.` — Cancelar a requisição interna n.º … de forma permanente? Isto não pode ser anulado.). O cancelamento é **permanente** — a requisição não pode ser reaberta; levante uma nova se ainda precisar da mercadoria.
+
 | De | Quem | Motivo obrigatório? |
 |------|-----|:---:|
 | **Rascunho** (`draft`) | Qualquer função de filial | Não |
-| **Aprovada** (`approved`) | Gestor / administrador | Sim |
+| **Aprovada** (`approved`) | Gestor / administrador | Sim (depois da confirmação) |
 
 Cancelar uma requisição **aprovada** (ainda sem expedição) **liberta a reserva** de imediato; essas unidades são oferecidas à requisição seguinte em espera (primeiro `approved_at` mais antigo).
 
@@ -320,7 +328,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - Ver o **custo** do fornecedor a partir de uma conta de filial (nunca). Os preços de venda só aparecem no modo **com preços**.
 - Ver o stock **exato** do armazém a partir de uma conta de filial (só indicação).
 - Aprovar como **operador**. No modo **com preços**, um gestor também não pode aprovar acima do **teto em EUR**.
-- Pedir um artigo **inativo**, ou uma linha **sem preço de grossista**, ou o **mesmo artigo duas vezes** numa requisição.
+- Pedir um artigo **inativo**, ou uma linha **sem preço de retalho**, ou o **mesmo artigo duas vezes** numa requisição.
 - Editar uma requisição depois de **submeter**.
 - **Emitir** mais do que está reservado para essa requisição, ou mais do que o restante da requisição.
 - **Receber** mais do que foi expedido.
@@ -359,10 +367,10 @@ Por omissão a empresa está no modo **sem preços**: as filiais pedem **quantid
 Sim. **None** (Nenhum) significa que nada está livre para expedição *hoje* (prateleira vazia, ou stock já reservado para requisições aprovadas anteriores). Levante a requisição na mesma — entra na fila de espera. O stock entrante é oferecido primeiro à requisição aprovada mais antiga.
 
 **P3. Porque foi a minha linha rejeitada?**
-As três regras: o artigo tem de ter **preço de grossista**, tem de estar **ativo** e não pode já estar na requisição. Verifique qual se aplica.
+As três regras: o artigo tem de ter **preço de retalho**, tem de estar **ativo** e não pode já estar na requisição. Verifique qual se aplica.
 
 **P4. Aprovei uma requisição e os preços mudaram depois — a minha requisição mudou?**
-Não. Aprovar **congela** os totais (instantâneo de grossista + IVA). Alterações de preço posteriores não tocam numa requisição aprovada.
+Não. Aprovar **congela** os totais (instantâneo de retalho + IVA). Alterações de preço posteriores não tocam numa requisição aprovada.
 
 **P5. O armazém expediu menos do que pedi — o que faço?**
 Confirme a **quantidade recebida** que chegou de facto em `/branch/receipts/`. Se o resto não vier, um **gestor/administrador** faz encerramento parcial. A requisição fecha depois.
@@ -380,7 +388,7 @@ Não — uma linha por artigo por requisição. **Edite** a quantidade da linha 
 A sede ainda não o atribuiu a uma filial (ou a filial está inativa). Contacte o administrador — o acesso à filial configura-se no Django `/admin/`, não por si.
 
 **P10. O que significa "gross" no botão de aprovar?**
-Só no modo **com preços**. É o total da requisição **incluindo IVA** (grossista × quantidade, mais IVA) — o valor que o teto de aprovação mede. No modo **sem preços** a confirmação de aprovar não tem montante em euros.
+Só no modo **com preços**. É o total da requisição **incluindo IVA** (retalho × quantidade, mais IVA) — o valor que o teto de aprovação mede. No modo **sem preços** a confirmação de aprovar não tem montante em euros.
 
 **P11. Outra filial pediu o mesmo artigo depois de nós — vão levar o nosso stock?**
 Não, depois da nossa requisição estar **approved**. O armazém reserva a quantidade livre para nós. Uma filial posterior pode ainda aprovar (e esperar), mas não lhe podem ser emitidas essas unidades reservadas.
@@ -395,7 +403,7 @@ O stock já está em movimento. Depois da primeira saída de mercadoria a única
 Dois livros-razão separados. O stock do armazém vive no artigo; o **stock da filial** vive por `(filial, artigo)` e só se move quando recebe uma expedição ou um administrador ajusta.
 
 **P15. Posso construir uma requisição offline?**
-Sim, **só rascunhos**. Abra `/branch/requests/` depois de ter visitado o catálogo online pelo menos uma vez (para a lista de artigos ficar em cache). Offline pode iniciar **New request** (Nova requisição) e adicionar linhas a partir do catálogo em cache. A requisição mostra **pending sync** (sincronização pendente) até o Wi-Fi voltar; depois carrega automaticamente quando abrir qualquer página da filial que carregue os scripts offline (catálogo, requisição, painel, etc.). **Submit**, **Approve**, **Reject** e **Cancel** continuam a exigir Wi-Fi.
+Sim, **só rascunhos**. Abra `/branch/requests/` depois de ter visitado o catálogo online pelo menos uma vez (para a lista de artigos ficar em cache). Offline pode iniciar **New request** (Nova requisição) e adicionar linhas a partir do catálogo em cache. A requisição mostra **pending sync** (sincronização pendente) até o Wi-Fi voltar; depois carrega automaticamente quando abrir qualquer página da filial que carregue os scripts offline (catálogo, requisição, painel, etc.). **Submit**, **Approve**, **Reject** e **Cancel Internal Request** (Cancelar requisição interna) continuam a exigir Wi-Fi.
 
 **P16. O aviso offline do catálogo diz que a disponibilidade pode estar desatualizada — porquê?**
 O modo offline mostra o **último catálogo descarregado** para a **filial ativa**. O stock do armazém e as indicações de disponibilidade podem mudar enquanto estava desligado. As colunas de preço de venda seguem esse último descarregamento: se foi **sem preços** (ou a cache não tem flag de modo), os preços ficam ocultos. Depois de se ligar uma vez, a app remove os campos de preço guardados na cache offline; até lá, as colunas seguem o último descarregamento. Ligue-se uma vez depois de uma mudança de modo comercial para a cache coincidir. Se mudar de filial offline, a app avisa que a cache pertence a outra filial — ligue o Wi-Fi na filial atual para descarregar o respetivo catálogo.

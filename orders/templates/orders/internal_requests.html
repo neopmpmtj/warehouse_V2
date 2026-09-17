@@ -283,7 +283,7 @@
                     tr.appendChild(el("td", line.available));
                     var td = document.createElement("td");
                     var input = document.createElement("input");
-                    input.type = "number"; input.step = "0.001"; input.min = "0.001"; input.className = "qty-input";
+                    input.type = "number"; input.step = "1"; input.min = "1"; input.className = "qty-input";
                     input.dataset.lineId = line.line_id;
                     if (line.reserved && Number(line.reserved) > 0) {
                         input.value = line.reserved;

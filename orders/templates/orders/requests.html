@@ -56,7 +56,7 @@
 
             <div id="line-form" class="row" hidden>
                 <select id="line-item" style="flex:1;"></select>
-                <input id="line-qty" type="number" step="0.001" min="0.001" placeholder="Qty" style="width:90px;">
+                <input id="line-qty" type="number" step="1" min="1" value="1" placeholder="Qty" style="width:90px;">
                 <button id="add-line" class="btn">Add</button>
             </div>
 
@@ -68,7 +68,7 @@
 
     {% include "branches/includes/offline_scripts.html" %}
     <script src="{% static 'products/js/select_fill.js' %}?v=1"></script>
-    <script src="{% static 'orders/js/branch_requests.js' %}?v=6"></script>
+    <script src="{% static 'orders/js/branch_requests.js' %}?v=8"></script>
     <script src="{% static 'products/js/preferences_bar.js' %}?v=11"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>

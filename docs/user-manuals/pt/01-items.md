@@ -158,7 +158,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 | **Sub-família** | Não | Agrupamento opcional mais fino sob a família (ver §7). Deixe vazio para nenhuma. |
 | **Unidade** | Sim | peça / kg / g / m / m² / m³ / l |
 | **Taxa de IVA** | Sim | 1%, 3%, 7%, 16%, Isento |
-| **Nível de reposição** | Sim | O nível que mais tarde dispara a reposição. |
+| **Nível de reposição** | Sim | O nível que mais tarde dispara a reposição. Número inteiro ≥ 0 (0 = sem disparo). |
 | **Em armazém / Disponível** | (só leitura, na edição) | Stock físico de armazém e o que ainda está livre para prometer após reservas. Não editável aqui. |
 | **Preço de retalho** | Não | Preço de venda (ver §6). Pode ser **0** na criação. |
 | **Fornecedor** | Não | Opcional na criação. Se preencher **fornecedor** e **preço de custo > 0** em conjunto, a Génese guarda uma linha **principal** de preço de compra. |

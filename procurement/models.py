@@ -87,7 +87,7 @@ class PurchaseOrderLine(models.Model):
     description = models.CharField(max_length=255)
     internal_code = models.CharField(max_length=64, blank=True)
     unit_of_measure = models.CharField(max_length=16, blank=True)
-    quantity = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    quantity = models.IntegerField(default=0)
     unit_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     discount_commercial = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     discount_financial = models.DecimalField(max_digits=5, decimal_places=2, default=0)

@@ -1,0 +1,199 @@
+/* Branch catalog: sticky filter toolbar + sticky sortable headers.
+   Do not load warehouse console.css here — it targets .topbar / .page. */
+
+:root {
+    --surface-2: #eef2f5;
+    --row-hover: #f0f7f6;
+}
+
+[data-theme="dark"] {
+    --surface-2: #222a33;
+    --row-hover: #1d2a2a;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body.viewport-fill-table {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body.viewport-fill-table .branch-page-header {
+    flex-shrink: 0;
+}
+
+body.viewport-fill-table .page {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.25rem 0.75rem;
+    overflow: auto;
+}
+
+body.viewport-fill-table .toolbar,
+body.viewport-fill-table .banner,
+body.viewport-fill-table #catalog-empty {
+    flex-shrink: 0;
+}
+
+body.viewport-fill-table .page > .table-wrap {
+    flex: 1 1 auto;
+    min-height: 12rem;
+}
+
+body.viewport-fill-table .page > .table-wrap .grid {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+body.viewport-fill-table .page > .table-wrap .grid th {
+    z-index: 1;
+    box-shadow: 0 1px 0 var(--border, #ddd);
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.toolbar input[type="search"],
+.toolbar select {
+    font: inherit;
+    color: inherit;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #ddd);
+    border-radius: 6px;
+    padding: 0.45rem 0.6rem;
+}
+
+[data-theme="dark"] .toolbar input[type="search"],
+[data-theme="dark"] .toolbar select {
+    background: var(--surface, #151a20);
+    color: var(--text, #e8edf2);
+}
+
+#catalog-search {
+    min-width: 16rem;
+}
+
+#catalog-family {
+    min-width: 14rem;
+}
+
+.banner {
+    padding: 10px 14px;
+    border-radius: 4px;
+    background: #fdecea;
+    color: #b00020;
+    margin: 0 0 0.75rem;
+}
+
+.banner.banner-info {
+    background: #e8f0fe;
+    color: #0b57d0;
+}
+
+.table-wrap {
+    overflow: auto;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #ddd);
+    border-radius: 8px;
+}
+
+[data-theme="dark"] .table-wrap {
+    background: var(--surface, #151a20);
+}
+
+.grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.grid th,
+.grid td {
+    padding: 0.55rem 0.65rem;
+    border-bottom: 1px solid var(--border, #ddd);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.grid th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    font-weight: 600;
+    color: var(--muted, #666);
+}
+
+.th-sortable {
+    padding: 0;
+}
+
+.sort-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem 0.65rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sort-btn:hover {
+    background: var(--row-hover);
+}
+
+.th-sortable.is-sorted .sort-btn {
+    color: var(--text, #222);
+}
+
+.sort-indicator {
+    display: inline-block;
+    min-width: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--muted, #666);
+    line-height: 1;
+}
+
+.th-sortable.is-sorted .sort-indicator {
+    color: var(--text, #222);
+}
+
+.grid tbody tr:hover {
+    background: var(--row-hover);
+}
+
+.avail-none {
+    color: #b00020;
+    font-weight: 600;
+}
+
+.avail-low {
+    color: #b26a00;
+    font-weight: 600;
+}
+
+.avail-ok {
+    color: #1e7d32;
+    font-weight: 600;
+}
+
+.empty-note {
+    color: var(--muted, #666);
+    margin: 0.5rem 0 0;
+}

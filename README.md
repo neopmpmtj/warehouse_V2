@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 11 September 2026, 18:55 WEST.*
+*Last updated: 17 September 2026, 10:15 WEST.*
 
-**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** EN+PT, including presentation slide 12). Warehouse `/manage/internal-requests/` i18n complete. Presentation deck **v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26). Full-tree production-readiness review **applied** (26 Aug 1205). **Pick up:** remove TEMP viewBox debug on deck; optional slides 10–16 polish — see [`docs/handoff.md`](docs/handoff.md). Then Phase 7 (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. Suite **608 OK**.
+**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** EN+PT, including presentation slide 12). Requisição line price is **retail** (**D41**). Warehouse `/manage/internal-requests/` i18n complete. Presentation deck **v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26). Full-tree production-readiness review **applied** (26 Aug 1205). **Pick up:** remove TEMP viewBox debug on deck; optional slides 10–16 polish — see [`docs/handoff.md`](docs/handoff.md). Then Phase 7 (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. `orders`/`inventory`/`branches` **175 OK**.
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 

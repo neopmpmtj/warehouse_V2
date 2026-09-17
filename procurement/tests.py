@@ -160,6 +160,13 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
             services.add_line(po, self.item, quantity="1000000000")
         self.assertEqual(ctx.exception.code, "invalid_quantity")
 
+    def test_fractional_quantity_is_rejected(self):
+        po = self.create_draft_po()
+        with self.assertRaises(ValidationError) as ctx:
+            services.add_line(po, self.item, quantity="1.5")
+        self.assertEqual(ctx.exception.code, "invalid_quantity")
+        self.assertIn("whole number", str(ctx.exception))
+
     def test_nan_values_are_rejected(self):
         po = self.create_draft_po()
         with self.assertRaises(ValidationError):
@@ -973,8 +980,8 @@ class PurchaseOrderGradeAndAuditTests(PurchaseOrderTestCaseMixin, TestCase):
         )
         body = detail.json()["purchase_order"]
         line = body["lines"][0]
-        self.assertEqual(line["quantity_received"], "4.000")
-        self.assertEqual(line["quantity_remaining"], "6.000")
+        self.assertEqual(line["quantity_received"], "4")
+        self.assertEqual(line["quantity_remaining"], "6")
         self.assertTrue(body["can_short_close"])
 
     def test_short_close_endpoint(self):

@@ -111,7 +111,13 @@ Open **`/branch/catalog/`**. This is the same product catalogue the warehouse ma
 
 Warehouse staff see exact stock **and** cost on the [manager catalog](07-manager-catalog.md) at `/manage/catalog/`.
 
-### 3.1 The availability hint
+### 3.1 Filters and sort
+
+The toolbar stays visible while you scroll. Search, family, and sub-family combine as you type or pick. Family and sub-family lists are **A–Z** (*All families* / *All sub-families* stay first). Click a column title to sort; click again to reverse. Default order is **Description** (A–Z). Column titles stay visible at the top of the table.
+
+Branch staff do **not** get **Below reorder only** or **Include inactive**. The catalogue shows **active** items only. You never see reorder amounts, exact on-hand, reserved, available, buying cost, or suppliers.
+
+### 3.2 The availability hint
 
 | Hint | Meaning |
 |------|---------|
@@ -135,12 +141,12 @@ Open **`/branch/requests/`**.
 ### 4.2 Add lines
 
 1. In the line form, pick an **item** from the catalogue picker (A–Z by the code — description shown).
-2. Enter the **quantity** (greater than zero).
+2. Enter the **quantity** as a **whole number** of the item’s unit (greater than zero; no decimals).
 3. Click **Add**.
 
 A line is **rejected** if:
 
-- the item has **no wholesale price**, or
+- the item has **no retail price**, or
 - the item is **already** on this request (edit the existing line instead), or
 - the item (or its family) is **inactive**.
 
@@ -151,7 +157,7 @@ You can **remove** a line while the request is still a draft.
 When the request has at least one line and everything is active, click **Submit** (*Submeter*). The request becomes **submitted** and waits for a manager.
 
 - You can no longer edit lines after submitting.
-- A **draft** can be **cancelled** by any branch role (no reason needed).
+- A **draft** can be **cancelled** by any branch role (no reason needed). Click **Cancel Internal Request** and confirm — cancellation is **permanent** and cannot be undone.
 
 ---
 
@@ -162,10 +168,10 @@ Open a **submitted** request.
 ### 5.1 Approve
 
 1. Click **Approve** (*Aprovar*).
-2. Confirm. In **unpriced** mode (default) the confirmation is on the **quantities**, not a euro total. In **priced** mode the confirmation shows the **gross** (wholesale × quantity + VAT).
+2. Confirm. In **unpriced** mode (default) the confirmation is on the **quantities**, not a euro total. In **priced** mode the confirmation shows the **gross** (retail × quantity + VAT).
 3. Confirm.
 
-In both modes the warehouse still **freezes the totals** internally (wholesale + VAT snapshot) so later price changes don't rewrite history. Branch staff only **see** those numbers when priced mode is on.
+In both modes the warehouse still **freezes the totals** internally (retail + VAT snapshot) so later price changes don't rewrite history. Branch staff only **see** those numbers when priced mode is on.
 
 Approving also **holds whatever warehouse stock is currently free** for this request (see §7). A later branch cannot take those units. If the hub has less than you asked for, the request is still approved: the free portion is held, and the rest waits for incoming stock (first approved wins).
 
@@ -184,10 +190,12 @@ Click **Reject** (*Rejeitar*) and give a **reason**. The request ends as **rejec
 
 ## 6. Cancelling a request
 
+Click **Cancel Internal Request**. Confirm the dialog (`Cancel internal request #… permanently? This cannot be undone.`). Cancellation is **permanent** — the request cannot be reopened; raise a new one if you still need the goods.
+
 | From | Who | Reason required? |
 |------|-----|:---:|
 | **Draft** | Any branch role | No |
-| **Approved** | Manager / admin | Yes |
+| **Approved** | Manager / admin | Yes (after the confirm) |
 
 Cancelling an **approved** request (no dispatch yet) **releases the hold** immediately; those units are offered to the next waiting requisição (oldest `approved_at` first).
 
@@ -320,7 +328,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - See the supplier **cost** from a branch account (never). Selling prices appear only in **priced** mode.
 - See the **exact** warehouse stock from a branch account (hint only).
 - Approve as an **operator**. In **priced** mode, a manager also cannot approve over their **EUR cap**.
-- Request an **inactive** item, or a line with **no wholesale price**, or the **same item twice** on one request.
+- Request an **inactive** item, or a line with **no retail price**, or the **same item twice** on one request.
 - Edit a request after **submit**.
 - **Issue** more than is reserved for that request, or more than the request's remaining.
 - **Receive** more than was shipped.
@@ -359,10 +367,10 @@ By default the company is in **unpriced** mode: branches request **quantities**,
 Yes. **None** means nothing is free to ship *today* (empty shelf, or stock already held for earlier approved requisições). Raise the requisição anyway — you join the wait. Incoming stock is offered to the oldest approved request first.
 
 **Q3. Why was my line rejected?**
-The three rules: the item must have a **wholesale price**, it must be **active**, and it must not already be on the request. Check which one applies.
+The three rules: the item must have a **retail price**, it must be **active**, and it must not already be on the request. Check which one applies.
 
 **Q4. I approved a request and the prices changed later — did my request change?**
-No. Approving **freezes** the totals (wholesale + VAT snapshot). Later price changes don't touch an approved request.
+No. Approving **freezes** the totals (retail + VAT snapshot). Later price changes don't touch an approved request.
 
 **Q5. The warehouse shipped less than I asked — what do I do?**
 Confirm the **received quantity** that actually arrived at `/branch/receipts/`. If the rest won't come, a **manager/admin** short-closes it. The request then closes.
@@ -380,7 +388,7 @@ No — one line per item per request. **Edit** the line's quantity instead of ad
 Head office hasn't assigned you to a branch (or your branch is inactive). Contact your administrator — branch access is set up in Django `/admin/`, not by you.
 
 **Q10. What does "gross" mean on the approve button?**
-Only in **priced** mode. It is the request's total **including VAT** (wholesale × quantity, plus VAT) — the figure your approval cap is measured against. In **unpriced** mode the approve confirmation has no euro amount.
+Only in **priced** mode. It is the request's total **including VAT** (retail × quantity, plus VAT) — the figure your approval cap is measured against. In **unpriced** mode the approve confirmation has no euro amount.
 
 **Q11. Another branch asked for the same item after us — will they take our stock?**
 No, once your requisição is **approved**. The warehouse holds the free quantity for you. A later branch can still approve (and wait), but they cannot be issued those held units.
@@ -395,7 +403,7 @@ Stock is already in motion. After the first goods issue the only way to finish e
 Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it.
 
 **Q15. Can I build a requisição while offline?**
-Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically when you open any branch page that loads the offline scripts (catalog, requisição, dashboard, etc.). **Submit**, **Approve**, **Reject**, and **Cancel** still require Wi-Fi.
+Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically when you open any branch page that loads the offline scripts (catalog, requisição, dashboard, etc.). **Submit**, **Approve**, **Reject**, and **Cancel Internal Request** still require Wi-Fi.
 
 **Q16. The catalogue offline banner says availability may be outdated — why?**
 Offline mode shows the **last downloaded** catalogue for the **active branch**. Warehouse stock and availability hints can change while you were disconnected. Selling-price columns follow that last successful download: if it was **unpriced** (or the cache has no mode flag), prices stay hidden. After you reconnect once, the app drops stored price fields from the offline cache; until then, columns still follow the last download. Connect once after a commercial-mode change so the cache matches. If you switch branch while offline, the app warns that the cache belongs to another branch — connect to Wi-Fi on the current branch to download its catalogue.

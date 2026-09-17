@@ -32,7 +32,7 @@ from .services import (
     InvalidStatusTransitionError,
     RequestHasGoodsIssueError,
     SelfApprovalLimitError,
-    WholesalePriceMissingError,
+    RetailPriceMissingError,
     add_line,
     approve,
     cancel,
@@ -53,7 +53,7 @@ def _make_branch_user(email, branch, role):
     return user
 
 
-def _make_item(description, wholesale="5.00", code="", active=True):
+def _make_item(description, wholesale="5.00", retail="10.00", code="", active=True):
     family = FamilyProduct.objects.create(name="Fam " + description, is_active=True)
     vat = VatRate.objects.get(code="VAT16")
     return Item.objects.create(
@@ -63,7 +63,7 @@ def _make_item(description, wholesale="5.00", code="", active=True):
         internal_code=code,
         unit_of_measure=Item.UnitOfMeasure.PIECE,
         is_active=active,
-        retail_price=Decimal("10.00"),
+        retail_price=Decimal(retail),
         wholesale_price=Decimal(wholesale),
         special_price=Decimal("8.00"),
         quantity=Decimal("0"),
@@ -88,11 +88,11 @@ class InternalRequestWorkflowTests(TestCase):
         req = approve(req, self.admin)
         self.assertEqual(req.status, InternalRequest.Status.APPROVED)
         self.assertIsNotNone(req.approved_gross)
-        self.assertEqual(req.approved_net, Decimal("50.00"))
+        self.assertEqual(req.approved_net, Decimal("100.00"))
         self.assertEqual(req.approved_gross, req.approved_net + req.approved_vat)
 
         line.refresh_from_db()
-        self.assertEqual(line.unit_price, Decimal("5.00"))
+        self.assertEqual(line.unit_price, Decimal("10.00"))
 
     def test_submit_requires_lines(self):
         req = create_internal_request(self.branch, self.operator)
@@ -105,10 +105,17 @@ class InternalRequestWorkflowTests(TestCase):
         with self.assertRaises(DuplicateRequestLineError):
             add_line(req, self.item, 2, self.operator)
 
-    def test_zero_wholesale_rejected(self):
-        free = _make_item("Free", wholesale="0.00", code="F1")
+    def test_fractional_quantity_is_rejected(self):
         req = create_internal_request(self.branch, self.operator)
-        with self.assertRaises(WholesalePriceMissingError):
+        with self.assertRaises(ValidationError) as ctx:
+            add_line(req, self.item, "1.5", self.operator)
+        self.assertEqual(ctx.exception.code, "invalid_quantity")
+        self.assertIn("whole number", str(ctx.exception))
+
+    def test_zero_retail_rejected(self):
+        free = _make_item("Free", wholesale="5.00", retail="0.00", code="F1")
+        req = create_internal_request(self.branch, self.operator)
+        with self.assertRaises(RetailPriceMissingError):
             add_line(req, free, 1, self.operator)
 
     def test_inactive_item_rejected(self):
@@ -136,7 +143,7 @@ class InternalRequestWorkflowTests(TestCase):
 
         set_branch_commercial_mode(BranchCommercialSettings.Mode.PRICED)
         req = create_internal_request(self.branch, self.manager)
-        add_line(req, self.item, 20, self.manager)  # gross 116 > 100 self cap
+        add_line(req, self.item, 20, self.manager)  # gross 232 > 100 self cap
         req = submit(req, self.manager)
         with self.assertRaises(SelfApprovalLimitError):
             approve(req, self.manager)
@@ -638,7 +645,7 @@ class WarehouseConsoleTests(TestCase):
         )
         self.assertEqual(r.status_code, 201)
         self.item.refresh_from_db()
-        self.assertEqual(self.item.quantity, Decimal("9.000"))
+        self.assertEqual(self.item.quantity, 9)
 
     def test_cancel_after_issue_is_blocked(self):
         req, line = self._approved_request("2")

@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -33,7 +31,7 @@ class GoodsReceipt(models.Model):
     def total_received(self):
         return sum(
             (line.quantity_received for line in self.lines.all()),
-            Decimal("0"),
+            0,
         )
 
 
@@ -48,7 +46,7 @@ class GoodsReceiptLine(models.Model):
         on_delete=models.PROTECT,
         related_name="goods_receipt_lines",
     )
-    quantity_received = models.DecimalField(max_digits=12, decimal_places=3)
+    quantity_received = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -80,9 +78,7 @@ class StockMovement(models.Model):
         on_delete=models.PROTECT,
         related_name="stock_movements",
     )
-    quantity = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
+    quantity = models.IntegerField(
         help_text="Signed quantity: positive in, negative out.",
     )
     movement_type = models.CharField(max_length=20, choices=Type.choices)
@@ -165,7 +161,7 @@ class GoodsIssueLine(models.Model):
         on_delete=models.PROTECT,
         related_name="goods_issue_lines",
     )
-    quantity_issued = models.DecimalField(max_digits=12, decimal_places=3)
+    quantity_issued = models.IntegerField()
 
     class Meta:
         ordering = ["id"]
@@ -218,7 +214,7 @@ class BranchReceiptLine(models.Model):
         on_delete=models.PROTECT,
         related_name="branch_receipt_lines",
     )
-    quantity_received = models.DecimalField(max_digits=12, decimal_places=3)
+    quantity_received = models.IntegerField()
 
     class Meta:
         ordering = ["id"]
@@ -249,7 +245,7 @@ class BranchItemStock(models.Model):
         on_delete=models.PROTECT,
         related_name="branch_stock",
     )
-    quantity = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    quantity = models.IntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -286,9 +282,7 @@ class BranchStockMovement(models.Model):
         on_delete=models.PROTECT,
         related_name="branch_stock_movements",
     )
-    quantity = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
+    quantity = models.IntegerField(
         help_text="Signed quantity: positive in, negative out.",
     )
     movement_type = models.CharField(max_length=20, choices=Type.choices)

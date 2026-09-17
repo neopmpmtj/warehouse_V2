@@ -92,12 +92,12 @@ class InactiveBranchError(ValidationError):
         super().__init__(f"Cannot use inactive branch '{name}'.", code="inactive_branch")
 
 
-class WholesalePriceMissingError(ValidationError):
+class RetailPriceMissingError(ValidationError):
     def __init__(self, item=None):
         label = getattr(item, "internal_code", None) or getattr(item, "description", None) or "item"
         super().__init__(
-            f"Item '{label}' has no wholesale price.",
-            code="wholesale_price_missing",
+            f"Item '{label}' has no retail price.",
+            code="retail_price_missing",
         )
 
 
@@ -227,9 +227,9 @@ def _ensure_branch_active(branch):
         raise InactiveBranchError(branch)
 
 
-def _ensure_wholesale_positive(item):
-    if not Item.objects.filter(pk=item.pk, wholesale_price__gt=0).exists():
-        raise WholesalePriceMissingError(item)
+def _ensure_retail_positive(item):
+    if not Item.objects.filter(pk=item.pk, retail_price__gt=0).exists():
+        raise RetailPriceMissingError(item)
 
 
 def _parse_decimal(value, field_name):
@@ -243,10 +243,29 @@ def _parse_decimal(value, field_name):
 
 
 def _validate_quantity(quantity):
-    value = _parse_decimal(quantity, "quantity")
+    if isinstance(quantity, bool) or quantity is None:
+        raise ValidationError("quantity must be a whole number.", code="invalid_quantity")
+    if isinstance(quantity, int):
+        value = quantity
+    elif isinstance(quantity, float):
+        if not quantity.is_integer():
+            raise ValidationError("quantity must be a whole number.", code="invalid_quantity")
+        value = int(quantity)
+    elif isinstance(quantity, Decimal):
+        if not quantity.is_finite() or quantity != quantity.to_integral_value():
+            raise ValidationError("quantity must be a whole number.", code="invalid_quantity")
+        value = int(quantity)
+    else:
+        text = str(quantity).strip()
+        if not text or any(ch in text for ch in ".,"):
+            raise ValidationError("quantity must be a whole number.", code="invalid_quantity")
+        try:
+            value = int(text)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("quantity must be a whole number.", code="invalid_quantity") from exc
     if value <= 0:
         raise ValidationError("quantity must be greater than zero.", code="invalid_quantity")
-    if value >= Decimal("1000000000"):
+    if value >= 1_000_000_000:
         raise ValidationError("quantity is too large.", code="invalid_quantity")
     return value
 
@@ -472,7 +491,7 @@ def add_line(request, item, quantity, user=None):
     _ensure_draft(request)
     item = _resolve_item(item)
     _ensure_item_active(item)
-    _ensure_wholesale_positive(item)
+    _ensure_retail_positive(item)
     quantity = _validate_quantity(quantity)
 
     if request.lines.filter(item=item).exists():
@@ -485,7 +504,7 @@ def add_line(request, item, quantity, user=None):
         internal_code=item.internal_code,
         unit_of_measure=item.unit_of_measure,
         quantity=quantity,
-        unit_price=item.wholesale_price,  # snapshot; refreshed at approve
+        unit_price=item.retail_price,  # snapshot; refreshed at approve
         vat_rate=item.vat_rate.rate,
     )
     try:
@@ -649,7 +668,7 @@ def submit(request, user=None):
     _ensure_branch_active(request.branch)
     for line in request.lines.select_related("item"):
         _ensure_item_active(line.item)
-        _ensure_wholesale_positive(line.item)
+        _ensure_retail_positive(line.item)
     _transition(request, InternalRequest.Status.SUBMITTED)
     request.status = InternalRequest.Status.SUBMITTED
     request.submitted_by = user
@@ -675,12 +694,12 @@ def approve(request, user=None, reason=""):
         raise ValidationError("Cannot approve an empty request.", code="empty_request")
     for line in lines:
         _ensure_item_active(line.item)
-        _ensure_wholesale_positive(line.item)
+        _ensure_retail_positive(line.item)
 
-    # Refresh each line's unit_price to the live wholesale (lock 6 / plan §3),
+    # Refresh each line's unit_price to the live retail (lock 6 superseded),
     # then freeze the approved totals.
     for line in lines:
-        line.unit_price = line.item.wholesale_price
+        line.unit_price = line.item.retail_price
         line.save(update_fields=["unit_price", "updated_at"])
 
     net, vat, gross = request.totals()

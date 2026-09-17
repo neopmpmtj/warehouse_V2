@@ -80,7 +80,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `This purchase order already has a line for 'X'.` | One line per item per PO (no merging) | Edit the existing line's quantity instead |
 | `Purchase order lines can only be changed while the order is a draft.` | You tried to add/edit/remove a line after submit | Only drafts are editable |
 | `Cannot submit a purchase order without lines.` | Submitting an empty PO | Add at least one line |
-| `quantity must be greater than zero.` / `quantity is too large.` | Quantity ≤ 0, or ≥ 1,000,000,000 | Use a quantity in `(0, 1e9)` |
+| `quantity must be greater than zero.` / `quantity is too large.` / `quantity must be a whole number.` | Quantity ≤ 0, ≥ 1,000,000,000, or not a whole number | Use a whole number in `(0, 1e9)` |
 | `unit_cost must be zero or greater.` | Negative unit cost | Enter 0 or positive |
 | `…must be between 0 and 100.` | A discount is negative or > 100% | Use 0–100 |
 | `Commercial, financial and rappel discounts cannot exceed 100% combined.` | The three % add up past 100 | Lower them |
@@ -112,6 +112,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Stock cannot be adjusted below zero.` | Would make on-hand negative | Check your quantities |
 | `Cannot reduce stock of 'X' below N reserved for approved requests.` | A negative adjust would steal units already held for requisições | Short-close or cancel the hold first, then adjust |
 | `A reason is required to adjust stock.` | `adjust_stock` needs a reason | Type one |
+| `quantity must be a whole number.` / `Quantity is too large.` | Fraction, or \|qty\| ≥ 1e9 | Use a whole number of the unit |
 
 **Goods issue (warehouse, `/manage/internal-requests/`)**
 
@@ -143,7 +144,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 | Message | Why | What to do |
 |---------|-----|------------|
-| `Item 'X' has no wholesale price.` | Wholesale is 0 — the requisição is priced from wholesale | Set a wholesale price (warehouse), or pick another item |
+| `Item 'X' has no retail price.` | Retail is 0 — the requisição is priced from retail | Set a retail price (warehouse), or pick another item |
 | `This request already has a line for 'X'.` | One line per item (no merging) | Edit the existing line |
 | `Cannot use inactive item 'X'.` / `Cannot use inactive branch 'X'.` | Item or branch deactivated | Reactivate, or pick another |
 | `Internal request lines can only be changed while the request is a draft.` | Editing after submit | Only drafts are editable |
@@ -225,18 +226,18 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 | Field | Storage | Valid range | Extra rule |
 |-------|---------|-------------|------------|
-| **Quantity** (PO line, request line, receipt, issue) | `Decimal(12,3)` | `> 0` and `< 1,000,000,000` | 3 decimal places |
+| **Quantity** (PO line, request line, receipt, issue) | integer | `> 0` and `< 1,000,000,000` | whole number of the item’s unit |
 | **Unit cost / unit price / selling prices / cost price** | `Decimal(12,2)` | `≥ 0` | 2 dp |
 | **Approved totals & approval limits** | `Decimal(14,2)` | `< 1,000,000,000,000` | guarded against overflow |
 | **Discounts** (commercial / financial / rappel) | `Decimal(5,2)` | each `0–100`; **combined ≤ 100** | percentages |
 | **VAT rate** | `Decimal(5,4)` | fraction `0 … 1` | e.g. `0.16` = 16% |
-| **Reorder level** | `Decimal(12,3)` | `≥ 0` | 0 = "no reorder trigger" |
+| **Reorder level** | integer | `≥ 0` and `< 1,000,000,000` | 0 = "no reorder trigger"; whole number |
 | **Internal code** | `CharField` max **64** | required on console create; letters, digits, `.`, `-`, `_` only; **stored uppercase**; **immutable after save** (set-if-empty once for legacy) | unique, case-insensitive |
 | **Retail price (Genesis)** | `Decimal(12,2)` | Console Genesis needs **> 0**; inactive save allows **≥ 0** | wholesale/special may stay 0 |
 | **Reason / notes (reason fields)** | `CharField` / `TextField` | reason ≤ **255 chars** | over-long reason rejected |
 | **Email** | `EmailField` | valid email | supplier & user |
-| **Stock balances** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | can't go negative |
-| **Reserved qty** (`InternalRequestLine.quantity_reserved`) | `Decimal(12,3)` | `≥ 0` and `≤` line quantity | claim on warehouse stock, not a ledger movement |
+| **Stock balances** (`Item.quantity`, `BranchItemStock.quantity`) | integer | `≥ 0` | can't go negative |
+| **Reserved qty** (`InternalRequestLine.quantity_reserved`) | integer | `≥ 0` and `≤` line quantity | claim on warehouse stock, not a ledger movement |
 | **Parle body** | `TextField` | **1–4000** characters after trim | empty rejected |
 | **Parle edit window** | — | **15 minutes** from `created_at` | author only |
 
@@ -304,7 +305,7 @@ cancelled                                cancelled         ▼               shi
 
 | Case | Behaviour |
 |------|-----------|
-| **Selling price = 0** | Means "not yet priced" — but a requisição line with **wholesale = 0 is rejected** |
+| **Selling price = 0** | Means "not yet priced" — but a requisição line with **retail = 0 is rejected** |
 | **Buying price (cost)** | From the **primary** supplier's price; if no primary, the **cheapest** supplier; if no prices at all → **no cost shown** |
 | **One primary per item** | Marking a new supplier primary automatically **un-marks** the old one (DB-enforced) |
 | **Supplier price** | Only for an **active** supplier **and** item; one cost per supplier×item |

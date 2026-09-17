@@ -55,7 +55,7 @@
             </div>
             <div class="row" id="adjust-row" hidden>
                 <input id="adjust-item" placeholder="Item ID">
-                <input id="adjust-qty" type="number" step="0.001" placeholder="Qty">
+                <input id="adjust-qty" type="number" step="1" placeholder="Qty">
                 <input id="adjust-reason" placeholder="Reason">
                 <button id="adjust-btn" class="btn">Adjust stock</button>
             </div>
@@ -132,7 +132,7 @@
                     tr.appendChild(el("td", line.remaining));
                     var td = document.createElement("td");
                     var input = document.createElement("input");
-                    input.type = "number"; input.step = "0.001"; input.min = "0.001"; input.className = "qty";
+                    input.type = "number"; input.step = "1"; input.min = "1"; input.className = "qty";
                     input.dataset.lineId = line.line_id;
                     input.disabled = issue.request_status === "closed";
                     td.appendChild(input);

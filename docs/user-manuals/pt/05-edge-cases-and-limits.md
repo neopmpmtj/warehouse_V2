@@ -80,7 +80,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `This purchase order already has a line for 'X'.` (Esta encomenda já tem uma linha para 'X'.) | Uma linha por artigo por encomenda (sem agregar) | Edite a quantidade da linha existente |
 | `As linhas só podem ser alteradas enquanto a encomenda é um rascunho.` | Tentou adicionar/editar/remover uma linha depois de submeter | Só rascunhos são editáveis |
 | `Adicione pelo menos uma linha antes de submeter.` | Submeter uma encomenda vazia | Adicione pelo menos uma linha |
-| `A quantidade tem de ser maior que zero.` / `quantity is too large.` (a quantidade é demasiado grande) | Quantidade ≤ 0, ou ≥ 1 000 000 000 | Use uma quantidade em `(0, 1e9)` |
+| `A quantidade tem de ser maior que zero.` / `quantity is too large.` (a quantidade é demasiado grande) / `quantity must be a whole number.` (a quantidade tem de ser um número inteiro) | Quantidade ≤ 0, ≥ 1 000 000 000, ou não inteira | Use um número inteiro em `(0, 1e9)` |
 | `O custo unitário tem de ser zero ou superior.` | Custo unitário negativo | Indique 0 ou positivo |
 | `…must be between 0 and 100.` (…tem de estar entre 0 e 100.) | Um desconto é negativo ou > 100% | Use 0–100 |
 | `Os descontos comercial, financeiro e rappel não podem, juntos, ultrapassar 100%.` | As três % somam mais de 100 | Reduza-as |
@@ -112,6 +112,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `O stock não pode ser ajustado abaixo de zero.` | Tornaria o stock em armazém negativo | Verifique as quantidades |
 | `Não é possível reduzir o stock abaixo da quantidade reservada para requisições aprovadas.` / `Cannot reduce stock of 'X' below N reserved for approved requests.` | Um ajuste negativo roubaria unidades já reservadas para requisições | Encerre parcialmente ou cancele a reserva primeiro, depois ajuste |
 | `É obrigatório indicar um motivo para ajustar o stock.` | `adjust_stock` exige motivo | Escreva um |
+| `quantity must be a whole number.` / `Quantity is too large.` | Fracção, ou \|qtd\| ≥ 1e9 | Use um número inteiro da unidade |
 
 **Saída de mercadoria (armazém, `/manage/internal-requests/`)**
 
@@ -144,7 +145,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 
 | Mensagem | Porquê | O que fazer |
 |---------|-----|------------|
-| `Item 'X' has no wholesale price.` (O artigo 'X' não tem preço de grossista.) | Grossista = 0 — a requisição é precificada pelo grossista | Defina preço de grossista (armazém), ou escolha outro artigo |
+| `Item 'X' has no retail price.` (O artigo 'X' não tem preço de retalho.) | Retalho = 0 — a requisição é precificada pelo retalho | Defina preço de retalho (armazém), ou escolha outro artigo |
 | `This request already has a line for 'X'.` (Esta requisição já tem uma linha para 'X'.) | Uma linha por artigo (sem agregar) | Edite a linha existente |
 | `Cannot use inactive item 'X'.` / `Cannot use inactive branch 'X'.` (Não é possível usar artigo/filial inativo 'X'.) | Artigo ou filial desativado | Reative, ou escolha outro |
 | `Internal request lines can only be changed while the request is a draft.` (As linhas da requisição interna só podem ser alteradas enquanto a requisição é rascunho.) | Edição depois de submeter | Só rascunhos são editáveis |
@@ -226,18 +227,18 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 
 | Campo | Armazenamento | Intervalo válido | Regra extra |
 |-------|---------|-------------|------------|
-| **Quantidade** (linha de encomenda, linha de requisição, receção, emissão) | `Decimal(12,3)` | `> 0` e `< 1 000 000 000` | 3 casas decimais |
+| **Quantidade** (linha de encomenda, linha de requisição, receção, emissão) | inteiro | `> 0` e `< 1 000 000 000` | número inteiro da unidade do artigo |
 | **Custo unitário / preço unitário / preços de venda / preço de custo** | `Decimal(12,2)` | `≥ 0` | 2 casas decimais |
 | **Totais aprovados e limites de aprovação** | `Decimal(14,2)` | `< 1 000 000 000 000` | protegido contra overflow |
-| **Descontos** (comercial / financeiro / rappel) | `Decimal(5,2)` | cada `0–100`; **combinados ≤ 100** | percentagens |
-| **Taxa de IVA** | `Decimal(5,4)` | fração `0 … 1` | ex.: `0.16` = 16% |
-| **Nível de reposição** | `Decimal(12,3)` | `≥ 0` | 0 = "sem disparo de encomenda" |
+| **Descontos** (comercial / financeiro / rappel) | `Decimal(5,2)` | cada `0–100`; **conjunto ≤ 100** | percentagens |
+| **Taxa de IVA** | `Decimal(5,4)` | fracção `0 … 1` | p.ex. `0.16` = 16% |
+| **Nível de reposição** | inteiro | `≥ 0` e `< 1 000 000 000` | 0 = "sem disparo de encomenda"; número inteiro |
 | **Código interno** | `CharField` máx. **64** | obrigatório na criação na consola; só letras, algarismos, `.`, `-`, `_`; **guardado em maiúsculas**; **imutável após guardar** (definir-se-vazio uma vez para legado) | único, sem distinção maiúsculas/minúsculas |
 | **Preço de retalho (Génese)** | `Decimal(12,2)` | A Génese na consola exige **> 0**; guardar inativo permite **≥ 0** | grossista/especial podem ficar 0 |
 | **Motivo / notas (campos de motivo)** | `CharField` / `TextField` | motivo ≤ **255 carateres** | motivo demasiado longo rejeitado |
 | **Email** | `EmailField` | email válido | fornecedor e utilizador |
-| **Saldos de stock** (`Item.quantity`, `BranchItemStock.quantity`) | `Decimal(12,3)` | `≥ 0` | não pode ficar negativo |
-| **Quantidade reservada** (`InternalRequestLine.quantity_reserved`) | `Decimal(12,3)` | `≥ 0` e `≤` quantidade da linha | reivindicação sobre stock de armazém, não movimento de livro-razão |
+| **Saldos de stock** (`Item.quantity`, `BranchItemStock.quantity`) | inteiro | `≥ 0` | não pode ficar negativo |
+| **Quantidade reservada** (`InternalRequestLine.quantity_reserved`) | inteiro | `≥ 0` e `≤` quantidade da linha | reivindicação sobre stock de armazém, não movimento de livro-razão |
 | **Corpo Parle** | `TextField` | **1–4000** carateres após trim | vazio rejeitado |
 | **Janela de edição Parle** | — | **15 minutos** desde `created_at` | só autor |
 
@@ -305,7 +306,7 @@ cancelled                                cancelled         ▼               shi
 
 | Caso | Comportamento |
 |------|-----------|
-| **Preço de venda = 0** | Significa "ainda sem preço" — mas uma linha de requisição com **grossista = 0 é rejeitada** |
+| **Preço de venda = 0** | Significa "ainda sem preço" — mas uma linha de requisição com **retalho = 0 é rejeitada** |
 | **Preço de compra (custo)** | Do preço do fornecedor **principal**; se não houver principal, o fornecedor **mais barato**; se não houver preços → **sem custo mostrado** |
 | **Um principal por artigo** | Marcar um fornecedor novo como principal **desmarca** automaticamente o antigo (imposto na BD) |
 | **Preço de fornecedor** | Só para fornecedor **ativo** **e** artigo; um custo por fornecedor×artigo |

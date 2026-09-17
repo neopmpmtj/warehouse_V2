@@ -115,7 +115,7 @@ def _serialize_line(line, received_map=None):
         "line_total": _dec(line.line_total),
     }
     if received_map is not None:
-        received = received_map.get(line.id, Decimal("0"))
+        received = received_map.get(line.id, 0)
         remaining = line.quantity - received
         payload["quantity_received"] = _dec(received)
         payload["quantity_remaining"] = _dec(remaining)
@@ -128,9 +128,9 @@ def _po_receipt_progress(po):
     received_map = _received_qty_map(po)
     lines = list(po.lines.all())
     has_remaining = any(
-        (line.quantity - received_map.get(line.id, Decimal("0"))) > 0 for line in lines
+        (line.quantity - received_map.get(line.id, 0)) > 0 for line in lines
     )
-    has_received = any(received_map.get(line.id, Decimal("0")) > 0 for line in lines)
+    has_received = any(received_map.get(line.id, 0) > 0 for line in lines)
     return received_map, has_remaining, has_received
 
 

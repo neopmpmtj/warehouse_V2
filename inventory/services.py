@@ -1,9 +1,9 @@
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import DecimalField, F, OuterRef, Subquery, Sum, Value
+from django.db.models import F, IntegerField, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 
 from logging_utils import get_logger
@@ -112,7 +112,7 @@ def _received_qty_map(po):
         .annotate(total=Sum("quantity_received"))
     )
     return {
-        row["purchase_order_line_id"]: (row["total"] or Decimal("0"))
+        row["purchase_order_line_id"]: (row["total"] or 0)
         for row in totals
     }
 
@@ -124,24 +124,13 @@ def ledger_quantity(item):
         "total"
     ]
     if total is None:
-        return Decimal("0.000")
-    return total.quantize(Decimal("0.001"))
+        return 0
+    return int(total)
 
 
 def _parse_decimal_quantity(value):
-    """Parse, bound and quantise a quantity to the field precision (12,3), rounding half away from zero."""
-    try:
-        qty = Decimal(str(value))
-    except (InvalidOperation, TypeError, ValueError) as exc:
-        raise InvalidQuantityError() from exc
-    if not qty.is_finite():
-        raise InvalidQuantityError()
-    rounded = qty.quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
-    if qty != 0 and rounded == 0:
-        raise InvalidQuantityError("Quantity is too small (rounds to zero).")
-    if rounded.copy_abs() >= Decimal("1000000000"):
-        raise InvalidQuantityError("Quantity is too large.")
-    return rounded
+    """Parse a whole-number quantity (legacy name kept for call sites)."""
+    return _parse_int_quantity(value)
 
 
 def _validate_received_qty(value):
@@ -156,7 +145,7 @@ def _validate_received_qty(value):
 def _is_fully_received(po):
     received_map = _received_qty_map(po)
     return all(
-        (line.quantity - received_map.get(line.id, Decimal("0"))) <= 0
+        (line.quantity - received_map.get(line.id, 0)) <= 0
         for line in po.lines.all()
     )
 
@@ -172,10 +161,10 @@ def _log_goods_received(po, user, changes):
 
 def _write_movement(item, quantity, movement_type, user, content_object=None, reason=""):
     item = Item.objects.select_for_update().get(pk=item.pk)
-    new_quantity = (item.quantity or Decimal("0")) + quantity
+    new_quantity = int(item.quantity or 0) + int(quantity)
     if quantity < 0 and new_quantity < 0:
         raise NegativeStockError()
-    if new_quantity.copy_abs() >= Decimal("1000000000"):
+    if abs(new_quantity) >= QTY_ABS_MAX:
         raise InvalidQuantityError(
             "Resulting stock balance is too large for the quantity field."
         )
@@ -191,7 +180,7 @@ def _write_movement(item, quantity, movement_type, user, content_object=None, re
         kwargs["object_id"] = content_object.pk
     movement = StockMovement.objects.create(**kwargs)
 
-    item.quantity = new_quantity.quantize(Decimal("0.001"))
+    item.quantity = new_quantity
     item.save(update_fields=["quantity", "updated_at"])
     return movement
 
@@ -230,7 +219,7 @@ def receive_goods(po, lines, user, reference="", notes=""):
         if po_line.id in seen_line_ids:
             raise DuplicateReceiptLineError()
         seen_line_ids.add(po_line.id)
-        remaining = po_line.quantity - received_map.get(po_line.id, Decimal("0"))
+        remaining = po_line.quantity - received_map.get(po_line.id, 0)
         if qty > remaining:
             raise InvalidReceivedQuantityError(
                 f"Received quantity {qty} exceeds remaining {remaining} "
@@ -325,7 +314,7 @@ def adjust_stock(item, quantity, reason, user):
     item = Item.objects.select_for_update().get(pk=item.pk)
     if quantity < 0:
         reserved = reserved_quantity(item)
-        projected = _qty3(item.quantity) + quantity
+        projected = _qty_int(item.quantity) + quantity
         if reserved > 0 and projected < reserved:
             raise AdjustBelowReservedError(item, reserved)
 
@@ -378,8 +367,8 @@ def get_receipt_summary(po):
             "description": line.description,
             "unit_of_measure": line.unit_of_measure,
             "quantity": str(line.quantity),
-            "received": str(received_map.get(line.id, Decimal("0"))),
-            "remaining": str(line.quantity - received_map.get(line.id, Decimal("0"))),
+            "received": str(received_map.get(line.id, 0)),
+            "remaining": str(line.quantity - received_map.get(line.id, 0)),
         }
         for line in lines
     ]
@@ -458,17 +447,46 @@ class AdjustBelowReservedError(ValidationError):
         )
 
 
-QTY_3DP = Decimal("0.001")
+QTY_ABS_MAX = 1_000_000_000
+
+
+def _parse_int_quantity(value):
+    """Parse a whole-number quantity. Rejects fractions; bound |q| < 1e9."""
+    if isinstance(value, bool) or value is None:
+        raise InvalidQuantityError("quantity must be a whole number.")
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, float):
+        if not value.is_integer():
+            raise InvalidQuantityError("quantity must be a whole number.")
+        parsed = int(value)
+    elif isinstance(value, Decimal):
+        if not value.is_finite() or value != value.to_integral_value():
+            raise InvalidQuantityError("quantity must be a whole number.")
+        parsed = int(value)
+    else:
+        text = str(value).strip()
+        if not text or any(ch in text for ch in ".,"):
+            raise InvalidQuantityError("quantity must be a whole number.")
+        try:
+            parsed = int(text)
+        except (TypeError, ValueError) as exc:
+            raise InvalidQuantityError("quantity must be a whole number.") from exc
+    if abs(parsed) >= QTY_ABS_MAX:
+        raise InvalidQuantityError("Quantity is too large.")
+    return parsed
+
+
+def _qty_int(value):
+    if value is None:
+        return 0
+    return int(value)
+
+
 ACTIVE_RESERVATION_STATUSES = (
     InternalRequest.Status.APPROVED,
     InternalRequest.Status.FULFILLING,
 )
-
-
-def _qty3(value):
-    if value is None:
-        return Decimal("0.000")
-    return Decimal(value).quantize(QTY_3DP)
 
 
 def reserved_quantity(item):
@@ -478,15 +496,15 @@ def reserved_quantity(item):
         item=item,
         internal_request__status__in=ACTIVE_RESERVATION_STATUSES,
     ).aggregate(total=Sum("quantity_reserved"))["total"]
-    return _qty3(total)
+    return _qty_int(total)
 
 
 def available_quantity(item):
     """On-hand minus active reservations. Never reports negative."""
     item = Item.objects.get(pk=_resolve_item(item).pk)
-    available = _qty3(item.quantity) - reserved_quantity(item)
+    available = _qty_int(item.quantity) - reserved_quantity(item)
     if available < 0:
-        return Decimal("0.000")
+        return 0
     return available
 
 
@@ -501,11 +519,11 @@ def annotate_item_reservations(queryset):
         .annotate(total=Sum("quantity_reserved"))
         .values("total")
     )
-    decimal_field = DecimalField(max_digits=12, decimal_places=3)
+    int_field = IntegerField()
     return queryset.annotate(
         reserved=Coalesce(
-            Subquery(reserved_sq, output_field=decimal_field),
-            Value(Decimal("0.000"), output_field=decimal_field),
+            Subquery(reserved_sq, output_field=int_field),
+            Value(0, output_field=int_field),
         )
     ).annotate(available=F("quantity") - F("reserved"))
 
@@ -519,7 +537,7 @@ def _issued_qty_for_line_ids(line_ids):
         .annotate(total=Sum("quantity_issued"))
     )
     return {
-        row["internal_request_line_id"]: _qty3(row["total"])
+        row["internal_request_line_id"]: _qty_int(row["total"])
         for row in totals
     }
 
@@ -530,16 +548,16 @@ def _log_reservation_change(line, user, old, new):
         user=user,
         action=InternalRequestLineChangeLog.Action.UPDATED,
         changes={
-            "quantity_reserved": {"old": str(_qty3(old)), "new": str(_qty3(new))},
+            "quantity_reserved": {"old": str(_qty_int(old)), "new": str(_qty_int(new))},
         },
     )
 
 
 def _set_line_reserved(line, new_qty, user=None):
-    new_qty = _qty3(new_qty)
+    new_qty = _qty_int(new_qty)
     if new_qty < 0:
-        new_qty = Decimal("0.000")
-    old = _qty3(line.quantity_reserved)
+        new_qty = 0
+    old = _qty_int(line.quantity_reserved)
     if old == new_qty:
         return line
     line.quantity_reserved = new_qty
@@ -578,17 +596,17 @@ def allocate_available_stock(item, user=None):
         .select_for_update()
     }
     issued_map = _issued_qty_for_line_ids(line_ids)
-    reserved_total = sum((_qty3(locked[pk].quantity_reserved) for pk in locked), Decimal("0.000"))
-    available = _qty3(item.quantity) - reserved_total
+    reserved_total = sum((_qty_int(locked[pk].quantity_reserved) for pk in locked), 0)
+    available = _qty_int(item.quantity) - reserved_total
     if available < 0:
-        available = Decimal("0.000")
+        available = 0
 
     for candidate in candidates:
         line = locked[candidate.pk]
-        remaining = _qty3(line.quantity) - issued_map.get(line.pk, Decimal("0.000"))
+        remaining = _qty_int(line.quantity) - issued_map.get(line.pk, 0)
         if remaining < 0:
-            remaining = Decimal("0.000")
-        current = _qty3(line.quantity_reserved)
+            remaining = 0
+        current = _qty_int(line.quantity_reserved)
         if current > remaining:
             _set_line_reserved(line, remaining, user)
             available += current - remaining
@@ -614,7 +632,7 @@ def release_reservations_for_request(request, user=None):
         InternalRequestLine.objects.filter(pk__in=line_ids).order_by("pk").select_for_update()
     )
     for line in locked_lines:
-        _set_line_reserved(line, Decimal("0"), user)
+        _set_line_reserved(line, 0, user)
     return item_ids
 
 
@@ -649,7 +667,7 @@ def _issued_qty_map(request):
         .annotate(total=Sum("quantity_issued"))
     )
     return {
-        row["internal_request_line_id"]: (row["total"] or Decimal("0"))
+        row["internal_request_line_id"]: (row["total"] or 0)
         for row in totals
     }
 
@@ -657,7 +675,7 @@ def _issued_qty_map(request):
 def _is_fully_issued(request):
     issued_map = _issued_qty_map(request)
     return all(
-        (line.quantity - issued_map.get(line.id, Decimal("0"))) <= 0
+        (line.quantity - issued_map.get(line.id, 0)) <= 0
         for line in request.lines.all()
     )
 
@@ -701,7 +719,7 @@ def issue_goods(request, lines, user, reference="", notes=""):
         if request_line.id in seen_line_ids:
             raise DuplicateIssueLineError()
         seen_line_ids.add(request_line.id)
-        remaining = request_line.quantity - issued_map.get(request_line.id, Decimal("0"))
+        remaining = request_line.quantity - issued_map.get(request_line.id, 0)
         if qty > remaining:
             raise InvalidIssuedQuantityError(
                 f"Issued quantity {qty} exceeds remaining {remaining} "
@@ -725,11 +743,11 @@ def issue_goods(request, lines, user, reference="", notes=""):
     issued_pairs = []
     for request_line, qty in normalized:
         request_line.refresh_from_db()
-        reserved = _qty3(request_line.quantity_reserved)
+        reserved = _qty_int(request_line.quantity_reserved)
         if qty > reserved:
             raise InsufficientReservationError(request_line.item, qty, reserved)
         item = Item.objects.select_for_update().get(pk=request_line.item_id)
-        on_hand = _qty3(item.quantity)
+        on_hand = _qty_int(item.quantity)
         if qty > on_hand:
             raise InsufficientStockError(request_line.item, on_hand, qty)
         issued_pairs.append((request_line, qty))
@@ -749,7 +767,7 @@ def issue_goods(request, lines, user, reference="", notes=""):
         )
         _set_line_reserved(
             request_line,
-            _qty3(request_line.quantity_reserved) - qty,
+            _qty_int(request_line.quantity_reserved) - qty,
             user,
         )
         _write_movement(
@@ -837,7 +855,7 @@ def get_issue_summaries(requests):
     for row in issued_rows:
         issued_by_req.setdefault(
             row["internal_request_line__internal_request_id"], {}
-        )[row["internal_request_line_id"]] = row["total"] or Decimal("0")
+        )[row["internal_request_line_id"]] = row["total"] or 0
 
     item_ids = set()
     for r in requests:
@@ -851,15 +869,15 @@ def get_issue_summaries(requests):
         issued_map = issued_by_req.get(r.id, {})
         summary = []
         for line in lines:
-            issued = issued_map.get(line.id, Decimal("0"))
+            issued = issued_map.get(line.id, 0)
             remaining = line.quantity - issued
-            reserved = _qty3(line.quantity_reserved)
+            reserved = _qty_int(line.quantity_reserved)
             backorder = remaining - reserved
             if backorder < 0:
-                backorder = Decimal("0.000")
-            available = available_by_item.get(line.item_id, Decimal("0.000"))
+                backorder = 0
+            available = available_by_item.get(line.item_id, 0)
             if available < 0:
-                available = Decimal("0.000")
+                available = 0
             summary.append(
                 {
                     "line_id": line.id,
@@ -871,7 +889,7 @@ def get_issue_summaries(requests):
                     "issued": str(issued),
                     "remaining": str(remaining),
                     "reserved": str(reserved),
-                    "backorder": str(_qty3(backorder)),
+                    "backorder": str(_qty_int(backorder)),
                     "on_hand": str(line.item.quantity),
                     "available": str(available),
                 }
@@ -957,7 +975,7 @@ def _branch_received_qty_map(goods_issue):
         .annotate(total=Sum("quantity_received"))
     )
     return {
-        row["goods_issue_line_id"]: (row["total"] or Decimal("0"))
+        row["goods_issue_line_id"]: (row["total"] or 0)
         for row in totals
     }
 
@@ -971,7 +989,7 @@ def _request_received_qty_map(request):
         .annotate(total=Sum("quantity_received"))
     )
     return {
-        row["goods_issue_line__internal_request_line_id"]: (row["total"] or Decimal("0"))
+        row["goods_issue_line__internal_request_line_id"]: (row["total"] or 0)
         for row in totals
     }
 
@@ -980,7 +998,7 @@ def _is_request_fully_received(request):
     issued_map = _issued_qty_map(request)
     received_map = _request_received_qty_map(request)
     return all(
-        (issued_map.get(line.id, Decimal("0")) - received_map.get(line.id, Decimal("0"))) <= 0
+        (issued_map.get(line.id, 0) - received_map.get(line.id, 0)) <= 0
         for line in request.lines.all()
     )
 
@@ -995,7 +1013,7 @@ def _validate_branch_received_qty(value):
 def _write_branch_movement(branch, item, quantity, movement_type, user, content_object=None, reason=""):
     stock, _ = BranchItemStock.objects.get_or_create(branch=branch, item=item)
     stock = BranchItemStock.objects.select_for_update().get(pk=stock.pk)
-    new_quantity = (stock.quantity or Decimal("0")) + quantity
+    new_quantity = int(stock.quantity or 0) + int(quantity)
     if new_quantity < 0:
         raise BranchStockNegativeError()
 
@@ -1012,7 +1030,7 @@ def _write_branch_movement(branch, item, quantity, movement_type, user, content_
         kwargs["object_id"] = content_object.pk
     movement = BranchStockMovement.objects.create(**kwargs)
 
-    stock.quantity = new_quantity.quantize(Decimal("0.001"))
+    stock.quantity = new_quantity
     stock.save(update_fields=["quantity", "updated_at"])
     return movement
 
@@ -1057,7 +1075,7 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
         if issue_line.id in seen_line_ids:
             raise DuplicateBranchReceiptLineError()
         seen_line_ids.add(issue_line.id)
-        remaining = issue_line.quantity_issued - received_map.get(issue_line.id, Decimal("0"))
+        remaining = issue_line.quantity_issued - received_map.get(issue_line.id, 0)
         if qty > remaining:
             raise BranchInsufficientShippedError(remaining, qty)
         normalized.append((issue_line, qty))
@@ -1203,8 +1221,8 @@ def get_branch_issue_summary(goods_issue):
             "description": line.internal_request_line.description,
             "unit_of_measure": line.internal_request_line.unit_of_measure,
             "quantity_issued": str(line.quantity_issued),
-            "received": str(received_map.get(line.id, Decimal("0"))),
-            "remaining": str(line.quantity_issued - received_map.get(line.id, Decimal("0"))),
+            "received": str(received_map.get(line.id, 0)),
+            "remaining": str(line.quantity_issued - received_map.get(line.id, 0)),
         }
         for line in lines
     ]

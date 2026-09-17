@@ -278,7 +278,7 @@ class Command(BaseCommand):
         if branch is None:
             return
         item = Item.objects.filter(
-            is_active=True, family__is_active=True, wholesale_price__gt=0
+            is_active=True, family__is_active=True, retail_price__gt=0
         ).first()
         if item is None:
             return

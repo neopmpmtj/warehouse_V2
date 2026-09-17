@@ -270,11 +270,11 @@ def _po_has_remaining(po):
         .annotate(total=Sum("quantity_received"))
     )
     received_map = {
-        row["purchase_order_line_id"]: (row["total"] or Decimal("0"))
+        row["purchase_order_line_id"]: (row["total"] or 0)
         for row in totals
     }
     return any(
-        (line.quantity - received_map.get(line.id, Decimal("0"))) > 0
+        (line.quantity - received_map.get(line.id, 0)) > 0
         for line in po.lines.all()
     )
 
@@ -396,10 +396,29 @@ def _parse_decimal(value, field_name):
 
 
 def _validate_quantity(quantity):
-    value = _parse_decimal(quantity, "quantity")
+    if isinstance(quantity, bool) or quantity is None:
+        raise ValidationError("quantity must be a whole number.", code="invalid_quantity")
+    if isinstance(quantity, int):
+        value = quantity
+    elif isinstance(quantity, float):
+        if not quantity.is_integer():
+            raise ValidationError("quantity must be a whole number.", code="invalid_quantity")
+        value = int(quantity)
+    elif isinstance(quantity, Decimal):
+        if not quantity.is_finite() or quantity != quantity.to_integral_value():
+            raise ValidationError("quantity must be a whole number.", code="invalid_quantity")
+        value = int(quantity)
+    else:
+        text = str(quantity).strip()
+        if not text or any(ch in text for ch in ".,"):
+            raise ValidationError("quantity must be a whole number.", code="invalid_quantity")
+        try:
+            value = int(text)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("quantity must be a whole number.", code="invalid_quantity") from exc
     if value <= 0:
         raise ValidationError("quantity must be greater than zero.", code="invalid_quantity")
-    if value >= Decimal("1000000000"):
+    if value >= 1_000_000_000:
         raise ValidationError("quantity is too large.", code="invalid_quantity")
     return value
 

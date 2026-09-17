@@ -136,7 +136,7 @@ Várias receções contra a mesma encomenda são normais.
 | Esta entrega | O que escrever em **A receber** |
 |---------------|--------------------------------|
 | Quantidade restante completa | Deixe os números pré-preenchidos |
-| Só parte de uma linha | Escreva a quantidade que realmente chegou (tem de ser **superior a zero** e **não mais que em falta**) |
+| Só parte de uma linha | Escreva a quantidade que realmente chegou (tem de ser um **número inteiro superior a zero** e **não mais que em falta**) |
 | Uma linha que não veio neste camião | Deixe **0** — essa linha é omitida nesta receção |
 
 - Tem de receber **pelo menos uma** linha com quantidade superior a zero.

@@ -173,10 +173,10 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
         )
         self.assertEqual(movements.first().reason, "correction")
 
-    def test_adjust_stock_rounds_quantity_half_up(self):
-        services.adjust_stock(self.item, "10.0005", "rounding", self.user)
-        self.item.refresh_from_db()
-        self.assertEqual(self.item.quantity, Decimal("10.001"))
+    def test_adjust_stock_rejects_fractional_quantity(self):
+        with self.assertRaises(services.InvalidQuantityError) as ctx:
+            services.adjust_stock(self.item, "10.0005", "rounding", self.user)
+        self.assertIn("whole number", str(ctx.exception))
 
     def test_adjust_stock_requires_reason(self):
         with self.assertRaises(ValidationError) as ctx:
@@ -204,11 +204,11 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
 
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                self.item.quantity = Decimal("-1")
+                self.item.quantity = -1
                 self.item.save(update_fields=["quantity"])
 
     def test_adjust_stock_rejects_balance_overflow(self):
-        self.item.quantity = Decimal("999999999.000")
+        self.item.quantity = 999999999
         self.item.save(update_fields=["quantity", "updated_at"])
         with self.assertRaises(services.InvalidQuantityError):
             services.adjust_stock(self.item, "1", "overflow", self.user)
@@ -219,9 +219,9 @@ class GoodsReceiptServiceTests(InventoryTestCaseMixin, TestCase):
 
         summary = services.get_receipt_summary(po)
         self.assertEqual(len(summary), 1)
-        self.assertEqual(summary[0]["quantity"], "10.000")
-        self.assertEqual(summary[0]["received"], "4.000")
-        self.assertEqual(summary[0]["remaining"], "6.000")
+        self.assertEqual(summary[0]["quantity"], "10")
+        self.assertEqual(summary[0]["received"], "4")
+        self.assertEqual(summary[0]["remaining"], "6")
 
     def test_short_close_purchase_order_wrapper(self):
         po, line = self.create_approved_po("10")
@@ -438,7 +438,7 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         )
         self.assertEqual(summary.status_code, 200)
         line = summary.json()["lines"][0]
-        self.assertEqual(line["remaining"], "10.000")
+        self.assertEqual(line["remaining"], "10")
 
         resp = self.client.post(
             reverse("manage_goods_receipt_list"),
@@ -454,7 +454,7 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         receipt = resp.json()["goods_receipt"]
-        self.assertEqual(receipt["total_received"], "6.000")
+        self.assertEqual(receipt["total_received"], "6")
 
         self.item.refresh_from_db()
         self.assertEqual(self.item.quantity, Decimal("6"))
@@ -518,8 +518,8 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
             **self.host,
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["quantity"], "5.000")
-        self.assertEqual(resp.json()["balance"], "5.000")
+        self.assertEqual(resp.json()["quantity"], "5")
+        self.assertEqual(resp.json()["balance"], "5")
 
         resp2 = self.client.post(
             reverse("manage_stock_adjustment"),
@@ -528,8 +528,8 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
             **self.host,
         )
         self.assertEqual(resp2.status_code, 200)
-        self.assertEqual(resp2.json()["quantity"], "-2.000")
-        self.assertEqual(resp2.json()["balance"], "3.000")
+        self.assertEqual(resp2.json()["quantity"], "-2")
+        self.assertEqual(resp2.json()["balance"], "3")
 
     def test_stock_movements_endpoint(self):
         self.client.force_login(self.user)
@@ -540,7 +540,7 @@ class InventoryConsoleTests(InventoryTestCaseMixin, TestCase):
         self.assertEqual(resp.status_code, 200)
         movements = resp.json()["stock_movements"]
         self.assertEqual(len(movements), 1)
-        self.assertEqual(movements[0]["quantity"], "3.000")
+        self.assertEqual(movements[0]["quantity"], "3")
         self.assertEqual(movements[0]["movement_type"], "receipt")
         self.assertTrue(movements[0]["reference"].startswith("GR #"))
 
@@ -673,7 +673,7 @@ class ConcurrentReceiptTests(InventoryTestCaseMixin, TransactionTestCase):
             thread.join()
 
         self.item.refresh_from_db()
-        self.assertEqual(self.item.quantity, Decimal("6.000"))
+        self.assertEqual(self.item.quantity, 6)
         self.assertEqual(outcomes.count("ok"), 1)
         self.assertEqual(outcomes.count("rejected"), 1)
 
@@ -726,14 +726,14 @@ class GoodsIssueTests(TestCase):
         services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
 
         self.item.refresh_from_db()
-        self.assertEqual(self.item.quantity, Decimal("6.000"))
+        self.assertEqual(self.item.quantity, 6)
         req.refresh_from_db()
         self.assertEqual(req.status, InternalRequest.Status.SHIPPED)
         self.assertTrue(
             StockMovement.objects.filter(
                 item=self.item,
                 movement_type=StockMovement.Type.GOODS_ISSUE,
-                quantity=Decimal("-4.000"),
+                quantity=-4,
             ).exists()
         )
 
@@ -744,7 +744,7 @@ class GoodsIssueTests(TestCase):
         req.refresh_from_db()
         self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
         self.item.refresh_from_db()
-        self.assertEqual(self.item.quantity, Decimal("6.000"))
+        self.assertEqual(self.item.quantity, 6)
 
     def test_cannot_issue_more_than_remaining(self):
         req, line = self._approved_request("4")
@@ -756,7 +756,7 @@ class GoodsIssueTests(TestCase):
         self.item.save(update_fields=["quantity"])
         req, line = self._approved_request("10")
         line.refresh_from_db()
-        self.assertEqual(line.quantity_reserved, Decimal("3.000"))
+        self.assertEqual(line.quantity_reserved, 3)
         with self.assertRaises(services.InsufficientReservationError) as ctx:
             services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
         self.assertEqual(ctx.exception.code, "insufficient_reservation")
@@ -812,7 +812,7 @@ class ConcurrentIssueTests(TransactionTestCase):
             thread.join()
 
         item.refresh_from_db()
-        self.assertEqual(item.quantity, Decimal("0.000"))
+        self.assertEqual(item.quantity, 0)
         self.assertEqual(outcomes.count("ok"), 1)
         self.assertEqual(outcomes.count("rejected"), 1)
 
@@ -839,14 +839,14 @@ class StockReservationTests(TestCase):
     def test_partial_reserve_at_approve(self):
         req, line = self._approve(self.north, self.north_op, self.north_mgr, "30")
         self.assertEqual(req.status, InternalRequest.Status.APPROVED)
-        self.assertEqual(line.quantity_reserved, Decimal("10.000"))
-        self.assertEqual(services.available_quantity(self.item), Decimal("0.000"))
+        self.assertEqual(line.quantity_reserved, 10)
+        self.assertEqual(services.available_quantity(self.item), 0)
 
     def test_later_branch_cannot_take_reserved_stock(self):
         north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
         south, south_line = self._approve(self.south, self.south_op, self.south_mgr, "10")
-        self.assertEqual(north_line.quantity_reserved, Decimal("10.000"))
-        self.assertEqual(south_line.quantity_reserved, Decimal("0.000"))
+        self.assertEqual(north_line.quantity_reserved, 10)
+        self.assertEqual(south_line.quantity_reserved, 0)
         with self.assertRaises(services.InsufficientReservationError):
             services.issue_goods(
                 south, [{"line_id": south_line.id, "quantity_issued": "10"}], self.admin
@@ -856,19 +856,19 @@ class StockReservationTests(TestCase):
         )
         self.item.refresh_from_db()
         north_line.refresh_from_db()
-        self.assertEqual(self.item.quantity, Decimal("0.000"))
-        self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))
-        self.assertEqual(services.available_quantity(self.item), Decimal("0.000"))
+        self.assertEqual(self.item.quantity, 0)
+        self.assertEqual(north_line.quantity_reserved, 0)
+        self.assertEqual(services.available_quantity(self.item), 0)
 
     def test_issue_leaves_available_unchanged(self):
         req, line = self._approve(self.north, self.north_op, self.north_mgr, "10")
-        self.assertEqual(services.available_quantity(self.item), Decimal("0.000"))
+        self.assertEqual(services.available_quantity(self.item), 0)
         services.issue_goods(req, [{"line_id": line.id, "quantity_issued": "4"}], self.admin)
         self.item.refresh_from_db()
         line.refresh_from_db()
-        self.assertEqual(self.item.quantity, Decimal("6.000"))
-        self.assertEqual(line.quantity_reserved, Decimal("6.000"))
-        self.assertEqual(services.available_quantity(self.item), Decimal("0.000"))
+        self.assertEqual(self.item.quantity, 6)
+        self.assertEqual(line.quantity_reserved, 6)
+        self.assertEqual(services.available_quantity(self.item), 0)
 
     def test_adjust_up_allocates_fifo_to_older_backorder(self):
         north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
@@ -879,8 +879,8 @@ class StockReservationTests(TestCase):
         services.adjust_stock(self.item, "15", "PO receipt", self.admin)
         north_line.refresh_from_db()
         south_line.refresh_from_db()
-        self.assertEqual(north_line.quantity_reserved, Decimal("15.000"))
-        self.assertEqual(south_line.quantity_reserved, Decimal("0.000"))
+        self.assertEqual(north_line.quantity_reserved, 15)
+        self.assertEqual(south_line.quantity_reserved, 0)
 
     def test_cancel_approved_reallocates_to_waiting_request(self):
         north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
@@ -888,9 +888,9 @@ class StockReservationTests(TestCase):
         order_services.cancel(north, self.north_mgr, reason="branch no longer needs it")
         north_line.refresh_from_db()
         south_line.refresh_from_db()
-        self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))
-        self.assertEqual(south_line.quantity_reserved, Decimal("5.000"))
-        self.assertEqual(services.available_quantity(self.item), Decimal("5.000"))
+        self.assertEqual(north_line.quantity_reserved, 0)
+        self.assertEqual(south_line.quantity_reserved, 5)
+        self.assertEqual(services.available_quantity(self.item), 5)
 
     def test_short_close_approved_reallocates(self):
         north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
@@ -899,8 +899,8 @@ class StockReservationTests(TestCase):
         north_line.refresh_from_db()
         south_line.refresh_from_db()
         self.assertEqual(north.status, InternalRequest.Status.CLOSED)
-        self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))
-        self.assertEqual(south_line.quantity_reserved, Decimal("5.000"))
+        self.assertEqual(north_line.quantity_reserved, 0)
+        self.assertEqual(south_line.quantity_reserved, 5)
 
     def test_short_close_fulfilling_releases_unissued_reserved(self):
         north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "10")
@@ -912,9 +912,9 @@ class StockReservationTests(TestCase):
         self.item.refresh_from_db()
         north_line.refresh_from_db()
         south_line.refresh_from_db()
-        self.assertEqual(north_line.quantity_reserved, Decimal("0.000"))
-        self.assertEqual(south_line.quantity_reserved, Decimal("5.000"))
-        self.assertEqual(services.available_quantity(self.item), Decimal("1.000"))
+        self.assertEqual(north_line.quantity_reserved, 0)
+        self.assertEqual(south_line.quantity_reserved, 5)
+        self.assertEqual(services.available_quantity(self.item), 1)
 
     def test_adjust_below_reserved_is_rejected(self):
         self._approve(self.north, self.north_op, self.north_mgr, "10")
@@ -922,14 +922,14 @@ class StockReservationTests(TestCase):
             services.adjust_stock(self.item, "-1", "count", self.admin)
         self.assertEqual(ctx.exception.code, "adjust_below_reserved")
         self.item.refresh_from_db()
-        self.assertEqual(self.item.quantity, Decimal("10.000"))
+        self.assertEqual(self.item.quantity, 10)
 
     def test_approve_with_zero_stock_still_succeeds(self):
         self.item.quantity = Decimal("0")
         self.item.save(update_fields=["quantity"])
         req, line = self._approve(self.north, self.north_op, self.north_mgr, "8")
         self.assertEqual(req.status, InternalRequest.Status.APPROVED)
-        self.assertEqual(line.quantity_reserved, Decimal("0.000"))
+        self.assertEqual(line.quantity_reserved, 0)
 
     def test_backfill_gives_older_request_the_units(self):
         north, north_line = self._approve(self.north, self.north_op, self.north_mgr, "30")
@@ -940,16 +940,16 @@ class StockReservationTests(TestCase):
         services.backfill_reservations()
         north_line.refresh_from_db()
         south_line.refresh_from_db()
-        self.assertEqual(north_line.quantity_reserved, Decimal("10.000"))
-        self.assertEqual(south_line.quantity_reserved, Decimal("0.000"))
+        self.assertEqual(north_line.quantity_reserved, 10)
+        self.assertEqual(south_line.quantity_reserved, 0)
 
     def test_issue_summary_includes_reservation_fields(self):
         req, line = self._approve(self.north, self.north_op, self.north_mgr, "30")
         summary = services.get_issue_summary(req)
         self.assertEqual(len(summary), 1)
-        self.assertEqual(summary[0]["reserved"], "10.000")
-        self.assertEqual(summary[0]["backorder"], "20.000")
-        self.assertEqual(summary[0]["available"], "0.000")
+        self.assertEqual(summary[0]["reserved"], "10")
+        self.assertEqual(summary[0]["backorder"], "20")
+        self.assertEqual(summary[0]["available"], "0")
 
 
 class ConcurrentApproveTests(TransactionTestCase):
@@ -994,8 +994,8 @@ class ConcurrentApproveTests(TransactionTestCase):
             (line.quantity_reserved for line in InternalRequestLine.objects.filter(item=item)),
             Decimal("0"),
         )
-        self.assertEqual(reserved, Decimal("10.000"))
-        self.assertEqual(services.available_quantity(item), Decimal("0.000"))
+        self.assertEqual(reserved, 10)
+        self.assertEqual(services.available_quantity(item), 0)
 
 
 class BranchReceiptTests(TestCase):
@@ -1028,7 +1028,7 @@ class BranchReceiptTests(TestCase):
         )
 
         stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
-        self.assertEqual(stock.quantity, Decimal("4.000"))
+        self.assertEqual(stock.quantity, 4)
         self.assertTrue(
             BranchStockMovement.objects.filter(
                 branch=self.branch, item=self.item, movement_type=BranchStockMovement.Type.RECEIPT
@@ -1048,7 +1048,7 @@ class BranchReceiptTests(TestCase):
         req.refresh_from_db()
         self.assertEqual(req.status, InternalRequest.Status.RECEIVED)
         stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
-        self.assertEqual(stock.quantity, Decimal("2.000"))
+        self.assertEqual(stock.quantity, 2)
 
     def test_over_receipt_rejected(self):
         req, goods_issue = self._shipped_issue("4")
@@ -1073,7 +1073,7 @@ class BranchReceiptTests(TestCase):
             services.adjust_branch_stock(self.branch, self.item, "1", "reason", self.manager)
         services.adjust_branch_stock(self.branch, self.item, "3", "reason", self.admin)
         stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
-        self.assertEqual(stock.quantity, Decimal("3.000"))
+        self.assertEqual(stock.quantity, 3)
 
 
 class BranchReceiptApiTests(TestCase):
@@ -1151,4 +1151,4 @@ class BranchReceiptApiTests(TestCase):
         r = self._post(reverse("branch_stock_adjust"), {"item_id": self.item.id, "quantity": "3", "reason": "x"})
         self.assertEqual(r.status_code, 200)
         stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
-        self.assertEqual(stock.quantity, Decimal("3.000"))
+        self.assertEqual(stock.quantity, 3)

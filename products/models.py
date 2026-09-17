@@ -109,15 +109,11 @@ class Item(models.Model):
         choices=UnitOfMeasure.choices,
         default=UnitOfMeasure.PIECE,
     )
-    reorder_level = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
+    reorder_level = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0)],
     )
-    quantity = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
+    quantity = models.IntegerField(
         default=0,
         help_text="Cached stock balance — updated only via StockMovement.",
     )

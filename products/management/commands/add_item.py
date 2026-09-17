@@ -56,7 +56,7 @@ class Command(BaseCommand):
             "--reorder-level",
             dest="reorder_level",
             default="0",
-            help="Reorder level (default: 0)",
+            help="Reorder level as a whole number (default: 0)",
         )
         parser.add_argument(
             "--supplier",

@@ -69,7 +69,7 @@ The order starts as a **Draft**.
 
 1. Open the order (click its row).
 2. Click **Add line** (*Adicionar linha*).
-3. Pick the **Item** (A–Z by the code — description shown) and enter a **Quantity**.
+3. Pick the **Item** (A–Z by the code — description shown) and enter a **Quantity** (whole number of the item’s unit, greater than zero).
 4. **Automatic price** (*Preço automático*) is **on** by default, shown inline with *(uncheck to type a unit cost)*. The unit cost field is hidden while automatic is on; the line uses the supplier's price list. Uncheck to show the unit cost field and type a cost yourself.
 5. (Optional) set the three discounts (see §5).
 6. **Save**.

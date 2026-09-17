@@ -97,8 +97,8 @@ class InternalRequestLine(models.Model):
     description = models.CharField(max_length=255)
     internal_code = models.CharField(max_length=64, blank=True)
     unit_of_measure = models.CharField(max_length=16, blank=True)
-    quantity = models.DecimalField(max_digits=12, decimal_places=3)
-    quantity_reserved = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    quantity = models.IntegerField()
+    quantity_reserved = models.IntegerField(default=0)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     vat_rate = models.DecimalField(max_digits=5, decimal_places=4, default=0)
     # Seam (unused in Phase 5): link a restocking PO later (lock 3).

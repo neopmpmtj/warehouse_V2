@@ -217,9 +217,9 @@ class InvalidSellingPriceError(ValidationError):
 
 
 class InvalidReorderLevelError(ValidationError):
-    def __init__(self, field_label="reorder level"):
+    def __init__(self, field_label="reorder level", *, message=None):
         super().__init__(
-            f"{field_label} must be zero or greater.",
+            message or f"{field_label} must be zero or greater.",
             code="invalid_reorder_level",
         )
 
@@ -248,6 +248,8 @@ class InactiveItemError(ValidationError):
 
 def _serialize_value(value):
     if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, int) and not isinstance(value, bool):
         return str(value)
     if isinstance(value, FamilyProduct):
         return {"id": value.pk, "name": value.name}
@@ -405,6 +407,34 @@ def _ensure_item_active(item):
         raise InactiveItemError(item)
 
 
+def _validate_reorder_level(value):
+    if isinstance(value, bool) or value is None:
+        raise InvalidReorderLevelError(message="reorder_level must be a whole number.")
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, float):
+        if not value.is_integer():
+            raise InvalidReorderLevelError(message="reorder_level must be a whole number.")
+        parsed = int(value)
+    elif isinstance(value, Decimal):
+        if not value.is_finite() or value != value.to_integral_value():
+            raise InvalidReorderLevelError(message="reorder_level must be a whole number.")
+        parsed = int(value)
+    else:
+        text = str(value).strip()
+        if not text or any(ch in text for ch in ".,"):
+            raise InvalidReorderLevelError(message="reorder_level must be a whole number.")
+        try:
+            parsed = int(text)
+        except (TypeError, ValueError) as exc:
+            raise InvalidReorderLevelError(message="reorder_level must be a whole number.") from exc
+    if parsed < 0:
+        raise InvalidReorderLevelError("reorder_level")
+    if parsed >= 1_000_000_000:
+        raise InvalidReorderLevelError(message="reorder_level is too large.")
+    return parsed
+
+
 def _validate_non_negative(value, field_label, error_cls):
     try:
         parsed = Decimal(str(value))
@@ -477,9 +507,7 @@ def create_item(
     _ensure_sub_family_usable(sub_family, family)
     vat_rate = _resolve_vat_rate(vat_rate)
 
-    reorder_level = _validate_non_negative(
-        reorder_level, "reorder_level", InvalidReorderLevelError
-    )
+    reorder_level = _validate_reorder_level(reorder_level)
     retail_price = _validate_non_negative(
         retail_price, "retail_price", InvalidSellingPriceError
     )
@@ -614,9 +642,7 @@ def update_item(user, item, reason="", **fields):
 
     for field_name, new_value in fields.items():
         if field_name == "reorder_level":
-            new_value = _validate_non_negative(
-                new_value, "reorder_level", InvalidReorderLevelError
-            )
+            new_value = _validate_reorder_level(new_value)
         elif field_name in ("retail_price", "wholesale_price", "special_price"):
             new_value = _validate_non_negative(
                 new_value, field_name, InvalidSellingPriceError

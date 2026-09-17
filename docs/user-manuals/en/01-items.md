@@ -158,7 +158,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 | **Sub-family** | No | Optional finer grouping under the family (see §7). Leave empty for none. |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
 | **VAT rate** | Yes | 1%, 3%, 7%, 16%, Exempt |
-| **Reorder level** | Yes | The level that later triggers reordering. |
+| **Reorder level** | Yes | The level that later triggers reordering. Whole number ≥ 0 (0 means no trigger). |
 | **On hand / Available** | (read-only, edit only) | Physical warehouse stock and what is still free to promise after reservations. Not editable here. |
 | **Retail price** | No | Selling price (see §6). May be **0** on create. |
 | **Supplier** | No | Optional on create. If you fill **supplier** and **cost price > 0** together, Genesis saves a **primary** buying-price row. |

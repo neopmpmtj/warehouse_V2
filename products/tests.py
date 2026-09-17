@@ -2878,10 +2878,22 @@ class ServiceValidationTests(ItemTestCaseMixin, TestCase):
                 self.user,
                 family=self.family,
                 description="OK",
-                reorder_level="12345678901.123",
+                reorder_level="12345678901",
                 unit_of_measure=Item.UnitOfMeasure.PIECE,
                 vat_rate=self.vat_rate,
             )
+
+    def test_create_item_rejects_fractional_reorder_level(self):
+        with self.assertRaises(ValidationError) as ctx:
+            create_item(
+                self.user,
+                family=self.family,
+                description="OK",
+                reorder_level="1.5",
+                unit_of_measure=Item.UnitOfMeasure.PIECE,
+                vat_rate=self.vat_rate,
+            )
+        self.assertIn("whole number", str(ctx.exception))
 
     def test_create_item_rejects_empty_description(self):
         with self.assertRaises(DescriptionRequiredError):

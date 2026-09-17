@@ -413,8 +413,8 @@ function renderReceiptLines(lines) {
         const td = document.createElement("td");
         const input = document.createElement("input");
         input.type = "number";
-        input.step = "0.001";
-        input.min = "0";
+        input.step = "1";
+        input.min = "1";
         input.max = line.remaining;
         input.value = formatQty(line.remaining);
         input.dataset.lineId = String(line.line_id);

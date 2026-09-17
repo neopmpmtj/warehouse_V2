@@ -351,7 +351,7 @@ class ServiceWorkerTests(TestCase):
         response = self.client.get("/service-worker.js")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
-        self.assertContains(response, "centcompras-branch-v13")
+        self.assertContains(response, "centcompras-branch-v16")
         self.assertContains(response, "select_fill.js")
         self.assertContains(response, "/api/")
         self.assertContains(response, "/manage/")
@@ -506,6 +506,15 @@ class BranchViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="catalog-head"')
         self.assertContains(response, 'id="catalog-body"')
+        self.assertContains(response, 'id="catalog-search"')
+        self.assertContains(response, 'id="catalog-family"')
+        self.assertContains(response, 'id="catalog-sub-family"')
+        self.assertContains(response, "th-sortable")
+        self.assertContains(response, "branch_catalog.css")
+        self.assertContains(response, "select_fill.js")
+        self.assertNotContains(response, 'id="catalog-below-reorder"')
+        self.assertNotContains(response, 'id="catalog-include-inactive"')
+        self.assertNotContains(response, 'step="0.001"')
 
 
 class IsolationTests(TestCase):

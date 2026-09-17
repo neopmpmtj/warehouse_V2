@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 11 September 2026, 18:55 WEST.
+> **Read this first when resuming work.** Last updated: 17 September 2026, 10:15 WEST.
 
 ---
 
@@ -32,11 +32,20 @@
 | 8 — Google OAuth production rollout + shared chrome | ⏸ After Phase 7 |
 | 9 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Presentation deck v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26); slide **12** → **Parle** (D40). **Immediate next:** remove **TEMP** viewBox debug borders; optional slides 10–16 / slide 8 viewBox polish — then **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
+**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Presentation deck v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26); slide **12** → **Parle** (D40). Requisição `unit_price` snapshots **retail** (D41). **Immediate next:** remove **TEMP** viewBox debug borders; optional slides 10–16 / slide 8 viewBox polish — then **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
 
-**Tests:** suite **608 OK** (11 Sep evening; includes `presentation`).
+**Tests:** `orders` + `inventory` + `branches` **175 OK** (17 Sep; D41 retail snapshot).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (17 Sep 2026) — requisição retail price (D41) ✅
+
+Branch **Add** on `/branch/requests/` does not send a price; the server was snapshotting `Item.wholesale_price` (Phase 5 lock 6). That is **wrong**. Requisição now uses **retail**.
+
+- `add_line` / `submit` / `approve` gate: `retail_price > 0` (`RetailPriceMissingError`: `Item 'X' has no retail price.`).
+- `unit_price` snapshots `Item.retail_price` on add-line and again at approve; `approved_*` freeze from that.
+- Offline pending estimate in `branch_requests.js` uses catalog `retail_price`. Cache `centcompras-branch-v15`; `branch_requests.js?v=7`.
+- Manuals 04 / 05 EN+PT. D37 unpriced still hides money; warehouse still stores the snapshot.
 
 ## This session (11 Sep 2026, evening) — presentation deck Part II + Parle slide 12 ✅
 

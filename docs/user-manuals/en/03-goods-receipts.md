@@ -136,7 +136,7 @@ Several receipts against the same PO are normal.
 | This delivery | What to type in **To receive** |
 |---------------|--------------------------------|
 | Full remaining quantity | Leave the pre-filled numbers |
-| Only some of a line | Type the quantity that actually arrived (must be **greater than 0** and **not more than remaining**) |
+| Only some of a line | Type the quantity that actually arrived (must be a **whole number greater than 0** and **not more than remaining**) |
 | A line not on this truck | Leave **0** — that line is omitted from this receipt |
 
 - You must receive **at least one** line with a quantity greater than zero.

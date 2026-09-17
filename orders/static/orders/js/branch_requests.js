@@ -213,8 +213,10 @@
             addAction("Submit", function () {
                 action(req.id, "submit");
             }, true);
-            addAction("Cancel", function () {
-                action(req.id, "cancel");
+            addAction("Cancel Internal Request", function () {
+                if (confirmPermanentCancel(req.id)) {
+                    action(req.id, "cancel");
+                }
             });
         } else if (req.status === "submitted" && CAN_APPROVE && BranchOffline.isOnline()) {
             addAction("Approve", function () {
@@ -232,7 +234,10 @@
                 }
             });
         } else if (req.status === "approved" && CAN_APPROVE && BranchOffline.isOnline()) {
-            addAction("Cancel", function () {
+            addAction("Cancel Internal Request", function () {
+                if (!confirmPermanentCancel(req.id)) {
+                    return;
+                }
                 var reason = prompt("Reason for cancellation:");
                 if (reason !== null) {
                     action(req.id, "cancel", { reason: reason });
@@ -256,8 +261,8 @@
                 var priced = state.items.find(function (i) {
                     return String(i.id) === String(line.item_id);
                 });
-                if (priced && priced.wholesale_price) {
-                    net += parseFloat(priced.wholesale_price) * parseFloat(line.quantity);
+                if (priced && priced.retail_price) {
+                    net += parseFloat(priced.retail_price) * parseFloat(line.quantity);
                 }
             });
             detailTotals.hidden = false;
@@ -277,7 +282,7 @@
             tr.appendChild(el("td", item ? item.description : ""));
             tr.appendChild(el("td", line.quantity));
             if (showSellingPrices) {
-                tr.appendChild(el("td", item ? item.wholesale_price : ""));
+                tr.appendChild(el("td", item ? item.retail_price : ""));
             }
             tr.appendChild(el("td", ""));
             lineBody.appendChild(tr);
@@ -290,6 +295,14 @@
             actions.lastChild.disabled = true;
             actions.lastChild.textContent = "Will sync when online";
         }
+    }
+
+    function confirmPermanentCancel(requestId) {
+        return confirm(
+            "Cancel internal request #" +
+                requestId +
+                " permanently? This cannot be undone."
+        );
     }
 
     function addAction(label, fn, primary) {
