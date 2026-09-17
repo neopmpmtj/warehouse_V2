@@ -83,7 +83,7 @@ const CATALOG_I18N = {
         colReserved: "Reservado",
         colAvailable: "Disponível",
         colReorder: "Encomenda",
-        colBuying: "Preço de compra",
+        colBuying: "Preço Compra",
         colRetail: "Preço Venda",
         colWholesale: "Grossista",
         colSpecial: "Especial",
