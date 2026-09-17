@@ -4,7 +4,7 @@
 
 > **Also available:** [Item Console](01-items.md) at `/manage/items/` · [Purchase orders](02-purchase-orders.md) · [Goods receipt & stock](03-goods-receipts.md) · [Branches & Requisição interna](04-internal-requests.md) · [Edge cases & limits](05-edge-cases-and-limits.md) · [Admin & Superuser Reference](06-admin-reference.md).
 
-This is the warehouse **read-only** overview: stock, reorder level, retail selling price, buying price, and suppliers on one page. You do **not** edit items here — that is the [Item Console](01-items.md).
+This is the warehouse **read-only** overview: stock, reorder level, selling price, buying price, and suppliers on one page. You do **not** edit items here — that is the [Item Console](01-items.md).
 
 ---
 
@@ -55,7 +55,7 @@ Manager catalog (/manage/catalog/)  →  read the joined picture
 | Show **active** items in **active** families by default | Let you edit items, prices, or stock |
 | Show deactivated items and items under inactive families when **Include inactive** is ticked | Open a drawer or history |
 | Show the **cached** on-hand quantity | Raise a purchase order (use [purchase orders](02-purchase-orders.md)) |
-| Show buying + retail selling price | |
+| Show buying + selling price | |
 | Flag items at or below reorder | |
 | List suppliers that have a price for the item (primary listed first, marked ★) | |
 | Sort any column by clicking its header | |
@@ -98,7 +98,7 @@ Filters combine. Search, family, sub-family, and **Below reorder only** run in t
 | **Available** | On hand minus reserved — what is still free to ship today |
 | **Reorder** | Reorder level set on the item |
 | **Buying Price** | Cost we pay — see §5 |
-| **Selling Price** | The **manual** retail selling price (wholesale and special stay on the item console) |
+| **Selling price** | The **manual** selling price (wholesale and special stay on the item console) |
 | **Suppliers** | Active suppliers that have a price for this item; the **primary** is listed **first** and marked ★ |
 
 Rows at or below reorder are highlighted with a warning tint. Deactivated items and items under an inactive family use muted row text. The tint follows the theme: pale amber on light, dark amber on dark, so the row text stays readable.
@@ -124,7 +124,7 @@ Use **Below reorder only** when you want a shortlist of items that need procurin
 
 ## 5. Buying price and suppliers
 
-Selling prices (retail / wholesale / special) are **manual** — they come from the item. This page shows **Selling Price** only; wholesale and special are on the item console. Buying price is **dynamic** — it comes from the supplier price list.
+Selling prices (selling price / wholesale / special) are **manual** — they come from the item. This page shows **Selling price** only; wholesale and special are on the item console. Buying price is **dynamic** — it comes from the supplier price list.
 
 The **Buying Price** column is one number per item:
 

@@ -1,0 +1,46 @@
+---
+description: Dual-language UI — JS dictionaries from the first screen, never hardcoded English
+alwaysApply: true
+---
+
+# Dual-language UI (ship bilingual, do not retrofit)
+
+Copy this file into the next bilingual project's `.cursor/rules/` as-is. Presence of this rule means the project is dual-language: **always apply it**. Do not wait for a later “i18n pass”.
+
+## When this applies
+
+The project already has a client i18n pattern (`cc-lang` / `*_i18n.js` / `data-i18n` / `t()`). **Do not invent Django `{% trans %}` / `.po` files** for console copy.
+
+Every **new or changed** user-visible string ships in **both** languages in the same change: headings, buttons, placeholders, empty states, `confirm()` / `prompt()` messages, status **labels**, banners, and mapped API `code`s.
+
+## Pattern (do not invent another)
+
+```text
+cc-lang (pt|en, default pt) → currentLang() → PAGE_I18N[lang] → t(key, vars)
+```
+
+- English HTML fallback + `data-i18n` / `data-i18n-placeholder` / `data-i18n-aria`.
+- Dictionary: `{ en: {…}, "pt-PT": {…} }` then `DICT.pt = DICT["pt-PT"]`.
+- `t(key, vars)` interpolates `{id}` / `{name}`. Dynamic JS strings go through `t()`, not concatenated English.
+- `applyStaticI18n()` on load **and** on `cc-lang-changed` (re-render lists/details). Scope page keys to `main` (or only keys the page dict owns) so chrome is not overwritten.
+- Translate **labels** (`draft` → Rascunho), not API enum values. Map known `payload.code`s; fall back to `payload.error`.
+- Native `confirm()` / `prompt()` **OK / Cancel** follow the **browser** language. Translate the **message** only unless asked for a custom dialog.
+- Dates/numbers: `toLocaleString` with `pt-PT` or `en-GB` from `cc-lang`.
+- Changed static JS → bump `?v=` everywhere (and Service Worker `CACHE_NAME` / precache when the page is PWA-cached).
+
+```javascript
+// BAD — English trapped in JS
+return confirm("Cancel internal request #" + id + " permanently?");
+
+// GOOD — dictionary + current language
+return confirm(t("cancelConfirm", { id: id }));
+```
+
+## New screen checklist (same commit)
+
+1. `*_i18n.js` (or a compact inline `I18N`) with `en` + `pt-PT` + `pt` alias.
+2. Template English fallbacks + `data-i18n*`.
+3. `currentLang()` / `t()` / `applyStaticI18n()`; listen for `cc-lang-changed`.
+4. `node --check` on edited JS. Update EN **and** PT user manuals when behaviour or exact UI copy changes.
+
+Full recipe: [`docs/i18n-pattern.md`](docs/i18n-pattern.md). Existing pages: `branch_catalog_i18n.js`, `branch_requests_i18n.js`, `preferences_bar.js`.

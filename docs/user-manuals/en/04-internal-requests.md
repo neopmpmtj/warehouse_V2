@@ -106,7 +106,7 @@ From the dashboard, open **Catalog**, **Requisição interna**, **Threads**, **R
 
 Open **`/branch/catalog/`**. This is the same product catalogue the warehouse manages, but with two deliberate differences:
 
-1. **Prices on the branch.** **Unpriced** (the default): you see identity, unit, family, and availability — **no** retail/wholesale/special, and never the supplier cost. **Priced** (superuser switch in `/admin/`): you see the **selling prices** (Retail / Wholesale / Special), still never the supplier cost.
+1. **Prices on the branch.** **Unpriced** (the default): you see identity, unit, family, and availability — **no** selling price/wholesale/special, and never the supplier cost. **Priced** (superuser switch in `/admin/`): you see the **selling prices** (Selling price / Wholesale / Special), still never the supplier cost.
 2. **Stock is only a hint** — never an exact number.
 
 Warehouse staff see exact stock **and** cost on the [manager catalog](07-manager-catalog.md) at `/manage/catalog/`.
@@ -146,7 +146,7 @@ Open **`/branch/requests/`**.
 
 A line is **rejected** if:
 
-- the item has **no retail price**, or
+- the item has **no selling price**, or
 - the item is **already** on this request (edit the existing line instead), or
 - the item (or its family) is **inactive**.
 
@@ -190,7 +190,7 @@ Click **Reject** (*Rejeitar*) and give a **reason**. The request ends as **rejec
 
 ## 6. Cancelling a request
 
-Click **Cancel Internal Request**. Confirm the dialog (`Cancel internal request #… permanently? This cannot be undone.`). Cancellation is **permanent** — the request cannot be reopened; raise a new one if you still need the goods.
+Click **Cancel Internal Request**. Confirm the dialog (`Cancel internal request #… permanently? This cannot be undone.` in English; Portuguese UI: `Cancelar a requisição interna n.º … de forma permanente? Isto não pode ser anulado.`). The dialog’s **OK / Cancel** buttons follow the **browser** language, not the site language. Cancellation is **permanent** — the request cannot be reopened; raise a new one if you still need the goods.
 
 | From | Who | Reason required? |
 |------|-----|:---:|
@@ -328,7 +328,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - See the supplier **cost** from a branch account (never). Selling prices appear only in **priced** mode.
 - See the **exact** warehouse stock from a branch account (hint only).
 - Approve as an **operator**. In **priced** mode, a manager also cannot approve over their **EUR cap**.
-- Request an **inactive** item, or a line with **no retail price**, or the **same item twice** on one request.
+- Request an **inactive** item, or a line with **no selling price**, or the **same item twice** on one request.
 - Edit a request after **submit**.
 - **Issue** more than is reserved for that request, or more than the request's remaining.
 - **Receive** more than was shipped.
@@ -367,7 +367,7 @@ By default the company is in **unpriced** mode: branches request **quantities**,
 Yes. **None** means nothing is free to ship *today* (empty shelf, or stock already held for earlier approved requisições). Raise the requisição anyway — you join the wait. Incoming stock is offered to the oldest approved request first.
 
 **Q3. Why was my line rejected?**
-The three rules: the item must have a **retail price**, it must be **active**, and it must not already be on the request. Check which one applies.
+The three rules: the item must have a **selling price**, it must be **active**, and it must not already be on the request. Check which one applies.
 
 **Q4. I approved a request and the prices changed later — did my request change?**
 No. Approving **freezes** the totals (retail + VAT snapshot). Later price changes don't touch an approved request.

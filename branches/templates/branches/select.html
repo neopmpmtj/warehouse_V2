@@ -12,7 +12,7 @@
     <header class="page-account-bar">
         {% include "products/includes/account_settings.html" %}
     </header>
-    <h1>Select branch</h1>
+    <h1 data-i18n="title">Select branch</h1>
 
     {% if memberships %}
         <form method="post" action="{% url 'branch_select' %}">
@@ -22,17 +22,74 @@
                     <li>
                         <label>
                             <input type="radio" name="branch_id" value="{{ membership.branch_id }}">
-                            {{ membership.branch.name }} — {{ membership.get_role_display }}
+                            {{ membership.branch.name }} — <span data-role="{{ membership.role }}">{{ membership.get_role_display }}</span>
                         </label>
                     </li>
                 {% endfor %}
             </ul>
-            <button type="submit">Continue</button>
+            <button type="submit" data-i18n="continue">Continue</button>
         </form>
     {% else %}
-        <p>You have no active branch access. Please contact your administrator.</p>
+        <p data-i18n="noAccess">You have no active branch access. Please contact your administrator.</p>
     {% endif %}
     {% include "branches/includes/offline_scripts.html" %}
+    <script>
+        (function () {
+            var LANG_KEY = "cc-lang";
+            var I18N = {
+                en: {
+                    title: "Select branch",
+                    continue: "Continue",
+                    noAccess: "You have no active branch access. Please contact your administrator.",
+                    operator: "Operator",
+                    manager: "Manager",
+                    admin: "Admin",
+                },
+                pt: {
+                    title: "Selecionar filial",
+                    continue: "Continuar",
+                    noAccess: "Não tem acesso ativo a nenhuma filial. Contacte o administrador.",
+                    operator: "Operador",
+                    manager: "Gestor",
+                    admin: "Administrador",
+                },
+            };
+            I18N["pt-PT"] = I18N.pt;
+
+            function currentLang() {
+                try {
+                    var raw = localStorage.getItem(LANG_KEY) || "pt";
+                    return String(raw).toLowerCase().indexOf("en") === 0 ? "en" : "pt";
+                } catch (e) {
+                    return "pt";
+                }
+            }
+            function t(key) {
+                var dict = I18N[currentLang()] || I18N.en;
+                return dict[key] !== undefined ? dict[key] : (I18N.en[key] || key);
+            }
+            function applyI18n() {
+                document.documentElement.lang = currentLang() === "pt" ? "pt-PT" : "en";
+                document.title = t("title") + " — CentCompras";
+                var dict = I18N[currentLang()] || I18N.en;
+                document.querySelectorAll("[data-i18n]").forEach(function (node) {
+                    var key = node.getAttribute("data-i18n");
+                    if (dict[key] !== undefined) {
+                        node.textContent = dict[key];
+                    }
+                });
+                document.querySelectorAll("[data-role]").forEach(function (node) {
+                    var role = node.getAttribute("data-role");
+                    if (dict[role] !== undefined) {
+                        node.textContent = dict[role];
+                    }
+                });
+            }
+            applyI18n();
+            document.addEventListener("cc-lang-changed", applyI18n);
+        })();
+    </script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=11"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

@@ -106,7 +106,7 @@ No painel, abra **Catálogo**, **Requisição interna**, **Conversas**, **Receç
 
 Abra **`/branch/catalog/`**. É o mesmo catálogo de produtos que o armazém gere, mas com duas diferenças deliberadas:
 
-1. **Preços na filial.** **Sem preços** (omissão): vê identidade, unidade, família e disponibilidade — **sem** retalho/grossista/especial, e nunca o custo do fornecedor. **Com preços** (interruptor do superutilizador em `/admin/`): vê os **preços de venda** (Retalho / Grossista / Especial), continua sem o custo do fornecedor.
+1. **Preços na filial.** **Sem preços** (omissão): vê identidade, unidade, família e disponibilidade — **sem** Preço Venda/grossista/especial, e nunca o custo do fornecedor. **Com preços** (interruptor do superutilizador em `/admin/`): vê os **preços de venda** (Preço Venda / Grossista / Especial), continua sem o custo do fornecedor.
 2. **O stock é apenas uma indicação** — nunca um número exato.
 
 O pessoal do armazém vê stock exato **e** custo no [catálogo do gestor](07-manager-catalog.md) em `/manage/catalog/`.
@@ -146,7 +146,7 @@ Abra **`/branch/requests/`**.
 
 Uma linha é **rejeitada** se:
 
-- o artigo **não tiver preço de retalho**, ou
+- o artigo **não tiver Preço Venda**, ou
 - o artigo **já** estiver nesta requisição (edite a linha existente), ou
 - o artigo (ou a respetiva família) estiver **inativo**.
 
@@ -157,7 +157,7 @@ Pode **remover** uma linha enquanto a requisição for rascunho.
 Quando a requisição tiver pelo menos uma linha e tudo estiver ativo, clique em **Submit** (Submeter). A requisição passa a **submitted** (submetida) e aguarda um gestor.
 
 - Já não pode editar linhas depois de submeter.
-- Um **rascunho** pode ser **cancelado** por qualquer função de filial (sem motivo). Clique em **Cancel Internal Request** (Cancelar requisição interna) e confirme — o cancelamento é **permanente** e não pode ser anulado.
+- Um **rascunho** pode ser **cancelado** por qualquer função de filial (sem motivo). Clique em **Cancelar requisição interna** e confirme — o cancelamento é **permanente** e não pode ser anulado.
 
 ---
 
@@ -190,7 +190,7 @@ Clique em **Reject** (Rejeitar) e indique um **motivo**. A requisição termina 
 
 ## 6. Cancelar uma requisição
 
-Clique em **Cancel Internal Request** (Cancelar requisição interna). Confirme o diálogo (`Cancel internal request #… permanently? This cannot be undone.` — Cancelar a requisição interna n.º … de forma permanente? Isto não pode ser anulado.). O cancelamento é **permanente** — a requisição não pode ser reaberta; levante uma nova se ainda precisar da mercadoria.
+Clique em **Cancelar requisição interna**. Confirme o diálogo (`Cancelar a requisição interna n.º … de forma permanente? Isto não pode ser anulado.`). Os botões **OK / Cancel** do diálogo seguem o idioma do **browser**, não o da página. O cancelamento é **permanente** — a requisição não pode ser reaberta; levante uma nova se ainda precisar da mercadoria.
 
 | De | Quem | Motivo obrigatório? |
 |------|-----|:---:|
@@ -328,7 +328,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - Ver o **custo** do fornecedor a partir de uma conta de filial (nunca). Os preços de venda só aparecem no modo **com preços**.
 - Ver o stock **exato** do armazém a partir de uma conta de filial (só indicação).
 - Aprovar como **operador**. No modo **com preços**, um gestor também não pode aprovar acima do **teto em EUR**.
-- Pedir um artigo **inativo**, ou uma linha **sem preço de retalho**, ou o **mesmo artigo duas vezes** numa requisição.
+- Pedir um artigo **inativo**, ou uma linha **sem Preço Venda**, ou o **mesmo artigo duas vezes** numa requisição.
 - Editar uma requisição depois de **submeter**.
 - **Emitir** mais do que está reservado para essa requisição, ou mais do que o restante da requisição.
 - **Receber** mais do que foi expedido.
@@ -367,7 +367,7 @@ Por omissão a empresa está no modo **sem preços**: as filiais pedem **quantid
 Sim. **None** (Nenhum) significa que nada está livre para expedição *hoje* (prateleira vazia, ou stock já reservado para requisições aprovadas anteriores). Levante a requisição na mesma — entra na fila de espera. O stock entrante é oferecido primeiro à requisição aprovada mais antiga.
 
 **P3. Porque foi a minha linha rejeitada?**
-As três regras: o artigo tem de ter **preço de retalho**, tem de estar **ativo** e não pode já estar na requisição. Verifique qual se aplica.
+As três regras: o artigo tem de ter **Preço Venda**, tem de estar **ativo** e não pode já estar na requisição. Verifique qual se aplica.
 
 **P4. Aprovei uma requisição e os preços mudaram depois — a minha requisição mudou?**
 Não. Aprovar **congela** os totais (instantâneo de retalho + IVA). Alterações de preço posteriores não tocam numa requisição aprovada.
@@ -403,7 +403,7 @@ O stock já está em movimento. Depois da primeira saída de mercadoria a única
 Dois livros-razão separados. O stock do armazém vive no artigo; o **stock da filial** vive por `(filial, artigo)` e só se move quando recebe uma expedição ou um administrador ajusta.
 
 **P15. Posso construir uma requisição offline?**
-Sim, **só rascunhos**. Abra `/branch/requests/` depois de ter visitado o catálogo online pelo menos uma vez (para a lista de artigos ficar em cache). Offline pode iniciar **New request** (Nova requisição) e adicionar linhas a partir do catálogo em cache. A requisição mostra **pending sync** (sincronização pendente) até o Wi-Fi voltar; depois carrega automaticamente quando abrir qualquer página da filial que carregue os scripts offline (catálogo, requisição, painel, etc.). **Submit**, **Approve**, **Reject** e **Cancel Internal Request** (Cancelar requisição interna) continuam a exigir Wi-Fi.
+Sim, **só rascunhos**. Abra `/branch/requests/` depois de ter visitado o catálogo online pelo menos uma vez (para a lista de artigos ficar em cache). Offline pode iniciar **New request** (Nova requisição) e adicionar linhas a partir do catálogo em cache. A requisição mostra **pending sync** (sincronização pendente) até o Wi-Fi voltar; depois carrega automaticamente quando abrir qualquer página da filial que carregue os scripts offline (catálogo, requisição, painel, etc.). **Submit** (Submeter), **Approve** (Aprovar), **Reject** (Rejeitar) e **Cancelar requisição interna** continuam a exigir Wi-Fi.
 
 **P16. O aviso offline do catálogo diz que a disponibilidade pode estar desatualizada — porquê?**
 O modo offline mostra o **último catálogo descarregado** para a **filial ativa**. O stock do armazém e as indicações de disponibilidade podem mudar enquanto estava desligado. As colunas de preço de venda seguem esse último descarregamento: se foi **sem preços** (ou a cache não tem flag de modo), os preços ficam ocultos. Depois de se ligar uma vez, a app remove os campos de preço guardados na cache offline; até lá, as colunas seguem o último descarregamento. Ligue-se uma vez depois de uma mudança de modo comercial para a cache coincidir. Se mudar de filial offline, a app avisa que a cache pertence a outra filial — ligue o Wi-Fi na filial atual para descarregar o respetivo catálogo.

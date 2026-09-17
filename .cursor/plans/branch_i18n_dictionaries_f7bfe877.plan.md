@@ -4,16 +4,16 @@ overview: "The cancel confirm is English because `/branch/requests/` JS never re
 todos:
   - id: requests-i18n
     content: Add branch_requests_i18n.js; t() all requests JS/HTML including cancel confirm; data-i18n on template
-    status: pending
+    status: completed
   - id: offline-sync-i18n
     content: Translate shared branch_offline.js banners and sync_queue last_error
-    status: pending
+    status: completed
   - id: receipts-threads-picker
     content: i18n /branch/receipts/, leftover thread placeholders, /branch/select/
-    status: pending
+    status: completed
   - id: cache-manuals-verify
     content: Bump ?v= + SW CACHE_NAME; update 04 EN/PT confirm copy; node --check + tests; PT UI check
-    status: pending
+    status: completed
 isProject: false
 ---
 

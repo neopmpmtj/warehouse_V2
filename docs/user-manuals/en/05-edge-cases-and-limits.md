@@ -57,7 +57,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 **Sub-family names and parent family are immutable** after create — same pattern as families. Deactivate and create a new sub-family if the label was wrong.
 
-**New items:** **Internal code**, **description**, and **family** are required (marked * on the form). **Family** starts unselected (`-----------`) and is required before Save. **Genesis** (activate) runs only when family, **retail price > 0**, and **cost price > 0** are filled; otherwise Save creates an **inactive** item. A **primary supplier price** is created only when both supplier and cost **> 0** are filled together at Genesis. Code is immutable after save; add more supplier prices later from the supplier drawer.
+**New items:** **Internal code**, **description**, and **family** are required (marked * on the form). **Family** starts unselected (`-----------`) and is required before Save. **Genesis** (activate) runs only when family, **selling price > 0**, and **cost price > 0** are filled; otherwise Save creates an **inactive** item. A **primary supplier price** is created only when both supplier and cost **> 0** are filled together at Genesis. Code is immutable after save; add more supplier prices later from the supplier drawer.
 
 **Manager catalog (`/manage/catalog/`)** — read-only stock + prices for warehouse staff. See [Manager catalog](07-manager-catalog.md).
 
@@ -144,7 +144,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 | Message | Why | What to do |
 |---------|-----|------------|
-| `Item 'X' has no retail price.` | Retail is 0 — the requisição is priced from retail | Set a retail price (warehouse), or pick another item |
+| `Item 'X' has no selling price.` | Selling price is 0 — the requisição is priced from this field | Set a selling price (warehouse), or pick another item |
 | `This request already has a line for 'X'.` | One line per item (no merging) | Edit the existing line |
 | `Cannot use inactive item 'X'.` / `Cannot use inactive branch 'X'.` | Item or branch deactivated | Reactivate, or pick another |
 | `Internal request lines can only be changed while the request is a draft.` | Editing after submit | Only drafts are editable |
@@ -233,7 +233,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | **VAT rate** | `Decimal(5,4)` | fraction `0 … 1` | e.g. `0.16` = 16% |
 | **Reorder level** | integer | `≥ 0` and `< 1,000,000,000` | 0 = "no reorder trigger"; whole number |
 | **Internal code** | `CharField` max **64** | required on console create; letters, digits, `.`, `-`, `_` only; **stored uppercase**; **immutable after save** (set-if-empty once for legacy) | unique, case-insensitive |
-| **Retail price (Genesis)** | `Decimal(12,2)` | Console Genesis needs **> 0**; inactive save allows **≥ 0** | wholesale/special may stay 0 |
+| **Selling price (Genesis)** | `Decimal(12,2)` | Console Genesis needs **> 0**; inactive save allows **≥ 0** | wholesale/special may stay 0 |
 | **Reason / notes (reason fields)** | `CharField` / `TextField` | reason ≤ **255 chars** | over-long reason rejected |
 | **Email** | `EmailField` | valid email | supplier & user |
 | **Stock balances** (`Item.quantity`, `BranchItemStock.quantity`) | integer | `≥ 0` | can't go negative |
@@ -305,7 +305,7 @@ cancelled                                cancelled         ▼               shi
 
 | Case | Behaviour |
 |------|-----------|
-| **Selling price = 0** | Means "not yet priced" — but a requisição line with **retail = 0 is rejected** |
+| **Selling price = 0** | Means "not yet priced" — but a requisição line with **selling price = 0 is rejected** |
 | **Buying price (cost)** | From the **primary** supplier's price; if no primary, the **cheapest** supplier; if no prices at all → **no cost shown** |
 | **One primary per item** | Marking a new supplier primary automatically **un-marks** the old one (DB-enforced) |
 | **Supplier price** | Only for an **active** supplier **and** item; one cost per supplier×item |

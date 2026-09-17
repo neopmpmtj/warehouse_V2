@@ -69,7 +69,7 @@
             <div id="item-links"></div>
             <div id="message-body"></div>
             <div class="row">
-                <textarea id="reply-body" placeholder="Write a message…"></textarea>
+                <textarea id="reply-body" data-i18n-placeholder="replyPlaceholder" placeholder="Write a message…"></textarea>
             </div>
             <div class="row">
                 <button id="reply-btn" class="btn btn-primary" data-i18n="reply">Reply</button>
@@ -82,7 +82,7 @@
                     <option value="other" data-i18n="reasonOther">Other</option>
                 </select>
                 <div id="close-other-row" class="row hidden">
-                    <input id="close-reason-text" placeholder="Reason…" maxlength="255">
+                    <input id="close-reason-text" data-i18n-placeholder="reasonPlaceholder" placeholder="Reason…" maxlength="255">
                 </div>
                 <div id="satisfaction-row" class="row">
                     <span data-i18n="satisfactionLabel">Satisfaction</span>
@@ -100,8 +100,8 @@
     <div id="new-dialog" class="dialog hidden" style="margin:20px;">
         <h3 data-i18n="newThreadTitle">New request thread</h3>
         <p class="muted" data-i18n="newThreadHelp">Describe the item you need — it does not exist in the catalogue yet. The warehouse will read your request and reply.</p>
-        <input id="new-subject" placeholder="Subject — e.g. Need a 25mm brass valve" maxlength="255" style="width:100%;box-sizing:border-box;margin-bottom:8px;">
-        <textarea id="new-first-message" placeholder="Describe the item…"></textarea>
+        <input id="new-subject" data-i18n-placeholder="subjectPlaceholder" placeholder="Subject — e.g. Need a 25mm brass valve" maxlength="255" style="width:100%;box-sizing:border-box;margin-bottom:8px;">
+        <textarea id="new-first-message" data-i18n-placeholder="describePlaceholder" placeholder="Describe the item…"></textarea>
         <div class="row">
             <button id="confirm-create" class="btn btn-primary" data-i18n="create">Create</button>
             <button id="cancel-create" class="btn" data-i18n="cancel">Cancel</button>
@@ -133,6 +133,11 @@
                     settings: "Settings", signedInAs: "Signed in as", signOut: "Sign out",
                     signOutOtherDevices: "Sign out other devices", help: "Help",
                     offlineEmptyThreads: "Connect to Wi-Fi to load threads.",
+                    requestFailed: "Request failed.",
+                    replyPlaceholder: "Write a message…",
+                    reasonPlaceholder: "Reason…",
+                    subjectPlaceholder: "Subject — e.g. Need a 25mm brass valve",
+                    describePlaceholder: "Describe the item…",
                 },
                 pt: {
                     title: "Conversas de pedido", threadsTitle: "Conversas", newThread: "Nova conversa",
@@ -150,6 +155,11 @@
                     settings: "Definições", signedInAs: "Sessão iniciada como", signOut: "Terminar sessão",
                     signOutOtherDevices: "Terminar sessão noutros dispositivos", help: "Ajuda",
                     offlineEmptyThreads: "Ligue-se ao Wi-Fi para carregar as conversas.",
+                    requestFailed: "O pedido falhou.",
+                    replyPlaceholder: "Escreva uma mensagem…",
+                    reasonPlaceholder: "Motivo…",
+                    subjectPlaceholder: "Assunto — p.ex. Preciso de uma válvula de latão de 25 mm",
+                    describePlaceholder: "Descreva o artigo…",
                 },
             };
 
@@ -172,11 +182,25 @@
             }
 
             function applyI18n() {
+                document.documentElement.lang = lang() === "pt" ? "pt-PT" : "en";
+                document.title = t("title") + " — CentCompras";
                 document.querySelectorAll("main [data-i18n], .dialog [data-i18n]").forEach(function (el) {
                     el.textContent = t(el.getAttribute("data-i18n"));
                 });
+                document.querySelectorAll("main [data-i18n-placeholder], .dialog [data-i18n-placeholder]").forEach(function (el) {
+                    el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+                });
             }
             applyI18n();
+            document.addEventListener("cc-lang-changed", function () {
+                applyI18n();
+                renderList();
+                if (state.selectedId) {
+                    selectThread(state.selectedId);
+                } else {
+                    renderDetail(null);
+                }
+            });
 
             var threadBody = document.getElementById("thread-body");
             var messageBody = document.getElementById("message-body");
@@ -218,7 +242,7 @@
                 return node;
             }
 
-            function showError(msg) { banner.textContent = msg || "Request failed."; banner.classList.remove("hidden"); }
+            function showError(msg) { banner.textContent = msg || t("requestFailed"); banner.classList.remove("hidden"); }
             function clearError() { banner.classList.add("hidden"); }
 
             function setVisible(el, visible) {

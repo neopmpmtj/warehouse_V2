@@ -196,7 +196,7 @@ var BranchSyncQueue = (function () {
                                 return BranchDB.updatePendingRequest(entry.client_uuid, {
                                     status: "failed",
                                     syncing_at: null,
-                                    last_error: err.message || "Sync failed.",
+                                    last_error: err.message || BranchOffline.t("syncFailed"),
                                 });
                             });
                     });

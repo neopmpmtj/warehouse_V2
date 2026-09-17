@@ -142,9 +142,9 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 1. Click **New item** (*Novo artigo*).
 2. Fill the form (fields below). **Internal code**, **description**, and **family** (marked * on the form) are required. **Family** starts unselected (`-----------`) — you must choose one before Save.
 3. Click **Save** (*Guardar*).
-4. If **family**, **retail price > 0**, and **cost price > 0** are all filled, confirm **Genesis** — the item is created and activated. Otherwise Save creates an **inactive** item with no Genesis dialog.
+4. If **family**, **selling price > 0**, and **cost price > 0** are all filled, confirm **Genesis** — the item is created and activated. Otherwise Save creates an **inactive** item with no Genesis dialog.
 
-> **Important:** Genesis only runs when family, retail price, and cost price are filled. If you cancel the Genesis dialog, nothing is saved. Saving without those prices creates an inactive row you can activate later.
+> **Important:** Genesis only runs when family, selling price, and cost price are filled. If you cancel the Genesis dialog, nothing is saved. Saving without those prices creates an inactive row you can activate later.
 
 > 📷 **[SCREENSHOT — "Confirm Genesis" dialog (before save)]**
 
@@ -160,7 +160,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 | **VAT rate** | Yes | 1%, 3%, 7%, 16%, Exempt |
 | **Reorder level** | Yes | The level that later triggers reordering. Whole number ≥ 0 (0 means no trigger). |
 | **On hand / Available** | (read-only, edit only) | Physical warehouse stock and what is still free to promise after reservations. Not editable here. |
-| **Retail price** | No | Selling price (see §6). May be **0** on create. |
+| **Selling price** | No | The main selling price used on requisições (see §6). May be **0** on create. |
 | **Supplier** | No | Optional on create. If you fill **supplier** and **cost price > 0** together, Genesis saves a **primary** buying-price row. |
 | **Cost price** | No | Optional on create. Must be filled together with **supplier** when you want a primary buying-price row at Genesis. |
 | **Wholesale price** | No | Selling price (see §6). |
@@ -201,11 +201,11 @@ Two different kinds of price — easy to confuse.
 | | **Selling prices** | **Buying / cost price** |
 |---|---|---|
 | What | What *we* sell the item for | What *we* pay the supplier for it |
-| How many | 3 (retail, wholesale, special) | 1 per supplier |
+| How many | 3 (selling price, wholesale, special) | 1 per supplier |
 | Who sets it | A senior person, **manually** | Pulled **automatically** from the supplier's price list |
 | Where | On the item form | In the supplier prices (see §9) |
 
-- **Retail / Wholesale / Special** are three price levels you type on the item itself. They do *not* change on their own.
+- **Selling price / Wholesale / Special** are three price levels you type on the item itself. They do *not* change on their own.
 - The **cost (buying) price** is the opposite: it's *dynamic*. It comes from the **supplier price list** (§9), so when a supplier's price changes there, the cost follows automatically.
 
 ---
@@ -319,7 +319,7 @@ This is your safety net: nothing is ever silently overwritten.
 It marks the **preferred supplier** for that item. Only one per item; it's the source of the item's buying price, and (in future) the supplier suggested when purchasing. Always overridable.
 
 **Q2. What's the difference between selling price and buying price?**
-Selling prices (retail / wholesale / special) are what we *sell for* — entered manually by a senior person. The buying/cost price is what we *pay the supplier* — taken automatically from the supplier price list.
+Selling prices (selling price / wholesale / special) are what we *sell for* — entered manually by a senior person. The buying/cost price is what we *pay the supplier* — taken automatically from the supplier price list.
 
 **Q3. Why are dates shown as DD/MM/YYYY?**
 That's the European convention used across the app. `05/08/2026` means **5 August 2026**, not 8 May.
@@ -328,7 +328,7 @@ That's the European convention used across the app. `05/08/2026` means **5 Augus
 No. Times adapt to each viewer's local timezone automatically. The system stores UTC and converts on display.
 
 **Q5. I created an item but it says "Inactive" — why?**
-Save without Genesis creates an **inactive** item. Genesis (activate) only runs when **family**, **retail price > 0**, and **cost price > 0** are filled. If you cancel the Genesis dialog, nothing is saved. You can also add an inactive row with Django admin (superuser) or the `add_item` CLI without `--activate`. With `--activate`, only **internal code** and **description** are required; pass `--supplier` and `--cost-price` together if you want a primary buying-price row.
+Save without Genesis creates an **inactive** item. Genesis (activate) only runs when **family**, **selling price > 0**, and **cost price > 0** are filled. If you cancel the Genesis dialog, nothing is saved. You can also add an inactive row with Django admin (superuser) or the `add_item` CLI without `--activate`. With `--activate`, only **internal code** and **description** are required; pass `--supplier` and `--cost-price` together if you want a primary buying-price row.
 
 **Q6. I can't see the edit button / checkboxes — why?**
 Your role is **operator** (read-only), or you don't have edit permission. Check §2. Ask your administrator if you think your role is wrong.

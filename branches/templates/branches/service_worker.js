@@ -1,7 +1,7 @@
 {% load static %}
 "use strict";
 
-var CACHE_NAME = "centcompras-branch-v16";
+var CACHE_NAME = "centcompras-branch-v19";
 
 var APP_SHELL = [
     "{% static 'products/css/settings_menu.css' %}?v=5",
@@ -11,14 +11,15 @@ var APP_SHELL = [
     "{% static 'products/js/console_settings_menu.js' %}?v=4",
     "{% static 'branches/js/db.js' %}?v=5",
     "{% static 'branches/js/register_sw.js' %}?v=2",
-    "{% static 'branches/js/branch_catalog_i18n.js' %}?v=1",
+    "{% static 'branches/js/branch_catalog_i18n.js' %}?v=2",
     "{% static 'branches/js/branch_catalog.js' %}?v=5",
-    "{% static 'branches/js/sync_queue.js' %}?v=3",
-    "{% static 'branches/js/branch_offline.js' %}?v=2",
+    "{% static 'branches/js/sync_queue.js' %}?v=4",
+    "{% static 'branches/js/branch_offline.js' %}?v=3",
     "{% static 'branches/js/branch_bootstrap.js' %}?v=1",
     "{% static 'branches/js/offline_logout.js' %}?v=1",
     "{% static 'products/js/select_fill.js' %}?v=1",
-    "{% static 'orders/js/branch_requests.js' %}?v=8",
+    "{% static 'orders/js/branch_requests_i18n.js' %}?v=2",
+    "{% static 'orders/js/branch_requests.js' %}?v=10",
     "{% static 'branches/manifest.webmanifest' %}",
     "{% static 'branches/icons/icon.svg' %}",
 ];

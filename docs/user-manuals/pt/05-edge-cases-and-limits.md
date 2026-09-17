@@ -57,7 +57,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 
 **Os nomes de sub-família e a família-mãe são imutáveis** após criar — o mesmo padrão das famílias. Desative e crie uma sub-família nova se a etiqueta estiver errada.
 
-**Artigos novos:** **Código interno**, **descrição** e **família** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----------`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família, **preço de retalho > 0** e **preço de custo > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos na Génese. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
+**Artigos novos:** **Código interno**, **descrição** e **família** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----------`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família, **Preço Venda > 0** e **preço de custo > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos na Génese. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
 
 **Catálogo do gestor (`/manage/catalog/`)** — stock + preços só de leitura para o pessoal do armazém. Ver [Catálogo do gestor](07-manager-catalog.md).
 
@@ -145,7 +145,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 
 | Mensagem | Porquê | O que fazer |
 |---------|-----|------------|
-| `Item 'X' has no retail price.` (O artigo 'X' não tem preço de retalho.) | Retalho = 0 — a requisição é precificada pelo retalho | Defina preço de retalho (armazém), ou escolha outro artigo |
+| `Item 'X' has no selling price.` (O artigo 'X' não tem Preço Venda.) | Preço Venda = 0 — a requisição é precificada por este campo | Defina Preço Venda (armazém), ou escolha outro artigo |
 | `This request already has a line for 'X'.` (Esta requisição já tem uma linha para 'X'.) | Uma linha por artigo (sem agregar) | Edite a linha existente |
 | `Cannot use inactive item 'X'.` / `Cannot use inactive branch 'X'.` (Não é possível usar artigo/filial inativo 'X'.) | Artigo ou filial desativado | Reative, ou escolha outro |
 | `Internal request lines can only be changed while the request is a draft.` (As linhas da requisição interna só podem ser alteradas enquanto a requisição é rascunho.) | Edição depois de submeter | Só rascunhos são editáveis |
@@ -234,7 +234,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | **Taxa de IVA** | `Decimal(5,4)` | fracção `0 … 1` | p.ex. `0.16` = 16% |
 | **Nível de reposição** | inteiro | `≥ 0` e `< 1 000 000 000` | 0 = "sem disparo de encomenda"; número inteiro |
 | **Código interno** | `CharField` máx. **64** | obrigatório na criação na consola; só letras, algarismos, `.`, `-`, `_`; **guardado em maiúsculas**; **imutável após guardar** (definir-se-vazio uma vez para legado) | único, sem distinção maiúsculas/minúsculas |
-| **Preço de retalho (Génese)** | `Decimal(12,2)` | A Génese na consola exige **> 0**; guardar inativo permite **≥ 0** | grossista/especial podem ficar 0 |
+| **Preço Venda (Génese)** | `Decimal(12,2)` | A Génese na consola exige **> 0**; guardar inativo permite **≥ 0** | grossista/especial podem ficar 0 |
 | **Motivo / notas (campos de motivo)** | `CharField` / `TextField` | motivo ≤ **255 carateres** | motivo demasiado longo rejeitado |
 | **Email** | `EmailField` | email válido | fornecedor e utilizador |
 | **Saldos de stock** (`Item.quantity`, `BranchItemStock.quantity`) | inteiro | `≥ 0` | não pode ficar negativo |
@@ -306,7 +306,7 @@ cancelled                                cancelled         ▼               shi
 
 | Caso | Comportamento |
 |------|-----------|
-| **Preço de venda = 0** | Significa "ainda sem preço" — mas uma linha de requisição com **retalho = 0 é rejeitada** |
+| **Preço Venda = 0** | Significa "ainda sem preço" — mas uma linha de requisição com **Preço Venda = 0 é rejeitada** |
 | **Preço de compra (custo)** | Do preço do fornecedor **principal**; se não houver principal, o fornecedor **mais barato**; se não houver preços → **sem custo mostrado** |
 | **Um principal por artigo** | Marcar um fornecedor novo como principal **desmarca** automaticamente o antigo (imposto na BD) |
 | **Preço de fornecedor** | Só para fornecedor **ativo** **e** artigo; um custo por fornecedor×artigo |

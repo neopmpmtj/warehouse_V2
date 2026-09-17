@@ -142,9 +142,9 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 1. Clique em **Novo artigo**.
 2. Preencha o formulário (campos abaixo). **Código interno**, **descrição** e **família** (marcados com * no formulário) são obrigatórios. **Família** começa sem seleção (`-----------`) — tem de escolher uma antes de Guardar.
 3. Clique em **Guardar**.
-4. Se **família**, **preço de retalho > 0** e **preço de custo > 0** estiverem todos preenchidos, confirme **Génese** — o artigo é criado e ativado. Caso contrário, Guardar cria um artigo **inativo** sem diálogo de Génese.
+4. Se **família**, **Preço Venda > 0** e **preço de custo > 0** estiverem todos preenchidos, confirme **Génese** — o artigo é criado e ativado. Caso contrário, Guardar cria um artigo **inativo** sem diálogo de Génese.
 
-> **Importante:** a Génese só corre quando família, preço de retalho e preço de custo estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Guardar sem esses preços cria uma linha inativa que pode ativar mais tarde.
+> **Importante:** a Génese só corre quando família, Preço Venda e preço de custo estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Guardar sem esses preços cria uma linha inativa que pode ativar mais tarde.
 
 > 📷 **[CAPTURA DE ECRÃ — diálogo "Confirmar Génese" (antes de guardar)]**
 
@@ -160,7 +160,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 | **Taxa de IVA** | Sim | 1%, 3%, 7%, 16%, Isento |
 | **Nível de reposição** | Sim | O nível que mais tarde dispara a reposição. Número inteiro ≥ 0 (0 = sem disparo). |
 | **Em armazém / Disponível** | (só leitura, na edição) | Stock físico de armazém e o que ainda está livre para prometer após reservas. Não editável aqui. |
-| **Preço de retalho** | Não | Preço de venda (ver §6). Pode ser **0** na criação. |
+| **Preço Venda** | Não | O preço de venda principal usado nas requisições (ver §6). Pode ser **0** na criação. |
 | **Fornecedor** | Não | Opcional na criação. Se preencher **fornecedor** e **preço de custo > 0** em conjunto, a Génese guarda uma linha **principal** de preço de compra. |
 | **Preço de custo** | Não | Opcional na criação. Tem de ser preenchido em conjunto com o **fornecedor** quando quer uma linha principal de compra na Génese. |
 | **Preço de grossista** | Não | Preço de venda (ver §6). |
@@ -201,11 +201,11 @@ Dois tipos diferentes de preço — fáceis de confundir.
 | | **Preços de venda** | **Preço de compra / custo** |
 |---|---|---|
 | O que é | O que *nós* vendemos o artigo por | O que *nós* pagamos ao fornecedor |
-| Quantos | 3 (retalho, grossista, especial) | 1 por fornecedor |
+| Quantos | 3 (Preço Venda, grossista, especial) | 1 por fornecedor |
 | Quem define | Uma pessoa sénior, **manualmente** | Obtido **automaticamente** da lista de preços do fornecedor |
 | Onde | No formulário do artigo | Nos preços de fornecedor (ver §9) |
 
-- **Retalho / Grossista / Especial** são três níveis de preço que escreve no próprio artigo. *Não* mudam por si.
+- **Preço Venda / Grossista / Especial** são três níveis de preço que escreve no próprio artigo. *Não* mudam por si.
 - O **preço de custo (compra)** é o oposto: é *dinâmico*. Vem da **lista de preços de fornecedor** (§9), por isso quando o preço de um fornecedor muda ali, o custo segue automaticamente.
 
 ---
@@ -319,7 +319,7 @@ Cada alteração é registada — **quem** fez, **o que** mudou e **quando** (co
 Marca o **fornecedor preferido** para esse artigo. Só um por artigo; é a fonte do preço de compra do artigo e (no futuro) o fornecedor sugerido na compra. Sempre alterável.
 
 **P2. Qual é a diferença entre preço de venda e preço de compra?**
-Os preços de venda (retalho / grossista / especial) são o que *vendemos por* — introduzidos manualmente por uma pessoa sénior. O preço de compra/custo é o que *pagamos ao fornecedor* — obtido automaticamente da lista de preços de fornecedor.
+Os preços de venda (Preço Venda / grossista / especial) são o que *vendemos por* — introduzidos manualmente por uma pessoa sénior. O preço de compra/custo é o que *pagamos ao fornecedor* — obtido automaticamente da lista de preços de fornecedor.
 
 **P3. Porque as datas aparecem como DD/MM/AAAA?**
 É a convenção europeia usada em toda a aplicação. `05/08/2026` significa **5 de agosto de 2026**, não 8 de maio.
@@ -328,7 +328,7 @@ Os preços de venda (retalho / grossista / especial) são o que *vendemos por* �
 Não. As horas adaptam-se automaticamente ao fuso horário local de cada utilizador. O sistema guarda UTC e converte na apresentação.
 
 **P5. Criei um artigo mas diz "Inativo" — porquê?**
-Guardar sem Génese cria um artigo **inativo**. A Génese (ativar) só corre quando **família**, **preço de retalho > 0** e **preço de custo > 0** estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Também pode adicionar uma linha inativa no admin Django (superutilizador) ou na CLI `add_item` sem `--activate`. Com `--activate`, só **código interno** e **descrição** são obrigatórios; passe `--supplier` e `--cost-price` em conjunto se quiser uma linha principal de preço de compra.
+Guardar sem Génese cria um artigo **inativo**. A Génese (ativar) só corre quando **família**, **Preço Venda > 0** e **preço de custo > 0** estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Também pode adicionar uma linha inativa no admin Django (superutilizador) ou na CLI `add_item` sem `--activate`. Com `--activate`, só **código interno** e **descrição** são obrigatórios; passe `--supplier` e `--cost-price` em conjunto se quiser uma linha principal de preço de compra.
 
 **P6. Não vejo o botão editar / caixas de seleção — porquê?**
 O seu papel é **operador** (só leitura) ou não tem permissão de edição. Consulte §2. Peça ao administrador se acha que o papel está errado.

@@ -96,7 +96,7 @@ class RetailPriceMissingError(ValidationError):
     def __init__(self, item=None):
         label = getattr(item, "internal_code", None) or getattr(item, "description", None) or "item"
         super().__init__(
-            f"Item '{label}' has no retail price.",
+            f"Item '{label}' has no selling price.",
             code="retail_price_missing",
         )
 

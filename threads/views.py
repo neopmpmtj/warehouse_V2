@@ -17,7 +17,7 @@ def branch_thread_console(request):
         {
             "role": branch_role(request.user, branch),
             "page_title": "Request threads",
-            "page_title_key": "title",
+            "page_title_key": "navBranchThreads",
             "active_nav": "threads",
         }
     )

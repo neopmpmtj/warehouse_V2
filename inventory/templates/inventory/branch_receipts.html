@@ -34,30 +34,37 @@
 
     <main>
         <section class="panel">
-            <h2>Dispatches</h2>
+            <h2 data-i18n="listTitle">Dispatches</h2>
             <p id="offline-banner" class="banner banner-info" hidden></p>
-            <p id="offline-empty" class="offline-empty" hidden>Connect to Wi-Fi to load dispatches.</p>
+            <p id="offline-empty" class="offline-empty" hidden data-i18n="offlineEmpty">Connect to Wi-Fi to load dispatches.</p>
             <table>
-                <thead><tr><th>#</th><th>Request</th><th>Status</th><th>Ref</th></tr></thead>
+                <thead><tr><th>#</th><th data-i18n="colRequest">Request</th><th data-i18n="colStatus">Status</th><th data-i18n="colRef">Ref</th></tr></thead>
                 <tbody id="issue-body"></tbody>
             </table>
         </section>
 
         <section class="panel">
-            <h2 id="detail-title">Dispatch</h2>
+            <h2 id="detail-title" data-i18n="detailTitle">Dispatch</h2>
             <table>
-                <thead><tr><th>Code</th><th>Description</th><th>Shipped</th><th>Received</th><th>Remaining</th><th>Receive qty</th></tr></thead>
+                <thead><tr>
+                    <th data-i18n="colCode">Code</th>
+                    <th data-i18n="colDescription">Description</th>
+                    <th data-i18n="colShipped">Shipped</th>
+                    <th data-i18n="colReceived">Received</th>
+                    <th data-i18n="colRemaining">Remaining</th>
+                    <th data-i18n="colReceiveQty">Receive qty</th>
+                </tr></thead>
                 <tbody id="line-body"></tbody>
             </table>
             <div class="row">
-                <button id="receive-btn" class="btn btn-primary">Receive</button>
-                <button id="short-close-btn" class="btn">Short close</button>
+                <button id="receive-btn" class="btn btn-primary" data-i18n="receive">Receive</button>
+                <button id="short-close-btn" class="btn" data-i18n="shortClose">Short close</button>
             </div>
             <div class="row" id="adjust-row" hidden>
-                <input id="adjust-item" placeholder="Item ID">
-                <input id="adjust-qty" type="number" step="1" placeholder="Qty">
-                <input id="adjust-reason" placeholder="Reason">
-                <button id="adjust-btn" class="btn">Adjust stock</button>
+                <input id="adjust-item" data-i18n-placeholder="itemId" placeholder="Item ID">
+                <input id="adjust-qty" type="number" step="1" data-i18n-placeholder="colQty" placeholder="Qty">
+                <input id="adjust-reason" data-i18n-placeholder="reason" placeholder="Reason">
+                <button id="adjust-btn" class="btn" data-i18n="adjustStock">Adjust stock</button>
             </div>
             <p id="banner" class="banner" hidden></p>
         </section>
@@ -69,7 +76,130 @@
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
             var CAN_SHORT_CLOSE = {{ can_short_close|yesno:"true,false" }};
             var CAN_ADJUST = {{ can_adjust|yesno:"true,false" }};
+            var LANG_KEY = "cc-lang";
+            var STATUS_KEYS = {
+                draft: "statusDraft",
+                submitted: "statusSubmitted",
+                approved: "statusApproved",
+                rejected: "statusRejected",
+                fulfilling: "statusFulfilling",
+                shipped: "statusShipped",
+                received: "statusReceived",
+                closed: "statusClosed",
+                cancelled: "statusCancelled",
+            };
             var state = { selectedId: null, issues: [] };
+
+            var I18N = {
+                en: {
+                    pageTitle: "Receipts",
+                    listTitle: "Dispatches",
+                    offlineEmpty: "Connect to Wi-Fi to load dispatches.",
+                    colRequest: "Request",
+                    colStatus: "Status",
+                    colRef: "Ref",
+                    detailTitle: "Dispatch",
+                    detailTitleNum: "Dispatch #{id} (request #{requestId}, {status})",
+                    colCode: "Code",
+                    colDescription: "Description",
+                    colShipped: "Shipped",
+                    colReceived: "Received",
+                    colRemaining: "Remaining",
+                    colReceiveQty: "Receive qty",
+                    receive: "Receive",
+                    shortClose: "Short close",
+                    itemId: "Item ID",
+                    colQty: "Qty",
+                    reason: "Reason",
+                    adjustStock: "Adjust stock",
+                    requestFailed: "Request failed.",
+                    needQty: "Enter at least one received quantity.",
+                    receiptRecorded: "Receipt recorded.",
+                    requestClosed: "Request closed.",
+                    stockAdjusted: "Stock adjusted.",
+                    shortClosePrompt: "Reason for short-close:",
+                    statusDraft: "draft",
+                    statusSubmitted: "submitted",
+                    statusApproved: "approved",
+                    statusRejected: "rejected",
+                    statusFulfilling: "fulfilling",
+                    statusShipped: "shipped",
+                    statusReceived: "received",
+                    statusClosed: "closed",
+                    statusCancelled: "cancelled",
+                },
+                pt: {
+                    pageTitle: "Receções",
+                    listTitle: "Expedições",
+                    offlineEmpty: "Ligue-se ao Wi-Fi para carregar as expedições.",
+                    colRequest: "Pedido",
+                    colStatus: "Estado",
+                    colRef: "Ref",
+                    detailTitle: "Expedição",
+                    detailTitleNum: "Expedição n.º {id} (pedido n.º {requestId}, {status})",
+                    colCode: "Código",
+                    colDescription: "Descrição",
+                    colShipped: "Expedido",
+                    colReceived: "Recebido",
+                    colRemaining: "Restante",
+                    colReceiveQty: "Qtd a receber",
+                    receive: "Receber",
+                    shortClose: "Encerramento parcial",
+                    itemId: "ID do artigo",
+                    colQty: "Qtd",
+                    reason: "Motivo",
+                    adjustStock: "Ajustar stock",
+                    requestFailed: "O pedido falhou.",
+                    needQty: "Indique pelo menos uma quantidade recebida.",
+                    receiptRecorded: "Receção registada.",
+                    requestClosed: "Pedido encerrado.",
+                    stockAdjusted: "Stock ajustado.",
+                    shortClosePrompt: "Motivo do encerramento parcial:",
+                    statusDraft: "rascunho",
+                    statusSubmitted: "submetido",
+                    statusApproved: "aprovado",
+                    statusRejected: "rejeitado",
+                    statusFulfilling: "em cumprimento",
+                    statusShipped: "expedido",
+                    statusReceived: "recebido",
+                    statusClosed: "fechado",
+                    statusCancelled: "cancelada",
+                },
+            };
+            I18N["pt-PT"] = I18N.pt;
+
+            function currentLang() {
+                try {
+                    var raw = localStorage.getItem(LANG_KEY) || "pt";
+                    return String(raw).toLowerCase().indexOf("en") === 0 ? "en" : "pt";
+                } catch (e) {
+                    return "pt";
+                }
+            }
+            function t(key, vars) {
+                var dict = I18N[currentLang()] || I18N.en;
+                var text = dict[key] !== undefined ? dict[key] : (I18N.en[key] || key);
+                if (vars) {
+                    Object.keys(vars).forEach(function (name) {
+                        text = text.split("{" + name + "}").join(String(vars[name]));
+                    });
+                }
+                return text;
+            }
+            function statusLabel(status) {
+                var key = STATUS_KEYS[status];
+                return key ? t(key) : status;
+            }
+            function applyStaticI18n() {
+                document.documentElement.lang = currentLang() === "pt" ? "pt-PT" : "en";
+                document.title = t("pageTitle") + " — CentCompras";
+                document.querySelectorAll("main [data-i18n]").forEach(function (node) {
+                    node.textContent = t(node.getAttribute("data-i18n"));
+                });
+                document.querySelectorAll("main [data-i18n-placeholder]").forEach(function (node) {
+                    node.setAttribute("placeholder", t(node.getAttribute("data-i18n-placeholder")));
+                });
+            }
 
             var issueBody = document.getElementById("issue-body");
             var lineBody = document.getElementById("line-body");
@@ -77,7 +207,7 @@
             var detailTitle = document.getElementById("detail-title");
 
             function el(tag, text, cls) { var n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
-            function showError(m) { banner.textContent = m || "Request failed."; banner.hidden = false; }
+            function showError(m) { banner.textContent = m || t("requestFailed"); banner.hidden = false; }
             function clearError() { banner.hidden = true; }
 
             function api(path, method, body) {
@@ -95,7 +225,7 @@
                     if (issue.id === state.selectedId) tr.className = "selected";
                     tr.appendChild(el("td", issue.id));
                     tr.appendChild(el("td", issue.request_id));
-                    tr.appendChild(el("td", issue.request_status));
+                    tr.appendChild(el("td", statusLabel(issue.request_status)));
                     tr.appendChild(el("td", issue.reference));
                     tr.addEventListener("click", function () { select(issue.id); });
                     issueBody.appendChild(tr);
@@ -109,7 +239,7 @@
                     state.selectedId = null;
                     issueBody.textContent = "";
                     lineBody.textContent = "";
-                    detailTitle.textContent = "Dispatch";
+                    detailTitle.textContent = t("detailTitle");
                     if (offlineEmpty) offlineEmpty.hidden = false;
                     return Promise.resolve();
                 }
@@ -121,7 +251,11 @@
             }
 
             function renderDetail(issue) {
-                detailTitle.textContent = "Dispatch #" + issue.id + " (request #" + issue.request_id + ", " + issue.request_status + ")";
+                detailTitle.textContent = t("detailTitleNum", {
+                    id: issue.id,
+                    requestId: issue.request_id,
+                    status: statusLabel(issue.request_status),
+                });
                 lineBody.textContent = "";
                 issue.lines.forEach(function (line) {
                     var tr = document.createElement("tr");
@@ -158,7 +292,7 @@
                     if (!stillOpen) {
                         state.selectedId = null;
                         lineBody.textContent = "";
-                        detailTitle.textContent = "Dispatch";
+                        detailTitle.textContent = t("detailTitle");
                         renderList();
                         banner.textContent = message;
                         banner.hidden = false;
@@ -174,18 +308,18 @@
                 lineBody.querySelectorAll("input[data-line-id]").forEach(function (input) {
                     if (input.value) lines.push({ line_id: parseInt(input.dataset.lineId, 10), quantity_received: input.value });
                 });
-                if (!lines.length) { showError("Enter at least one received quantity."); return; }
+                if (!lines.length) { showError(t("needQty")); return; }
                 api("/api/branch/receipts/issues/" + state.selectedId + "/receive/", "POST", { lines: lines })
-                    .then(function () { return afterAction("Receipt recorded."); })
+                    .then(function () { return afterAction(t("receiptRecorded")); })
                     .catch(showError);
             }
 
             function shortClose() {
                 clearError();
-                var reason = prompt("Reason for short-close:");
+                var reason = prompt(t("shortClosePrompt"));
                 if (reason === null) return;
                 api("/api/branch/receipts/issues/" + state.selectedId + "/short-close/", "POST", { reason: reason })
-                    .then(function () { return afterAction("Request closed."); })
+                    .then(function () { return afterAction(t("requestClosed")); })
                     .catch(showError);
             }
 
@@ -195,7 +329,7 @@
                     item_id: document.getElementById("adjust-item").value,
                     quantity: document.getElementById("adjust-qty").value,
                     reason: document.getElementById("adjust-reason").value
-                }).then(function () { banner.textContent = "Stock adjusted."; banner.hidden = false; }).catch(showError);
+                }).then(function () { banner.textContent = t("stockAdjusted"); banner.hidden = false; }).catch(showError);
             }
 
             document.getElementById("receive-btn").addEventListener("click", receive);
@@ -204,6 +338,16 @@
             document.getElementById("adjust-btn").addEventListener("click", adjust);
             if (CAN_ADJUST) document.getElementById("adjust-row").hidden = false;
 
+            applyStaticI18n();
+            document.addEventListener("cc-lang-changed", function () {
+                applyStaticI18n();
+                renderList();
+                if (state.selectedId) {
+                    select(state.selectedId);
+                } else {
+                    detailTitle.textContent = t("detailTitle");
+                }
+            });
             load().catch(showError);
         })();
     </script>
