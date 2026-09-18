@@ -250,6 +250,21 @@
                 });
             }
 
+            function clampReceiveQty(input) {
+                var max = parseInt(input.max, 10);
+                if (!Number.isFinite(max) || max <= 0) {
+                    input.value = "";
+                    return;
+                }
+                if (input.value === "") return;
+                var n = parseInt(input.value, 10);
+                if (!Number.isFinite(n) || n < 1) {
+                    input.value = "";
+                    return;
+                }
+                if (n > max) input.value = String(max);
+            }
+
             function renderDetail(issue) {
                 detailTitle.textContent = t("detailTitleNum", {
                     id: issue.id,
@@ -258,6 +273,8 @@
                 });
                 lineBody.textContent = "";
                 issue.lines.forEach(function (line) {
+                    var remaining = parseInt(line.remaining, 10);
+                    if (!Number.isFinite(remaining) || remaining < 0) remaining = 0;
                     var tr = document.createElement("tr");
                     tr.appendChild(el("td", line.internal_code));
                     tr.appendChild(el("td", line.description));
@@ -266,9 +283,17 @@
                     tr.appendChild(el("td", line.remaining));
                     var td = document.createElement("td");
                     var input = document.createElement("input");
-                    input.type = "number"; input.step = "1"; input.min = "1"; input.className = "qty";
+                    input.type = "number";
+                    input.step = "1";
+                    input.min = "1";
+                    input.max = String(remaining);
+                    input.className = "qty";
                     input.dataset.lineId = line.line_id;
-                    input.disabled = issue.request_status === "closed";
+                    input.disabled = issue.request_status === "closed" || remaining <= 0;
+                    if (!input.disabled) {
+                        input.addEventListener("input", function () { clampReceiveQty(input); });
+                        input.addEventListener("change", function () { clampReceiveQty(input); });
+                    }
                     td.appendChild(input);
                     tr.appendChild(td);
                     lineBody.appendChild(tr);
@@ -306,6 +331,7 @@
                 clearError();
                 var lines = [];
                 lineBody.querySelectorAll("input[data-line-id]").forEach(function (input) {
+                    clampReceiveQty(input);
                     if (input.value) lines.push({ line_id: parseInt(input.dataset.lineId, 10), quantity_received: input.value });
                 });
                 if (!lines.length) { showError(t("needQty")); return; }

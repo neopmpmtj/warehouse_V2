@@ -256,7 +256,7 @@ Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your bra
 
 Rules:
 
-- You cannot receive **more than was shipped** on that line.
+- **Receive qty** cannot exceed **Remaining** on that line (shipped minus already received). The field will not accept a higher number via typing or the arrows.
 - **Partial** receipt → request stays **received** (more still expected).
 - **Full** receipt → request becomes **closed**.
 
@@ -331,7 +331,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - Request an **inactive** item, or a line with **no selling price**, or the **same item twice** on one request.
 - Edit a request after **submit**.
 - **Issue** more than is reserved for that request, or more than the request's remaining.
-- **Receive** more than was shipped.
+- **Receive** more than the line's remaining (shipped minus already received).
 - **Cancel** a request after goods have been issued (short-close instead).
 - Short-close as an **operator** (either side).
 - Adjust branch stock unless you are the branch **admin**.

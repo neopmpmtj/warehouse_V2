@@ -256,7 +256,7 @@ Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial 
 
 Regras:
 
-- Não pode receber **mais do que foi expedido** nessa linha.
+- A **Qtd a receber** não pode exceder o **Restante** nessa linha (expedido menos o já recebido). O campo não aceita um número maior, nem ao escrever nem com as setas.
 - **Receção parcial** → a requisição mantém-se **received** (ainda se espera mais).
 - **Receção completa** → a requisição passa a **closed** (fechada).
 
@@ -331,7 +331,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - Pedir um artigo **inativo**, ou uma linha **sem Preço Venda**, ou o **mesmo artigo duas vezes** numa requisição.
 - Editar uma requisição depois de **submeter**.
 - **Emitir** mais do que está reservado para essa requisição, ou mais do que o restante da requisição.
-- **Receber** mais do que foi expedido.
+- **Receber** mais do que o restante da linha (expedido menos o já recebido).
 - **Cancelar** uma requisição depois de mercadoria emitida (use encerramento parcial).
 - Encerramento parcial como **operador** (em qualquer dos lados).
 - Ajustar stock da filial a menos que seja **administrador** da filial.
