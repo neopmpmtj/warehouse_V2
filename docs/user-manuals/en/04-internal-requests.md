@@ -246,7 +246,7 @@ Only a **manager grade 2+ or admin** can do this.
 
 ## 8. Branch — confirm arrival (receipt)
 
-Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your branch — requests that are **shipped** or **received** (i.e. on their way or partly arrived).
+Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your branch — requests that are **shipped** or **received** (i.e. on their way or partly arrived). **Receive** and **Short close** stay visible but disabled until you select a dispatch.
 
 ### 8.1 Receive against a dispatch
 

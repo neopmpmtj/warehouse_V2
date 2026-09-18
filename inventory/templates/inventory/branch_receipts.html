@@ -57,8 +57,8 @@
                 <tbody id="line-body"></tbody>
             </table>
             <div class="row">
-                <button id="receive-btn" class="btn btn-primary" data-i18n="receive">Receive</button>
-                <button id="short-close-btn" class="btn" data-i18n="shortClose">Short close</button>
+                <button id="receive-btn" class="btn btn-primary" data-i18n="receive" disabled>Receive</button>
+                <button id="short-close-btn" class="btn" data-i18n="shortClose" disabled>Short close</button>
             </div>
             <div class="row" id="adjust-row" hidden>
                 <input id="adjust-item" data-i18n-placeholder="itemId" placeholder="Item ID">
@@ -205,6 +205,14 @@
             var lineBody = document.getElementById("line-body");
             var banner = document.getElementById("banner");
             var detailTitle = document.getElementById("detail-title");
+            var receiveBtn = document.getElementById("receive-btn");
+            var shortCloseBtn = document.getElementById("short-close-btn");
+
+            function syncActionButtons() {
+                var hasDispatch = Boolean(state.selectedId);
+                receiveBtn.disabled = !hasDispatch;
+                shortCloseBtn.disabled = !hasDispatch || !CAN_SHORT_CLOSE;
+            }
 
             function el(tag, text, cls) { var n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
             function showError(m) { banner.textContent = m || t("requestFailed"); banner.hidden = false; }
@@ -241,12 +249,14 @@
                     lineBody.textContent = "";
                     detailTitle.textContent = t("detailTitle");
                     if (offlineEmpty) offlineEmpty.hidden = false;
+                    syncActionButtons();
                     return Promise.resolve();
                 }
                 if (offlineEmpty) offlineEmpty.hidden = true;
                 return api("/api/branch/receipts/issues/").then(function (d) {
                     state.issues = d.goods_issues || [];
                     renderList();
+                    syncActionButtons();
                 });
             }
 
@@ -306,7 +316,11 @@
                 api("/api/branch/receipts/issues/" + id + "/").then(function (d) {
                     renderDetail(d.goods_issue);
                     renderList();
-                }).catch(showError);
+                    syncActionButtons();
+                }).catch(function (err) {
+                    syncActionButtons();
+                    showError(err.message);
+                });
             }
 
             function afterAction(message) {
@@ -319,6 +333,7 @@
                         lineBody.textContent = "";
                         detailTitle.textContent = t("detailTitle");
                         renderList();
+                        syncActionButtons();
                         banner.textContent = message;
                         banner.hidden = false;
                         return;
@@ -358,9 +373,8 @@
                 }).then(function () { banner.textContent = t("stockAdjusted"); banner.hidden = false; }).catch(showError);
             }
 
-            document.getElementById("receive-btn").addEventListener("click", receive);
-            document.getElementById("short-close-btn").addEventListener("click", shortClose);
-            document.getElementById("short-close-btn").disabled = !CAN_SHORT_CLOSE;
+            receiveBtn.addEventListener("click", receive);
+            shortCloseBtn.addEventListener("click", shortClose);
             document.getElementById("adjust-btn").addEventListener("click", adjust);
             if (CAN_ADJUST) document.getElementById("adjust-row").hidden = false;
 
@@ -372,6 +386,7 @@
                     select(state.selectedId);
                 } else {
                     detailTitle.textContent = t("detailTitle");
+                    syncActionButtons();
                 }
             });
             load().catch(showError);

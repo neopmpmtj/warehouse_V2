@@ -246,7 +246,7 @@ Só um **gestor grau 2+ ou administrador** pode fazer isto.
 
 ## 8. Filial — confirmar chegada (receção)
 
-Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial — requisições **shipped** (expedidas) ou **received** (recebidas) (ou seja, a caminho ou parcialmente chegadas).
+Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial — requisições **shipped** (expedidas) ou **received** (recebidas) (ou seja, a caminho ou parcialmente chegadas). **Receber** e **Encerramento parcial** permanecem visíveis mas desativados até selecionar uma expedição.
 
 ### 8.1 Receber face a uma expedição
 
