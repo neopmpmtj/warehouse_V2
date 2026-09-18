@@ -3888,3 +3888,4 @@ process.stdout.write(JSON.stringify(ctx.__export));
         self.assertIn("sectionVisualizations:", source)
         self.assertIn("Gestão de artigos", source)
         self.assertIn("sectionWarehouse:", source)
+        self.assertIn("sectionCommunication:", source)

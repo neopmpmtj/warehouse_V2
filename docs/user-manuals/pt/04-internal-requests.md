@@ -92,7 +92,7 @@ Pode pertencer a **uma filial, várias filiais ou a nenhuma**. Depois de iniciar
 | **Várias filiais** | Aterra em `/branch/select/` — escolha uma, depois continue para o painel. |
 | **Sem filial** | O seletor diz *"You have no active branch access."* (Não tem acesso ativo a nenhuma filial.) Peça ajuda ao administrador. |
 
-No painel, abra **Catálogo**, **Requisição interna**, **Conversas**, **Receções** ou **Parle** a partir dos cartões. Em **Catálogo**, **Pedidos**, **Receções** e **Conversas**, a barra superior também tem **Início**, **Catálogo**, **Pedidos**, **Receções** e **Conversas** (Conversas é o último) — não no painel em si.
+No painel, **A sua filial** tem **Catálogo**, **Requisição interna** e **Receções**. **Comunicação** tem **Conversas**, depois **Parle**. Em **Catálogo**, **Pedidos**, **Receções** e **Conversas**, a barra superior também tem **Início**, **Catálogo**, **Pedidos**, **Receções** e **Conversas** (Conversas é o último) — não no painel em si.
 
 **Mudar filial** só aparece quando pertence a **mais do que uma** filial. Se só viu uma filial na sua vida, essa ligação fica oculta — não pode consultar outras filiais.
 

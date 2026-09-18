@@ -351,7 +351,7 @@ class ServiceWorkerTests(TestCase):
         response = self.client.get("/service-worker.js")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
-        self.assertContains(response, "centcompras-branch-v20")
+        self.assertContains(response, "centcompras-branch-v21")
         self.assertContains(response, "select_fill.js")
         self.assertContains(response, "/api/")
         self.assertContains(response, "/manage/")
@@ -434,12 +434,30 @@ class BranchViewTests(TestCase):
         response = self.client.get(reverse("branch_dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.north.name)
+        self.assertContains(response, 'data-i18n="sectionBranchWork"')
+        self.assertContains(response, 'data-i18n="sectionCommunication"')
         self.assertContains(response, 'href="/branch/catalog/"')
         self.assertContains(response, 'href="/branch/requests/"')
         self.assertContains(response, 'href="/branch/threads/"')
         self.assertContains(response, 'href="/branch/receipts/"')
         self.assertContains(response, 'href="/company-voice/"')
         self.assertContains(response, 'data-i18n="cardBranchCatalog"')
+        html = response.content.decode()
+        self.assertLess(
+            html.index('data-i18n="sectionBranchWork"'),
+            html.index('data-i18n="sectionCommunication"'),
+        )
+        communication = html.split('data-i18n="sectionCommunication"', 1)[1]
+        self.assertLess(
+            communication.index('href="/branch/threads/"'),
+            communication.index('href="/company-voice/"'),
+        )
+        work = html.split('data-i18n="sectionCommunication"', 1)[0]
+        self.assertIn('href="/branch/catalog/"', work)
+        self.assertIn('href="/branch/requests/"', work)
+        self.assertIn('href="/branch/receipts/"', work)
+        self.assertNotIn('href="/branch/threads/"', work)
+        self.assertNotIn('href="/company-voice/"', work)
         self.assertNotContains(response, 'href="/branch/select/"')
         self.assertNotContains(response, "Switch branch")
         self.assertContains(response, "Manager")

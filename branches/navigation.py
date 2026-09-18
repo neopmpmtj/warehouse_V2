@@ -4,8 +4,8 @@ from .capabilities import branch_role
 from .services import get_active_memberships
 
 
-def branch_dashboard_cards(*, include_picker=False):
-    """Card links for branch staff landing pages."""
+def branch_work_cards(*, include_picker=False):
+    """Operational cards: picker (optional), catalog, requisição, receipts."""
     cards = []
     if include_picker:
         cards.append(
@@ -34,29 +34,40 @@ def branch_dashboard_cards(*, include_picker=False):
                 "url": "/branch/requests/",
             },
             {
-                "title_key": "cardBranchThreads",
-                "desc_key": "cardBranchThreadsDesc",
-                "title": "Branch threads",
-                "desc": "Request items not in the catalogue",
-                "url": "/branch/threads/",
-            },
-            {
                 "title_key": "cardBranchReceipts",
                 "desc_key": "cardBranchReceiptsDesc",
                 "title": "Branch receipts",
                 "desc": "Receive goods and view branch stock",
                 "url": "/branch/receipts/",
             },
-            {
-                "title_key": "cardCompanyVoice",
-                "desc_key": "cardCompanyVoiceDesc",
-                "title": "Parle",
-                "desc": "Suggestions, praise, and concerns — all logged-in staff can read and post.",
-                "url": "/company-voice/",
-            },
         ]
     )
     return cards
+
+
+def branch_communication_cards():
+    """Messaging cards: threads, then Parle."""
+    return [
+        {
+            "title_key": "cardBranchThreads",
+            "desc_key": "cardBranchThreadsDesc",
+            "title": "Branch threads",
+            "desc": "Request items not in the catalogue",
+            "url": "/branch/threads/",
+        },
+        {
+            "title_key": "cardCompanyVoice",
+            "desc_key": "cardCompanyVoiceDesc",
+            "title": "Parle",
+            "desc": "Suggestions, praise, and concerns — all logged-in staff can read and post.",
+            "url": "/company-voice/",
+        },
+    ]
+
+
+def branch_dashboard_cards(*, include_picker=False):
+    """Card links for branch staff landing pages (warehouse dashboard uses the flat list)."""
+    return branch_work_cards(include_picker=include_picker) + branch_communication_cards()
 
 
 def branch_page_context(request):

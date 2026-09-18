@@ -3,7 +3,11 @@ from django.shortcuts import redirect, render
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_GET
 
-from .navigation import branch_dashboard_cards, branch_page_context
+from .navigation import (
+    branch_communication_cards,
+    branch_page_context,
+    branch_work_cards,
+)
 from .permissions import active_branch_required
 from .services import BRANCH_HOME_URL, get_active_memberships, set_active_branch
 
@@ -35,7 +39,9 @@ def branch_select(request):
 def branch_dashboard(request):
     memberships = list(get_active_memberships(request.user))
     context = branch_page_context(request)
-    context["cards"] = branch_dashboard_cards(include_picker=len(memberships) > 1)
+    include_picker = len(memberships) > 1
+    context["work_cards"] = branch_work_cards(include_picker=include_picker)
+    context["communication_cards"] = branch_communication_cards()
     return render(request, "branches/dashboard.html", context)
 
 

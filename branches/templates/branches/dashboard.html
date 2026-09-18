@@ -37,7 +37,18 @@
         <section class="dash-section">
             <h2 data-i18n="sectionBranchWork">Your branch</h2>
             <div class="card-grid">
-                {% for card in cards %}
+                {% for card in work_cards %}
+                <a class="dash-card" href="{{ card.url }}">
+                    <span class="dash-card-title" data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                    <span class="dash-card-desc" data-i18n="{{ card.desc_key }}">{{ card.desc }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        <section class="dash-section">
+            <h2 data-i18n="sectionCommunication">Communication</h2>
+            <div class="card-grid">
+                {% for card in communication_cards %}
                 <a class="dash-card" href="{{ card.url }}">
                     <span class="dash-card-title" data-i18n="{{ card.title_key }}">{{ card.title }}</span>
                     <span class="dash-card-desc" data-i18n="{{ card.desc_key }}">{{ card.desc }}</span>
@@ -48,7 +59,7 @@
     </main>
 
     {% include "branches/includes/offline_scripts.html" %}
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=11"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=12"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>
