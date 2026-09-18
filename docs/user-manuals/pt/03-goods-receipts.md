@@ -110,7 +110,7 @@ Só pode receber contra uma encomenda de compra **Aprovada** ou já **Recebida**
 ### 4.1 Nesta consola
 
 1. Clique em **Nova receção**.
-2. Escolha a **Encomenda de compra** — mostrada como `#12 — Nome do fornecedor`, listada **A–Z pelo nome do fornecedor** (depois o número da encomenda).
+2. Escolha a **Encomenda de compra** — mostrada como `#12 — Nome do fornecedor`, listada **A–Z pelo nome do fornecedor** (depois o número da encomenda). A lista começa em `-----`; nenhuma encomenda vem pré-selecionada (a menos que tenha chegado de **Receber mercadoria** numa encomenda específica).
 3. As linhas dessa encomenda aparecem com **Encomendado / Recebido / Em falta / A receber**.
 4. **A receber** é pré-preenchido com a quantidade **em falta**. Altere se esta entrega é só parte da encomenda. Defina uma linha como **0** (ou limpe) para ignorá-la nesta receção.
 5. (Opcional) **Referência (guia de entrega)** — o número da GR / *guia* do fornecedor. Recomendado: aparece na linha da receção e no movimento de stock.
@@ -178,7 +178,7 @@ Filtre por artigo quando investiga um produto. A coluna **Referência** de um mo
 Use isto para **correções**, não para entregas de fornecedor. Motivos típicos: contagem de stock, mercadoria danificada, receção registada com quantidade errada sem quantidade restante na encomenda para corrigir.
 
 1. Clique em **Ajustar stock**.
-2. Escolha o **Artigo**.
+2. Escolha o **Artigo**. A lista começa em `-----`.
 3. Introduza **Quantidade**:
    - **Positiva** (por exemplo `5`) — acrescenta stock
    - **Negativa** (por exemplo `-5`) — remove stock

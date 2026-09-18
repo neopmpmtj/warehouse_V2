@@ -49,7 +49,7 @@ def _make_warehouse_user(email, group=GROUP_ADMINS, grade=1):
 
 def _make_item(description, active=True):
     family = FamilyProduct.objects.create(name="Fam " + description, is_active=True)
-    vat = VatRate.objects.get(code="VAT16")
+    vat = VatRate.objects.get(code="VAT14")
     return Item.objects.create(
         family=family,
         vat_rate=vat,

@@ -335,16 +335,16 @@ async function loadReceivablePurchaseOrders() {
     );
 }
 
-function fillReceivablePoSelect() {
+function fillReceivablePoSelect(selectedId) {
     const select = document.getElementById("receipt-po");
-    fillSelect(
+    fillActionSelect(
         select,
         state.purchaseOrders.map((po) => ({
             value: String(po.id),
             label: `#${po.id} — ${po.supplier_name}`,
             sortValue: `${po.supplier_name || ""}\u0000${String(po.id).padStart(12, "0")}`,
         })),
-        t("choosePo")
+        selectedId || ""
     );
 }
 
@@ -442,13 +442,8 @@ async function openReceiptDialog(preferredPoId) {
         showBanner(error.message, true);
         return;
     }
-    fillReceivablePoSelect();
+    fillReceivablePoSelect(preferredPoId);
     const select = document.getElementById("receipt-po");
-    if (preferredPoId && [...select.options].some((option) => option.value === String(preferredPoId))) {
-        select.value = String(preferredPoId);
-    } else {
-        select.value = "";
-    }
     state.receiptSummary = [];
     document.getElementById("receipt-dialog-backdrop").hidden = false;
     document.getElementById("receipt-dialog").hidden = false;
@@ -569,13 +564,12 @@ async function openAdjustDialog() {
         return;
     }
     fillItemFilter();
-    fillSelect(
+    fillActionSelect(
         document.getElementById("adjust-item"),
         state.items.map((item) => ({
             value: String(item.id),
             label: `${item.internal_code || "—"} — ${item.description}`,
-        })),
-        t("chooseItem")
+        }))
     );
     document.getElementById("adjust-dialog-backdrop").hidden = false;
     document.getElementById("adjust-dialog").hidden = false;

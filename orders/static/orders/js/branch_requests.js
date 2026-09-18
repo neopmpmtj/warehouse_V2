@@ -196,15 +196,20 @@
 
     function populateItemPicker(items) {
         state.items = items || [];
-        fillSelect(
+        fillActionSelect(
             lineItem,
             state.items.map(function (item) {
                 return {
                     value: String(item.id),
                     label: (item.internal_code || "") + " — " + item.description,
                 };
-            })
+            }),
+            lineItem.value
         );
+    }
+
+    function resetItemPicker() {
+        lineItem.value = "";
     }
 
     function loadItems() {
@@ -509,6 +514,7 @@
                     return loadPending();
                 })
                 .then(function () {
+                    resetItemPicker();
                     selectPending(state.selectedClientUuid);
                 })
                 .catch(showError);
@@ -524,6 +530,7 @@
             quantity: qty,
         })
             .then(function () {
+                resetItemPicker();
                 return selectRequest(state.selectedId);
             })
             .catch(showError);

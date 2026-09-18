@@ -110,7 +110,7 @@ You can only receive against a purchase order that is **Approved** or already **
 ### 4.1 From this console
 
 1. Click **New receipt** (*Nova receção*).
-2. Choose the **Purchase order** (*Encomenda de compra*) — shown as `#12 — Supplier name`, listed **A–Z by supplier name** (then PO number).
+2. Choose the **Purchase order** (*Encomenda de compra*) — shown as `#12 — Supplier name`, listed **A–Z by supplier name** (then PO number). The list starts on `-----`; no order is pre-selected (unless you arrived from **Receive goods** on a specific PO).
 3. The lines of that order appear with **Ordered / Received / Remaining / To receive**.
 4. **To receive** is pre-filled with the **remaining** quantity. Change it if this delivery is only part of the order. Set a line to **0** (or clear it) to skip it on this receipt.
 5. (Optional) **Reference (delivery note)** (*Referência — guia de entrega*) — the supplier’s GR / *guia* number. Recommended: it appears on the receipt row and on the stock movement.
@@ -178,7 +178,7 @@ Filter by item when you are investigating one product. A receipt movement’s **
 Use this for **corrections**, not for supplier deliveries. Typical reasons: stock count, damaged goods, a receipt booked against the wrong quantity with no remaining PO quantity to fix it.
 
 1. Click **Adjust stock** (*Ajustar stock*).
-2. Choose the **Item**.
+2. Choose the **Item**. The list starts on `-----`.
 3. Enter **Quantity**:
    - **Positive** (e.g. `5`) — adds stock
    - **Negative** (e.g. `-5`) — removes stock

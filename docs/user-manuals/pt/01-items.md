@@ -95,7 +95,7 @@ A consola é uma única página, dividida em três áreas.
 | **Ação em lote** + **Aplicar** | Desativar/reativar vários artigos de uma vez |
 | **Novo artigo** | Criar um novo artigo |
 
-As listas de família, sub-família, unidade, IVA, fornecedor e artigo estão **A–Z pelo texto visível** (*Todas…* / *Escolher…* ficam no topo). Estado e ação em lote mantêm a ordem do fluxo de trabalho.
+As listas de família, sub-família, unidade, IVA, fornecedor e artigo estão **A–Z pelo texto visível** (*Todas…* / *-----* ficam no topo). Estado e ação em lote mantêm a ordem do fluxo de trabalho.
 
 **C. Tabela de artigos**
 - Uma linha por artigo, com colunas: **Código, Descrição, Família, Sub-família, Unidade, Reposição, IVA, Estado, Ações**
@@ -140,7 +140,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 ### 5.1 Criar um novo artigo
 
 1. Clique em **Novo artigo**.
-2. Preencha o formulário (campos abaixo). **Código interno**, **descrição** e **família** (marcados com * no formulário) são obrigatórios. **Família** começa sem seleção (`-----------`) — tem de escolher uma antes de Guardar.
+2. Preencha o formulário (campos abaixo). **Código interno**, **descrição** e **família** (marcados com * no formulário) são obrigatórios. **Família** começa sem seleção (`-----`) — tem de escolher uma antes de Guardar.
 3. Clique em **Guardar**.
 4. Se **família**, **Preço Venda > 0** e **preço de custo > 0** estiverem todos preenchidos, confirme **Génese** — o artigo é criado e ativado. Caso contrário, Guardar cria um artigo **inativo** sem diálogo de Génese.
 
@@ -154,7 +154,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 |-------|:---:|-------|
 | **Código interno** * | Sim (novos artigos) | A sua referência, por exemplo `CEM-50` ou `CABLE-2.5`. Tem de ser **único** (sem distinção entre maiúsculas e minúsculas). Apenas **letras, algarismos, pontos (`.`), hífens (`-`) e sublinhados (`_`)** — sem espaços nem outros símbolos. Máximo **64** caracteres. **Guardado em maiúsculas** (`cem-50` torna-se `CEM-50`). **Não pode ser alterado depois do primeiro guardar** (artigos antigos com código vazio podem definir o código uma vez). |
 | **Descrição** * | Sim | O que é o artigo. |
-| **Família** * | Sim | O grupo a que pertence (ver §7). Um artigo novo começa com `-----------` — escolha uma família antes de Guardar. |
+| **Família** * | Sim | O grupo a que pertence (ver §7). Um artigo novo começa com `-----` — escolha uma família antes de Guardar. |
 | **Sub-família** | Não | Agrupamento opcional mais fino sob a família (ver §7). Deixe vazio para nenhuma. |
 | **Unidade** | Sim | peça / kg / g / m / m² / m³ / l |
 | **Taxa de IVA** | Sim | 1%, 3%, 7%, 14% (predefinição em artigos novos), Isento |
@@ -227,7 +227,7 @@ Uma **família** agrupa artigos relacionados (por exemplo *Cimento*, *Tubos*, *E
 Uma **sub-família** é um segundo nível opcional sob uma família (por exemplo *Cimento → Sacos*, *Tubos → PVC*). Os artigos **não** exigem sub-família — a família sozinha basta para Génese e ativação.
 
 1. Clique em **Sub-famílias** na barra superior. Em janela estreita, abra primeiro **Dados mestres**.
-2. Clique em **Nova sub-família**, escolha a **família-mãe**, escreva o nome, confirme.
+2. Clique em **Nova sub-família**, escolha a **família-mãe** (começa em `-----`), escreva o nome, confirme.
 3. Os nomes de sub-família são únicos **dentro de cada família** (sem distinção entre maiúsculas e minúsculas) — o mesmo nome sob duas famílias diferentes é permitido.
 4. No formulário do artigo, escolha uma sub-família só depois de escolher a família; mudar a família limpa sub-famílias incompatíveis.
 
@@ -260,7 +260,7 @@ Cada par fornecedor × artigo pode ter um **preço de custo** — quanto esse fo
 1. Abra **Fornecedores**.
 2. Na linha do fornecedor, clique em **Preços de fornecedor**.
 3. Clique em **Adicionar preço**.
-4. Escolha o **Artigo** (a lista começa com traços até escolher), introduza o **Preço de custo** e, opcionalmente, marque **Principal**.
+4. Escolha o **Artigo** (a lista começa em `-----` até escolher), introduza o **Preço de custo** e, opcionalmente, marque **Principal**.
 5. Guarde.
 
 Pode adicionar um custo a um **artigo inativo**. Encomendas de compra e requisições continuam a não poder usar esse artigo até o reativar. Adicionar um preço a um **fornecedor inativo** continua a ser recusado.

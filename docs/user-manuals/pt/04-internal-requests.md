@@ -140,7 +140,7 @@ Abra **`/branch/requests/`**.
 
 ### 4.2 Adicionar linhas
 
-1. No formulário de linha, escolha um **artigo** no seletor do catálogo (A–Z pelo código — descrição visível).
+1. No formulário de linha, escolha um **artigo** no seletor do catálogo (A–Z pelo código — descrição visível). O seletor começa em `-----`; nenhum artigo vem pré-selecionado.
 2. Indique a **quantidade** como um **número inteiro** da unidade do artigo (maior que zero; sem casas decimais).
 3. Clique em **Add** (Adicionar).
 

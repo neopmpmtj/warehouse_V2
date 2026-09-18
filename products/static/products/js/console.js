@@ -507,11 +507,7 @@ function fillFormLookups() {
             value: String(family.id),
             label: family.is_active ? family.name : `${family.name} (${t("inactive")})`,
         }));
-    fillSelect(
-        familySelect,
-        familyOptions,
-        t("chooseFamily")
-    );
+    fillActionSelect(familySelect, familyOptions, selected);
     fillSelect(
         document.getElementById("field-unit"),
         state.units.map((unit) => ({
@@ -526,15 +522,16 @@ function fillFormLookups() {
             label: vatRate.label,
         }))
     );
-    fillSelect(
-        document.getElementById("field-supplier"),
+    const supplierSelect = document.getElementById("field-supplier");
+    fillActionSelect(
+        supplierSelect,
         (state.suppliers || [])
             .filter((supplier) => supplier.is_active)
             .map((supplier) => ({
                 value: String(supplier.id),
                 label: supplier.name,
             })),
-        t("chooseSupplier"),
+        supplierSelect.value
     );
     fillSubFamilyField();
 }
@@ -1205,15 +1202,14 @@ function askSubFamilyCreate() {
             return;
         }
 
-        fillSelect(
+        fillActionSelect(
             familyInput,
             state.families
                 .filter((family) => family.is_active)
                 .map((family) => ({
                     value: String(family.id),
                     label: family.name,
-                })),
-            t("family")
+                }))
         );
         confirmButton.textContent = t("save");
         nameInput.value = "";
@@ -1855,12 +1851,7 @@ function fillSupplierPriceItemSelect(selectedId) {
         value: String(item.id),
         label: `${item.internal_code || "—"} — ${item.description}`,
     }));
-    fillSelect(select, options, t("chooseItem"));
-    if (selectedId && [...select.options].some((opt) => opt.value === String(selectedId))) {
-        select.value = String(selectedId);
-    } else {
-        select.value = "";
-    }
+    fillActionSelect(select, options, selectedId || "");
 }
 
 function renderSupplierPrices() {
@@ -1990,6 +1981,7 @@ async function submitSupplierPriceAdd(event) {
         });
         state.supplierPrices.push(data.supplier_item_price);
         renderSupplierPrices();
+        document.getElementById("supplier-price-item").value = "";
         document.getElementById("supplier-price-cost").value = "";
         document.getElementById("supplier-price-primary").checked = false;
         showBanner(t("supplierPriceAdded"));
@@ -2273,7 +2265,7 @@ async function openDrawer(item, selectFamilyId) {
             document.getElementById("field-unit").value = state.units[0].value;
         }
         if (state.vat_rates.length) {
-            const preferred = state.vat_rates.find((vatRate) => vatRate.code === "VAT16");
+            const preferred = state.vat_rates.find((vatRate) => vatRate.code === "VAT14");
             const vatRate = preferred || state.vat_rates[0];
             document.getElementById("field-vat-rate").value = String(vatRate.id);
         }

@@ -140,7 +140,7 @@ Open **`/branch/requests/`**.
 
 ### 4.2 Add lines
 
-1. In the line form, pick an **item** from the catalogue picker (A–Z by the code — description shown).
+1. In the line form, pick an **item** from the catalogue picker (A–Z by the code — description shown). The picker starts on `-----`; no catalogue row is pre-selected.
 2. Enter the **quantity** as a **whole number** of the item’s unit (greater than zero; no decimals).
 3. Click **Add**.
 

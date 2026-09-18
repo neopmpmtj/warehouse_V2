@@ -55,8 +55,8 @@ class InventoryTestCaseMixin:
         self.user = make_warehouse_user("inv-admin@example.com")
         self.family = create_family("Test Family")
         self.vat_rate, _ = VatRate.objects.get_or_create(
-            code="VAT16",
-            defaults={"label": "VAT 16%", "rate": Decimal("0.16")},
+            code="VAT14",
+            defaults={"label": "14%", "rate": Decimal("0.14")},
         )
         self.supplier = create_supplier(name="BuildSupply Ltd")
 
@@ -681,8 +681,8 @@ class ConcurrentReceiptTests(InventoryTestCaseMixin, TransactionTestCase):
 def _make_issue_item(description, wholesale="5.00", quantity="0"):
     family = create_family(description + " Fam")
     vat, _ = VatRate.objects.get_or_create(
-        code="VAT16",
-        defaults={"label": "VAT 16%", "rate": Decimal("0.16")},
+        code="VAT14",
+        defaults={"label": "14%", "rate": Decimal("0.14")},
     )
     return Item.objects.create(
         family=family,

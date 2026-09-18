@@ -31,7 +31,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `O código interno só pode conter letras, algarismos, pontos, hífens e sublinhados.` | O código contém um **espaço** ou um **carácter não permitido** (só `A–Z`, `a–z`, `0–9`, `.`, `-`, `_` são permitidos) | Corrija o código (ex.: `CEM-50`, `CABLE-2.5`) |
 | `O código interno não pode ser alterado depois de o artigo ser guardado.` | Tentou renomear um código num artigo existente | Os códigos ficam bloqueados após o primeiro guardar (códigos vazios antigos podem ser definidos uma vez) |
 | `O artigo não pode ser ativado (Génese): faltam …` | A primeira ativação (Génese) ainda exige código interno, descrição, unidade, IVA e família ativa (ação em lote **Reativar** no Django admin, ou `add_item --activate`) | Complete os campos antes de ativar |
-| `Escolha uma família.` | **Novo artigo** na consola com família ainda em `-----------` | Escolha uma família |
+| `Escolha uma família.` | **Novo artigo** na consola com família ainda em `-----` | Escolha uma família |
 | `family_id is required.` | POST **Novo artigo** na consola sem família | Escolha uma família |
 | `O código interno é obrigatório para novos artigos.` | POST **Novo artigo** na consola sem código interno | Introduza um código |
 | `A descrição é obrigatória.` | POST **Novo artigo** na consola com descrição vazia ou só espaços | Introduza uma descrição |
@@ -57,7 +57,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 
 **Os nomes de sub-família e a família-mãe são imutáveis** após criar — o mesmo padrão das famílias. Desative e crie uma sub-família nova se a etiqueta estiver errada.
 
-**Artigos novos:** **Código interno**, **descrição** e **família** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----------`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família, **Preço Venda > 0** e **preço de custo > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos na Génese. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
+**Artigos novos:** **Código interno**, **descrição** e **família** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família, **Preço Venda > 0** e **preço de custo > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos na Génese. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
 
 **Catálogo do gestor (`/manage/catalog/`)** — stock + preços só de leitura para o pessoal do armazém. Ver [Catálogo do gestor](07-manager-catalog.md).
 
@@ -231,7 +231,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | **Custo unitário / preço unitário / preços de venda / preço de custo** | `Decimal(12,2)` | `≥ 0` | 2 casas decimais |
 | **Totais aprovados e limites de aprovação** | `Decimal(14,2)` | `< 1 000 000 000 000` | protegido contra overflow |
 | **Descontos** (comercial / financeiro / rappel) | `Decimal(5,2)` | cada `0–100`; **conjunto ≤ 100** | percentagens |
-| **Taxa de IVA** | `Decimal(5,4)` | fracção `0 … 1` | p.ex. `0.16` = 16% |
+| **Taxa de IVA** | `Decimal(5,4)` | fracção `0 … 1` | p.ex. `0.14` = 14% |
 | **Nível de reposição** | inteiro | `≥ 0` e `< 1 000 000 000` | 0 = "sem disparo de encomenda"; número inteiro |
 | **Código interno** | `CharField` máx. **64** | obrigatório na criação na consola; só letras, algarismos, `.`, `-`, `_`; **guardado em maiúsculas**; **imutável após guardar** (definir-se-vazio uma vez para legado) | único, sem distinção maiúsculas/minúsculas |
 | **Preço Venda (Génese)** | `Decimal(12,2)` | A Génese na consola exige **> 0**; guardar inativo permite **≥ 0** | grossista/especial podem ficar 0 |
@@ -311,7 +311,7 @@ cancelled                                cancelled         ▼               shi
 | **Um principal por artigo** | Marcar um fornecedor novo como principal **desmarca** automaticamente o antigo (imposto na BD) |
 | **Preço de fornecedor** | Só para fornecedor **ativo** **e** artigo; um custo por fornecedor×artigo |
 | **Totais aprovados** | **Congelados na aprovação** — alterações posteriores de preço/IVA não reescrevem uma encomenda/requisição aprovada (linhas mantêm instantâneos) |
-| **IVA** | Guardado como fração (`0.16`), aplicado por linha na aprovação |
+| **IVA** | Guardado como fração (`0.14`), aplicado por linha na aprovação |
 | **Descontos** | Comercial + financeiro + rappel são todos % simples por agora; combinados > 100% é rejeitado |
 
 ---

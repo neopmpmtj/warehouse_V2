@@ -117,7 +117,7 @@ class ItemTestCaseMixin:
         if family is None:
             family = self.family
         if "vat_rate" not in kwargs:
-            kwargs["vat_rate"] = VatRate.objects.get(code="VAT16")
+            kwargs["vat_rate"] = VatRate.objects.get(code="VAT14")
         with_primary_supplier = kwargs.pop("with_primary_supplier", True)
         defaults = {
             "family": family,
@@ -154,7 +154,7 @@ class ItemTestCaseMixin:
 
     def genesis_create_payload(self, *, include_supplier_price=True, **overrides):
         family = getattr(self, "family", None) or self.create_test_family()
-        vat_rate = getattr(self, "vat_rate", None) or VatRate.objects.get(code="VAT16")
+        vat_rate = getattr(self, "vat_rate", None) or VatRate.objects.get(code="VAT14")
         payload = {
             "family_id": family.id,
             "description": "Genesis item",
@@ -179,7 +179,7 @@ class ItemServiceTests(ItemTestCaseMixin, TestCase):
             password="test-pass-123",
         )
         self.family = self.create_test_family()
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
         self.supplier = self.create_test_supplier()
 
     def test_create_item_writes_audit_log(self):
@@ -800,7 +800,7 @@ class SubFamilyServiceTests(TestCase):
             password="test-pass-123",
         )
         sub_family = create_sub_family("Bags", self.family)
-        vat_rate = VatRate.objects.get(code="VAT16")
+        vat_rate = VatRate.objects.get(code="VAT14")
 
         without = create_item(
             user,
@@ -834,7 +834,7 @@ class SubFamilyServiceTests(TestCase):
             password="test-pass-123",
         )
         sub_family = create_sub_family("Steel", self.other_family)
-        vat_rate = VatRate.objects.get(code="VAT16")
+        vat_rate = VatRate.objects.get(code="VAT14")
 
         with self.assertRaises(SubFamilyFamilyMismatchError):
             create_item(
@@ -855,7 +855,7 @@ class SubFamilyServiceTests(TestCase):
             password="test-pass-123",
         )
         sub_family = create_sub_family("Bags", self.family, is_active=False)
-        vat_rate = VatRate.objects.get(code="VAT16")
+        vat_rate = VatRate.objects.get(code="VAT14")
 
         with self.assertRaises(InactiveSubFamilyError):
             create_item(
@@ -876,7 +876,7 @@ class SubFamilyServiceTests(TestCase):
             password="test-pass-123",
         )
         sub_family = create_sub_family("Bags", self.family)
-        vat_rate = VatRate.objects.get(code="VAT16")
+        vat_rate = VatRate.objects.get(code="VAT14")
         supplier = create_supplier(name="Bag Supplier")
         item = create_and_activate_item(
             user,
@@ -969,7 +969,7 @@ class ItemAdminAccessTests(TestCase):
 
     def test_admin_create_rejects_inactive_family(self):
         inactive = create_family("Legacy", is_active=False)
-        vat = VatRate.objects.get(code="VAT16")
+        vat = VatRate.objects.get(code="VAT14")
         self.client.force_login(self.superuser)
 
         response = self.client.post(
@@ -998,7 +998,7 @@ class ItemAdminAccessTests(TestCase):
 
     def test_admin_reactivate_genesis_not_ready_shows_error(self):
         family = create_family("Reactivate family")
-        vat = VatRate.objects.get(code="VAT16")
+        vat = VatRate.objects.get(code="VAT14")
         item = create_item(
             user=self.superuser,
             family=family,
@@ -1039,7 +1039,7 @@ class AddItemCommandTests(TestCase):
             "add_item",
             "Orphan test",
             family=self.family.name,
-            vat_rate="VAT16",
+            vat_rate="VAT14",
             internal_code="CLI-ORPHAN",
             retail_price="0",
             activate=True,
@@ -1056,7 +1056,7 @@ class AddItemCommandTests(TestCase):
                 "add_item",
                 "Pair test",
                 family=self.family.name,
-                vat_rate="VAT16",
+                vat_rate="VAT14",
                 internal_code="CLI-PAIR",
                 supplier=self.supplier.name,
                 activate=True,
@@ -1070,7 +1070,7 @@ class AddItemCommandTests(TestCase):
             "add_item",
             "Activated item",
             family=self.family.name,
-            vat_rate="VAT16",
+            vat_rate="VAT14",
             internal_code="CLI-ACTIVE",
             retail_price="12.50",
             supplier=self.supplier.name,
@@ -1092,7 +1092,7 @@ class AddItemCommandTests(TestCase):
             "add_item",
             "Bagged cement",
             family=self.family.name,
-            vat_rate="VAT16",
+            vat_rate="VAT14",
             internal_code="CLI-BAG",
             retail_price="9.50",
             sub_family="Bags",
@@ -1348,7 +1348,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         )
         self.client = Client()
         self.family = self.create_test_family()
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
         self.supplier = self.create_test_supplier()
 
     def test_staff_can_open_console(self):
@@ -1360,8 +1360,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, "item-form")
         self.assertContains(response, "item-table-body")
         self.assertContains(response, "supplier-table-body")
-        self.assertContains(response, "select_fill.js?v=1")
-        self.assertContains(response, "console.js?v=29")
+        self.assertContains(response, "select_fill.js?v=2")
+        self.assertContains(response, "console.js?v=31")
         self.assertContains(response, 'id="supplier-search"')
         self.assertContains(response, "colVatRate")
         self.assertNotContains(response, "product-table-body")
@@ -2850,7 +2850,7 @@ class ServiceValidationTests(ItemTestCaseMixin, TestCase):
             password="test-pass-123",
         )
         self.family = self.create_test_family()
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
 
     def test_create_item_rejects_overlong_description(self):
         with self.assertRaises(ValidationError):
@@ -2997,7 +2997,7 @@ class ServiceValidationTests(ItemTestCaseMixin, TestCase):
 class SaveHelperDuplicateMappingTests(TestCase):
     def setUp(self):
         self.family = create_family("Dup Family")
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
 
     def test_save_item_maps_db_unique_violation(self):
         Item.objects.create(
@@ -3037,7 +3037,7 @@ class SellingPriceServiceTests(ItemTestCaseMixin, TestCase):
             password="test-pass-123",
         )
         self.family = self.create_test_family()
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
 
     def test_create_item_stores_selling_prices(self):
         item = create_item(
@@ -3083,7 +3083,7 @@ class SupplierItemPriceServiceTests(ItemTestCaseMixin, TestCase):
             password="test-pass-123",
         )
         self.family = self.create_test_family()
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
         self.item = self.create_test_item(
             self.user,
             description="Cement 50kg",
@@ -3334,7 +3334,7 @@ class SupplierItemPriceConsoleTests(ItemTestCaseMixin, TestCase):
         )
         self.client = Client()
         self.family = self.create_test_family()
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
         self.item = self.create_test_item(
             self.staff_user,
             description="Cement 50kg",
@@ -3489,7 +3489,7 @@ class CatalogServiceTests(ItemTestCaseMixin, TestCase):
     def setUp(self):
         self.user = make_warehouse_user("catalog@example.com")
         self.family = self.create_test_family()
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
         self.item = self.create_test_item(
             self.user,
             description="Cement 50kg",
@@ -3606,7 +3606,7 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         )
         self.client = Client()
         self.family = self.create_test_family()
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
         self.item = self.create_test_item(
             self.staff_user,
             description="Cement 50kg",
@@ -3748,7 +3748,7 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'data-sort="internal_code"')
         self.assertContains(response, "catalog.js?v=10")
         self.assertContains(response, "catalog_i18n.js?v=13")
-        self.assertContains(response, "select_fill.js?v=1")
+        self.assertContains(response, "select_fill.js?v=2")
         self.assertContains(response, 'data-sort="retail_price"')
         self.assertNotContains(response, 'data-sort="wholesale_price"')
         self.assertNotContains(response, 'data-sort="special_price"')

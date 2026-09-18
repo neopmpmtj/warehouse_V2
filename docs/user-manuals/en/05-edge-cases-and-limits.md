@@ -30,7 +30,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Internal code "X" is already used by another item.` | Internal codes are unique, **case-insensitive** | Use a different code |
 | `Internal code may only contain letters, digits, dots, hyphens, and underscores.` | The code contains a **space** or a **disallowed character** (only `A–Z`, `a–z`, `0–9`, `.`, `-`, `_` are allowed) | Fix the code (e.g. `CEM-50`, `CABLE-2.5`) |
 | `Internal code cannot be changed after the item is saved.` | You tried to rename a code on an existing item | Codes are locked after first save (legacy empty codes may be set once) |
-| `Choose a family.` | Console **New item** Save with family still on `-----------` | Pick a family |
+| `Choose a family.` | Console **New item** Save with family still on `-----` | Pick a family |
 | `family_id is required.` | Console **New item** POST without a family | Choose a family |
 | `Item cannot be activated (Genesis): missing …` | First activation (Genesis) still needs internal code, description, unit, VAT, and active family (Django admin **Reactivate**, or `add_item --activate`) | Complete the fields before activating |
 | `Internal code is required for new items.` | Console **New item** POST with an empty internal code | Enter a code |
@@ -57,7 +57,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 **Sub-family names and parent family are immutable** after create — same pattern as families. Deactivate and create a new sub-family if the label was wrong.
 
-**New items:** **Internal code**, **description**, and **family** are required (marked * on the form). **Family** starts unselected (`-----------`) and is required before Save. **Genesis** (activate) runs only when family, **selling price > 0**, and **cost price > 0** are filled; otherwise Save creates an **inactive** item. A **primary supplier price** is created only when both supplier and cost **> 0** are filled together at Genesis. Code is immutable after save; add more supplier prices later from the supplier drawer.
+**New items:** **Internal code**, **description**, and **family** are required (marked * on the form). **Family** starts unselected (`-----`) and is required before Save. **Genesis** (activate) runs only when family, **selling price > 0**, and **cost price > 0** are filled; otherwise Save creates an **inactive** item. A **primary supplier price** is created only when both supplier and cost **> 0** are filled together at Genesis. Code is immutable after save; add more supplier prices later from the supplier drawer.
 
 **Manager catalog (`/manage/catalog/`)** — read-only stock + prices for warehouse staff. See [Manager catalog](07-manager-catalog.md).
 
@@ -230,7 +230,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | **Unit cost / unit price / selling prices / cost price** | `Decimal(12,2)` | `≥ 0` | 2 dp |
 | **Approved totals & approval limits** | `Decimal(14,2)` | `< 1,000,000,000,000` | guarded against overflow |
 | **Discounts** (commercial / financial / rappel) | `Decimal(5,2)` | each `0–100`; **combined ≤ 100** | percentages |
-| **VAT rate** | `Decimal(5,4)` | fraction `0 … 1` | e.g. `0.16` = 16% |
+| **VAT rate** | `Decimal(5,4)` | fraction `0 … 1` | e.g. `0.14` = 14% |
 | **Reorder level** | integer | `≥ 0` and `< 1,000,000,000` | 0 = "no reorder trigger"; whole number |
 | **Internal code** | `CharField` max **64** | required on console create; letters, digits, `.`, `-`, `_` only; **stored uppercase**; **immutable after save** (set-if-empty once for legacy) | unique, case-insensitive |
 | **Selling price (Genesis)** | `Decimal(12,2)` | Console Genesis needs **> 0**; inactive save allows **≥ 0** | wholesale/special may stay 0 |
@@ -310,7 +310,7 @@ cancelled                                cancelled         ▼               shi
 | **One primary per item** | Marking a new supplier primary automatically **un-marks** the old one (DB-enforced) |
 | **Supplier price** | Only for an **active** supplier **and** item; one cost per supplier×item |
 | **Approved totals** | **Frozen at approval** — later price/VAT changes don't rewrite an approved PO/request (lines keep snapshots) |
-| **VAT** | Stored as a fraction (`0.16`), applied per line at approval time |
+| **VAT** | Stored as a fraction (`0.14`), applied per line at approval time |
 | **Discounts** | Commercial + financial + rappel are all simple % now; combined > 100% is rejected |
 
 ---

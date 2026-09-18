@@ -675,21 +675,20 @@ async function ensureSuppliersLoaded() {
 }
 
 function fillSupplierSelect() {
-    fillSelect(
+    fillActionSelect(
         document.getElementById("new-po-supplier"),
         state.suppliers
             .filter((supplier) => supplier.is_active)
             .map((supplier) => ({
                 value: String(supplier.id),
                 label: supplier.name,
-            })),
-        t("supplier")
+            }))
     );
 }
 
 function fillItemSelect(selectedId) {
     const select = document.getElementById("line-item");
-    fillSelect(
+    fillActionSelect(
         select,
         state.items
             .filter((item) => item.is_active && item.family && item.family.is_active)
@@ -697,11 +696,8 @@ function fillItemSelect(selectedId) {
                 value: String(item.id),
                 label: `${item.internal_code || "—"} — ${item.description}`,
             })),
-        t("item")
+        selectedId || ""
     );
-    if (selectedId && [...select.options].some((option) => option.value === String(selectedId))) {
-        select.value = String(selectedId);
-    }
 }
 
 async function openNewPoDialog() {

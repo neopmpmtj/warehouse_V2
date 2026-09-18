@@ -95,7 +95,7 @@ The console is one screen, split into three areas.
 | **Bulk action** + **Apply** | Deactivate/reactivate several items at once |
 | **New item** | Create a new item |
 
-Family, sub-family, unit, VAT, supplier, and item lists are **A–Z by the text shown** (*All…* / *Choose…* stay first). Status and bulk-action keep their workflow order.
+Family, sub-family, unit, VAT, supplier, and item lists are **A–Z by the text shown** (*All…* / *-----* stay first). Status and bulk-action keep their workflow order.
 
 **C. Items table**
 - One row per item, with columns: **Code, Description, Family, Sub-family, Unit, Reorder, VAT, Status, Actions**
@@ -140,7 +140,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 ### 5.1 Creating a new item
 
 1. Click **New item** (*Novo artigo*).
-2. Fill the form (fields below). **Internal code**, **description**, and **family** (marked * on the form) are required. **Family** starts unselected (`-----------`) — you must choose one before Save.
+2. Fill the form (fields below). **Internal code**, **description**, and **family** (marked * on the form) are required. **Family** starts unselected (`-----`) — you must choose one before Save.
 3. Click **Save** (*Guardar*).
 4. If **family**, **selling price > 0**, and **cost price > 0** are all filled, confirm **Genesis** — the item is created and activated. Otherwise Save creates an **inactive** item with no Genesis dialog.
 
@@ -154,7 +154,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 |-------|:---:|-------|
 | **Internal code** * | Yes (new items) | Your own reference, e.g. `CEM-50` or `CABLE-2.5`. Must be **unique** (case-insensitive). Only **letters, digits, dots (`.`), hyphens (`-`), and underscores (`_`)** — no spaces or other symbols. Max **64** characters. **Saved as uppercase** (`cem-50` becomes `CEM-50`). **Cannot be changed after the first save** (legacy items with an empty code may set it once). |
 | **Description** * | Yes | What the item is. |
-| **Family** * | Yes | The group it belongs to (see §7). New item starts with `-----------` — pick a family before Save. |
+| **Family** * | Yes | The group it belongs to (see §7). New item starts with `-----` — pick a family before Save. |
 | **Sub-family** | No | Optional finer grouping under the family (see §7). Leave empty for none. |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
 | **VAT rate** | Yes | 1%, 3%, 7%, 14% (default on new items), Exempt |
@@ -227,7 +227,7 @@ A **family** groups related items (e.g. *Cement*, *Pipes*, *Electrical*). Every 
 A **sub-family** is an optional second level under a family (e.g. *Cement → Bags*, *Pipes → PVC*). Items do **not** require a sub-family — family alone is enough for Genesis and activation.
 
 1. Click **Sub-families** (*Sub-famílias*) in the top bar. On a narrow window, open **Master data** first.
-2. Click **New sub-family** (*Nova sub-família*), choose the **parent family**, type the name, confirm.
+2. Click **New sub-family** (*Nova sub-família*), choose the **parent family** (starts on `-----`), type the name, confirm.
 3. Sub-family names are unique **within each family** (case-insensitive) — the same name under two different families is allowed.
 4. On the item form, pick a sub-family only after choosing the family; changing the family clears incompatible sub-family choices.
 
@@ -260,7 +260,7 @@ Each supplier × item pair can have a **cost price** — how much that supplier 
 1. Open **Suppliers**.
 2. On the supplier's row, click **Supplier prices**.
 3. Click **Add price** (*Adicionar preço*).
-4. Pick the **Item** (the list starts as dashes until you choose), enter the **Cost price**, and optionally tick **Primary**.
+4. Pick the **Item** (the list starts on `-----` until you choose), enter the **Cost price**, and optionally tick **Primary**.
 5. Save.
 
 You can add a cost for an **inactive item**. Purchase orders and requisição still cannot use that item until it is reactivated. Adding a price on an **inactive supplier** is still rejected.

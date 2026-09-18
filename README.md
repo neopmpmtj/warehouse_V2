@@ -86,7 +86,7 @@ Production will use Google OAuth (not implemented in dev).
 - Family and supplier names are case-insensitive unique. The console UI does not rename them.
 - Audit: `ItemChangeLog`, `FamilyChangeLog`, `SupplierChangeLog`, `SupplierItemPriceChangeLog`.
 - All mutations through [`products/services.py`](products/services.py).
-- CLI (dev/bootstrap): `python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16 --internal-code CEM-50 --internal-code CEM-50`
+- CLI (dev/bootstrap): `python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT14 --internal-code CEM-50 --internal-code CEM-50`
 
 ### Consoles
 
@@ -255,7 +255,7 @@ It also creates **branches** (Norte, Sul) and **branch users**. It does **not** 
 Items can also be added in `/manage/items/` or:
 
 ```bash
-python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT16 --internal-code CEM-50
+python manage.py add_item "Cement 50kg" --family Cement --vat-rate VAT14 --internal-code CEM-50
 ```
 
 ### 6. Test the application

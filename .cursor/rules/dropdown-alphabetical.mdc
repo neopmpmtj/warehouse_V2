@@ -11,23 +11,31 @@ Copy this file into the next project's `.cursor/rules/` as-is.
 
 Lists of named records (families, items, suppliers, branches, people, units, VAT **labels**, and similar pickers) must appear **A at the top, Z at the bottom**, sorted by the **text the user sees**, not by id, pk, insert order, or enum declaration order.
 
-- Pin empty sentinels first (`All…`, `Choose…`, `—`). Then sort the rest.
+- Pin empty sentinels first (`All…`, `-----`, `—`). Then sort the rest.
+- **Action pickers** (choose a record before submit): `fillActionSelect` — empty value, visible label `-----`, nothing pre-selected.
+- **Filters**: `fillSelect(..., "All…")` — empty value means no filter and *is* the default.
 - Use locale-aware compare (`localeCompare` with `{ sensitivity: "base", numeric: true }`, or the UI language’s collation). Translated labels must sort in the **current language**.
-- Prefer one shared filler (`fillSelect` or equivalent) over per-page option loops. A CSS class cannot sort `<option>`s; SQL `ORDER BY name` is a safety net, not enough when labels are composed or i18n’d.
+- Prefer one shared filler (`fillSelect` / `fillActionSelect`) over per-page option loops. A CSS class cannot sort `<option>`s; SQL `ORDER BY name` is a safety net, not enough when labels are composed or i18n’d.
 - Do **not** change table/pagination default order just to fix a picker. Sort at fill time (and/or via an optional `sortValue` when the visible label is a poor key, e.g. `#12 — Supplier`).
 
 ```javascript
-// BAD — API id order
+// BAD — API id order, first row pre-selected
 items.forEach((item) => select.appendChild(option(item.id, item.label)));
 
-// GOOD — placeholder first, then visible label
-fillSelect(select, items.map((item) => ({
+// GOOD — action picker: dashes first, then visible label
+fillActionSelect(select, items.map((item) => ({
   value: String(item.id),
   label: `${item.code} — ${item.description}`,
-})), "Choose…");
+})));
+
+// GOOD — filter: All… is the empty default
+fillSelect(select, families.map((family) => ({
+  value: String(family.id),
+  label: family.name,
+})), "All families");
 ```
 
-Stability over skipping the sort. New dropdowns must use the shared helper so they cannot “forget” to sort.
+Stability over skipping the sort. New action dropdowns must use `fillActionSelect` so they cannot “forget” the empty sentinel or silently select the first row.
 
 ## Workflow lists — do not alphabetize
 
@@ -35,4 +43,4 @@ Keep author order for closed vocabularies: status/lifecycle, time periods, langu
 
 ## This repository
 
-Helper: [`products/static/products/js/select_fill.js`](products/static/products/js/select_fill.js) (`window.fillSelect`). Include it **before** the page script and bump `?v=` (and the branch Service Worker precache when the page is PWA-cached).
+Helper: [`products/static/products/js/select_fill.js`](products/static/products/js/select_fill.js) (`window.fillSelect`, `window.fillActionSelect`, `window.EMPTY_OPTION_LABEL`). Include it **before** the page script and bump `?v=` (and the branch Service Worker precache when the page is PWA-cached).

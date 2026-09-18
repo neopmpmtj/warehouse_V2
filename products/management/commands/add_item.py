@@ -26,7 +26,7 @@ class Command(BaseCommand):
             "--vat-rate",
             dest="vat_rate",
             required=True,
-            help="VAT rate code (e.g. VAT16)",
+            help="VAT rate code (e.g. VAT14)",
         )
         parser.add_argument(
             "--unit",

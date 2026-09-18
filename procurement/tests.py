@@ -41,7 +41,7 @@ class PurchaseOrderTestCaseMixin:
     def setUp(self):
         self.user = make_warehouse_user("po-admin@example.com")
         self.family = create_family("Test Family")
-        self.vat_rate = VatRate.objects.get(code="VAT16")
+        self.vat_rate = VatRate.objects.get(code="VAT14")
         self.supplier = create_supplier(name="BuildSupply Ltd")
         self.other_supplier = create_supplier(name="Porto Materials Co")
 
@@ -85,7 +85,7 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         self.assertEqual(line.unit_cost, Decimal("12.50"))
         self.assertEqual(line.description, "Cement 50kg")
         self.assertEqual(line.internal_code, "CEM-50")
-        self.assertEqual(line.vat_rate, Decimal("0.1600"))
+        self.assertEqual(line.vat_rate, Decimal("0.1400"))
 
     def test_add_line_respects_explicit_cost(self):
         po = self.create_draft_po()
@@ -112,7 +112,7 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
 
         self.assertEqual(line.net_unit_cost, Decimal("11.875"))
         self.assertEqual(line.line_net, Decimal("118.75"))
-        self.assertEqual(line.line_total, Decimal("137.75"))
+        self.assertEqual(line.line_total, Decimal("135.38"))
 
     def test_line_net_rounds_half_away_from_zero(self):
         po = self.create_draft_po()
@@ -144,10 +144,10 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
 
         po = services.approve(po, self.user)
 
-        # net 1.005 → 1.01; VAT16 on 1.01 → 0.1616 → 0.16; gross 1.17
+        # net 1.005 → 1.01; VAT14 on 1.01 → 0.1414 → 0.14; gross 1.15
         self.assertEqual(po.approved_net, Decimal("1.01"))
-        self.assertEqual(po.approved_vat, Decimal("0.16"))
-        self.assertEqual(po.approved_gross, Decimal("1.17"))
+        self.assertEqual(po.approved_vat, Decimal("0.14"))
+        self.assertEqual(po.approved_gross, Decimal("1.15"))
 
     def test_negative_quantity_is_rejected(self):
         po = self.create_draft_po()
@@ -248,8 +248,8 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         net, vat, gross = po.totals()
 
         self.assertEqual(net, Decimal("125.00"))
-        self.assertEqual(vat, Decimal("20.00"))
-        self.assertEqual(gross, Decimal("145.00"))
+        self.assertEqual(vat, Decimal("17.50"))
+        self.assertEqual(gross, Decimal("142.50"))
 
     def test_approve_snapshots_approved_totals(self):
         po = self.create_draft_po()
@@ -259,14 +259,14 @@ class PurchaseOrderServiceTests(PurchaseOrderTestCaseMixin, TestCase):
         po = services.approve(po, self.user)
 
         self.assertEqual(po.approved_net, Decimal("125.00"))
-        self.assertEqual(po.approved_vat, Decimal("20.00"))
-        self.assertEqual(po.approved_gross, Decimal("145.00"))
+        self.assertEqual(po.approved_vat, Decimal("17.50"))
+        self.assertEqual(po.approved_gross, Decimal("142.50"))
 
         approval_log = po.change_logs.get(
             action=PurchaseOrderChangeLog.Action.STATUS_CHANGED,
             changes__has_key="approved_gross",
         )
-        self.assertEqual(approval_log.changes["approved_gross"], "145.00")
+        self.assertEqual(approval_log.changes["approved_gross"], "142.50")
 
     def test_rejected_po_has_no_approved_totals(self):
         po = self.create_draft_po()
@@ -580,7 +580,7 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
         )
         line = resp.json()["lines"][0]
         self.assertIn("line_vat", line)
-        self.assertEqual(line["line_vat"], "20.00")
+        self.assertEqual(line["line_vat"], "17.50")
 
     def test_approved_po_exposes_approved_totals(self):
         self.client.force_login(self.user)
@@ -598,8 +598,8 @@ class PurchaseOrderConsoleTests(PurchaseOrderTestCaseMixin, TestCase):
 
         data = resp.json()["purchase_order"]
         self.assertEqual(data["approved_net"], "125.00")
-        self.assertEqual(data["approved_vat"], "20.00")
-        self.assertEqual(data["approved_gross"], "145.00")
+        self.assertEqual(data["approved_vat"], "17.50")
+        self.assertEqual(data["approved_gross"], "142.50")
 
     def test_console_rejects_line_for_supplier_without_price(self):
         self.client.force_login(self.user)

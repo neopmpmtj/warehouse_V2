@@ -55,7 +55,7 @@ def _make_branch_user(email, branch, role):
 
 def _make_item(description, wholesale="5.00", retail="10.00", code="", active=True):
     family = FamilyProduct.objects.create(name="Fam " + description, is_active=True)
-    vat = VatRate.objects.get(code="VAT16")
+    vat = VatRate.objects.get(code="VAT14")
     return Item.objects.create(
         family=family,
         vat_rate=vat,
@@ -553,8 +553,8 @@ class ConcurrentSyncTests(TransactionTestCase):
         branch = create_branch("North Conc Sync")
         operator = _make_branch_user("conc-sync@example.com", branch, ROLE_OPERATOR)
         VatRate.objects.get_or_create(
-            code="VAT16",
-            defaults={"label": "VAT 16%", "rate": Decimal("0.16")},
+            code="VAT14",
+            defaults={"label": "14%", "rate": Decimal("0.14")},
         )
         item = _make_item("Conc Sync Widget", wholesale="5.00", code="CSW1")
         client_uuid = str(uuid.uuid4())
