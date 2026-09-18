@@ -2,8 +2,8 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 17 September 2026, 10:15 WEST
-- **Current phase:** Phases 0–6 **complete** ✅. **Immediate next:** presentation deck cleanup (remove TEMP viewBox debug; optional slides 10–16 polish). **Then Phase 7** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
+- **Last updated:** 18 September 2026, 16:10 WEST
+- **Current phase:** Phases 0–6 **complete** ✅. **Immediate next:** wait for approval of the 18 Sep stability plan ([`.cursor/plans/stability_review_followup_2026_09_18.plan.md`](../.cursor/plans/stability_review_followup_2026_09_18.plan.md); report [`docs/reviews/code-review-full-2026-09-18-1510.md`](reviews/code-review-full-2026-09-18-1510.md)). Then presentation deck cleanup (TEMP viewBox debug is **on `main`**) and **Phase 7**. OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
 ## Status vocabulary
@@ -574,6 +574,8 @@ Unify the **persistent shell** (header, nav, account controls) across warehouse,
 - [x] Presentation deck v2.7 (11 Sep) — reorder; slides 2–9 SVG graphics; unified 710 viewBox (3–5/7–9); larger in-box SVG labels; slide 8 arrow spacing; plan [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md)
 - [x] Presentation deck Part II v2.8 (11 Sep evening) — slides 18–26 verbose reference; slide 12 Parle (D40); `SLIDE_COUNT` 26; plan v2.8
 - [x] Requisição line price = **retail** (D41) — Phase 5 lock 6 wholesale superseded; gate + snapshot + offline estimate + manuals
+- [x] Full-tree stability review (18 Sep 2026) — read-only; report [`docs/reviews/code-review-full-2026-09-18-1510.md`](reviews/code-review-full-2026-09-18-1510.md); plan waiting for approval
+- [ ] Stability follow-up Batch A (shared-device IDB, pending discard, Genesis retail server rule, demo-password gate, JSON 400) — **not started**
 - [ ] Presentation deck polish — remove TEMP viewBox debug; slides 10–16 graphics (optional before Phase 7)
 - [ ] Phase 7 — production deployment readiness — after the deck pass ([`DEPLOYMENT.md`](DEPLOYMENT.md))
 - [ ] Phase 8 — Google OAuth production rollout + shared chrome

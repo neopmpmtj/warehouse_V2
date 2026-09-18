@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 17 September 2026, 10:15 WEST.
+> **Read this first when resuming work.** Last updated: 18 September 2026, 16:10 WEST.
 
 ---
 
@@ -34,9 +34,20 @@
 
 **Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Presentation deck v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26); slide **12** → **Parle** (D40). Requisição `unit_price` snapshots **retail** (D41). **Immediate next:** remove **TEMP** viewBox debug borders; optional slides 10–16 / slide 8 viewBox polish — then **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
 
-**Tests:** `orders` + `inventory` + `branches` **175 OK** (17 Sep; D41 retail snapshot).
+**Tests:** full suite **616 OK** (18 Sep, stability review). `orders` + `inventory` + `branches` were **175 OK** on 17 Sep (D41 retail snapshot).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (18 Sep 2026) — full-tree stability review (read-only) ✅
+
+Requested: thorough review (dead ends, traps, logic flaws) + Bugbot + a plan **before** any application patch.
+
+- **Report:** [`docs/reviews/code-review-full-2026-09-18-1510.md`](reviews/code-review-full-2026-09-18-1510.md)
+- **Plan (waiting for approval):** [`.cursor/plans/stability_review_followup_2026_09_18.plan.md`](../.cursor/plans/stability_review_followup_2026_09_18.plan.md)
+- **Method:** parent verification + three domain explorers (inventory/orders; catalogue/PO; offline/auth) + Bugbot. Bugbot returned no bugs — expected on clean `main` (diff-oriented).
+- **Suite:** **616 OK** (21.4s).
+- **Verdict:** warehouse **core is sound** (ledger, D32 FIFO, PO snapshot, branch isolation). **Do not rewrite.** Two High traps: shared-tablet IndexedDB pending drafts across logins (H1); public demo passwords + ungated seed (H2, Phase 7 leftover). Medium: Genesis retail split-brain (UI vs server), offline pending with no discard, D37 stale priced cache, cancelled-PO money display, UTF-8 JSON 500s on three consoles.
+- **No application code changed.** Next is an approved batch from the plan, not Phase 7 by default.
 
 ## This session (17 Sep 2026) — requisição retail price (D41) ✅
 
@@ -151,9 +162,10 @@ Company-wide **unpriced / priced** switch for the branch catalogue and requisiç
 
 ## Next session — do this
 
-1. **Remove TEMP viewBox debug** — delete `.viewbox-debug` rects from `deck_en.html` / `deck_pt.html` and the CSS rule in `deck.css`; bump `?v=` on templates. Commit Part II deck + plan v2.8 when ready.
-2. **Presentation polish (optional before Phase 7)** — slide 8: reduce right-side empty viewBox; slides **10–16** to match slides 2–9 graphic language. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.8.
-3. **Phase 7 — production deployment readiness** (after deck paused or done) — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). Follow the updated TLS order (`SECURE_SSL_REDIRECT=False` until certbot). **Do not** bundle OAuth or shared chrome in this phase.
+1. **Approve or defer** the 18 Sep stability plan ([`.cursor/plans/stability_review_followup_2026_09_18.plan.md`](../.cursor/plans/stability_review_followup_2026_09_18.plan.md)). Recommended first slice is **Batch A** (shared-device IDB, pending discard, Genesis retail on the server, demo-password gate, JSON 400). Do not start patches without that approval. Confirm A3 (server retail > 0) and M7 (inactive sub-family rule).
+2. **Remove TEMP viewBox debug** — delete `.viewbox-debug` rects from `deck_en.html` / `deck_pt.html` and the CSS rule in `deck.css`; bump `?v=` on templates. The debug rects **are on `main`**, not only an old working tree.
+3. **Presentation polish (optional before Phase 7)** — slide 8: reduce right-side empty viewBox; slides **10–16** to match slides 2–9 graphic language. Plans: [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md) v2.8.
+4. **Phase 7 — production deployment readiness** (after deck paused or done, or after Batch A if production comfort is the priority) — VPS, `prod` settings, HTTPS, static files, gunicorn, secrets — see [`docs/PROJECT-PLAN.md`](PROJECT-PLAN.md) §14 and [`docs/DEPLOYMENT.md`](DEPLOYMENT.md). Follow the updated TLS order (`SECURE_SSL_REDIRECT=False` until certbot). **Do not** bundle OAuth or shared chrome in this phase.
 4. **Phase 8 (later)** — OAuth production rollout + shared chrome; contribute ideas to PROJECT-PLAN §15.2 before build.
 5. **Do not treat as a work queue:** Phase 6 leftover L/N, 24 Aug nits, chrome leftover **L3–L8 / N1–N3** (scheduled for Phase 8). The 1205 review is **applied**.
 6. **Do not start** Phase 9 email in passing.
