@@ -1,7 +1,7 @@
 {% load static %}
 "use strict";
 
-var CACHE_NAME = "centcompras-branch-v22";
+var CACHE_NAME = "centcompras-branch-v23";
 
 var APP_SHELL = [
     "{% static 'products/css/settings_menu.css' %}?v=5",
@@ -19,7 +19,7 @@ var APP_SHELL = [
     "{% static 'branches/js/offline_logout.js' %}?v=1",
     "{% static 'products/js/select_fill.js' %}?v=2",
     "{% static 'orders/js/branch_requests_i18n.js' %}?v=2",
-    "{% static 'orders/js/branch_requests.js' %}?v=11",
+    "{% static 'orders/js/branch_requests.js' %}?v=12",
     "{% static 'branches/manifest.webmanifest' %}",
     "{% static 'branches/icons/icon.svg' %}",
 ];

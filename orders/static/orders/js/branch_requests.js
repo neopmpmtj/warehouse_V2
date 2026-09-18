@@ -23,6 +23,8 @@
     var lineBody = document.getElementById("line-body");
     var lineForm = document.getElementById("line-form");
     var lineItem = document.getElementById("line-item");
+    var lineQty = document.getElementById("line-qty");
+    var lineFormPriceCell = document.getElementById("line-form-price-cell");
     var actions = document.getElementById("actions");
     var banner = document.getElementById("banner");
     var detailTitle = document.getElementById("detail-title");
@@ -84,9 +86,12 @@
         }
     }
 
-    function headerCell(text) {
+    function headerCell(text, className) {
         var th = document.createElement("th");
         th.textContent = text;
+        if (className) {
+            th.className = className;
+        }
         return th;
     }
 
@@ -97,11 +102,14 @@
         lineHead.textContent = "";
         lineHead.appendChild(headerCell(t("colCode")));
         lineHead.appendChild(headerCell(t("colDescription")));
-        lineHead.appendChild(headerCell(t("colQty")));
+        lineHead.appendChild(headerCell(t("colQty"), "qty-col"));
         if (showSellingPrices) {
             lineHead.appendChild(headerCell(t("colUnitPrice")));
         }
         lineHead.appendChild(headerCell(""));
+        if (lineFormPriceCell) {
+            lineFormPriceCell.hidden = !showSellingPrices;
+        }
     }
 
     function el(tag, text, className) {
@@ -208,8 +216,11 @@
         );
     }
 
-    function resetItemPicker() {
+    function resetLineForm() {
         lineItem.value = "";
+        if (lineQty) {
+            lineQty.value = "1";
+        }
     }
 
     function loadItems() {
@@ -289,6 +300,7 @@
 
     function renderDetail(req) {
         renderLineHead();
+        resetLineForm();
         detailTitle.textContent = t("detailTitleNum", { id: req.id });
         detailMeta.textContent = t("statusLabel", { status: statusLabel(req.status) });
         if (showSellingPrices && req.totals) {
@@ -308,7 +320,7 @@
             var tr = document.createElement("tr");
             tr.appendChild(el("td", line.internal_code));
             tr.appendChild(el("td", line.description));
-            tr.appendChild(el("td", line.quantity));
+            tr.appendChild(el("td", line.quantity, "qty-cell"));
             if (showSellingPrices) {
                 tr.appendChild(el("td", line.unit_price));
             }
@@ -373,6 +385,7 @@
 
     function renderPendingDetail(pending) {
         renderLineHead();
+        resetLineForm();
         detailTitle.textContent = t("pendingSync");
         detailMeta.textContent = t("pendingStatus", {
             detail: pending.last_error ? pending.last_error : t("waitingWifi"),
@@ -402,7 +415,7 @@
             var tr = document.createElement("tr");
             tr.appendChild(el("td", item ? item.internal_code : line.item_id));
             tr.appendChild(el("td", item ? item.description : ""));
-            tr.appendChild(el("td", line.quantity));
+            tr.appendChild(el("td", line.quantity, "qty-cell"));
             if (showSellingPrices) {
                 tr.appendChild(el("td", item ? item.retail_price : ""));
             }
@@ -476,7 +489,7 @@
 
     function addLine() {
         var itemId = lineItem.value;
-        var qty = document.getElementById("line-qty").value;
+        var qty = lineQty.value;
         if (!itemId || !qty) {
             showError(t("chooseItemQty"));
             return;
@@ -514,7 +527,7 @@
                     return loadPending();
                 })
                 .then(function () {
-                    resetItemPicker();
+                    resetLineForm();
                     selectPending(state.selectedClientUuid);
                 })
                 .catch(showError);
@@ -530,7 +543,7 @@
             quantity: qty,
         })
             .then(function () {
-                resetItemPicker();
+                resetLineForm();
                 return selectRequest(state.selectedId);
             })
             .catch(showError);
@@ -599,7 +612,13 @@
     document.addEventListener("cc-lang-changed", refreshView);
 
     applyStaticI18n();
+    renderLineHead();
     loadItems()
         .then(loadRequests)
+        .then(function () {
+            if (!state.selectedId && !state.selectedClientUuid) {
+                renderLineHead();
+            }
+        })
         .catch(showError);
 }());
