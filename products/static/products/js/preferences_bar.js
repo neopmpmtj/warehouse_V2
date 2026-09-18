@@ -66,7 +66,7 @@
             cardBranchCatalog: "Branch catalog",
             cardBranchCatalogDesc:
                 "Read-only catalogue (cost always hidden; selling prices only in priced mode)",
-            cardRequisicao: "Requisição interna",
+            cardRequisicao: "Internal request",
             cardRequisicaoDesc: "Request stock from the warehouse",
             cardBranchThreads: "Branch threads",
             cardBranchThreadsDesc: "Request items not in the catalogue",

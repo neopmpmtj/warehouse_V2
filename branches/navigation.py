@@ -29,7 +29,7 @@ def branch_work_cards(*, include_picker=False):
             {
                 "title_key": "cardRequisicao",
                 "desc_key": "cardRequisicaoDesc",
-                "title": "Requisição interna",
+                "title": "Internal request",
                 "desc": "Request stock from the warehouse",
                 "url": "/branch/requests/",
             },

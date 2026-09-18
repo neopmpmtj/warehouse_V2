@@ -92,7 +92,7 @@ You may belong to **one branch, several branches, or none**. After signing in:
 | **Several branches** | You land on `/branch/select/` — pick one, then continue to the dashboard. |
 | **No branch** | The picker says *"You have no active branch access."* Ask your administrator. |
 
-From the dashboard, **Your branch** has **Catalog**, **Requisição interna**, and **Receipts**. **Communication** has **Threads**, then **Parle**. On **Catalog**, **Requests**, **Receipts**, and **Threads**, the top bar also has **Home**, **Catalog**, **Requests**, **Receipts**, and **Threads** (Threads is last) — not on the dashboard itself.
+From the dashboard, **Your branch** has **Catalog**, **Internal request**, and **Receipts**. **Communication** has **Threads**, then **Parle**. On **Catalog**, **Requests**, **Receipts**, and **Threads**, the top bar also has **Home**, **Catalog**, **Requests**, **Receipts**, and **Threads** (Threads is last) — not on the dashboard itself.
 
 **Switch branch** appears only when you belong to **more than one** branch. If you see only one branch in your life, that link is hidden — you cannot browse other branches.
 
