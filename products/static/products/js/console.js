@@ -2273,7 +2273,9 @@ async function openDrawer(item, selectFamilyId) {
             document.getElementById("field-unit").value = state.units[0].value;
         }
         if (state.vat_rates.length) {
-            document.getElementById("field-vat-rate").value = String(state.vat_rates[0].id);
+            const preferred = state.vat_rates.find((vatRate) => vatRate.code === "VAT16");
+            const vatRate = preferred || state.vat_rates[0];
+            document.getElementById("field-vat-rate").value = String(vatRate.id);
         }
         document.getElementById("field-supplier").value = "";
         fillSubFamilyField({ reset: true });

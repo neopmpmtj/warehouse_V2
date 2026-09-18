@@ -157,7 +157,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 | **Família** * | Sim | O grupo a que pertence (ver §7). Um artigo novo começa com `-----------` — escolha uma família antes de Guardar. |
 | **Sub-família** | Não | Agrupamento opcional mais fino sob a família (ver §7). Deixe vazio para nenhuma. |
 | **Unidade** | Sim | peça / kg / g / m / m² / m³ / l |
-| **Taxa de IVA** | Sim | 1%, 3%, 7%, 16%, Isento |
+| **Taxa de IVA** | Sim | 1%, 3%, 7%, 14% (predefinição em artigos novos), Isento |
 | **Nível de reposição** | Sim | O nível que mais tarde dispara a reposição. Número inteiro ≥ 0 (0 = sem disparo). |
 | **Em armazém / Disponível** | (só leitura, na edição) | Stock físico de armazém e o que ainda está livre para prometer após reservas. Não editável aqui. |
 | **Preço Venda** | Não | O preço de venda principal usado nas requisições (ver §6). Pode ser **0** na criação. |
@@ -361,4 +361,4 @@ Use a barra horizontal no **fundo da janela**, logo acima de **Anterior** / **Se
 
 **Unidades de medida:** peça · kg (quilograma) · g (grama) · m (metro) · m² (metro quadrado) · m³ (metro cúbico) · l (litro)
 
-**Taxas de IVA:** 1% · 3% · 7% · 16% · Isento
+**Taxas de IVA:** 1% · 3% · 7% · 14% (predefinição em artigos novos) · Isento

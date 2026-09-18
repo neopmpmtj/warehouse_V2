@@ -1361,7 +1361,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, "item-table-body")
         self.assertContains(response, "supplier-table-body")
         self.assertContains(response, "select_fill.js?v=1")
-        self.assertContains(response, "console.js?v=28")
+        self.assertContains(response, "console.js?v=29")
         self.assertContains(response, 'id="supplier-search"')
         self.assertContains(response, "colVatRate")
         self.assertNotContains(response, "product-table-body")

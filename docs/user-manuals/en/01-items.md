@@ -157,7 +157,7 @@ Above the table you'll see **"Showing X of Y items"** (*A mostrar X de Y artigos
 | **Family** * | Yes | The group it belongs to (see §7). New item starts with `-----------` — pick a family before Save. |
 | **Sub-family** | No | Optional finer grouping under the family (see §7). Leave empty for none. |
 | **Unit** | Yes | piece / kg / g / m / m² / m³ / l |
-| **VAT rate** | Yes | 1%, 3%, 7%, 16%, Exempt |
+| **VAT rate** | Yes | 1%, 3%, 7%, 14% (default on new items), Exempt |
 | **Reorder level** | Yes | The level that later triggers reordering. Whole number ≥ 0 (0 means no trigger). |
 | **On hand / Available** | (read-only, edit only) | Physical warehouse stock and what is still free to promise after reservations. Not editable here. |
 | **Selling price** | No | The main selling price used on requisições (see §6). May be **0** on create. |
@@ -361,4 +361,4 @@ Use the horizontal bar at the **bottom of the window**, just above **Prev** / **
 
 **Units of measure:** piece · kg (kilogram) · g (gram) · m (meter) · m² (square meter) · m³ (cubic meter) · l (liter)
 
-**VAT rates:** 1% · 3% · 7% · 16% · Exempt
+**VAT rates:** 1% · 3% · 7% · 14% (default on new items) · Exempt
