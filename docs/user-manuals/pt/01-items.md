@@ -142,9 +142,9 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 1. Clique em **Novo artigo**.
 2. Preencha o formulário (campos abaixo). **Código interno**, **descrição** e **família** (marcados com * no formulário) são obrigatórios. **Família** começa sem seleção (`-----`) — tem de escolher uma antes de Guardar.
 3. Clique em **Guardar**.
-4. Se **família**, **Preço Venda > 0** e **preço de custo > 0** estiverem todos preenchidos, confirme **Génese** — o artigo é criado e ativado. Caso contrário, Guardar cria um artigo **inativo** sem diálogo de Génese.
+4. Se **família** e **Preço Venda > 0** estiverem preenchidos, confirme **Génese** — o artigo é criado e ativado. Caso contrário, Guardar cria um artigo **inativo** sem diálogo de Génese. Defina o preço de compra mais tarde em **Fornecedores → Preços de fornecedor** (§9).
 
-> **Importante:** a Génese só corre quando família, Preço Venda e preço de custo estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Guardar sem esses preços cria uma linha inativa que pode ativar mais tarde.
+> **Importante:** a Génese só corre quando família e Preço Venda estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Guardar sem Preço Venda cria uma linha inativa que pode ativar mais tarde.
 
 > 📷 **[CAPTURA DE ECRÃ — diálogo "Confirmar Génese" (antes de guardar)]**
 
@@ -160,9 +160,7 @@ Acima da tabela verá **"A mostrar X de Y artigos"** para saber sempre quantos c
 | **Taxa de IVA** | Sim | 1%, 3%, 7%, 14% (predefinição em artigos novos), Isento |
 | **Nível de reposição** | Sim | O nível que mais tarde dispara a reposição. Número inteiro ≥ 0 (0 = sem disparo). |
 | **Em armazém / Disponível** | (só leitura, na edição) | Stock físico de armazém e o que ainda está livre para prometer após reservas. Não editável aqui. |
-| **Preço Venda** | Não | O preço de venda principal usado nas requisições (ver §6). Pode ser **0** na criação. |
-| **Fornecedor** | Não | Opcional na criação. Se preencher **fornecedor** e **preço de custo > 0** em conjunto, a Génese guarda uma linha **principal** de preço de compra. |
-| **Preço de custo** | Não | Opcional na criação. Tem de ser preenchido em conjunto com o **fornecedor** quando quer uma linha principal de compra na Génese. |
+| **Preço Venda** | Não | O preço de venda principal usado nas requisições (ver §6). Pode ser **0** na criação. A Génese exige **> 0**. |
 | **Preço de grossista** | Não | Preço de venda (ver §6). |
 | **Preço especial** | Não | Preço de venda (ver §6). |
 | **Motivo** | Não | Uma nota que explique por que está alterando isto (guardada no histórico). |
@@ -329,7 +327,7 @@ Os preços de venda (Preço Venda / grossista / especial) são o que *vendemos p
 Não. As horas adaptam-se automaticamente ao fuso horário local de cada utilizador. O sistema guarda UTC e converte na apresentação.
 
 **P5. Criei um artigo mas diz "Inativo" — porquê?**
-Guardar sem Génese cria um artigo **inativo**. A Génese (ativar) só corre quando **família**, **Preço Venda > 0** e **preço de custo > 0** estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Também pode adicionar uma linha inativa no admin Django (superutilizador) ou na CLI `add_item` sem `--activate`. Com `--activate`, só **código interno** e **descrição** são obrigatórios; passe `--supplier` e `--cost-price` em conjunto se quiser uma linha principal de preço de compra.
+Guardar sem Génese cria um artigo **inativo**. A Génese (ativar) só corre quando **família** e **Preço Venda > 0** estão preenchidos. Se cancelar o diálogo de Génese, nada é guardado. Adicione o preço de compra mais tarde em **Fornecedores → Preços de fornecedor**. Também pode adicionar uma linha inativa no admin Django (superutilizador) ou na CLI `add_item` sem `--activate`. Com `--activate`, só **código interno** e **descrição** são obrigatórios; passe `--supplier` e `--cost-price` em conjunto se quiser uma linha principal de preço de compra a partir da CLI.
 
 **P6. Não vejo o botão editar / caixas de seleção — porquê?**
 O seu papel é **operador** (só leitura) ou não tem permissão de edição. Consulte §2. Peça ao administrador se acha que o papel está errado.

@@ -158,8 +158,6 @@ function setItemFormEditable(editable, isNew, item) {
         "field-retail-price",
         "field-wholesale-price",
         "field-special-price",
-        "field-supplier",
-        "field-cost-price",
         "field-reason",
     ].forEach((id) => {
         const field = document.getElementById(id);
@@ -522,17 +520,6 @@ function fillFormLookups() {
             label: vatRate.label,
         }))
     );
-    const supplierSelect = document.getElementById("field-supplier");
-    fillActionSelect(
-        supplierSelect,
-        (state.suppliers || [])
-            .filter((supplier) => supplier.is_active)
-            .map((supplier) => ({
-                value: String(supplier.id),
-                label: supplier.name,
-            })),
-        supplierSelect.value
-    );
     fillSubFamilyField();
 }
 
@@ -768,10 +755,6 @@ function refreshDrawerLabels() {
     document.getElementById("item-save").hidden = !canSave;
     document.getElementById("reason-field").hidden = !canSave;
     document.getElementById("new-family-inline").hidden = !perms.addFamily;
-    const genesisSupplierFields = document.getElementById("genesis-supplier-fields");
-    if (genesisSupplierFields) {
-        genesisSupplierFields.hidden = !isNew;
-    }
     const itemSupplierPrices = document.getElementById("item-supplier-prices");
     if (itemSupplierPrices) {
         itemSupplierPrices.hidden = isNew;
@@ -1712,9 +1695,7 @@ function validateNewItemFields() {
     clearFieldValidity(
         "field-internal-code",
         "field-description",
-        "field-family",
-        "field-supplier",
-        "field-cost-price"
+        "field-family"
     );
     const codeField = document.getElementById("field-internal-code");
     const descriptionField = document.getElementById("field-description");
@@ -1738,23 +1719,13 @@ function validateNewItemFields() {
         showBanner(t("family_required"), true);
         return showFieldValidity("field-family", t("family_required"));
     }
-    const supplierId = document.getElementById("field-supplier").value;
-    const costRaw = document.getElementById("field-cost-price").value.trim();
-    const hasSupplier = Boolean(supplierId);
-    const hasCost = costRaw !== "" && Number.parseFloat(costRaw) > 0;
-    if (hasSupplier !== hasCost) {
-        showBanner(t("genesis_supplier_cost_pair"), true);
-        const targetId = hasSupplier ? "field-cost-price" : "field-supplier";
-        return showFieldValidity(targetId, t("genesis_supplier_cost_pair"));
-    }
     return true;
 }
 
 function isGenesisReady() {
     const familyId = document.getElementById("field-family").value;
     const retail = Number.parseFloat(document.getElementById("field-retail-price").value);
-    const cost = Number.parseFloat(document.getElementById("field-cost-price").value);
-    return Boolean(familyId) && retail > 0 && cost > 0;
+    return Boolean(familyId) && retail > 0;
 }
 
 function formPayload(isPatch) {
@@ -1775,12 +1746,6 @@ function formPayload(isPatch) {
     };
     if (!isPatch) {
         payload.internal_code = document.getElementById("field-internal-code").value.trim();
-        const supplierId = document.getElementById("field-supplier").value;
-        const costPrice = document.getElementById("field-cost-price").value.trim();
-        if (supplierId && costPrice) {
-            payload.supplier_id = Number(supplierId);
-            payload.cost_price = costPrice;
-        }
     } else {
         const itemId = document.getElementById("field-id").value;
         const item = state.items.find((entry) => String(entry.id) === itemId);
@@ -2252,7 +2217,6 @@ async function openDrawer(item, selectFamilyId) {
         document.getElementById("field-retail-price").value = "0";
         document.getElementById("field-wholesale-price").value = "0";
         document.getElementById("field-special-price").value = "0";
-        document.getElementById("field-cost-price").value = "";
         document.getElementById("stock-figure").hidden = true;
         itemSupplierPriceRequestId += 1;
         renderItemSupplierPrices([]);
@@ -2269,7 +2233,6 @@ async function openDrawer(item, selectFamilyId) {
             const vatRate = preferred || state.vat_rates[0];
             document.getElementById("field-vat-rate").value = String(vatRate.id);
         }
-        document.getElementById("field-supplier").value = "";
         fillSubFamilyField({ reset: true });
         refreshDrawerLabels();
         return;

@@ -35,7 +35,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `family_id is required.` | POST **Novo artigo** na consola sem família | Escolha uma família |
 | `O código interno é obrigatório para novos artigos.` | POST **Novo artigo** na consola sem código interno | Introduza um código |
 | `A descrição é obrigatória.` | POST **Novo artigo** na consola com descrição vazia ou só espaços | Introduza uma descrição |
-| `Fornecedor e preço de custo têm de ser preenchidos em conjunto, ou ambos vazios.` | **Novo artigo** na consola com só fornecedor ou só custo | Preencha ambos ou limpe ambos |
+| `Fornecedor e preço de custo têm de ser preenchidos em conjunto, ou ambos vazios.` | API/`add_item` com só fornecedor ou só custo | Preencha ambos ou omita ambos |
 | `Já existe uma família com este nome.` | Os nomes de família são únicos, sem distinção de maiúsculas/minúsculas | Use outro nome |
 | `Já existe um fornecedor com este nome.` | Os nomes de fornecedor são únicos, sem distinção de maiúsculas/minúsculas | Use outro nome |
 | `O nome da família é obrigatório.` / `O nome do fornecedor é obrigatório.` / `Description is required.` (A descrição é obrigatória.) | Campo obrigatório vazio | Preencha-o |
@@ -50,14 +50,14 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `…selling price must be zero or greater.` (…o preço de venda tem de ser zero ou superior.) | Os preços não podem ser negativos | Indique 0 (significa "sem preço") ou um número positivo |
 | `…reorder level must be zero or greater.` (…o nível de reposição tem de ser zero ou superior.) | O nível de reposição não pode ser negativo | Indique 0 ou um número positivo |
 | `Pass both --supplier and --cost-price together, or omit both.` (Passe `--supplier` e `--cost-price` em conjunto, ou omita ambos.) | `add_item --activate` com só um de `--supplier` / `--cost-price` | Passe as duas flags em conjunto ou omita ambas |
-| `Cost price must be greater than zero for Genesis.` | Génese na consola ou `create_and_activate_item` com fornecedor mas preço de custo ≤ 0 | Introduza preço de custo superior a zero |
+| `Cost price must be greater than zero for Genesis.` | `create_and_activate_item` / `add_item --activate` com fornecedor mas preço de custo ≤ 0 | Introduza preço de custo superior a zero |
 | `Cannot use inactive supplier 'X'.` (Não é possível usar fornecedor inativo 'X'.) | Criação de preço de fornecedor (`Fornecedores` → **Preços de fornecedor**) usou um fornecedor desativado | Reative o fornecedor, ou escolha um ativo. Artigos **inativos** podem receber um custo novo; encomendas de compra e requisições continuam a recusar artigos inativos |
 
 **Os nomes de família são imutáveis** — a consola não tem "renomear". Se o nome estiver errado, desative e crie uma família nova (os artigos mantêm a família antiga; não pode acrescentar artigos novos a uma família inativa).
 
 **Os nomes de sub-família e a família-mãe são imutáveis** após criar — o mesmo padrão das famílias. Desative e crie uma sub-família nova se a etiqueta estiver errada.
 
-**Artigos novos:** **Código interno**, **descrição** e **família** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família, **Preço Venda > 0** e **preço de custo > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Um **preço de fornecedor principal** só é criado quando fornecedor e custo **> 0** estão ambos preenchidos na Génese. O código fica bloqueado após guardar; pode adicionar mais preços de fornecedor depois no painel de fornecedores.
+**Artigos novos:** **Código interno**, **descrição** e **família** são obrigatórios (marcados com * no formulário). **Família** começa sem seleção (`-----`) e é obrigatória antes de Guardar. A **Génese** (ativar) só corre quando família e **Preço Venda > 0** estão preenchidos; caso contrário Guardar cria um artigo **inativo**. Adicione um **preço de fornecedor principal** mais tarde em **Fornecedores → Preços de fornecedor**. O código fica bloqueado após guardar.
 
 **Catálogo do gestor (`/manage/catalog/`)** — stock + preços só de leitura para o pessoal do armazém. Ver [Catálogo do gestor](07-manager-catalog.md).
 

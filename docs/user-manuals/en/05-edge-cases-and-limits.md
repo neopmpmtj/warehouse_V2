@@ -35,7 +35,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Item cannot be activated (Genesis): missing …` | First activation (Genesis) still needs internal code, description, unit, VAT, and active family (Django admin **Reactivate**, or `add_item --activate`) | Complete the fields before activating |
 | `Internal code is required for new items.` | Console **New item** POST with an empty internal code | Enter a code |
 | `Description is required.` | Console **New item** POST with an empty or whitespace-only description | Enter a description |
-| `Supplier and cost price must both be provided together, or both left empty.` | Console **New item** with only supplier or only cost filled | Fill both or clear both |
+| `Supplier and cost price must both be provided together, or both left empty.` | API/`add_item` with only supplier or only cost filled | Fill both or omit both |
 | `Family name "X" is already used.` | Family names are unique, case-insensitive | Use another name |
 | `Supplier name "X" is already used.` | Supplier names are unique, case-insensitive | Use another name |
 | `Family name is required.` / `Supplier name is required.` / `Description is required.` | Required field empty | Fill it in |
@@ -50,14 +50,14 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `…selling price must be zero or greater.` | Prices can't be negative | Enter 0 (means "not priced") or a positive number |
 | `…reorder level must be zero or greater.` | Reorder level can't be negative | Enter 0 or a positive number |
 | `Pass both --supplier and --cost-price together, or omit both.` | `add_item --activate` with only one of `--supplier` / `--cost-price` | Pass both flags together or omit both |
-| `Cost price must be greater than zero for Genesis.` | Console Genesis or `create_and_activate_item` with a supplier but cost price ≤ 0 | Enter a cost price greater than zero |
+| `Cost price must be greater than zero for Genesis.` | `create_and_activate_item` / `add_item --activate` with a supplier but cost price ≤ 0 | Enter a cost price greater than zero |
 | `Cannot use inactive supplier 'X'.` | Supplier-price create (`Suppliers` → **Supplier prices**) used a deactivated supplier | Reactivate the supplier, or pick an active one. Inactive **items** can still receive a new cost; POs and requisição still reject inactive items |
 
 **Family names are immutable** — the console has no "rename". If a name is wrong, deactivate it and create a new family (items keep the old family; you can't add new items to an inactive family).
 
 **Sub-family names and parent family are immutable** after create — same pattern as families. Deactivate and create a new sub-family if the label was wrong.
 
-**New items:** **Internal code**, **description**, and **family** are required (marked * on the form). **Family** starts unselected (`-----`) and is required before Save. **Genesis** (activate) runs only when family, **selling price > 0**, and **cost price > 0** are filled; otherwise Save creates an **inactive** item. A **primary supplier price** is created only when both supplier and cost **> 0** are filled together at Genesis. Code is immutable after save; add more supplier prices later from the supplier drawer.
+**New items:** **Internal code**, **description**, and **family** are required (marked * on the form). **Family** starts unselected (`-----`) and is required before Save. **Genesis** (activate) runs only when family and **selling price > 0** are filled; otherwise Save creates an **inactive** item. Add a **primary supplier price** later from **Suppliers → Supplier prices**. Code is immutable after save.
 
 **Manager catalog (`/manage/catalog/`)** — read-only stock + prices for warehouse staff. See [Manager catalog](07-manager-catalog.md).
 
