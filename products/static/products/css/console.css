@@ -265,6 +265,11 @@ input[type="search"] {
     min-width: 16rem;
 }
 
+.drawer-body .search-input {
+    width: 100%;
+    min-width: 0;
+}
+
 .control-inline {
     display: flex;
     align-items: center;

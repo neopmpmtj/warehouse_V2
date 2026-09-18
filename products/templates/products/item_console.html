@@ -20,7 +20,7 @@
             document.documentElement.setAttribute("lang", lang);
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=27">
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=28">
     <link rel="stylesheet" href="{% static 'products/css/viewport_table.css' %}?v=3">
 </head>
 <body
@@ -325,6 +325,14 @@
         </div>
         <div class="drawer-body">
             <p id="supplier-drawer-help" class="drawer-help" data-i18n="supplierDrawerHelp">Suppliers are master data for later purchasing. Create them here independently of items.</p>
+            <input
+                type="search"
+                id="supplier-search"
+                class="search-input"
+                data-i18n-placeholder="supplierSearchPlaceholder"
+                data-i18n-aria="supplierSearchPlaceholder"
+                placeholder="Search supplier name or contact"
+            >
             <div class="drawer-actions">
                 <button type="button" id="new-supplier" class="btn btn-primary" data-i18n="newSupplier">New supplier</button>
             </div>
@@ -467,10 +475,10 @@
         </div>
     </div>
 
-    <script src="{% static 'products/js/console_i18n.js' %}?v=26"></script>
+    <script src="{% static 'products/js/console_i18n.js' %}?v=27"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
     <script src="{% static 'products/js/console_escape_close.js' %}?v=2"></script>
     <script src="{% static 'products/js/select_fill.js' %}?v=1"></script>
-    <script src="{% static 'products/js/console.js' %}?v=27"></script>
+    <script src="{% static 'products/js/console.js' %}?v=28"></script>
 </body>
 </html>

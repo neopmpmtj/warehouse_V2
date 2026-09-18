@@ -242,10 +242,11 @@ Uma **sub-família** é um segundo nível opcional sob uma família (por exemplo
 Um **fornecedor** é uma empresa da qual compramos — dados mestres que serão usados nas compras.
 
 1. Clique em **Fornecedores** na barra superior. Em janela estreita, abra primeiro **Dados mestres**.
-2. Clique em **Novo fornecedor**, preencha o formulário:
+2. Use a caixa de pesquisa no topo do painel para filtrar por **nome** ou **contacto** (nome do contacto, email ou telefone).
+3. Clique em **Novo fornecedor**, preencha o formulário:
    - **Nome** (obrigatório, único)
    - **Nome do contacto**, **Email**, **Telefone**, **Notas** (opcionais)
-3. Guarde.
+4. Guarde.
 
 **Desative um fornecedor** para parar de encomendar (mantido no histórico, não eliminado).
 
@@ -259,7 +260,7 @@ Cada par fornecedor × artigo pode ter um **preço de custo** — quanto esse fo
 1. Abra **Fornecedores**.
 2. Na linha do fornecedor, clique em **Preços de fornecedor**.
 3. Clique em **Adicionar preço**.
-4. Escolha o **Artigo**, introduza o **Preço de custo** e, opcionalmente, marque **Principal**.
+4. Escolha o **Artigo** (a lista começa com traços até escolher), introduza o **Preço de custo** e, opcionalmente, marque **Principal**.
 5. Guarde.
 
 Pode adicionar um custo a um **artigo inativo**. Encomendas de compra e requisições continuam a não poder usar esse artigo até o reativar. Adicionar um preço a um **fornecedor inativo** continua a ser recusado.

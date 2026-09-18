@@ -242,10 +242,11 @@ A **sub-family** is an optional second level under a family (e.g. *Cement → Ba
 A **supplier** is a company we buy from — master data that will be used for purchasing.
 
 1. Click **Suppliers** (*Fornecedores*) in the top bar. On a narrow window, open **Master data** first.
-2. Click **New supplier** (*Novo fornecedor*), fill the form:
+2. Use the search box at the top of the drawer to filter by **name** or **contact** (contact name, email, or phone).
+3. Click **New supplier** (*Novo fornecedor*), fill the form:
    - **Name** (required, unique)
    - **Contact name**, **Email**, **Phone**, **Notes** (optional)
-3. Save.
+4. Save.
 
 **Deactivate a supplier** to stop ordering from it (kept in history, not deleted).
 
@@ -259,7 +260,7 @@ Each supplier × item pair can have a **cost price** — how much that supplier 
 1. Open **Suppliers**.
 2. On the supplier's row, click **Supplier prices**.
 3. Click **Add price** (*Adicionar preço*).
-4. Pick the **Item**, enter the **Cost price**, and optionally tick **Primary**.
+4. Pick the **Item** (the list starts as dashes until you choose), enter the **Cost price**, and optionally tick **Primary**.
 5. Save.
 
 You can add a cost for an **inactive item**. Purchase orders and requisição still cannot use that item until it is reactivated. Adding a price on an **inactive supplier** is still rejected.

@@ -844,6 +844,7 @@ function closeSupplierDrawer() {
     document.getElementById("supplier-drawer").hidden = true;
     document.getElementById("supplier-drawer-backdrop").hidden = true;
     resetSupplierHistory();
+    clearSupplierSearch();
 }
 
 async function openFamilyDrawer() {
@@ -1406,10 +1407,35 @@ function replaceSupplier(supplier) {
     renderSupplierTable();
 }
 
+function clearSupplierSearch() {
+    const input = document.getElementById("supplier-search");
+    if (input) {
+        input.value = "";
+    }
+}
+
+function filteredSuppliers() {
+    const input = document.getElementById("supplier-search");
+    const query = input ? input.value.trim().toLowerCase() : "";
+    if (!query) {
+        return state.suppliers;
+    }
+    return state.suppliers.filter((supplier) => {
+        const haystack = [
+            supplier.name || "",
+            supplier.contact_name || "",
+            supplier.email || "",
+            supplier.phone || "",
+        ].join(" ").toLowerCase();
+        return haystack.includes(query);
+    });
+}
+
 async function openSupplierDrawer() {
     closeDrawer();
     closeFamilyDrawer();
     closeSubFamilyDrawer();
+    clearSupplierSearch();
     document.getElementById("supplier-drawer").hidden = false;
     document.getElementById("supplier-drawer-backdrop").hidden = false;
     try {
@@ -1440,7 +1466,18 @@ function renderSupplierTable() {
         body.appendChild(row);
         return;
     }
-    state.suppliers.forEach((supplier) => {
+    const rows = filteredSuppliers();
+    if (!rows.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 4;
+        cell.className = "empty-row";
+        cell.textContent = t("emptySupplierSearch");
+        row.appendChild(cell);
+        body.appendChild(row);
+        return;
+    }
+    rows.forEach((supplier) => {
         const row = document.createElement("tr");
         if (!supplier.is_active) {
             row.classList.add("is-inactive");
@@ -1818,9 +1855,11 @@ function fillSupplierPriceItemSelect(selectedId) {
         value: String(item.id),
         label: `${item.internal_code || "—"} — ${item.description}`,
     }));
-    fillSelect(select, options, null);
+    fillSelect(select, options, t("chooseItem"));
     if (selectedId && [...select.options].some((opt) => opt.value === String(selectedId))) {
         select.value = String(selectedId);
+    } else {
+        select.value = "";
     }
 }
 
@@ -1931,6 +1970,9 @@ async function submitSupplierPriceAdd(event) {
         return;
     }
     const itemId = document.getElementById("supplier-price-item").value;
+    if (!itemId) {
+        return;
+    }
     const costPrice = document.getElementById("supplier-price-cost").value;
     const primary = document.getElementById("supplier-price-primary").checked;
     const addButton = document.getElementById("supplier-price-add");
@@ -2696,6 +2738,10 @@ function bindEvents() {
         fillSubFamilyField({ reset: true });
     });
     document.getElementById("new-supplier").addEventListener("click", () => promptSupplierForm(null));
+    const supplierSearch = document.getElementById("supplier-search");
+    if (supplierSearch) {
+        supplierSearch.addEventListener("input", renderSupplierTable);
+    }
     document.getElementById("supplier-drawer-close").addEventListener("click", closeSupplierDrawer);
     document.getElementById("supplier-drawer-backdrop").addEventListener("click", closeSupplierDrawer);
     document.getElementById("drawer-close").addEventListener("click", closeDrawer);
