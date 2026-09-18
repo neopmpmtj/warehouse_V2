@@ -569,8 +569,9 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D37 | **Branch commercial mode ✅** | Company-wide `BranchCommercialSettings` (superuser `/admin/` only). Default **unpriced**. **Priced** restores selling prices + EUR caps. Buying cost never on the branch. Warehouse `/manage/…` unchanged. No per-user/per-branch flag; no storefront. |
 | D38 | **Dashboard vs work-page chrome ✅** | Prefs only on `/` and `/branch/`. Sibling nav only on work pages. Company Voice **CentCompras** → `home_url_for_request`. Does not complete Phase 8. |
 | D30 | **Server-side item drafts** | **Deferred** — try localStorage autosave first if staff report lost forms; see plan advisory |
-| D31 | **Warehouse short-close** | `approved` + zero dispatch → **closed**; `fulfilling` (partial issue) → **shipped** for branch receipt path |
+| D31 | **Warehouse short-close** | `approved` + zero dispatch → **closed**; `fulfilling` (partial issue) → **shipped**, or **closed** if the branch already received every issued unit (D42) |
 | D32 | **Warehouse stock reservation** | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `RESERVE` movement (D5). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |
+| D42 | **Per-dispatch branch receipt** | Each `GoodsIssue` appears on `/branch/receipts/` as soon as issued (`fulfilling` / `shipped` / `received`). Receiving while `fulfilling` does not change request status. Branch short-close only after warehouse done. |
 
 ---
 

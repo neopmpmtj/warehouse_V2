@@ -1075,6 +1075,89 @@ class BranchReceiptTests(TestCase):
         stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
         self.assertEqual(stock.quantity, 3)
 
+    def _partial_issue(self, requested="10", issued="4"):
+        req = order_services.create_internal_request(self.branch, self.operator)
+        line = order_services.add_line(req, self.item, requested, self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(
+            req,
+            [{"line_id": line.id, "quantity_issued": issued}],
+            self.wh_admin,
+        )
+        req.refresh_from_db()
+        return req, line, goods_issue
+
+    def test_partial_issue_appears_on_branch_receipts(self):
+        req, line, goods_issue = self._partial_issue()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+        listed = list(services.get_branch_goods_issues(self.branch))
+        self.assertEqual([gi.id for gi in listed], [goods_issue.id])
+
+    def test_receive_partial_issue_stays_fulfilling(self):
+        req, line, goods_issue = self._partial_issue()
+        issue_line = goods_issue.lines.get()
+        services.receive_at_branch(
+            goods_issue,
+            [{"line_id": issue_line.id, "quantity_received": "4"}],
+            self.operator,
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+        stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
+        self.assertEqual(stock.quantity, 4)
+
+    def test_second_issue_new_gi_then_receive_closes(self):
+        req, line, first_issue = self._partial_issue()
+        first_line = first_issue.lines.get()
+        services.receive_at_branch(
+            first_issue,
+            [{"line_id": first_line.id, "quantity_received": "4"}],
+            self.operator,
+        )
+
+        second_issue = services.issue_goods(
+            req,
+            [{"line_id": line.id, "quantity_issued": "6"}],
+            self.wh_admin,
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.SHIPPED)
+        self.assertNotEqual(second_issue.id, first_issue.id)
+        listed_ids = {gi.id for gi in services.get_branch_goods_issues(self.branch)}
+        self.assertEqual(listed_ids, {first_issue.id, second_issue.id})
+
+        services.receive_at_branch(
+            second_issue,
+            [{"line_id": second_issue.lines.get().id, "quantity_received": "6"}],
+            self.operator,
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+        stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
+        self.assertEqual(stock.quantity, 10)
+
+    def test_short_close_receipt_while_fulfilling_rejected(self):
+        req, line, goods_issue = self._partial_issue()
+        with self.assertRaises(services.BranchShortCloseWarehouseOpenError) as ctx:
+            services.short_close_receipt(req, self.manager, reason="cannot wait")
+        self.assertEqual(ctx.exception.code, "branch_short_close_warehouse_open")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+
+    def test_warehouse_short_close_after_full_receive_closes(self):
+        req, line, goods_issue = self._partial_issue()
+        issue_line = goods_issue.lines.get()
+        services.receive_at_branch(
+            goods_issue,
+            [{"line_id": issue_line.id, "quantity_received": "4"}],
+            self.operator,
+        )
+        req = services.short_close_issue(req, self.wh_admin, reason="cannot supply rest")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+
 
 class BranchReceiptApiTests(TestCase):
     def setUp(self):
@@ -1152,3 +1235,51 @@ class BranchReceiptApiTests(TestCase):
         self.assertEqual(r.status_code, 200)
         stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
         self.assertEqual(stock.quantity, 3)
+
+    def _partial_issue(self, requested="10", issued="4"):
+        req = order_services.create_internal_request(self.branch, self.operator)
+        line = order_services.add_line(req, self.item, requested, self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(
+            req,
+            [{"line_id": line.id, "quantity_issued": issued}],
+            self.wh_admin,
+        )
+        req.refresh_from_db()
+        return req, line, goods_issue
+
+    def test_list_includes_partial_issue_while_fulfilling(self):
+        req, line, goods_issue = self._partial_issue()
+        self._login(self.operator)
+        r = self.client.get(reverse("branch_receipt_issue_list"))
+        self.assertEqual(r.status_code, 200)
+        ids = [row["id"] for row in r.json()["goods_issues"]]
+        self.assertIn(goods_issue.id, ids)
+        row = next(item for item in r.json()["goods_issues"] if item["id"] == goods_issue.id)
+        self.assertEqual(row["request_status"], InternalRequest.Status.FULFILLING)
+
+    def test_short_close_while_fulfilling_returns_400(self):
+        req, line, goods_issue = self._partial_issue()
+        self._login(self.manager)
+        r = self._post(
+            reverse("branch_receipt_short_close", args=[goods_issue.id]),
+            {"reason": "cannot wait"},
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["code"], "branch_short_close_warehouse_open")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+
+    def test_operator_can_receive_partial_issue(self):
+        req, line, goods_issue = self._partial_issue()
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator)
+        r = self._post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            {"lines": [{"line_id": issue_line.id, "quantity_received": "4"}]},
+        )
+        self.assertEqual(r.status_code, 201)
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)

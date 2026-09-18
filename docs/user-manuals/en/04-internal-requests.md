@@ -222,7 +222,7 @@ Rules:
 
 - You cannot issue **more than is reserved for this request** (the quantity held at approve, plus any later incoming stock allocated to it).
 - You cannot issue **more than the request's remaining** quantity.
-- **Partial issue** is fine — the request becomes **fulfilling** and the rest ships later.
+- **Partial issue** is fine — the request becomes **fulfilling** and the rest ships later. Each issue creates its own dispatch (*guia*) number, which appears immediately on the branch **Receipts** page.
 - A **complete** issue marks the request **shipped**.
 
 The queue shows **reserved**, **backorder** (still waiting for stock), **on hand**, and **available** (on hand minus all holds) per line. Issue quantity defaults to the reserved amount.
@@ -236,7 +236,7 @@ If another branch is first in line for free stock, you cannot ship to a later re
 If you can't (or won't) ship the rest, click **Short close** and give a **reason**. The unshipped remainder is written off and any hold on that remainder is **released** to the next waiting requisição (oldest `approved_at` first).
 
 - If **nothing was dispatched yet** (request still **approved**), the request becomes **closed** — there is nothing for the branch to receive.
-- If you already **partially issued** goods (request **fulfilling**), the request becomes **shipped** so the branch can receive what was sent and short-close any remainder.
+- If you already **partially issued** goods (request **fulfilling**), the request becomes **shipped** so the branch can short-close any unreceived remainder. If the branch already received every unit you issued, the request becomes **closed**.
 
 Only a **manager grade 2+ or admin** can do this.
 
@@ -246,7 +246,7 @@ Only a **manager grade 2+ or admin** can do this.
 
 ## 8. Branch — confirm arrival (receipt)
 
-Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your branch — requests that are **shipped** or **received** (i.e. on their way or partly arrived). **Receive** and **Short close** stay visible but disabled until you select a dispatch.
+Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your branch as soon as the warehouse issues them — including while the request is still **fulfilling** (more still to ship). Each warehouse issue has its own dispatch **#**. **Receive** is enabled once you select a dispatch. **Short close** stays disabled until the warehouse has finished (request **shipped** or **received**).
 
 ### 8.1 Receive against a dispatch
 
@@ -256,15 +256,15 @@ Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your bra
 
 Rules:
 
-- **Receive qty** cannot exceed **Remaining** on that line (shipped minus already received). The field will not accept a higher number via typing or the arrows.
-- **Partial** receipt → request stays **received** (more still expected).
-- **Full** receipt → request becomes **closed**.
+- **Receive qty** cannot exceed **Remaining** on that line (issued on this dispatch minus already received). The field will not accept a higher number via typing or the arrows.
+- While the request is still **fulfilling**, receiving a dispatch does **not** change the request status (the warehouse still has remainder). Branch stock still goes up.
+- After the warehouse is done (**shipped**): **partial** receipt → request stays **received** (more still expected on that or another dispatch). **Full** receipt of every issued unit → **closed**.
 
 Receiving **increments branch stock** immediately.
 
 ### 8.2 Branch short-close
 
-If the rest won't arrive, click **Short close** and give a **reason**. The unreceived remainder is written off and the request becomes **closed**. Only a **manager or admin** can do this.
+If the rest of a finished warehouse dispatch won't arrive, click **Short close** and give a **reason**. The unreceived remainder is written off and the request becomes **closed**. Only a **manager or admin** can do this, and only after the warehouse has fully issued or short-closed (request **shipped** or **received**). While the request is still **fulfilling**, Short close is disabled (*Cannot short-close while the warehouse still has remaining to ship.*).
 
 > 📷 **[SCREENSHOT — branch receipt with received quantities]**
 
@@ -309,13 +309,15 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
                                                                                        └── short-close ──────┘
 ```
 
+Issued *guias* can be received while the request is still **fulfilling**; that receipt does not change the header status.
+
 | Status | Meaning |
 |--------|---------|
 | **draft** | Branch is building it |
 | **submitted** | Waiting for a branch manager |
 | **approved** | Visible to the warehouse; not yet shipped |
 | **rejected** | Manager rejected it (terminal) |
-| **fulfilling** | Partly shipped; warehouse remainder still open |
+| **fulfilling** | Partly shipped; warehouse remainder still open. Issued *guias* are already on `/branch/receipts/` |
 | **shipped** | Warehouse done (fully issued or short-closed) |
 | **received** | Partly arrived; branch remainder still open |
 | **closed** | Branch done (fully received or short-closed) |
@@ -331,8 +333,9 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - Request an **inactive** item, or a line with **no selling price**, or the **same item twice** on one request.
 - Edit a request after **submit**.
 - **Issue** more than is reserved for that request, or more than the request's remaining.
-- **Receive** more than the line's remaining (shipped minus already received).
+- **Receive** more than the line's remaining (issued on this dispatch minus already received).
 - **Cancel** a request after goods have been issued (short-close instead).
+- **Short-close** a branch receipt while the warehouse still has remainder (**fulfilling**).
 - Short-close as an **operator** (either side).
 - Adjust branch stock unless you are the branch **admin**.
 
@@ -373,7 +376,7 @@ The three rules: the item must have a **selling price**, it must be **active**, 
 No. Approving **freezes** the totals (retail + VAT snapshot). Later price changes don't touch an approved request.
 
 **Q5. The warehouse shipped less than I asked — what do I do?**
-Confirm the **received quantity** that actually arrived at `/branch/receipts/`. If the rest won't come, a **manager/admin** short-closes it. The request then closes.
+Each partial dispatch appears on `/branch/receipts/` as soon as it is issued — confirm what arrived against that dispatch **#**. A later warehouse issue gets a **new** dispatch number. Branch **short-close** is only available after the warehouse has finished (full issue or warehouse short-close).
 
 **Q6. I can't see "Approve" — why?**
 You're an **operator** (operators never approve), or the request isn't **submitted**. Ask a manager, or submit first.

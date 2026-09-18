@@ -132,7 +132,8 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 
 | Mensagem | Porquê | O que fazer |
 |---------|-----|------------|
-| `Cannot receive against a request with status 'X'.` (Não é possível receber contra uma requisição com estado 'X'.) | A requisição não está **shipped** ou **received** | Aguarde a expedição |
+| `Cannot receive against a request with status 'X'.` (Não é possível receber contra uma requisição com estado 'X'.) | A requisição não está **fulfilling**, **shipped** ou **received** | Aguarde a primeira expedição |
+| `Cannot short-close while the warehouse still has remaining to ship.` (Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.) | A requisição ainda está **fulfilling** | Aguarde o armazém concluir ou encerrar parcialmente o restante |
 | `Goods issue line not found on this dispatch.` (Linha de saída de mercadoria não encontrada nesta expedição.) | Id de linha errado | Selecione de novo |
 | `A goods issue line was provided more than once in this receipt.` (Uma linha de saída foi indicada mais do que uma vez nesta receção.) | Linha duplicada | Uma linha por linha de emissão |
 | `Received quantity X exceeds shipped remaining Y.` (Quantidade recebida X excede o restante expedido Y.) | Sobre-receção face à expedição | Reduza |
@@ -275,17 +276,19 @@ cancelled                                cancelled         ▼               shi
                                                                                       └── short-close ──────┘
 ```
 
-**Transições "saltadas"** (ambas acontecem automaticamente, na mesma ação):
+**Transições "saltadas"** (acontecem automaticamente, na mesma ação):
 
 - A primeira emissão que conclui o lado do armazém → **`approved → shipped`** diretamente (nunca persiste `fulfilling`).
-- A primeira receção que conclui o lado da filial → **`shipped → closed`** diretamente (nunca persiste `received`).
+- Receção enquanto a requisição ainda está **`fulfilling`** → o estado **mantém-se `fulfilling`** (o armazém ainda tem restante).
+- A primeira receção que conclui o lado da filial **depois** de o armazém ter terminado → **`shipped → closed`** diretamente (nunca persiste `received`).
+- Encerramento parcial no armazém a partir de **`fulfilling`** quando a filial já recebeu todas as unidades emitidas → **`shipped → closed`** na mesma ação.
 
 **Dois encerramentos parciais:**
 
 | Lado | Quem | Efeito |
 |------|-----|--------|
-| Armazém (`/manage/internal-requests/`) | Gestor grau 2+ / administrador, motivo | **Sem expedição ainda** (`approved`, zero emitido) → **closed**. **Emissão parcial** (`fulfilling`) → restante não expedido dado como baixa → **shipped** |
-| Filial (`/branch/receipts/`) | Gestor / administrador, motivo | restante não recebido dado como baixa → **closed** |
+| Armazém (`/manage/internal-requests/`) | Gestor grau 2+ / administrador, motivo | **Sem expedição ainda** (`approved`, zero emitido) → **closed**. **Emissão parcial** (`fulfilling`) → restante não expedido dado como baixa → **shipped** (ou **closed** se a filial já recebeu todas as unidades emitidas) |
+| Filial (`/branch/receipts/`) | Gestor / administrador, motivo | Só quando **shipped** / **received**; restante não recebido dado como baixa → **closed**. Bloqueado enquanto **fulfilling** |
 
 **Sem cancelar depois da primeira saída de mercadoria** — só encerramento parcial.
 

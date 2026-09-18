@@ -800,7 +800,8 @@ def short_close_issue(request, user, reason=""):
     When nothing was dispatched yet (still ``approved``), close the request
     directly — there is no branch receipt path without a ``GoodsIssue``.
     After a partial issue (``fulfilling``), mark ``shipped`` so the branch can
-    receive what was sent and short-close the remainder.
+    receive what was sent and short-close the remainder. If the branch already
+    received every issued unit, skip to ``closed``.
     """
     from orders.services import mark_closed, mark_shipped
 
@@ -823,6 +824,8 @@ def short_close_issue(request, user, reason=""):
         request = mark_closed(request, user, reason=reason)
     else:
         request = mark_shipped(request, user, reason=reason)
+        if _is_request_fully_received(request):
+            request = mark_closed(request, user, reason=reason)
     reallocate_items(item_ids, user)
     logger.info(
         "Short-closed request id=%s user=%s",
@@ -909,6 +912,14 @@ class BranchReceiptNotAllowedError(ValidationError):
         super().__init__(
             f"Cannot receive against a request with status '{status}'.",
             code="branch_receipt_not_allowed",
+        )
+
+
+class BranchShortCloseWarehouseOpenError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Cannot short-close while the warehouse still has remaining to ship.",
+            code="branch_short_close_warehouse_open",
         )
 
 
@@ -1037,7 +1048,12 @@ def _write_branch_movement(branch, item, quantity, movement_type, user, content_
 
 @transaction.atomic
 def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
-    """Confirm branch receipt against a dispatch (guia); reject over-receipt."""
+    """Confirm branch receipt against a dispatch (guia); reject over-receipt.
+
+    Partial warehouse issues (request still ``fulfilling``) are receivable.
+    Status stays ``fulfilling`` until the warehouse finishes, so a later issue
+    is not blocked. ``received`` / ``closed`` apply only after warehouse done.
+    """
     from orders.services import mark_closed, mark_received
 
     goods_issue = GoodsIssue.objects.select_for_update().get(
@@ -1048,6 +1064,7 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
     )
 
     if request.status not in (
+        InternalRequest.Status.FULFILLING,
         InternalRequest.Status.SHIPPED,
         InternalRequest.Status.RECEIVED,
     ):
@@ -1111,10 +1128,11 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
             content_object=receipt,
         )
 
-    if _is_request_fully_received(request):
-        mark_closed(request, user)
-    else:
-        mark_received(request, user)
+    if request.status != InternalRequest.Status.FULFILLING:
+        if _is_request_fully_received(request):
+            mark_closed(request, user)
+        else:
+            mark_received(request, user)
 
     logger.info(
         "Branch receipt br=%s gi=%s lines=%s user=%s",
@@ -1132,6 +1150,8 @@ def short_close_receipt(request, user, reason=""):
     from orders.services import mark_closed
 
     request = InternalRequest.objects.select_for_update().get(pk=_resolve_request(request).pk)
+    if request.status == InternalRequest.Status.FULFILLING:
+        raise BranchShortCloseWarehouseOpenError()
     if request.status not in (
         InternalRequest.Status.SHIPPED,
         InternalRequest.Status.RECEIVED,
@@ -1193,11 +1213,12 @@ def adjust_branch_stock(branch, item, quantity, reason, user):
 
 
 def get_branch_goods_issues(branch):
-    """Dispatches awaiting/partially received by a branch (shipped/received requests)."""
+    """Dispatches awaiting/partially received by a branch (issued guias)."""
     return (
         GoodsIssue.objects.filter(
             internal_request__branch=branch,
             internal_request__status__in=[
+                InternalRequest.Status.FULFILLING,
                 InternalRequest.Status.SHIPPED,
                 InternalRequest.Status.RECEIVED,
             ],

@@ -114,6 +114,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D39 | PT name for catalogue-gap threads | English **Threads** / **Request threads** unchanged. Portuguese UI + manuals: **Conversas** (nav), **Conversas de pedido** (page/card), **Conversa** / **Nova conversa** / **Fechar conversa**. Replaces **fio/fios**. Presentation PT **slide 3** aligned (Sep 2026); EN slide 3 uses **New conversation**. |
 | D40 | Parle product name | User-visible rename of Company Voice / Voz da Empresa → **Parle** in **both** EN and PT. URLs (`/company-voice/`), Django app `company_voice`, and code identifiers unchanged. Presentation **slide 12** title **Parle — your ongoing channel** / **Parle — o seu canal permanente** (Sep 2026). |
 | D41 | Requisição selling price | `InternalRequestLine.unit_price` snapshots **`Item.retail_price`** on add-line and again at approve. Add/submit/approve reject retail `== 0`. Phase 5 lock 6 (wholesale) is **superseded**. D37 unpriced still hides money in the UI; warehouse still freezes `approved_*`. |
+| D42 | Per-dispatch branch receipt | Each `GoodsIssue` appears on `/branch/receipts/` as soon as issued (`fulfilling` / `shipped` / `received`). Receiving while `fulfilling` does **not** change request status. Branch short-close only after warehouse done (`shipped` / `received`). Each `issue_goods` call keeps its own GI number. |
 | D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
@@ -135,7 +136,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D28 | Money rounding | `ROUND_HALF_UP` (half away from zero) via `procurement.models.round_money` — unit costs to 4 dp first, then monetary amounts to 2 dp |
 | D29 | `internal_code` lifecycle (Phases 1–2 ✅) | Charset `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive; **immutable after first save** (set-if-empty once); console save activates (Genesis) only when family + retail > 0 + cost > 0; otherwise inactive draft; **internal code** + **description** + family required |
 | D30 | Server-side item drafts | **Deferred** — localStorage autosave first if needed |
-| D31 | Warehouse short-close (zero dispatch) | `approved` with no `GoodsIssue` → **closed** (not `shipped`) |
+| D31 | Warehouse short-close (zero dispatch) | `approved` with no `GoodsIssue` → **closed** (not `shipped`). From `fulfilling` → **shipped**, or **closed** in the same action if the branch already received every issued unit (D42) |
 | D32 | Warehouse stock reservation | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO by `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `StockMovement.Type.RESERVE` (D5 unchanged). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |
 | O1 | Item-level buying-price display | **Option A** — `primary` flag (one per item); fall back to cheapest if none marked — **implemented** |
 
@@ -386,7 +387,7 @@ The following was the **Phase-0 snapshot** when this plan was first written (pre
 - ✅ Branch catalog: read-only (cost hidden, stock **hint** only).
 - ✅ `orders` app: internal request ("Requisição interna") — priced (**retail** snapshot at add-line and approve; D41, Phase 5 lock 6 superseded); branch approve caps mirror PO.
 - ✅ Warehouse: `GoodsIssue` + queue (approved requests only); partial issue + short-close; manual PO when out of stock (nullable PO FK on lines for later automation).
-- ✅ Branch receipt + branch stock ledger (`BranchReceipt` on `GoodsIssue`, `BranchStockMovement` + cached `BranchItemStock`).
+- ✅ Branch receipt + branch stock ledger (`BranchReceipt` on `GoodsIssue`, `BranchStockMovement` + cached `BranchItemStock`). **D42:** each *guia* is listed and receivable while the request is still `fulfilling`; branch short-close waits until warehouse done.
 - **Not in Phase 5:** offline/sync (Phase 6), email notify (Phase 9), linked/auto PO (later slice). **Stock reservation (A4)** was deferred in Phase 5; it shipped later as **D32**.
 
 ### 12.1 Item `internal_code` — catalogue constraints ✅

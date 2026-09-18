@@ -131,7 +131,8 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 
 | Message | Why | What to do |
 |---------|-----|------------|
-| `Cannot receive against a request with status 'X'.` | Request isn't **shipped** or **received** | Wait for dispatch |
+| `Cannot receive against a request with status 'X'.` | Request isn't **fulfilling**, **shipped**, or **received** | Wait for the first dispatch |
+| `Cannot short-close while the warehouse still has remaining to ship.` | Request is still **fulfilling** | Wait for the warehouse to finish or short-close the remainder |
 | `Goods issue line not found on this dispatch.` | Wrong line id | Re-select |
 | `A goods issue line was provided more than once in this receipt.` | Duplicate line | One row per issue line |
 | `Received quantity X exceeds shipped remaining Y.` | Over-receipt vs the dispatch | Lower it |
@@ -274,17 +275,19 @@ cancelled                                cancelled         ▼               shi
                                                                                       └── short-close ──────┘
 ```
 
-**"Skip" transitions** (both happen automatically, in the same action):
+**"Skip" transitions** (happen automatically, in the same action):
 
 - First issue that finishes the warehouse side → **`approved → shipped`** directly (never persists `fulfilling`).
-- First receipt that finishes the branch side → **`shipped → closed`** directly (never persists `received`).
+- Receipt while the request is still **`fulfilling`** → status **stays `fulfilling`** (the warehouse still has remainder).
+- First receipt that finishes the branch side **after** the warehouse is done → **`shipped → closed`** directly (never persists `received`).
+- Warehouse short-close from **`fulfilling`** when the branch already received every issued unit → **`shipped → closed`** in the same action.
 
 **Two short-closes:**
 
 | Side | Who | Effect |
 |------|-----|--------|
-| Warehouse (`/manage/internal-requests/`) | Manager grade 2+ / admin, reason | **No dispatch yet** (`approved`, zero issued) → **closed**. **Partial issue** (`fulfilling`) → unshipped remainder written off → **shipped** |
-| Branch (`/branch/receipts/`) | Manager / admin, reason | unreceived remainder written off → **closed** |
+| Warehouse (`/manage/internal-requests/`) | Manager grade 2+ / admin, reason | **No dispatch yet** (`approved`, zero issued) → **closed**. **Partial issue** (`fulfilling`) → unshipped remainder written off → **shipped** (or **closed** if the branch already received every issued unit) |
+| Branch (`/branch/receipts/`) | Manager / admin, reason | Only when **shipped** / **received**; unreceived remainder written off → **closed**. Blocked while **fulfilling** |
 
 **No cancel after the first goods issue** — short-close only.
 

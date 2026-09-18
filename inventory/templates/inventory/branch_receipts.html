@@ -60,6 +60,7 @@
                 <button id="receive-btn" class="btn btn-primary" data-i18n="receive" disabled>Receive</button>
                 <button id="short-close-btn" class="btn" data-i18n="shortClose" disabled>Short close</button>
             </div>
+            <p id="short-close-hint" class="offline-empty" hidden></p>
             <div class="row" id="adjust-row" hidden>
                 <input id="adjust-item" data-i18n-placeholder="itemId" placeholder="Item ID">
                 <input id="adjust-qty" type="number" step="1" data-i18n-placeholder="colQty" placeholder="Qty">
@@ -118,6 +119,7 @@
                     requestClosed: "Request closed.",
                     stockAdjusted: "Stock adjusted.",
                     shortClosePrompt: "Reason for short-close:",
+                    shortCloseWarehouseOpen: "Cannot short-close while the warehouse still has remaining to ship.",
                     statusDraft: "draft",
                     statusSubmitted: "submitted",
                     statusApproved: "approved",
@@ -155,6 +157,7 @@
                     requestClosed: "Pedido encerrado.",
                     stockAdjusted: "Stock ajustado.",
                     shortClosePrompt: "Motivo do encerramento parcial:",
+                    shortCloseWarehouseOpen: "Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.",
                     statusDraft: "rascunho",
                     statusSubmitted: "submetido",
                     statusApproved: "aprovado",
@@ -208,21 +211,50 @@
             var receiveBtn = document.getElementById("receive-btn");
             var shortCloseBtn = document.getElementById("short-close-btn");
 
+            function selectedIssue() {
+                if (!state.selectedId) return null;
+                for (var i = 0; i < state.issues.length; i += 1) {
+                    if (state.issues[i].id === state.selectedId) return state.issues[i];
+                }
+                return null;
+            }
+
+            function warehouseDone(status) {
+                return status === "shipped" || status === "received";
+            }
+
             function syncActionButtons() {
-                var hasDispatch = Boolean(state.selectedId);
+                var issue = selectedIssue();
+                var hasDispatch = Boolean(issue);
+                var hint = document.getElementById("short-close-hint");
                 receiveBtn.disabled = !hasDispatch;
-                shortCloseBtn.disabled = !hasDispatch || !CAN_SHORT_CLOSE;
+                shortCloseBtn.disabled = !hasDispatch || !CAN_SHORT_CLOSE || !warehouseDone(issue && issue.request_status);
+                if (hint) {
+                    var showHint = hasDispatch && issue.request_status === "fulfilling";
+                    hint.hidden = !showHint;
+                    if (showHint) hint.textContent = t("shortCloseWarehouseOpen");
+                }
             }
 
             function el(tag, text, cls) { var n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
             function showError(m) { banner.textContent = m || t("requestFailed"); banner.hidden = false; }
             function clearError() { banner.hidden = true; }
 
+            function apiErrorMessage(payload) {
+                if (payload && payload.code === "branch_short_close_warehouse_open") {
+                    return t("shortCloseWarehouseOpen");
+                }
+                return (payload && payload.error) || t("requestFailed");
+            }
+
             function api(path, method, body) {
                 var opts = { method: method || "GET", headers: { "Accept": "application/json", "X-CSRFToken": CSRF } };
                 if (body !== undefined) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
                 return fetch(path, opts).then(function (r) {
-                    return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || ("HTTP " + r.status)); return d; });
+                    return r.json().then(function (d) {
+                        if (!r.ok) throw new Error(apiErrorMessage(d));
+                        return d;
+                    });
                 });
             }
 

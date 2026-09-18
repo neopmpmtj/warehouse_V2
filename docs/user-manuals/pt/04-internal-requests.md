@@ -222,7 +222,7 @@ Regras:
 
 - Não pode emitir **mais do que está reservado para esta requisição** (a quantidade retida na aprovação, mais stock entrante posteriormente alocado a ela).
 - Não pode emitir **mais do que o restante** da requisição.
-- **Emissão parcial** é aceite — a requisição passa a **fulfilling** e o resto expede mais tarde.
+- **Emissão parcial** é aceite — a requisição passa a **fulfilling** e o resto expede mais tarde. Cada emissão cria o seu próprio número de expedição (*guia*), que aparece de imediato na página de **Receções** da filial.
 - Uma emissão **completa** marca a requisição como **shipped** (expedida).
 
 A fila mostra **reserved** (reservado), **backorder** (ainda à espera de stock), **on hand** (em armazém) e **available** (disponível — em armazém menos todas as reservas) por linha. A quantidade a emitir vem por defeito com o valor reservado.
@@ -236,7 +236,7 @@ Se outra filial estiver primeiro na fila para stock livre, não pode expedir par
 Se não puder (ou não quiser) expedir o resto, clique em **Encerramento parcial** e indique um **motivo**. O restante não expedido é dado como baixa e qualquer reserva sobre esse restante é **libertada** para a requisição seguinte em espera (primeiro `approved_at` mais antigo).
 
 - Se **nada foi expedido ainda** (requisição ainda **approved**), a requisição passa a **closed** (fechada) — não há nada para a filial receber.
-- Se já **emitiu parcialmente** mercadoria (requisição **fulfilling**), a requisição passa a **shipped** para a filial poder receber o que foi enviado e encerrar parcialmente o restante.
+- Se já **emitiu parcialmente** mercadoria (requisição **fulfilling**), a requisição passa a **shipped** para a filial poder encerrar parcialmente qualquer restante não recebido. Se a filial já recebeu todas as unidades emitidas, a requisição passa a **closed**.
 
 Só um **gestor grau 2+ ou administrador** pode fazer isto.
 
@@ -246,7 +246,7 @@ Só um **gestor grau 2+ ou administrador** pode fazer isto.
 
 ## 8. Filial — confirmar chegada (receção)
 
-Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial — requisições **shipped** (expedidas) ou **received** (recebidas) (ou seja, a caminho ou parcialmente chegadas). **Receber** e **Encerramento parcial** permanecem visíveis mas desativados até selecionar uma expedição.
+Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial assim que o armazém as emite — inclusive enquanto a requisição ainda está **fulfilling** (ainda há mais a expedir). Cada emissão do armazém tem o seu próprio **n.º** de expedição. **Receber** fica ativo depois de selecionar uma expedição. **Encerramento parcial** permanece desativado até o armazém ter concluído (requisição **shipped** ou **received**).
 
 ### 8.1 Receber face a uma expedição
 
@@ -256,15 +256,15 @@ Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial 
 
 Regras:
 
-- A **Qtd a receber** não pode exceder o **Restante** nessa linha (expedido menos o já recebido). O campo não aceita um número maior, nem ao escrever nem com as setas.
-- **Receção parcial** → a requisição mantém-se **received** (ainda se espera mais).
-- **Receção completa** → a requisição passa a **closed** (fechada).
+- A **Qtd a receber** não pode exceder o **Restante** nessa linha (emitido nesta expedição menos o já recebido). O campo não aceita um número maior, nem ao escrever nem com as setas.
+- Enquanto a requisição ainda está **fulfilling**, receber uma expedição **não** altera o estado da requisição (o armazém ainda tem restante). O stock da filial sobe na mesma.
+- Depois de o armazém concluir (**shipped**): **receção parcial** → a requisição mantém-se **received** (ainda se espera mais nesta ou noutra expedição). **Receção completa** de todas as unidades emitidas → **closed** (fechada).
 
 Receber **incrementa o stock da filial** de imediato.
 
 ### 8.2 Encerramento parcial na filial
 
-Se o resto não chegar, clique em **Encerramento parcial** e indique um **motivo**. O restante não recebido é dado como baixa e a requisição passa a **closed**. Só um **gestor ou administrador** pode fazer isto.
+Se o resto de uma expedição **já concluída** pelo armazém não chegar, clique em **Encerramento parcial** e indique um **motivo**. O restante não recebido é dado como baixa e a requisição passa a **closed**. Só um **gestor ou administrador** pode fazer isto, e só depois de o armazém ter emitido tudo ou encerrado parcialmente (requisição **shipped** ou **received**). Enquanto a requisição ainda está **fulfilling**, Encerramento parcial fica desativado (*Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.*).
 
 > 📷 **[CAPTURA DE ECRÃ — receção na filial com quantidades recebidas]**
 
@@ -309,13 +309,15 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
                                                                                        └── short-close ──────┘
 ```
 
+As *guias* emitidas podem ser recebidas enquanto a requisição ainda está **fulfilling**; essa receção não altera o estado do cabeçalho.
+
 | Estado | Significado |
 |--------|---------|
 | **draft** | A filial está a construí-la |
 | **submitted** | À espera de um gestor de filial |
 | **approved** | Visível para o armazém; ainda não expedida |
 | **rejected** | O gestor rejeitou (terminal) |
-| **fulfilling** | Parcialmente expedida; restante do armazém ainda aberto |
+| **fulfilling** | Parcialmente expedida; restante do armazém ainda aberto. As *guias* emitidas já estão em `/branch/receipts/` |
 | **shipped** | Armazém concluído (totalmente emitida ou encerrada parcialmente) |
 | **received** | Parcialmente chegada; restante da filial ainda aberto |
 | **closed** | Filial concluída (totalmente recebida ou encerrada parcialmente) |
@@ -331,8 +333,9 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
 - Pedir um artigo **inativo**, ou uma linha **sem Preço Venda**, ou o **mesmo artigo duas vezes** numa requisição.
 - Editar uma requisição depois de **submeter**.
 - **Emitir** mais do que está reservado para essa requisição, ou mais do que o restante da requisição.
-- **Receber** mais do que o restante da linha (expedido menos o já recebido).
+- **Receber** mais do que o restante da linha (emitido nesta expedição menos o já recebido).
 - **Cancelar** uma requisição depois de mercadoria emitida (use encerramento parcial).
+- **Encerramento parcial** na receção da filial enquanto o armazém ainda tem restante (**fulfilling**).
 - Encerramento parcial como **operador** (em qualquer dos lados).
 - Ajustar stock da filial a menos que seja **administrador** da filial.
 
@@ -373,7 +376,7 @@ As três regras: o artigo tem de ter **Preço Venda**, tem de estar **ativo** e 
 Não. Aprovar **congela** os totais (instantâneo de retalho + IVA). Alterações de preço posteriores não tocam numa requisição aprovada.
 
 **P5. O armazém expediu menos do que pedi — o que faço?**
-Confirme a **quantidade recebida** que chegou de facto em `/branch/receipts/`. Se o resto não vier, um **gestor/administrador** faz encerramento parcial. A requisição fecha depois.
+Cada expedição parcial aparece em `/branch/receipts/` assim que é emitida — confirme o que chegou face a esse **n.º** de expedição. Uma emissão posterior do armazém recebe um **novo** número. O **encerramento parcial** na filial só fica disponível depois de o armazém ter concluído (emissão completa ou encerramento parcial no armazém).
 
 **P6. Não vejo "Approve" — porquê?**
 É **operador** (operadores nunca aprovam), ou a requisição não está **submitted**. Peça a um gestor, ou submeta primeiro.
