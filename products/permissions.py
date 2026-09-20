@@ -2,10 +2,13 @@ from functools import wraps
 
 from django.contrib.auth.views import redirect_to_login
 from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import render
 
 from accounts.authz import deny_if_inactive, user_is_active
 from accounts.capabilities import catalog_permission_flags, has_effective_perm
 from accounts.groups import VIEW_ITEM
+
+CATALOGUE_FORBIDDEN_MESSAGE = "Catalogue view permission required"
 
 
 def can_view_catalog(user):
@@ -27,6 +30,21 @@ def deny_unless(request, perm):
     return HttpResponseForbidden(message)
 
 
+def catalogue_forbidden(request):
+    """HTML 403 for warehouse catalogue pages: home link + Sign out."""
+    from branches.services import home_url_for_request
+
+    return render(
+        request,
+        "products/catalogue_forbidden.html",
+        {
+            "home_url": home_url_for_request(request),
+            "error_code": CATALOGUE_FORBIDDEN_MESSAGE,
+        },
+        status=403,
+    )
+
+
 def catalog_required(view_func):
     @wraps(view_func)
     def wrapped(request, *args, **kwargs):
@@ -41,10 +59,10 @@ def catalog_required(view_func):
         if not can_view_catalog(request.user):
             if wants_json:
                 return JsonResponse(
-                    {"error": "Catalogue view permission required"},
+                    {"error": CATALOGUE_FORBIDDEN_MESSAGE},
                     status=403,
                 )
-            return HttpResponseForbidden("Catalogue view permission required")
+            return catalogue_forbidden(request)
         return view_func(request, *args, **kwargs)
 
     return wrapped

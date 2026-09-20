@@ -14,7 +14,6 @@ AUTH_MODE setting:
 - "google_only" (final prod): password login disabled; Google is the only method
 """
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.shortcuts import redirect, render
@@ -42,7 +41,9 @@ class GoogleLoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
             messages.info(request, _("You are already logged in."))
-            return redirect(settings.LOGIN_REDIRECT_URL)
+            from accounts.views import landing_url
+
+            return redirect(landing_url(request))
 
         try:
             verifier, challenge = generate_pkce_pair()
@@ -133,7 +134,9 @@ class GoogleCallbackView(View):
 
             self._login_google_user(request, user, user_info)
             messages.success(request, _("Welcome back!"))
-            return redirect(settings.LOGIN_REDIRECT_URL)
+            from accounts.views import landing_url
+
+            return redirect(landing_url(request))
 
         except GoogleAuthError as e:
             logger.error(f"Google OAuth error: {e}")
@@ -218,4 +221,6 @@ class GoogleLinkConfirmView(View):
         login(request, user)
         logger.info(f"Linked Google account for user: {user.email}")
         messages.success(request, _("Your Google account has been linked successfully!"))
-        return redirect(settings.LOGIN_REDIRECT_URL)
+        from accounts.views import landing_url
+
+        return redirect(landing_url(request))

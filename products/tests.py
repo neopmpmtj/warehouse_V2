@@ -1544,12 +1544,31 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login/", response.url)
 
-    def test_non_staff_user_cannot_open_dashboard(self):
+    def test_non_staff_user_is_sent_to_branch_select(self):
         self.client.force_login(self.non_staff_user)
 
         response = self.client.get(reverse("staff_dashboard"))
 
-        self.assertEqual(response.status_code, 403)
+        self.assertRedirects(
+            response, "/branch/select/", fetch_redirect_response=False
+        )
+
+    def test_branch_user_is_sent_to_branch_home(self):
+        from branches.capabilities import ROLE_OPERATOR
+        from branches.models import Branch
+        from branches.services import assign_membership
+
+        branch = Branch.objects.create(name="Root Route Branch")
+        user = get_user_model().objects.create_user(
+            email="branch-root@example.com",
+            password="test-pass-123",
+        )
+        assign_membership(user, branch, ROLE_OPERATOR)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("staff_dashboard"))
+
+        self.assertRedirects(response, "/branch/", fetch_redirect_response=False)
 
     def test_non_staff_user_cannot_open_console(self):
         self.client.force_login(self.non_staff_user)
@@ -3628,6 +3647,30 @@ class CatalogConsoleTests(ItemTestCaseMixin, TestCase):
         response = self.client.get(reverse("catalog_console"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "catalog-body")
+
+    def test_branch_user_gets_html_catalogue_forbidden(self):
+        from branches.capabilities import ROLE_OPERATOR
+        from branches.models import Branch
+        from branches.services import assign_membership
+
+        branch = Branch.objects.create(name="Catalog 403 Branch")
+        user = get_user_model().objects.create_user(
+            email="branch-catalog-403@example.com",
+            password="test-pass-123",
+        )
+        assign_membership(user, branch, ROLE_OPERATOR)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("catalog_console"))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(
+            response, "Catalogue view permission required", status_code=403
+        )
+        self.assertContains(response, reverse("logout"), status_code=403)
+        self.assertContains(response, 'href="/branch/"', status_code=403)
+        self.assertContains(response, "Go to home", status_code=403)
+        self.assertContains(response, "Sign out", status_code=403)
 
     def test_catalog_header_uses_settings_popover(self):
         self.client.force_login(self.staff_user)

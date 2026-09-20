@@ -218,6 +218,45 @@ class LoginViewTests(TestCase):
         self.assertRedirects(response, "/", fetch_redirect_response=False)
         self.assertIn("_auth_user_id", self.client.session)
 
+    def test_authenticated_login_page_redirects_to_landing(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("login"))
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+
+    def test_branch_login_with_next_root_goes_to_branch_home(self):
+        from branches.capabilities import ROLE_OPERATOR
+        from branches.models import Branch
+        from branches.services import assign_membership
+
+        branch = Branch.objects.create(name="Login Next Branch")
+        user = get_user_model().objects.create_user(
+            email="branch-login-next@example.com",
+            password="test-pass-123",
+        )
+        assign_membership(user, branch, ROLE_OPERATOR)
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": user.email,
+                "password": "test-pass-123",
+                "next": "/",
+            },
+        )
+        self.assertRedirects(response, "/branch/", fetch_redirect_response=False)
+
+    def test_warehouse_login_honors_manage_next(self):
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": self.user.email,
+                "password": "test-pass-123",
+                "next": "/manage/items/",
+            },
+        )
+        self.assertRedirects(
+            response, "/manage/items/", fetch_redirect_response=False
+        )
+
     def test_login_with_invalid_password_returns_form_error(self):
         response = self.client.post(
             reverse("login"),
@@ -334,6 +373,26 @@ class SessionManagementTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/")
+
+    def test_logout_other_devices_sends_branch_user_home(self):
+        from branches.capabilities import ROLE_OPERATOR
+        from branches.models import Branch
+        from branches.services import assign_membership
+
+        branch = Branch.objects.create(name="Logout Other Branch")
+        user = get_user_model().objects.create_user(
+            email="branch-logout-other@example.com",
+            password="test-pass-123",
+        )
+        assign_membership(user, branch, ROLE_OPERATOR)
+        client = Client()
+        client.force_login(user)
+        response = client.post(
+            reverse("logout_other_devices"),
+            {"next": "/"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/branch/")
 
 
 class DjangoAdminAccessTests(TestCase):
@@ -550,6 +609,28 @@ class GoogleOAuthTests(TestCase):
         self.assertEqual(self.client.session.get("oauth_state"), "state123")
 
     @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    def test_google_login_when_authenticated_goes_to_landing(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("google_login"))
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    def test_google_login_when_authenticated_branch_goes_to_branch_home(self):
+        from branches.capabilities import ROLE_OPERATOR
+        from branches.models import Branch
+        from branches.services import assign_membership
+
+        branch = Branch.objects.create(name="Google Landing Branch")
+        user = get_user_model().objects.create_user(
+            email="branch-google@example.com",
+            password="test-pass-123",
+        )
+        assign_membership(user, branch, ROLE_OPERATOR)
+        self.client.force_login(user)
+        response = self.client.get(reverse("google_login"))
+        self.assertRedirects(response, "/branch/", fetch_redirect_response=False)
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
     @mock.patch("accounts.google_views.get_google_user_info", return_value={"email": "unknown@example.com", "email_verified": True})
     @mock.patch("accounts.google_views.exchange_code_for_tokens", return_value={"access_token": "tok"})
     def test_callback_unknown_email_blocked_existing_only(self, mock_exchange, mock_info):
@@ -569,6 +650,34 @@ class GoogleOAuthTests(TestCase):
         session.save()
         response = self.client.get(reverse("google_callback"), {"code": "code1", "state": "state123"})
         self.assertRedirects(response, reverse("google_link_confirm"))
+
+    @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
+    @mock.patch(
+        "accounts.google_views.get_google_user_info",
+        return_value={
+            "email": "google@example.com",
+            "email_verified": True,
+            "given_name": "Google",
+            "family_name": "User",
+        },
+    )
+    @mock.patch(
+        "accounts.google_views.exchange_code_for_tokens",
+        return_value={"access_token": "tok"},
+    )
+    def test_callback_existing_google_account_lands_on_dashboard(
+        self, mock_exchange, mock_info
+    ):
+        self.user.is_google_account = True
+        self.user.save(update_fields=["is_google_account"])
+        session = self.client.session
+        session["oauth_state"] = "state123"
+        session.save()
+        response = self.client.get(
+            reverse("google_callback"), {"code": "code1", "state": "state123"}
+        )
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        self.assertIn("_auth_user_id", self.client.session)
 
     @override_settings(GOOGLE_CLIENT_ID="client-id", GOOGLE_CLIENT_SECRET="client-secret")
     @mock.patch("accounts.google_views.get_google_user_info", return_value={"email": "google@example.com", "email_verified": True, "given_name": "Google", "family_name": "User"})

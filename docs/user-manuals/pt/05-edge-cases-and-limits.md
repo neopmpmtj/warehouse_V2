@@ -67,7 +67,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Nenhum artigo corresponde a estes filtros.` | A pesquisa, família ou "só abaixo do ponto de encomenda" ocultaram todas as linhas | Limpe os filtros (*Todas as famílias*, desmarque as caixas) |
 | `Não foi possível carregar o catálogo.` | A API do catálogo falhou | Atualize; se persistir, peça ajuda a um administrador |
 | `Não foi possível concluir o pedido.` | O pedido falhou sem mensagem específica | Atualize; tente de novo |
-| `Catalogue view permission required` (É necessária permissão de vista do catálogo) | Não é utilizador de armazém (típico para inícios de sessão só de filial) | Use `/branch/` e páginas da filial, ou peça à sede um grupo de armazém |
+| `Catalogue view permission required` (É necessária permissão de vista do catálogo) | Não é utilizador de armazém (típico para inícios de sessão só de filial) **em `/manage/catalog/`** (ou outra página de catálogo do armazém) | Use **Ir para o início** (página da filial ou seletor) ou **Terminar sessão**. Escrever a raiz do sítio (`/`) como utilizador de filial já não mostra isto — é enviado para `/branch/` automaticamente |
 
 **Abaixo do ponto de encomenda** é `reorder_level > 0` **e** disponível ≤ ponto de encomenda. Ponto de encomenda **0** nunca sinaliza. Preço de compra = custo do fornecedor principal; senão o mais barato entre fornecedores **ativos** (senão —). **Incluir inativos** (`?include_inactive=1` na API) recarrega artigos desativados e artigos sob família inativa; a vista por defeito é só ativos. A coluna **Fornecedores** lista o principal em primeiro (★), depois os restantes por ordem alfabética. Os cabeçalhos das colunas são ordenáveis no browser.
 
@@ -354,6 +354,7 @@ Estes são adiamentos deliberados — confirme antes de assumir que existem:
 
 - **Início de sessão é por email** — não há campo de nome de utilizador.
 - **Desativado a meio da sessão:** o pedido seguinte devolve **"Account is inactive"** (403) e termina a sessão — mesmo com cookie de sessão ainda válido.
+- **A raiz do sítio (`/`) é o painel do armazém.** Contas só de filial que abrem `/` (marcador, URL escrito, sessão anterior) são **redirecionadas** para `/branch/` (ou o seletor). **Não** vêem um 403 em branco. Páginas de armazém como `/manage/catalog/` continuam a recusar logins de filial, com uma página que inclui **Ir para o início** e **Terminar sessão** — não é preciso limpar o histórico do browser.
 - **Fuso horário:** cada utilizador tem um fuso horário (por defeito `Europe/Lisbon`); fusos inválidos são rejeitados ao guardar. Datas renderizadas no servidor aparecem no fuso do visualizador; guardadas em UTC.
 - **`/admin/`** é **só superutilizador**. Pessoal de armazém e de filial nunca entra no Django admin.
 - **Utilizador duplo armazém + filial:** depois do início de sessão aterram no **painel do armazém** (`/`); páginas da filial continuam acessíveis por URL/seletor.

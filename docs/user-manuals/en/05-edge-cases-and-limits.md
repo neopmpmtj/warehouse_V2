@@ -67,7 +67,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `No items match these filters.` | Search, family, sub-family, or “below reorder only” hid every row | Clear filters (*All families*, untick the checkboxes) |
 | `Could not load the catalog.` | Catalog API failed | Refresh; if it persists, ask an administrator |
 | `The request could not be completed.` | Request failed without a specific message | Refresh; try again |
-| `Catalogue view permission required` | Not a warehouse user (typical for branch-only logins) | Use `/branch/` and branch pages, or ask head office for a warehouse group |
+| `Catalogue view permission required` | Not a warehouse user (typical for branch-only logins) **on `/manage/catalog/`** (or another warehouse catalogue page) | Use **Go to home** (branch home or picker) or **Sign out**. Typing the site root (`/`) as a branch user no longer shows this — you are sent to `/branch/` automatically |
 
 **Below reorder** is `reorder_level > 0` **and** available ≤ reorder. Reorder **0** never flags. Buying price = primary supplier’s cost, else cheapest among **active** suppliers (else —). **Include inactive** (`?include_inactive=1` on the API) reloads deactivated items and items under inactive families; default view is active-only. **Suppliers** column lists the primary first (★), then others alphabetically. Column headers are sortable client-side.
 
@@ -353,6 +353,7 @@ These are deliberate deferrals — ask before assuming they exist:
 
 - **Login is by email** — there is no username field.
 - **Deactivated mid-session:** the next request returns **"Account is inactive"** (403) and signs you out — even with a still-valid session cookie.
+- **Site root (`/`) is the warehouse dashboard.** Branch-only accounts that open `/` (bookmark, typed URL, leftover session) are **redirected** to `/branch/` (or the branch picker). They are **not** shown a blank 403. Warehouse pages such as `/manage/catalog/` still refuse branch logins with a page that includes **Go to home** and **Sign out** — you do not need to clear the browser history.
 - **Timezone:** every user has a timezone (default `Europe/Lisbon`); invalid timezones are rejected at save. Server-rendered dates are shown in the viewer's timezone; stored in UTC.
 - **`/admin/`** is **superuser-only**. Warehouse and branch staff never log into Django admin.
 - **Dual warehouse + branch user:** after login they land on the **warehouse dashboard** (`/`); branch pages are still reachable by URL/picker.

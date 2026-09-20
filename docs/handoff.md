@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 17 September 2026, 10:15 WEST.
+> **Read this first when resuming work.** Last updated: 20 September 2026, 07:00 WEST.
 
 ---
 
@@ -37,6 +37,15 @@
 **Tests:** `orders` + `inventory` + `branches` **175 OK** (17 Sep; D41 retail snapshot).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (20 Sep 2026) — branch users no longer stuck on `/` 403 ✅
+
+`/` is the warehouse dashboard (`catalog_required`). Branch-only sessions that typed the site URL (or kept a leftover cookie) got a **plain-text 403** with no Sign out — logout is POST-only, so people cleared history.
+
+- Authenticated users **without** catalogue permission on `GET /` are redirected via `post_login_landing` (`/branch/` or picker).
+- Password `next=/` / `/manage/…`, Google landing, and `logout_other_devices` ignore warehouse-only URLs for branch users.
+- Login page `redirect_authenticated_user = True`.
+- `/manage/catalog/` (and other HTML `catalog_required` pages) keep 403, now a bilingual page with **Go to home** + **Sign out**. JSON error string unchanged.
 
 ## This session (17 Sep 2026) — requisição retail price (D41) ✅
 
@@ -125,7 +134,7 @@ Language/theme vs sibling nav aligned on warehouse and branch (greenfield chrome
 - **Dashboards** (`/` and `/branch/`): language + theme + Settings; navigation is the **card grid** only (no sibling URL strip).
 - **Branch work pages** (catalog, requests, receipts, threads): sibling nav **Home → Catalog → Requests → Receipts → Threads** (Threads last); no prefs bar. Headers split: `branch_dashboard_header.html` / `branch_work_page_header.html` (`branch_page_header.html` removed).
 - **Warehouse `/manage/…` consoles:** sibling strip **Home, Items, Catalog, POs, Receipts, Requests, Threads** (`warehouse_page_nav.html`). Admin-only limits, cost trends, and Company Voice stay dashboard cards. Dropped one-off “Branch caps” / “Requests” topbar links.
-- **Company Voice:** **CentCompras** uses `home_url_for_request()` — warehouse (and dual) → `/`; branch-only → `/branch/` (not `/`, which 403s without catalogue permission).
+- **Company Voice:** **CentCompras** uses `home_url_for_request()` — warehouse (and dual) → `/`; branch-only → `/branch/`. `/` now **routes** branch-only sessions to `/branch/` (or the picker) instead of a raw catalogue 403; `/manage/catalog/` still 403s with Go to home + Sign out.
 - Cache: `preferences_bar.js?v=9`, `console.css?v=19`, SW `centcompras-branch-v11`. Manuals 01 / 03 / 04 / 07 / 08 / 09 EN+PT. Plan: [`.cursor/plans/branch_chrome_consistency_b18412a7.plan.md`](../.cursor/plans/branch_chrome_consistency_b18412a7.plan.md).
 - **Tests:** **593 OK**. Git on `main`: `419fdba`, `7b063b1`.
 
@@ -567,7 +576,7 @@ Plans (reference only): `.cursor/plans/fix_h1_h2_h3_b4b6ce0c.plan.md`, `fix_p1_m
 | D29 | **`internal_code` lifecycle (Phases 1–2 ✅)** | Charset: `A–Z` `a–z` `0–9` `.` `-` `_`; max 64; unique case-insensitive. **Locked after first save** (set-if-empty once for legacy). Console Save = **Genesis only when family + retail > 0 + cost > 0**; otherwise inactive item. Requires **internal code** + **description** + family; family select starts blank |
 | D36 | **Genesis primary supplier ✅** | Optional at Genesis: when **both** supplier and **cost price > 0** are provided, `create_and_activate_item` creates primary `SupplierItemPrice`; existing one-primary demotion unchanged (D14) |
 | D37 | **Branch commercial mode ✅** | Company-wide `BranchCommercialSettings` (superuser `/admin/` only). Default **unpriced**. **Priced** restores selling prices + EUR caps. Buying cost never on the branch. Warehouse `/manage/…` unchanged. No per-user/per-branch flag; no storefront. |
-| D38 | **Dashboard vs work-page chrome ✅** | Prefs only on `/` and `/branch/`. Sibling nav only on work pages. Company Voice **CentCompras** → `home_url_for_request`. Does not complete Phase 8. |
+| D38 | **Dashboard vs work-page chrome ✅** | Prefs only on `/` and `/branch/`. Sibling nav only on work pages. Company Voice **CentCompras** → `home_url_for_request`. `/` routes branch-only sessions to `/branch/` (or picker). Does not complete Phase 8. |
 | D30 | **Server-side item drafts** | **Deferred** — try localStorage autosave first if staff report lost forms; see plan advisory |
 | D31 | **Warehouse short-close** | `approved` + zero dispatch → **closed**; `fulfilling` (partial issue) → **shipped**, or **closed** if the branch already received every issued unit (D42) |
 | D32 | **Warehouse stock reservation** | At branch **approve**: hold `min(remaining, unreserved on-hand)` on `InternalRequestLine.quantity_reserved`. FIFO `(approved_at, request.id, line.id)`. Incoming stock auto-allocates. Issue only from that line's reserved qty. `available = on-hand − reserved`. Approve never fails for lack of stock. No `RESERVE` movement (D5). Negative `adjust_stock` cannot go below total reserved when reserved > 0. |

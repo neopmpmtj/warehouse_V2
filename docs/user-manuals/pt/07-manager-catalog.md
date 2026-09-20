@@ -33,7 +33,7 @@ O pessoal de filial **não** usa este URL. Consulta o [catálogo da filial](04-i
 
 - A página inteira é **só de leitura** para todas as funções de armazém — não há Guardar, nem Novo artigo, nem Ajustar stock.
 - **O custo é confidencial do armazém.** Por isso esta página existe separada de `/branch/catalog/`.
-- Um botão ou coluna em falta **não é um bug**; utilizadores de filial que abram `/manage/catalog/` são recusados (*Catalogue view permission required*).
+- Um botão ou coluna em falta **não é um bug**; utilizadores de filial que abram `/manage/catalog/` são recusados (*Catalogue view permission required*) com **Ir para o início** e **Terminar sessão**. Escrever `/` como utilizador de filial vai para a página da filial.
 - O ecrã Django **`/admin/`** é só para o **superutilizador do sítio** — *não* faz parte deste manual.
 
 Para alterar um artigo, um preço ou o stock, use as consolas na §7.
@@ -146,7 +146,7 @@ Os preços aqui **não** são um instantâneo congelado de encomenda; seguem a l
 | `No items match these filters.` | Pesquisa, família, sub-família ou «só abaixo do ponto de encomenda» ocultaram todas as linhas | Limpe a pesquisa, defina família/sub-família em *Todas*, desmarque a caixa |
 | `Could not load the catalog.` | A API do catálogo falhou | Atualize a página; se persistir, fale com um administrador |
 | `The request could not be completed.` | Um pedido falhou sem mensagem específica | Atualize; tente de novo |
-| `Catalogue view permission required` | Não é utilizador de armazém (típico de logins só de filial) | Use `/branch/catalog/` em alternativa, ou peça à sede um grupo de armazém |
+| `Catalogue view permission required` | Não é utilizador de armazém (típico de logins só de filial) | Use **Ir para o início** ou **Terminar sessão** nessa página, ou abra `/branch/catalog/`. Escrever `/` como utilizador de filial já não dá 403 |
 
 A lista pendente de famílias pode incluir famílias **inativas** (reutiliza a lista de famílias). A tabela nunca lista artigos sob família inativa; escolher uma dessas famílias dá *No items match these filters.*
 

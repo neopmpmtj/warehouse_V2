@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
@@ -15,17 +17,35 @@ def _client_ip(request):
     return request.META.get("REMOTE_ADDR", "")
 
 
+def landing_url(request):
+    """Role landing after login (lock 5). Warehouse/dual → `/`; branch-only → `/branch/`."""
+    from branches.services import post_login_landing
+
+    return post_login_landing(request) or settings.LOGIN_REDIRECT_URL
+
+
+def next_usable_for_user(request, url):
+    """True when this signed-in user can open ``url`` (not a warehouse-only trap)."""
+    if not url:
+        return False
+    from products.permissions import can_view_catalog
+
+    path = urlparse(url).path or "/"
+    if path == "/" or path.startswith("/manage/"):
+        return can_view_catalog(request.user)
+    return True
+
+
 class LoginView(auth_views.LoginView):
     template_name = "accounts/login.html"
+    redirect_authenticated_user = True
 
     def get_success_url(self):
-        # Honor an explicit `next` first; otherwise route by role (lock 5).
+        # Honor `next` only when this user can open it; otherwise lock 5.
         url = self.get_redirect_url()
-        if url:
+        if url and next_usable_for_user(self.request, url):
             return url
-        from branches.services import post_login_landing
-
-        return post_login_landing(self.request) or settings.LOGIN_REDIRECT_URL
+        return landing_url(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -43,10 +63,10 @@ class LoginView(auth_views.LoginView):
                 getattr(settings, "GOOGLE_CLIENT_ID", "")
                 and getattr(settings, "GOOGLE_CLIENT_SECRET", "")
             )
-            if google_configured:
+            if google_configured and not request.user.is_authenticated:
                 return redirect("google_login")
-            # No credentials yet: fall through so the template can explain.
-            messages.error(request, "Google login is not configured yet.")
+            if not google_configured:
+                messages.error(request, "Google login is not configured yet.")
         # H2 rate limiting: refuse before authenticate() runs.
         if request.method == "POST":
             username = request.POST.get("username", "")
@@ -93,10 +113,14 @@ def logout_other_devices(request):
             session.delete()
     messages.success(request, "Other devices have been signed out.")
     next_url = request.POST.get("next") or ""
-    if next_url and url_has_allowed_host_and_scheme(
-        next_url,
-        allowed_hosts={request.get_host()},
-        require_https=request.is_secure(),
+    if (
+        next_url
+        and url_has_allowed_host_and_scheme(
+            next_url,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure(),
+        )
+        and next_usable_for_user(request, next_url)
     ):
         return redirect(next_url)
-    return redirect(settings.LOGIN_REDIRECT_URL)
+    return redirect(landing_url(request))

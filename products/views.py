@@ -1,18 +1,30 @@
 from django.conf import settings
-from django.shortcuts import render
+from django.contrib.auth.views import redirect_to_login
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
+from accounts.authz import deny_if_inactive
 from accounts.capabilities import can_edit_approval_policy
 from accounts.groups import warehouse_group_name
 from branches.navigation import branch_dashboard_cards
-from branches.services import get_active_memberships
+from branches.services import BRANCH_SELECT_URL, get_active_memberships, post_login_landing
 
-from .permissions import catalog_required
+from .permissions import can_view_catalog
 
 
-@catalog_required
 @require_GET
 def staff_dashboard(request):
+    inactive = deny_if_inactive(request)
+    if inactive is not None:
+        return inactive
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    if not can_view_catalog(request.user):
+        landing = post_login_landing(request) or BRANCH_SELECT_URL
+        if landing in ("/", request.path):
+            landing = BRANCH_SELECT_URL
+        return redirect(landing)
+
     user = request.user
     groups = list(user.groups.order_by("name").values_list("name", flat=True))
     is_warehouse = user.is_superuser or warehouse_group_name(user) is not None

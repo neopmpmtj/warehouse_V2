@@ -33,7 +33,7 @@ Branch staff do **not** use this URL. They browse the [branch catalogue](04-inte
 
 - The whole page is **view-only** for every warehouse role — there is no Save, no New item, no Adjust stock.
 - **Cost is warehouse-confidential.** That is why this page exists separately from `/branch/catalog/`.
-- A button or column missing is **not a bug**; branch users who open `/manage/catalog/` are refused (*Catalogue view permission required*).
+- A button or column missing is **not a bug**; branch users who open `/manage/catalog/` are refused (*Catalogue view permission required*) with **Go to home** and **Sign out**. Typing `/` as a branch user goes to the branch home instead.
 - The Django **`/admin/`** screen is for the **site superuser only** — it is *not* part of this manual.
 
 To change an item, a price, or stock, use the consoles in §7.
@@ -146,7 +146,7 @@ Prices here are **not** a frozen PO snapshot; they follow the live supplier list
 | `No items match these filters.` | Search, family, sub-family, or “below reorder only” hid every row | Clear search, set family/sub-family to *All*, untick the checkboxes |
 | `Could not load the catalog.` | The catalog API failed | Refresh the page; if it persists, ask an administrator |
 | `The request could not be completed.` | A request failed without a specific message | Refresh; try again |
-| `Catalogue view permission required` | You are not a warehouse user (typical for branch-only logins) | Use `/branch/catalog/` instead, or ask head office for a warehouse group |
+| `Catalogue view permission required` | You are not a warehouse user (typical for branch-only logins) | Use **Go to home** or **Sign out** on that page, or open `/branch/catalog/`. Typing `/` as a branch user no longer 403s |
 
 The family dropdown can include **inactive** families (it reuses the families list). By default the table never lists items under an inactive family — tick **Include inactive** to load them. Picking an inactive family without that box ticked yields *No items match these filters.*
 
