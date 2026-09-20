@@ -41,8 +41,10 @@ Sem stock? O armazém levanta primeiro uma **encomenda de compra** a um forneced
 | Filial (qualquer função) | `/branch/threads/` | Pedir artigos que não estão no catálogo |
 | Filial (gestor / administrador) | `/branch/requests/` | Aprovar / rejeitar |
 | Filial (qualquer função) | `/branch/receipts/` | Confirmar chegada face a uma expedição |
+| Filial (gestor / administrador) | `/branch/alerts/` | Discrepâncias de receção (por ler até abrir a linha) |
 | Filial (qualquer função) | `/company-voice/` | Caixa de sugestões da empresa |
 | Armazém | `/manage/internal-requests/` | Fila de requisições aprovadas + saída de mercadoria |
+| Armazém (administrador, ou gestor grau 2+) | `/manage/alerts/` | Discrepâncias de receção de todas as filiais |
 | Administrador do armazém | `/manage/branch-approval-limits/` | Tetos de aprovação dos gestores de filial |
 
 *(Durante o desenvolvimento na sua máquina: `http://127.0.0.1:8015/…`.)*
@@ -64,6 +66,7 @@ Existem **três funções de filial** (definidas pela sede) e as habituais **fun
 | Aprovar / rejeitar | ❌ | ✅ (sim/não; tetos em EUR só se o modo com preços estiver ligado) | ✅ (ilimitado) |
 | Cancelar requisição **aprovada** | ❌ | ✅ | ✅ |
 | Confirmar chegada (receção na filial) | ✅ | ✅ | ✅ |
+| Alertas de discrepância de receção | ❌ | ✅ | ✅ |
 | Encerramento parcial na filial | ❌ | ✅ | ✅ |
 | Ajustar stock da filial | ❌ | ❌ | ✅ |
 
@@ -77,6 +80,7 @@ Existem **três funções de filial** (definidas pela sede) e as habituais **fun
 | Capacidade | Quem |
 |-----------|-----|
 | Ver a fila de requisições + emitir mercadoria | Operador grau 2+, gestor, administrador |
+| Alertas de discrepância de receção (`/manage/alerts/`) | Gestor grau 2+ ou administrador |
 | Encerramento parcial no armazém | Gestor grau 2+ ou administrador |
 | Editar tetos de aprovação das filiais | Administrador do armazém (`/manage/branch-approval-limits/`) |
 
@@ -252,22 +256,38 @@ Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial 
 ### 8.1 Receber face a uma expedição
 
 1. Selecione uma expedição.
-2. A **Qtd a receber** vem preenchida com o **Restante** (a parte ainda não recebida do que foi expedido nesta expedição — a quantidade expedida completa quando ainda nada foi recebido). Altere-a se dano ou falta significar que chegou menos.
-3. Clique em **Receive** (Receber).
+2. A **Qtd a receber** vem preenchida com o **Restante** (a parte ainda não recebida do que foi expedido nesta expedição — a quantidade expedida completa quando ainda nada foi recebido). O campo é **só de leitura**.
+3. Se todas as linhas chegaram como expedido, clique em **Receive** (Receber).
+4. Se a contagem não coincidir, clique em **Report discrepancies** (Comunicar discrepâncias). Aparecem a coluna **Qtd efectivamente recebida** e a caixa **Requisitar em falta**. Altere só as linhas erradas (pode indicar **0**). Marque **Requisitar em falta** se ainda precisar das unidades em falta.
+5. Clique em **Receive**. Se alguma quantidade efectiva for menor do que o Restante, tem de indicar **um motivo** para a expedição. **Cancelar** nesse pedido não faz nada.
 
 Regras:
 
-- A **Qtd a receber** não pode exceder o **Restante** nessa linha (emitido nesta expedição menos o já recebido). O campo não aceita um número maior, nem ao escrever nem com as setas. Deixe o número pré-preenchido para receber todo o restante.
-- Enquanto a requisição ainda está **fulfilling**, receber uma expedição **não** altera o estado da requisição (o armazém ainda tem restante). O stock da filial sobe na mesma.
-- Depois de o armazém concluir (**shipped**): **receção parcial** → a requisição mantém-se **received** (ainda se espera mais nesta ou noutra expedição). **Receção completa** de todas as unidades emitidas → **closed** (fechada).
+- A **Qtd a receber** não pode exceder o **Restante** nessa linha (emitido nesta expedição menos o já recebido, menos qualquer baixa de discrepância anterior). Deixe o número pré-preenchido e clique em Receber para registar todo o restante.
+- Uma discrepância **termina essa linha da expedição**. Não pode receber mais tarde nesta guia as unidades em falta. O documento de emissão do armazém **não** é alterado. Se ainda precisar das unidades, marque **Requisitar em falta** — a aplicação cria **uma nova requisição já submetida** (fila do gestor) para o em falta; várias linhas marcadas ficam no mesmo pedido novo.
+- Enquanto a requisição ainda está **fulfilling**, receber uma expedição **não** altera o estado da requisição (o armazém ainda tem restante). O stock da filial sobe pela quantidade efectiva.
+- Depois de o armazém concluir (**shipped**): se todas as unidades emitidas foram recebidas ou acertadas como discrepância → **closed**. Se outra expedição ainda tem quantidade por receber → **received**.
 
 Receber **incrementa o stock da filial** de imediato.
 
 ### 8.2 Encerramento parcial na filial
 
-Se o resto de uma expedição **já concluída** pelo armazém não chegar, clique em **Encerramento parcial** e indique um **motivo**. O restante não recebido é dado como baixa e a requisição passa a **closed**. Só um **gestor ou administrador** pode fazer isto, e só depois de o armazém ter emitido tudo ou encerrado parcialmente (requisição **shipped** ou **received**). Enquanto a requisição ainda está **fulfilling**, Encerramento parcial fica desativado (*Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.*).
+Se o armazém já concluiu e uma expedição **nunca foi registada no stock da filial** (por exemplo um palete danificado recusado), clique em **Encerramento parcial** e indique um **motivo**. Isso não é o caso “contámos 4, expediram 5” — use **Comunicar discrepâncias** para um desacordo de contagem. O encerramento parcial dá como baixa o restante não recebido da **requisição inteira** e a requisição passa a **closed**. Só um **gestor ou administrador** pode fazer isto, e só depois de o armazém ter emitido tudo ou encerrado parcialmente (requisição **shipped** ou **received**). Enquanto a requisição ainda está **fulfilling**, Encerramento parcial fica desativado (*Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.*).
 
 > 📷 **[CAPTURA DE ECRÃ — receção na filial com quantidades recebidas]**
+
+### 8.3 Alertas do gestor (discrepâncias de receção)
+
+Quando a filial regista **menos** unidades do que o armazém expediu nessa expedição, a receção fica guardada como discrepância. Os **gestores** de ambos os lados vêem-na como um cartão **Alertas** no painel (não na faixa de navegação das páginas de trabalho):
+
+- Armazém: **`/`** → **Alertas** → `/manage/alerts/` (todas as filiais). Visível a **administradores** do armazém e **gestores grau 2+**.
+- Filial: **`/branch/`** → **Alertas** → `/branch/alerts/` (só a **filial ativa**). Visível a **gestores** e **administradores** da filial.
+
+O cartão mostra quantas linhas ainda não abriu (por exemplo um distintivo **3**). Abrir a página **não** limpa esse número. Clique numa linha para a marcar como vista **para si**; as outras pessoas continuam a vê-la por ler. As linhas já vistas permanecem na lista.
+
+Cada linha mostra **quando**, o número do **pedido**, o número da **expedição** (*guia*), o desvio de quantidade (código, expedido, recebido, em falta), o **motivo**, e o número do **pedido de seguimento** quando Requisitar em falta foi marcado (senão —). A lista do armazém também mostra o nome da **filial**. Os operadores não têm cartão; o URL devolve **403**.
+
+**Não há e-mail** para isto. O documento de emissão do armazém não é alterado.
 
 ---
 
@@ -334,7 +354,7 @@ As *guias* emitidas podem ser recebidas enquanto a requisição ainda está **fu
 - Pedir um artigo **inativo**, ou uma linha **sem Preço Venda**, ou o **mesmo artigo duas vezes** numa requisição.
 - Editar uma requisição depois de **submeter**.
 - **Emitir** mais do que está reservado para essa requisição, ou mais do que o restante da requisição.
-- **Receber** mais do que o restante da linha (emitido nesta expedição menos o já recebido).
+- **Receber** mais do que o restante da linha (emitido nesta expedição menos o já recebido, menos qualquer baixa de discrepância). Uma contagem abaixo do Restante tem de passar por **Comunicar discrepâncias** e termina essa linha da expedição.
 - **Cancelar** uma requisição depois de mercadoria emitida (use encerramento parcial).
 - **Encerramento parcial** na receção da filial enquanto o armazém ainda tem restante (**fulfilling**).
 - Encerramento parcial como **operador** (em qualquer dos lados).
@@ -417,3 +437,6 @@ Rascunhos offline ficam ligados à filial onde os criou. Se mudar para outra fil
 
 **P18. Tablet partilhado: a pessoa seguinte vai carregar o meu rascunho offline?**
 Não, se **Terminar sessão**. Terminar sessão limpa a fila de rascunhos offline deste browser. Os rascunhos também ficam ligados ao seu id de utilizador: outra pessoa que inicie sessão no mesmo tablet não sincroniza automaticamente as suas linhas pendentes. Termine sempre sessão no fim do turno.
+
+**P19. Comuniquei uma discrepância — quem é avisado?**
+Ninguém recebe e-mail. Os **administradores** do armazém e os **gestores grau 2+** têm um cartão **Alertas** em `/`; os **gestores** e **administradores** da filial têm um em `/branch/`. Abra a linha para a marcar como vista para si. Os operadores não vêem o cartão.

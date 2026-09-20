@@ -15,6 +15,7 @@ from accounts.groups import (
     GROUP_MANAGERS,
     GROUP_OPERATORS,
     assign_warehouse_group,
+    set_warehouse_grade,
 )
 from accounts.capabilities import can_mutate_catalog
 from products.models import Item, VatRate
@@ -35,6 +36,8 @@ from orders.models import InternalRequest, InternalRequestLine
 from . import services
 from .models import (
     BranchItemStock,
+    BranchReceipt,
+    BranchReceiptReadState,
     BranchStockMovement,
     GoodsIssue,
     GoodsIssueLine,
@@ -1037,18 +1040,107 @@ class BranchReceiptTests(TestCase):
         req.refresh_from_db()
         self.assertEqual(req.status, InternalRequest.Status.CLOSED)
 
-    def test_partial_receive_marks_received(self):
+    def test_partial_receive_without_reason_rejected(self):
+        req, goods_issue = self._shipped_issue("4")
+        issue_line = goods_issue.lines.get()
+        with self.assertRaises(services.DiscrepancyReasonRequiredError) as ctx:
+            services.receive_at_branch(
+                goods_issue,
+                [{"line_id": issue_line.id, "quantity_received": "2"}],
+                self.operator,
+            )
+        self.assertEqual(ctx.exception.code, "discrepancy_reason_required")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.SHIPPED)
+        self.assertFalse(BranchReceipt.objects.filter(goods_issue=goods_issue).exists())
+
+    def test_discrepancy_without_reorder_settles_line_and_closes(self):
         req, goods_issue = self._shipped_issue("4")
         issue_line = goods_issue.lines.get()
         services.receive_at_branch(
             goods_issue,
             [{"line_id": issue_line.id, "quantity_received": "2"}],
             self.operator,
+            reason="broken in transit",
         )
         req.refresh_from_db()
-        self.assertEqual(req.status, InternalRequest.Status.RECEIVED)
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+        issue_line.refresh_from_db()
+        self.assertEqual(issue_line.quantity_issued, 4)
+        receipt = BranchReceipt.objects.get(goods_issue=goods_issue)
+        self.assertTrue(receipt.is_critical)
+        self.assertEqual(receipt.discrepancy_reason, "broken in transit")
+        receipt_line = receipt.lines.get()
+        self.assertEqual(receipt_line.quantity_received, 2)
+        self.assertEqual(receipt_line.quantity_written_off, 2)
         stock = BranchItemStock.objects.get(branch=self.branch, item=self.item)
         self.assertEqual(stock.quantity, 2)
+        summary = services.get_branch_issue_summary(goods_issue)[0]
+        self.assertEqual(summary["remaining"], "0")
+        self.assertFalse(
+            InternalRequest.objects.exclude(pk=req.pk)
+            .filter(branch=self.branch, created_by=self.operator)
+            .exists()
+        )
+
+    def test_discrepancy_with_reorder_creates_submitted_follow_up(self):
+        req, goods_issue = self._shipped_issue("5")
+        issue_line = goods_issue.lines.get()
+        receipt = services.receive_at_branch(
+            goods_issue,
+            [{"line_id": issue_line.id, "quantity_received": "4", "reorder": True}],
+            self.operator,
+            reason="one tyre missing",
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+        self.assertEqual(req.lines.get().quantity, 5)
+        issue_line.refresh_from_db()
+        self.assertEqual(issue_line.quantity_issued, 5)
+        follow_up = InternalRequest.objects.get(pk=receipt.follow_up_request_id)
+        receipt.refresh_from_db()
+        self.assertEqual(receipt.follow_up_request_id, follow_up.id)
+        self.assertEqual(follow_up.status, InternalRequest.Status.SUBMITTED)
+        self.assertEqual(follow_up.branch_id, self.branch.id)
+        self.assertEqual(follow_up.created_by_id, self.operator.id)
+        follow_line = follow_up.lines.get()
+        self.assertEqual(follow_line.item_id, self.item.id)
+        self.assertEqual(follow_line.quantity, 1)
+
+    def test_discrepancy_zero_received_writes_off_all(self):
+        req, goods_issue = self._shipped_issue("4")
+        issue_line = goods_issue.lines.get()
+        services.receive_at_branch(
+            goods_issue,
+            [{"line_id": issue_line.id, "quantity_received": "0"}],
+            self.operator,
+            reason="nothing arrived",
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+        self.assertFalse(BranchItemStock.objects.filter(branch=self.branch, item=self.item).exists())
+        receipt_line = BranchReceipt.objects.get(goods_issue=goods_issue).lines.get()
+        self.assertEqual(receipt_line.quantity_received, 0)
+        self.assertEqual(receipt_line.quantity_written_off, 4)
+
+    def test_discrepancy_while_fulfilling_stays_fulfilling(self):
+        req, line, goods_issue = self._partial_issue()
+        issue_line = goods_issue.lines.get()
+        services.receive_at_branch(
+            goods_issue,
+            [{"line_id": issue_line.id, "quantity_received": "3", "reorder": True}],
+            self.operator,
+            reason="short on this dispatch",
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+        follow_up = InternalRequest.objects.exclude(pk=req.pk).get(
+            branch=self.branch, created_by=self.operator
+        )
+        self.assertEqual(follow_up.status, InternalRequest.Status.SUBMITTED)
+        self.assertEqual(follow_up.lines.get().quantity, 1)
+        summary = services.get_branch_issue_summary(goods_issue)[0]
+        self.assertEqual(summary["remaining"], "0")
 
     def test_over_receipt_rejected(self):
         req, goods_issue = self._shipped_issue("4")
@@ -1194,6 +1286,7 @@ class BranchReceiptApiTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'id="settings-toggle"')
         self.assertContains(r, "Catalog")
+        self.assertContains(r, 'id="report-discrepancies-btn"')
         self.assertContains(r, "Requests")
         self.assertNotContains(r, 'id="language-select"')
         self.assertNotContains(r, 'id="theme-toggle"')
@@ -1210,7 +1303,33 @@ class BranchReceiptApiTests(TestCase):
         req.refresh_from_db()
         self.assertEqual(req.status, InternalRequest.Status.CLOSED)
 
-    def test_operator_cannot_short_close(self):
+    def test_operator_discrepancy_requires_reason(self):
+        req, goods_issue = self._shipped_issue("4")
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator)
+        r = self._post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            {"lines": [{"line_id": issue_line.id, "quantity_received": "2"}]},
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["code"], "discrepancy_reason_required")
+
+    def test_operator_discrepancy_with_reorder_returns_follow_up(self):
+        req, goods_issue = self._shipped_issue("5")
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator)
+        r = self._post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            {
+                "lines": [{"line_id": issue_line.id, "quantity_received": "4", "reorder": True}],
+                "reason": "one missing",
+            },
+        )
+        self.assertEqual(r.status_code, 201)
+        self.assertIn("follow_up_request_id", r.json())
+        follow_up = InternalRequest.objects.get(pk=r.json()["follow_up_request_id"])
+        self.assertEqual(follow_up.status, InternalRequest.Status.SUBMITTED)
+        self.assertEqual(follow_up.lines.get().quantity, 1)
         req, goods_issue = self._shipped_issue("4")
         self._login(self.operator)
         r = self._post(reverse("branch_receipt_short_close", args=[goods_issue.id]), {"reason": "x"})
@@ -1283,3 +1402,169 @@ class BranchReceiptApiTests(TestCase):
         self.assertEqual(r.status_code, 201)
         req.refresh_from_db()
         self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+
+
+class BranchReceiptAlertTests(TestCase):
+    def setUp(self):
+        self.north = create_branch("North Alerts")
+        self.south = create_branch("South Alerts")
+        self.operator = _make_branch_user("alert-op@example.com", self.north, ROLE_OPERATOR)
+        self.manager = _make_branch_user("alert-mgr@example.com", self.north, ROLE_MANAGER)
+        self.other_manager = _make_branch_user(
+            "alert-mgr-south@example.com", self.south, ROLE_MANAGER
+        )
+        self.wh_admin = make_warehouse_user("alert-wh-admin@example.com")
+        self.wh_operator = make_warehouse_user(
+            "alert-wh-op@example.com", group_name=GROUP_OPERATORS
+        )
+        self.wh_manager_g1 = make_warehouse_user(
+            "alert-wh-mgr1@example.com", group_name=GROUP_MANAGERS
+        )
+        self.wh_manager_g2 = make_warehouse_user(
+            "alert-wh-mgr2@example.com", group_name=GROUP_MANAGERS
+        )
+        set_warehouse_grade(self.wh_manager_g2, 2)
+        self.item = _make_issue_item("Alert Widget", wholesale="5.00", quantity="20")
+
+    def _login_branch(self, user, branch):
+        self.client.force_login(user)
+        session = self.client.session
+        session[SESSION_KEY] = branch.id
+        session.save()
+
+    def _critical_receipt(self, branch, operator, manager, qty="5", received="4", reorder=True):
+        req = order_services.create_internal_request(branch, operator)
+        line = order_services.add_line(req, self.item, qty, operator)
+        req = order_services.submit(req, operator)
+        req = order_services.approve(req, manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(
+            req, [{"line_id": line.id, "quantity_issued": qty}], self.wh_admin
+        )
+        receipt = services.receive_at_branch(
+            goods_issue,
+            [
+                {
+                    "line_id": goods_issue.lines.get().id,
+                    "quantity_received": received,
+                    "reorder": reorder,
+                }
+            ],
+            operator,
+            reason="short count",
+        )
+        return req, goods_issue, receipt
+
+    def test_warehouse_operator_and_grade1_manager_are_forbidden(self):
+        self.client.force_login(self.wh_operator)
+        self.assertEqual(self.client.get(reverse("warehouse_alerts_console")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("manage_alerts_list")).status_code, 403)
+        self.client.force_login(self.wh_manager_g1)
+        self.assertEqual(self.client.get(reverse("warehouse_alerts_console")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("manage_alerts_list")).status_code, 403)
+
+    def test_branch_operator_is_forbidden(self):
+        self._login_branch(self.operator, self.north)
+        self.assertEqual(self.client.get(reverse("branch_alerts_console")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("branch_alerts_list")).status_code, 403)
+
+    def test_warehouse_list_all_branches_and_follow_up_id(self):
+        north_req, north_gi, north_receipt = self._critical_receipt(
+            self.north, self.operator, self.manager
+        )
+        south_op = _make_branch_user("alert-south-op@example.com", self.south, ROLE_OPERATOR)
+        south_req, south_gi, south_receipt = self._critical_receipt(
+            self.south, south_op, self.other_manager, qty="3", received="1", reorder=False
+        )
+        self.client.force_login(self.wh_admin)
+        page = self.client.get(reverse("warehouse_alerts_console"))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Receipt discrepancies")
+        response = self.client.get(reverse("manage_alerts_list"))
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        ids = [row["id"] for row in payload["alerts"]]
+        self.assertIn(north_receipt.id, ids)
+        self.assertIn(south_receipt.id, ids)
+        self.assertEqual(payload["unread_count"], 2)
+        north_row = next(row for row in payload["alerts"] if row["id"] == north_receipt.id)
+        self.assertEqual(north_row["request_id"], north_req.id)
+        self.assertEqual(north_row["dispatch_id"], north_gi.id)
+        self.assertEqual(north_row["follow_up_request_id"], north_receipt.follow_up_request_id)
+        self.assertTrue(north_row["unread"])
+        self.assertEqual(north_row["branch_name"], self.north.name)
+        self.assertEqual(north_row["lines"][0]["shipped"], 5)
+        self.assertEqual(north_row["lines"][0]["received"], 4)
+        self.assertEqual(north_row["lines"][0]["missing"], 1)
+        south_row = next(row for row in payload["alerts"] if row["id"] == south_receipt.id)
+        self.assertIsNone(south_row["follow_up_request_id"])
+
+    def test_branch_list_is_scoped_and_other_branch_mark_read_404(self):
+        north_req, north_gi, north_receipt = self._critical_receipt(
+            self.north, self.operator, self.manager
+        )
+        south_op = _make_branch_user("alert-south-op2@example.com", self.south, ROLE_OPERATOR)
+        _south_req, _south_gi, south_receipt = self._critical_receipt(
+            self.south, south_op, self.other_manager, qty="3", received="2", reorder=False
+        )
+        self._login_branch(self.manager, self.north)
+        page = self.client.get(reverse("branch_alerts_console"))
+        self.assertEqual(page.status_code, 200)
+        response = self.client.get(reverse("branch_alerts_list"))
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        ids = [row["id"] for row in payload["alerts"]]
+        self.assertEqual(ids, [north_receipt.id])
+        self.assertEqual(payload["unread_count"], 1)
+        row = payload["alerts"][0]
+        self.assertEqual(row["request_id"], north_req.id)
+        self.assertEqual(row["dispatch_id"], north_gi.id)
+        self.assertEqual(row["follow_up_request_id"], north_receipt.follow_up_request_id)
+        mark = self.client.post(reverse("branch_alerts_mark_read", args=[south_receipt.id]))
+        self.assertEqual(mark.status_code, 404)
+
+    def test_mark_read_is_per_user_and_keeps_row(self):
+        _req, _gi, receipt = self._critical_receipt(self.north, self.operator, self.manager)
+        self.client.force_login(self.wh_admin)
+        self.assertEqual(services.unread_alert_count(self.wh_admin), 1)
+        self.assertEqual(services.unread_alert_count(self.wh_manager_g2), 1)
+        marked = self.client.post(reverse("manage_alerts_mark_read", args=[receipt.id]))
+        self.assertEqual(marked.status_code, 200)
+        self.assertFalse(marked.json()["unread"])
+        self.assertTrue(
+            BranchReceiptReadState.objects.filter(receipt=receipt, user=self.wh_admin).exists()
+        )
+        listed = self.client.get(reverse("manage_alerts_list")).json()
+        self.assertEqual(listed["unread_count"], 0)
+        self.assertEqual(listed["alerts"][0]["id"], receipt.id)
+        self.assertFalse(listed["alerts"][0]["unread"])
+        self.assertEqual(services.unread_alert_count(self.wh_manager_g2), 1)
+
+    def test_page_load_does_not_mark_read(self):
+        _req, _gi, receipt = self._critical_receipt(self.north, self.operator, self.manager)
+        self.client.force_login(self.wh_manager_g2)
+        self.client.get(reverse("warehouse_alerts_console"))
+        self.assertEqual(services.unread_alert_count(self.wh_manager_g2), 1)
+        self.assertFalse(
+            BranchReceiptReadState.objects.filter(
+                receipt=receipt, user=self.wh_manager_g2
+            ).exists()
+        )
+
+    def test_warehouse_dashboard_shows_unread_badge(self):
+        self._critical_receipt(self.north, self.operator, self.manager)
+        self.client.force_login(self.wh_admin)
+        response = self.client.get(reverse("staff_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/manage/alerts/"')
+        self.assertContains(response, 'class="dash-card-badge"')
+        self.assertContains(response, ">1</span>")
+
+    def test_branch_dashboard_shows_unread_badge(self):
+        self._critical_receipt(self.north, self.operator, self.manager)
+        self._login_branch(self.manager, self.north)
+        response = self.client.get(reverse("branch_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/branch/alerts/"')
+        self.assertContains(response, 'class="dash-card-badge"')
+        self.assertContains(response, ">1</span>")

@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import F, IntegerField, OuterRef, Subquery, Sum, Value
+from django.db.models import F, IntegerField, OuterRef, Prefetch, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 
 from logging_utils import get_logger
@@ -20,6 +20,7 @@ from .models import (
     BranchItemStock,
     BranchReceipt,
     BranchReceiptLine,
+    BranchReceiptReadState,
     BranchStockMovement,
     GoodsIssue,
     GoodsIssueLine,
@@ -27,7 +28,12 @@ from .models import (
     GoodsReceiptLine,
     StockMovement,
 )
-from orders.models import InternalRequest, InternalRequestLine, InternalRequestLineChangeLog
+from orders.models import (
+    InternalRequest,
+    InternalRequestChangeLog,
+    InternalRequestLine,
+    InternalRequestLineChangeLog,
+)
 
 logger = get_logger("centcompras.inventory")
 
@@ -932,8 +938,16 @@ class BranchIssueLineNotFoundError(ValidationError):
 
 
 class InvalidBranchReceivedQuantityError(ValidationError):
-    def __init__(self, message="Received quantity must be a positive number."):
+    def __init__(self, message="Received quantity must be zero or greater."):
         super().__init__(message, code="invalid_branch_received_quantity")
+
+
+class DiscrepancyReasonRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A reason is required to report a receipt discrepancy.",
+            code="discrepancy_reason_required",
+        )
 
 
 class NoBranchLinesToReceiveError(ValidationError):
@@ -991,6 +1005,18 @@ def _branch_received_qty_map(goods_issue):
     }
 
 
+def _branch_written_off_qty_map(goods_issue):
+    totals = (
+        BranchReceiptLine.objects.filter(goods_issue_line__goods_issue=goods_issue)
+        .values("goods_issue_line_id")
+        .annotate(total=Sum("quantity_written_off"))
+    )
+    return {
+        row["goods_issue_line_id"]: (row["total"] or 0)
+        for row in totals
+    }
+
+
 def _request_received_qty_map(request):
     totals = (
         BranchReceiptLine.objects.filter(
@@ -1005,18 +1031,38 @@ def _request_received_qty_map(request):
     }
 
 
+def _request_written_off_qty_map(request):
+    totals = (
+        BranchReceiptLine.objects.filter(
+            goods_issue_line__goods_issue__internal_request=request
+        )
+        .values("goods_issue_line__internal_request_line_id")
+        .annotate(total=Sum("quantity_written_off"))
+    )
+    return {
+        row["goods_issue_line__internal_request_line_id"]: (row["total"] or 0)
+        for row in totals
+    }
+
+
 def _is_request_fully_received(request):
     issued_map = _issued_qty_map(request)
     received_map = _request_received_qty_map(request)
+    written_off_map = _request_written_off_qty_map(request)
     return all(
-        (issued_map.get(line.id, 0) - received_map.get(line.id, 0)) <= 0
+        (
+            issued_map.get(line.id, 0)
+            - received_map.get(line.id, 0)
+            - written_off_map.get(line.id, 0)
+        )
+        <= 0
         for line in request.lines.all()
     )
 
 
 def _validate_branch_received_qty(value):
     qty = _parse_decimal_quantity(value)
-    if qty <= 0:
+    if qty < 0:
         raise InvalidBranchReceivedQuantityError()
     return qty
 
@@ -1047,14 +1093,18 @@ def _write_branch_movement(branch, item, quantity, movement_type, user, content_
 
 
 @transaction.atomic
-def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
+def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason=""):
     """Confirm branch receipt against a dispatch (guia); reject over-receipt.
 
     Partial warehouse issues (request still ``fulfilling``) are receivable.
     Status stays ``fulfilling`` until the warehouse finishes, so a later issue
     is not blocked. ``received`` / ``closed`` apply only after warehouse done.
+
+    Qty less than remaining is a discrepancy: reason required, the guia line is
+    settled (written off), issued documents are not changed. Optional ``reorder``
+    on a short line creates one submitted follow-up request for the missing qty.
     """
-    from orders.services import mark_closed, mark_received
+    from orders.services import add_line, create_internal_request, mark_closed, mark_received, submit
 
     goods_issue = GoodsIssue.objects.select_for_update().get(
         pk=_resolve_goods_issue(goods_issue).pk
@@ -1070,9 +1120,11 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
     ):
         raise BranchReceiptNotAllowedError(request.status)
 
+    reason_text = (reason or "").strip()
     normalized = []
     seen_line_ids = set()
     received_map = _branch_received_qty_map(goods_issue)
+    written_off_map = _branch_written_off_qty_map(goods_issue)
     for entry in lines:
         if not isinstance(entry, dict):
             raise ValidationError(
@@ -1092,16 +1144,30 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
         if issue_line.id in seen_line_ids:
             raise DuplicateBranchReceiptLineError()
         seen_line_ids.add(issue_line.id)
-        remaining = issue_line.quantity_issued - received_map.get(issue_line.id, 0)
+        remaining = (
+            issue_line.quantity_issued
+            - received_map.get(issue_line.id, 0)
+            - written_off_map.get(issue_line.id, 0)
+        )
+        if remaining < 0:
+            remaining = 0
         if qty > remaining:
             raise BranchInsufficientShippedError(remaining, qty)
-        normalized.append((issue_line, qty))
+        if qty == 0 and remaining == 0:
+            raise InvalidBranchReceivedQuantityError()
+        written_off = remaining - qty
+        reorder = bool(entry.get("reorder")) and written_off > 0
+        normalized.append((issue_line, qty, written_off, remaining, reorder))
 
     if not normalized:
         raise NoBranchLinesToReceiveError()
 
+    is_critical = any(written_off > 0 for _line, _qty, written_off, _remaining, _reorder in normalized)
+    if is_critical and not reason_text:
+        raise DiscrepancyReasonRequiredError()
+
     branch = request.branch
-    item_ids = sorted({issue_line.internal_request_line.item_id for issue_line, _qty in normalized})
+    item_ids = sorted({issue_line.internal_request_line.item_id for issue_line, qty, _wo, _rem, _re in normalized if qty > 0})
     for item_id in item_ids:
         stock, _ = BranchItemStock.objects.get_or_create(branch=branch, item_id=item_id)
         BranchItemStock.objects.select_for_update().get(pk=stock.pk)
@@ -1111,21 +1177,77 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
         received_by=user,
         reference=(reference or "").strip(),
         notes=(notes or "").strip(),
+        discrepancy_reason=reason_text if is_critical else "",
+        is_critical=is_critical,
     )
 
-    for issue_line, qty in normalized:
+    changelog_lines = []
+    for issue_line, qty, written_off, remaining, reorder in normalized:
         BranchReceiptLine.objects.create(
             branch_receipt=receipt,
             goods_issue_line=issue_line,
             quantity_received=qty,
+            quantity_written_off=written_off,
         )
-        _write_branch_movement(
+        if qty > 0:
+            _write_branch_movement(
+                branch,
+                issue_line.internal_request_line.item,
+                qty,
+                BranchStockMovement.Type.RECEIPT,
+                user,
+                content_object=receipt,
+            )
+        changelog_lines.append(
+            {
+                "line_id": issue_line.id,
+                "remaining_before": remaining,
+                "quantity_received": qty,
+                "written_off": written_off,
+                "reorder": reorder,
+            }
+        )
+
+    follow_up = None
+    reorder_by_item = {}
+    for issue_line, _qty, written_off, _remaining, reorder in normalized:
+        if not reorder or written_off <= 0:
+            continue
+        item = issue_line.internal_request_line.item
+        reorder_by_item[item.id] = reorder_by_item.get(item.id, 0) + written_off
+    if reorder_by_item:
+        follow_up = create_internal_request(
             branch,
-            issue_line.internal_request_line.item,
-            qty,
-            BranchStockMovement.Type.RECEIPT,
             user,
-            content_object=receipt,
+            notes=f"Follow-up for dispatch #{goods_issue.id} (request #{request.id}).",
+        )
+        for item_id, missing_qty in reorder_by_item.items():
+            add_line(follow_up, item_id, missing_qty, user)
+        follow_up = submit(follow_up, user)
+        InternalRequestChangeLog.objects.create(
+            internal_request=follow_up,
+            user=user,
+            action=InternalRequestChangeLog.Action.FIELD_UPDATED,
+            changes={
+                "source_goods_issue_id": goods_issue.id,
+                "source_request_id": request.id,
+                "source_receipt_id": receipt.id,
+            },
+            reason=reason_text,
+        )
+
+    if is_critical:
+        InternalRequestChangeLog.objects.create(
+            internal_request=request,
+            user=user,
+            action=InternalRequestChangeLog.Action.FIELD_UPDATED,
+            changes={
+                "goods_issue_id": goods_issue.id,
+                "receipt_id": receipt.id,
+                "follow_up_request_id": follow_up.id if follow_up is not None else None,
+                "lines": changelog_lines,
+            },
+            reason=reason_text,
         )
 
     if request.status != InternalRequest.Status.FULFILLING:
@@ -1134,11 +1256,17 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes=""):
         else:
             mark_received(request, user)
 
+    if follow_up is not None:
+        receipt.follow_up_request = follow_up
+        receipt.save(update_fields=["follow_up_request"])
+
     logger.info(
-        "Branch receipt br=%s gi=%s lines=%s user=%s",
+        "Branch receipt br=%s gi=%s lines=%s critical=%s follow_up=%s user=%s",
         receipt.id,
         goods_issue.id,
         len(normalized),
+        is_critical,
+        getattr(follow_up, "id", None),
         getattr(user, "email", None),
     )
     return receipt
@@ -1234,16 +1362,113 @@ def get_branch_issue_summary(goods_issue):
     goods_issue = _resolve_goods_issue(goods_issue)
     lines = list(goods_issue.lines.select_related("internal_request_line__item").all())
     received_map = _branch_received_qty_map(goods_issue)
-    return [
-        {
-            "line_id": line.id,
-            "item_id": line.internal_request_line.item_id,
-            "internal_code": line.internal_request_line.internal_code,
-            "description": line.internal_request_line.description,
-            "unit_of_measure": line.internal_request_line.unit_of_measure,
-            "quantity_issued": str(line.quantity_issued),
-            "received": str(received_map.get(line.id, 0)),
-            "remaining": str(line.quantity_issued - received_map.get(line.id, 0)),
-        }
-        for line in lines
-    ]
+    written_off_map = _branch_written_off_qty_map(goods_issue)
+    summary = []
+    for line in lines:
+        received = received_map.get(line.id, 0)
+        written_off = written_off_map.get(line.id, 0)
+        remaining = line.quantity_issued - received - written_off
+        if remaining < 0:
+            remaining = 0
+        summary.append(
+            {
+                "line_id": line.id,
+                "item_id": line.internal_request_line.item_id,
+                "internal_code": line.internal_request_line.internal_code,
+                "description": line.internal_request_line.description,
+                "unit_of_measure": line.internal_request_line.unit_of_measure,
+                "quantity_issued": str(line.quantity_issued),
+                "received": str(received),
+                "remaining": str(remaining),
+            }
+        )
+    return summary
+
+
+ALERTS_LIST_CAP = 200
+
+
+def critical_receipts_qs(branch=None):
+    """Critical (discrepancy) receipts, newest first. Optional branch scope."""
+    qs = (
+        BranchReceipt.objects.filter(is_critical=True)
+        .select_related(
+            "goods_issue__internal_request__branch",
+            "follow_up_request",
+            "received_by",
+        )
+        .prefetch_related(
+            Prefetch(
+                "lines",
+                queryset=BranchReceiptLine.objects.select_related(
+                    "goods_issue_line__internal_request_line__item"
+                ),
+            )
+        )
+        .order_by("-received_at", "-id")
+    )
+    if branch is not None:
+        qs = qs.filter(goods_issue__internal_request__branch=branch)
+    return qs
+
+
+def unread_alert_count(user, branch=None):
+    """Critical receipts with no read-state for this user."""
+    read_ids = BranchReceiptReadState.objects.filter(user=user).values("receipt_id")
+    return critical_receipts_qs(branch=branch).exclude(pk__in=read_ids).count()
+
+
+def serialize_alert(receipt, unread):
+    lines = []
+    for line in receipt.lines.all():
+        missing = line.quantity_written_off
+        if missing <= 0:
+            continue
+        item = line.goods_issue_line.internal_request_line.item
+        received = line.quantity_received
+        lines.append(
+            {
+                "internal_code": item.internal_code or "",
+                "shipped": received + missing,
+                "received": received,
+                "missing": missing,
+            }
+        )
+    request = receipt.goods_issue.internal_request
+    return {
+        "id": receipt.id,
+        "received_at": receipt.received_at.isoformat(),
+        "branch_name": request.branch.name,
+        "request_id": request.id,
+        "dispatch_id": receipt.goods_issue_id,
+        "reason": receipt.discrepancy_reason,
+        "follow_up_request_id": receipt.follow_up_request_id,
+        "unread": unread,
+        "lines": lines,
+    }
+
+
+def list_alerts(user, branch=None):
+    """Newest-first critical receipts (cap 200) with per-user unread flags."""
+    receipts = list(critical_receipts_qs(branch=branch)[:ALERTS_LIST_CAP])
+    read_ids = set(
+        BranchReceiptReadState.objects.filter(
+            user=user,
+            receipt_id__in=[receipt.id for receipt in receipts],
+        ).values_list("receipt_id", flat=True)
+    )
+    return [serialize_alert(receipt, receipt.id not in read_ids) for receipt in receipts]
+
+
+def get_critical_receipt(receipt_id, branch=None):
+    return critical_receipts_qs(branch=branch).get(pk=receipt_id)
+
+
+def mark_alert_read(receipt, user):
+    """Upsert this user's seen cursor on a critical receipt."""
+    BranchReceiptReadState.objects.update_or_create(
+        receipt=receipt,
+        user=user,
+        defaults={},
+    )
+    return receipt

@@ -45,24 +45,39 @@ def branch_work_cards(*, include_picker=False):
     return cards
 
 
-def branch_communication_cards():
-    """Messaging cards: threads, then Parle."""
-    return [
-        {
-            "title_key": "cardBranchThreads",
-            "desc_key": "cardBranchThreadsDesc",
-            "title": "Branch threads",
-            "desc": "Request items not in the catalogue",
-            "url": "/branch/threads/",
-        },
-        {
-            "title_key": "cardCompanyVoice",
-            "desc_key": "cardCompanyVoiceDesc",
-            "title": "Parle",
-            "desc": "Suggestions, praise, and concerns — all logged-in staff can read and post.",
-            "url": "/company-voice/",
-        },
-    ]
+def branch_communication_cards(*, include_alerts=False, alerts_unread=0):
+    """Messaging cards: optional Alerts, then threads, then Parle."""
+    cards = []
+    if include_alerts:
+        cards.append(
+            {
+                "title_key": "cardAlerts",
+                "desc_key": "cardAlertsDesc",
+                "title": "Alerts",
+                "desc": "Receipt discrepancies",
+                "url": "/branch/alerts/",
+                "unread": alerts_unread,
+            }
+        )
+    cards.extend(
+        [
+            {
+                "title_key": "cardBranchThreads",
+                "desc_key": "cardBranchThreadsDesc",
+                "title": "Branch threads",
+                "desc": "Request items not in the catalogue",
+                "url": "/branch/threads/",
+            },
+            {
+                "title_key": "cardCompanyVoice",
+                "desc_key": "cardCompanyVoiceDesc",
+                "title": "Parle",
+                "desc": "Suggestions, praise, and concerns — all logged-in staff can read and post.",
+                "url": "/company-voice/",
+            },
+        ]
+    )
+    return cards
 
 
 def branch_dashboard_cards(*, include_picker=False):

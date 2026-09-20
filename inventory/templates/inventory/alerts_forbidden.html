@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerts view permission required — CentCompras</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1.5rem 1rem;
+            background: #f4f6f8;
+            color: #1c2430;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #d5dde6;
+            border-radius: 10px;
+            padding: 2rem 2.25rem;
+            width: 100%;
+            max-width: 26rem;
+            box-shadow: 0 12px 32px rgba(16, 24, 40, 0.12);
+        }
+        h1 { margin: 0 0 0.75rem; font-size: 1.25rem; }
+        p { margin: 0 0 1.25rem; color: #5b6776; line-height: 1.45; }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+        .actions a,
+        .actions button {
+            display: inline-block;
+            padding: 0.55rem 0.85rem;
+            border-radius: 6px;
+            font: inherit;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+        .actions a {
+            background: #0f766e;
+            border: 1px solid #0f766e;
+            color: #fff;
+        }
+        .actions button {
+            background: #fff;
+            border: 1px solid #d5dde6;
+            color: #1c2430;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <h1 data-i18n="title">{{ error_code }}</h1>
+        <p data-i18n="body">This page is for managers. Go to your home page, or sign out to use a different account.</p>
+        <div class="actions">
+            <a href="{{ home_url }}" data-i18n="goHome">Go to home</a>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" data-i18n="signOut">Sign out</button>
+            </form>
+        </div>
+    </main>
+    <script>
+        (function () {
+            var LANG_KEY = "cc-lang";
+            var I18N = {
+                en: {
+                    title: "Alerts view permission required",
+                    body: "This page is for managers. Go to your home page, or sign out to use a different account.",
+                    goHome: "Go to home",
+                    signOut: "Sign out",
+                },
+                "pt-PT": {
+                    title: "É necessária permissão de vista dos alertas",
+                    body: "Esta página é para gestores. Vá para a sua página inicial, ou termine sessão para usar outra conta.",
+                    goHome: "Ir para o início",
+                    signOut: "Terminar sessão",
+                },
+            };
+            I18N.pt = I18N["pt-PT"];
+
+            function currentLang() {
+                try {
+                    var raw = localStorage.getItem(LANG_KEY) || "pt";
+                    return String(raw).toLowerCase().indexOf("en") === 0 ? "en" : "pt";
+                } catch (e) {
+                    return "pt";
+                }
+            }
+            function t(key) {
+                var dict = I18N[currentLang()] || I18N.en;
+                return dict[key] !== undefined ? dict[key] : (I18N.en[key] || key);
+            }
+            function applyStaticI18n() {
+                var lang = currentLang();
+                document.documentElement.lang = lang === "pt" ? "pt-PT" : "en";
+                document.title = t("title") + " — CentCompras";
+                var dict = I18N[lang] || I18N.en;
+                document.querySelectorAll("[data-i18n]").forEach(function (node) {
+                    var key = node.getAttribute("data-i18n");
+                    if (dict[key] !== undefined) {
+                        node.textContent = dict[key];
+                    }
+                });
+            }
+            applyStaticI18n();
+            window.addEventListener("cc-lang-changed", applyStaticI18n);
+        })();
+    </script>
+</body>
+</html>

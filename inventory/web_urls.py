@@ -9,8 +9,18 @@ urlpatterns = [
         name="goods_receipt_console",
     ),
     path(
+        "manage/alerts/",
+        views.warehouse_alerts_console,
+        name="warehouse_alerts_console",
+    ),
+    path(
         "branch/receipts/",
         views.branch_receipt_console,
         name="branch_receipt_console",
+    ),
+    path(
+        "branch/alerts/",
+        views.branch_alerts_console,
+        name="branch_alerts_console",
     ),
 ]

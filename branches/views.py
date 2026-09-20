@@ -3,6 +3,9 @@ from django.shortcuts import redirect, render
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_GET
 
+from inventory.services import unread_alert_count
+
+from .capabilities import can_approve_request
 from .navigation import (
     branch_communication_cards,
     branch_page_context,
@@ -41,7 +44,14 @@ def branch_dashboard(request):
     context = branch_page_context(request)
     include_picker = len(memberships) > 1
     context["work_cards"] = branch_work_cards(include_picker=include_picker)
-    context["communication_cards"] = branch_communication_cards()
+    include_alerts = can_approve_request(request.user, request.active_branch)
+    alerts_unread = 0
+    if include_alerts:
+        alerts_unread = unread_alert_count(request.user, branch=request.active_branch)
+    context["communication_cards"] = branch_communication_cards(
+        include_alerts=include_alerts,
+        alerts_unread=alerts_unread,
+    )
     return render(request, "branches/dashboard.html", context)
 
 

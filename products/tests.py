@@ -20,6 +20,7 @@ from accounts.groups import (
     GROUP_MANAGERS,
     GROUP_OPERATORS,
     assign_warehouse_group,
+    set_warehouse_grade,
 )
 from products.models import (
     FamilyChangeLog,
@@ -1452,6 +1453,7 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'href="/manage/goods-receipts/"')
         self.assertContains(response, 'href="/manage/internal-requests/"')
         self.assertContains(response, 'href="/manage/threads/"')
+        self.assertContains(response, 'href="/manage/alerts/"')
         # Admin-only cards visible for warehouse admin
         self.assertContains(response, 'href="/manage/approval-limits/"')
         self.assertContains(response, 'href="/manage/branch-approval-limits/"')
@@ -1500,10 +1502,20 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
             self.assertContains(response, 'href="/manage/goods-receipts/"')
             self.assertContains(response, 'href="/manage/internal-requests/"')
             self.assertContains(response, 'href="/manage/threads/"')
+            self.assertNotContains(response, 'href="/manage/alerts/"')
             # Admin-only cards hidden
             self.assertNotContains(response, 'href="/manage/approval-limits/"')
             self.assertNotContains(response, 'href="/manage/branch-approval-limits/"')
             self.assertNotContains(response, 'href="/admin/"')
+
+    def test_manager_grade_2_sees_alerts_card(self):
+        user = make_warehouse_user("mgr2-alerts@example.com", group_name=GROUP_MANAGERS)
+        set_warehouse_grade(user, 2)
+        self.client.force_login(user)
+        response = self.client.get(reverse("staff_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/manage/alerts/"')
+        self.assertContains(response, 'data-i18n="cardAlerts"')
 
     def test_branch_membership_user_sees_branch_cards(self):
         from branches.models import Branch
@@ -1523,6 +1535,8 @@ class ItemConsoleTests(ItemTestCaseMixin, TestCase):
         self.assertContains(response, 'href="/branch/receipts/"')
         self.assertContains(response, 'href="/company-voice/"')
         self.assertNotContains(response, 'href="/branch/select/"')
+        self.assertContains(response, 'href="/manage/alerts/"')
+        self.assertNotContains(response, 'href="/branch/alerts/"')
 
     def test_superuser_sees_permission_codenames_on_dashboard(self):
         user_model = get_user_model()
@@ -3937,3 +3951,6 @@ process.stdout.write(JSON.stringify(ctx.__export));
         self.assertIn("sectionWarehouse:", source)
         self.assertIn("sectionCommunication:", source)
         self.assertIn('cardRequisicao: "Internal request"', source)
+        self.assertIn("cardAlerts:", source)
+        self.assertIn('cardAlerts: "Alerts"', source)
+        self.assertIn("Discrepâncias de receção", source)

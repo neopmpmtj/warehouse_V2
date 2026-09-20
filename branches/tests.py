@@ -351,7 +351,7 @@ class ServiceWorkerTests(TestCase):
         response = self.client.get("/service-worker.js")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
-        self.assertContains(response, "centcompras-branch-v24")
+        self.assertContains(response, "centcompras-branch-v25")
         self.assertContains(response, "select_fill.js")
         self.assertContains(response, "/api/")
         self.assertContains(response, "/manage/")
@@ -440,6 +440,7 @@ class BranchViewTests(TestCase):
         self.assertContains(response, 'href="/branch/requests/"')
         self.assertContains(response, 'href="/branch/threads/"')
         self.assertContains(response, 'href="/branch/receipts/"')
+        self.assertContains(response, 'href="/branch/alerts/"')
         self.assertContains(response, 'href="/company-voice/"')
         self.assertContains(response, 'data-i18n="cardBranchCatalog"')
         html = response.content.decode()
@@ -449,6 +450,10 @@ class BranchViewTests(TestCase):
         )
         communication = html.split('data-i18n="sectionCommunication"', 1)[1]
         self.assertLess(
+            communication.index('href="/branch/alerts/"'),
+            communication.index('href="/branch/threads/"'),
+        )
+        self.assertLess(
             communication.index('href="/branch/threads/"'),
             communication.index('href="/company-voice/"'),
         )
@@ -457,6 +462,7 @@ class BranchViewTests(TestCase):
         self.assertIn('href="/branch/requests/"', work)
         self.assertIn('href="/branch/receipts/"', work)
         self.assertNotIn('href="/branch/threads/"', work)
+        self.assertNotIn('href="/branch/alerts/"', work)
         self.assertNotIn('href="/company-voice/"', work)
         self.assertNotContains(response, 'href="/branch/select/"')
         self.assertNotContains(response, "Switch branch")
@@ -469,6 +475,18 @@ class BranchViewTests(TestCase):
         self.assertContains(response, 'id="pref-theme"')
         self.assertNotContains(response, 'class="branch-nav"')
         self.assertNotContains(response, 'data-i18n="navBranchCatalog"')
+
+    def test_dashboard_operator_hides_alerts_card(self):
+        user = _make_user("dash-op-alerts@example.com")
+        assign_membership(user, self.north, ROLE_OPERATOR)
+        self._login(user)
+        session = self.client.session
+        session[SESSION_KEY] = self.north.id
+        session.save()
+        response = self.client.get(reverse("branch_dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/branch/receipts/"')
+        self.assertNotContains(response, 'href="/branch/alerts/"')
 
     def test_dashboard_shows_picker_for_multi_membership(self):
         user = _make_user("dash-multi@example.com")

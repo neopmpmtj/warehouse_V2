@@ -4,6 +4,7 @@ from .models import (
     BranchItemStock,
     BranchReceipt,
     BranchReceiptLine,
+    BranchReceiptReadState,
     BranchStockMovement,
     GoodsIssue,
     GoodsIssueLine,
@@ -141,7 +142,7 @@ class BranchReceiptLineInline(admin.TabularInline):
     model = BranchReceiptLine
     extra = 0
     can_delete = False
-    readonly_fields = ("goods_issue_line", "quantity_received")
+    readonly_fields = ("goods_issue_line", "quantity_received", "quantity_written_off")
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -152,10 +153,50 @@ class BranchReceiptLineInline(admin.TabularInline):
 
 @admin.register(BranchReceipt)
 class BranchReceiptAdmin(admin.ModelAdmin):
-    list_display = ("id", "goods_issue", "received_by", "received_at", "reference")
+    list_display = (
+        "id",
+        "goods_issue",
+        "received_by",
+        "received_at",
+        "is_critical",
+        "follow_up_request",
+        "reference",
+    )
     search_fields = ("reference", "goods_issue__id", "goods_issue__internal_request__id")
+    list_filter = ("is_critical",)
     inlines = (BranchReceiptLineInline,)
-    readonly_fields = ("goods_issue", "received_by", "received_at", "reference", "notes")
+    readonly_fields = (
+        "goods_issue",
+        "received_by",
+        "received_at",
+        "reference",
+        "notes",
+        "discrepancy_reason",
+        "is_critical",
+        "follow_up_request",
+    )
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BranchReceiptReadState)
+class BranchReceiptReadStateAdmin(admin.ModelAdmin):
+    list_display = ("id", "receipt", "user", "read_at")
+    search_fields = ("user__email", "receipt__id")
+    readonly_fields = ("receipt", "user", "read_at")
 
     def has_module_permission(self, request):
         return request.user.is_superuser

@@ -53,4 +53,24 @@ urlpatterns = [
         console_views.branch_stock_adjust,
         name="branch_stock_adjust",
     ),
+    path(
+        "manage/alerts/",
+        console_views.manage_alerts_list,
+        name="manage_alerts_list",
+    ),
+    path(
+        "manage/alerts/<int:receipt_id>/mark-read/",
+        console_views.manage_alerts_mark_read,
+        name="manage_alerts_mark_read",
+    ),
+    path(
+        "branch/alerts/",
+        console_views.branch_alerts_list,
+        name="branch_alerts_list",
+    ),
+    path(
+        "branch/alerts/<int:receipt_id>/mark-read/",
+        console_views.branch_alerts_mark_read,
+        name="branch_alerts_mark_read",
+    ),
 ]

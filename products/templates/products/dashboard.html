@@ -25,7 +25,7 @@
         })();
     </script>
     <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=4">
-    <link rel="stylesheet" href="{% static 'products/css/dashboard.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'products/css/dashboard.css' %}?v=2">
 </head>
 <body>
     <header class="page-account-bar">
@@ -61,7 +61,10 @@
             <div class="card-grid">
                 {% for card in warehouse_cards %}
                 <a class="dash-card" href="{{ card.url }}">
-                    <span class="dash-card-title" data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                    <span class="dash-card-title">
+                        <span data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                        {% if card.unread %}<span class="dash-card-badge">{{ card.unread }}</span>{% endif %}
+                    </span>
                     <span class="dash-card-desc" data-i18n="{{ card.desc_key }}">{{ card.desc }}</span>
                 </a>
                 {% endfor %}
@@ -238,7 +241,7 @@
         </details>
     </main>
 
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=13"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=14"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

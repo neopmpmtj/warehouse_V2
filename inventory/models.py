@@ -195,6 +195,15 @@ class BranchReceipt(models.Model):
     received_at = models.DateTimeField(auto_now_add=True)
     reference = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
+    discrepancy_reason = models.CharField(max_length=255, blank=True)
+    is_critical = models.BooleanField(default=False, db_index=True)
+    follow_up_request = models.ForeignKey(
+        "orders.InternalRequest",
+        on_delete=models.SET_NULL,
+        related_name="source_receipts",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ["-received_at"]
@@ -215,6 +224,7 @@ class BranchReceiptLine(models.Model):
         related_name="branch_receipt_lines",
     )
     quantity_received = models.IntegerField()
+    quantity_written_off = models.IntegerField(default=0)
 
     class Meta:
         ordering = ["id"]
@@ -223,6 +233,14 @@ class BranchReceiptLine(models.Model):
                 fields=["branch_receipt", "goods_issue_line"],
                 name="unique_branch_receipt_line",
             ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_received__gte=0),
+                name="branch_receipt_line_received_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_written_off__gte=0),
+                name="branch_receipt_line_written_off_gte_zero",
+            ),
         ]
 
     def __str__(self):
@@ -230,6 +248,33 @@ class BranchReceiptLine(models.Model):
             f"BR #{self.branch_receipt_id}: GI line {self.goods_issue_line_id} "
             f"x {self.quantity_received}"
         )
+
+
+class BranchReceiptReadState(models.Model):
+    """Per-user seen cursor for a critical branch receipt (manager alerts)."""
+
+    receipt = models.ForeignKey(
+        BranchReceipt,
+        on_delete=models.CASCADE,
+        related_name="read_states",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="branch_receipt_read_states",
+    )
+    read_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["receipt", "user"],
+                name="unique_branch_receipt_read_state",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} read BR #{self.receipt_id} @ {self.read_at:%Y-%m-%d %H:%M}"
 
 
 class BranchItemStock(models.Model):

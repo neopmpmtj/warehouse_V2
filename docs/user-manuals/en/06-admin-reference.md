@@ -19,7 +19,7 @@ The Django admin at **`/admin/`** is **superuser-only**.
 | **Warehouse staff** (warehouse group) | ❌ | ✅ |
 | **Branch staff** (branch membership) | ❌ | ✅ (`/branch/…`) |
 
-Warehouse staff land on **`/`** after login. Branch-only staff land on **`/branch/`** (branch dashboard). That dashboard lists every branch tool (catalog, requisição, threads, receipts, Parle). On each **`/manage/…`** console page, the **CentCompras** label above the page title links back to **`/`** (warehouse dashboard). On branch pages, **CentCompras** links back to **`/branch/`**. **Sign out** is a small link on the **Settings** title row (gear, top-right). **Help** is the blue **?** icon next to the gear (placeholder).
+Warehouse staff land on **`/`** after login. Branch-only staff land on **`/branch/`** (branch dashboard). That dashboard lists every branch tool (catalog, requisição, threads, receipts, Parle). Warehouse **admins** and **managers grade 2+** also see an **Alerts** card on `/` for receipt discrepancies (`/manage/alerts/`); branch **managers** and **admins** see the same card on `/branch/` (`/branch/alerts/`, active branch only). On each **`/manage/…`** console page, the **CentCompras** label above the page title links back to **`/`** (warehouse dashboard). On branch pages, **CentCompras** links back to **`/branch/`**. **Sign out** is a small link on the **Settings** title row (gear, top-right). **Help** is the blue **?** icon next to the gear (placeholder).
 
 Two rules to remember:
 
@@ -217,6 +217,7 @@ Most business tables in `/admin/` are **read-only on purpose** — day-to-day ch
 | Goods receipts, stock movements | `/manage/goods-receipts/` |
 | Internal requests, goods issues | `/manage/internal-requests/` + `/branch/…` |
 | Branch receipts, branch stock | `/branch/receipts/` |
+| Receipt discrepancy alerts (read-state) | `/manage/alerts/` + `/branch/alerts/` (admin is inspect-only) |
 | Request threads | `/branch/threads/` + `/manage/threads/` (admin is inspect-only) |
 | Parle | `/company-voice/` (admin is inspect-only; **no hard delete**) |
 | Change logs (all `*ChangeLog`) | Read-only everywhere (audit) |

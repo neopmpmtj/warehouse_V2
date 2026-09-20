@@ -41,8 +41,10 @@ Out of stock? The warehouse raises a **purchase order** to a supplier first — 
 | Branch (any role) | `/branch/threads/` | Request items not in the catalogue |
 | Branch (manager / admin) | `/branch/requests/` | Approve / reject |
 | Branch (any role) | `/branch/receipts/` | Confirm arrival against a dispatch |
+| Branch (manager / admin) | `/branch/alerts/` | Receipt discrepancies (unread until you open a row) |
 | Branch (any role) | `/company-voice/` | Company-wide suggestion box |
 | Warehouse | `/manage/internal-requests/` | Queue of approved requests + goods issue |
+| Warehouse (admin, or manager grade 2+) | `/manage/alerts/` | Receipt discrepancies from every branch |
 | Warehouse admin | `/manage/branch-approval-limits/` | Branch manager approval caps |
 
 *(During development on your own machine: `http://127.0.0.1:8015/…`.)*
@@ -64,6 +66,7 @@ There are **three branch roles** (set for you by the head office) and the usual 
 | Approve / reject | ❌ | ✅ (yes/no; EUR caps only if priced mode is on) | ✅ (unlimited) |
 | Cancel an **approved** request | ❌ | ✅ | ✅ |
 | Confirm arrival (branch receipt) | ✅ | ✅ | ✅ |
+| Receipt discrepancy alerts | ❌ | ✅ | ✅ |
 | Branch short-close | ❌ | ✅ | ✅ |
 | Adjust branch stock | ❌ | ❌ | ✅ |
 
@@ -77,6 +80,7 @@ There are **three branch roles** (set for you by the head office) and the usual 
 | Capability | Who |
 |-----------|-----|
 | See the request queue + issue goods | Operator grade 2+, manager, admin |
+| Receipt discrepancy alerts (`/manage/alerts/`) | Manager grade 2+ or admin |
 | Warehouse short-close | Manager grade 2+ or admin |
 | Edit branch approval caps | Warehouse admin (`/manage/branch-approval-limits/`) |
 
@@ -252,22 +256,38 @@ Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your bra
 ### 8.1 Receive against a dispatch
 
 1. Select a dispatch.
-2. **Receive qty** is pre-filled with **Remaining** (the still-unreceived part of what was shipped on this dispatch — the full shipped quantity when nothing has been received yet). Change it if damage or shortage means less arrived.
-3. Click **Receive** (*Receber*).
+2. **Receive qty** is pre-filled with **Remaining** (the still-unreceived part of what was shipped on this dispatch — the full shipped quantity when nothing has been received yet). The field is **view-only**.
+3. If every line arrived as shipped, click **Receive** (*Receber*).
+4. If a count does not match, click **Report discrepancies** (*Comunicar discrepâncias*). An **Actual received** column and a **Reorder** (*Requisitar em falta*) checkbox appear. Change only the wrong lines (you may enter **0**). Tick **Reorder** on a line if you still need the missing units.
+5. Click **Receive**. If any actual qty is less than Remaining, you must give **one reason** for the dispatch. **Cancel** on that prompt does nothing.
 
 Rules:
 
-- **Receive qty** cannot exceed **Remaining** on that line (issued on this dispatch minus already received). The field will not accept a higher number via typing or the arrows. Leave the pre-filled number to receive the full remaining quantity.
-- While the request is still **fulfilling**, receiving a dispatch does **not** change the request status (the warehouse still has remainder). Branch stock still goes up.
-- After the warehouse is done (**shipped**): **partial** receipt → request stays **received** (more still expected on that or another dispatch). **Full** receipt of every issued unit → **closed**.
+- **Receive qty** cannot exceed **Remaining** on that line (issued on this dispatch minus already received, minus any earlier discrepancy write-off). Leave the pre-filled number and click Receive to book the full remaining quantity.
+- A discrepancy **finishes that dispatch line**. You cannot receive the missing units later on this guia. The warehouse issue document is **not** changed. If you still need the missing units, tick **Reorder** — the app creates **one new submitted** requisição (manager queue) for the shortfall; several ticked lines go on the same new request.
+- While the request is still **fulfilling**, receiving a dispatch does **not** change the request status (the warehouse still has remainder). Branch stock still goes up by the actual qty.
+- After the warehouse is done (**shipped**): if every issued unit is received or settled as a discrepancy → **closed**. If another dispatch still has unreceived qty → **received**.
 
 Receiving **increments branch stock** immediately.
 
 ### 8.2 Branch short-close
 
-If the rest of a finished warehouse dispatch won't arrive, click **Short close** and give a **reason**. The unreceived remainder is written off and the request becomes **closed**. Only a **manager or admin** can do this, and only after the warehouse has fully issued or short-closed (request **shipped** or **received**). While the request is still **fulfilling**, Short close is disabled (*Cannot short-close while the warehouse still has remaining to ship.*).
+If the warehouse has finished and a dispatch was **never booked into branch stock** (for example a refused damaged pallet), click **Short close** and give a **reason**. That is not the “we counted 4, they shipped 5” case — use **Report discrepancies** for a count dispute. Short close writes off the unreceived remainder of the **whole request** and the request becomes **closed**. Only a **manager or admin** can do this, and only after the warehouse has fully issued or short-closed (request **shipped** or **received**). While the request is still **fulfilling**, Short close is disabled (*Cannot short-close while the warehouse still has remaining to ship.*).
 
 > 📷 **[SCREENSHOT — branch receipt with received quantities]**
+
+### 8.3 Manager alerts (receipt discrepancies)
+
+When a branch books **fewer** units than the warehouse shipped on that dispatch, the receipt is stored as a discrepancy. **Managers** on both sides see it as an **Alerts** card on their dashboard (not on the work-page nav strip):
+
+- Warehouse: **`/`** → **Alerts** → `/manage/alerts/` (every branch). Shown to warehouse **admins** and **managers grade 2+**.
+- Branch: **`/branch/`** → **Alerts** → `/branch/alerts/` (the **active branch** only). Shown to branch **managers** and **admins**.
+
+The card shows how many rows you have not opened yet (for example a badge **3**). Opening the page does **not** clear that number. Click a row to mark it seen **for you**; other people still see it unread. Seen rows stay in the list.
+
+Each row shows **when**, the **request** number, the **dispatch** (*guia*) number, the qty mismatch (code, shipped, received, missing), the **reason**, and the **follow-up request** number when Reorder was ticked (otherwise —). The warehouse list also shows the **branch** name. Operators have no card; the URL returns **403**.
+
+There is **no email** for this. The warehouse issue document is not changed.
 
 ---
 
@@ -334,7 +354,7 @@ Issued *guias* can be received while the request is still **fulfilling**; that r
 - Request an **inactive** item, or a line with **no selling price**, or the **same item twice** on one request.
 - Edit a request after **submit**.
 - **Issue** more than is reserved for that request, or more than the request's remaining.
-- **Receive** more than the line's remaining (issued on this dispatch minus already received).
+- **Receive** more than the line's remaining (issued on this dispatch minus already received, minus any discrepancy write-off). A count short of Remaining must go through **Report discrepancies** and finishes that dispatch line.
 - **Cancel** a request after goods have been issued (short-close instead).
 - **Short-close** a branch receipt while the warehouse still has remainder (**fulfilling**).
 - Short-close as an **operator** (either side).
@@ -417,3 +437,6 @@ Offline drafts are tied to the branch where you created them. If you switch to a
 
 **Q18. Shared tablet: will the next person upload my offline draft?**
 No, if you **Sign out**. Sign out clears this browser's offline draft queue. Drafts are also tied to your user id: another person who signs in on the same tablet will not auto-sync your leftover rows. Always sign out at the end of a shift.
+
+**Q19. I reported a discrepancy — who is told?**
+Nobody is emailed. Warehouse **admins** and **managers grade 2+** get an **Alerts** card on `/`; branch **managers** and **admins** get one on `/branch/`. Open the row to mark it seen for yourself. Operators do not see the card.

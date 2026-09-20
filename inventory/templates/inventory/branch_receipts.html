@@ -53,11 +53,14 @@
                     <th data-i18n="colReceived">Received</th>
                     <th data-i18n="colRemaining">Remaining</th>
                     <th data-i18n="colReceiveQty">Receive qty</th>
+                    <th data-i18n="colActualReceived" class="discrepancy-col" hidden>Actual received</th>
+                    <th data-i18n="colReorder" class="discrepancy-col" hidden>Reorder</th>
                 </tr></thead>
                 <tbody id="line-body"></tbody>
             </table>
             <div class="row">
                 <button id="receive-btn" class="btn btn-primary" data-i18n="receive" disabled>Receive</button>
+                <button id="report-discrepancies-btn" class="btn" data-i18n="reportDiscrepancies" disabled>Report discrepancies</button>
                 <button id="short-close-btn" class="btn" data-i18n="shortClose" disabled>Short close</button>
             </div>
             <p id="short-close-hint" class="offline-empty" hidden></p>
@@ -89,7 +92,7 @@
                 closed: "statusClosed",
                 cancelled: "statusCancelled",
             };
-            var state = { selectedId: null, issues: [] };
+            var state = { selectedId: null, issues: [], reportingDiscrepancies: false };
 
             var I18N = {
                 en: {
@@ -107,7 +110,10 @@
                     colReceived: "Received",
                     colRemaining: "Remaining",
                     colReceiveQty: "Receive qty",
+                    colActualReceived: "Actual received",
+                    colReorder: "Reorder",
                     receive: "Receive",
+                    reportDiscrepancies: "Report discrepancies",
                     shortClose: "Short close",
                     itemId: "Item ID",
                     colQty: "Qty",
@@ -119,6 +125,8 @@
                     requestClosed: "Request closed.",
                     stockAdjusted: "Stock adjusted.",
                     shortClosePrompt: "Reason for short-close:",
+                    discrepancyReasonPrompt: "Reason for short-close (received less than shipped):",
+                    discrepancyReasonRequired: "A reason is required to report a receipt discrepancy.",
                     shortCloseWarehouseOpen: "Cannot short-close while the warehouse still has remaining to ship.",
                     statusDraft: "draft",
                     statusSubmitted: "submitted",
@@ -145,7 +153,10 @@
                     colReceived: "Recebido",
                     colRemaining: "Restante",
                     colReceiveQty: "Qtd a receber",
+                    colActualReceived: "Qtd efectivamente recebida",
+                    colReorder: "Requisitar em falta",
                     receive: "Receber",
+                    reportDiscrepancies: "Comunicar discrepâncias",
                     shortClose: "Encerramento parcial",
                     itemId: "ID do artigo",
                     colQty: "Qtd",
@@ -157,6 +168,8 @@
                     requestClosed: "Pedido encerrado.",
                     stockAdjusted: "Stock ajustado.",
                     shortClosePrompt: "Motivo do encerramento parcial:",
+                    discrepancyReasonPrompt: "Motivo do encerramento parcial (recebido menos do que expedido):",
+                    discrepancyReasonRequired: "É obrigatório indicar um motivo para comunicar uma discrepância de receção.",
                     shortCloseWarehouseOpen: "Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.",
                     statusDraft: "rascunho",
                     statusSubmitted: "submetido",
@@ -209,6 +222,7 @@
             var banner = document.getElementById("banner");
             var detailTitle = document.getElementById("detail-title");
             var receiveBtn = document.getElementById("receive-btn");
+            var reportBtn = document.getElementById("report-discrepancies-btn");
             var shortCloseBtn = document.getElementById("short-close-btn");
 
             function selectedIssue() {
@@ -223,11 +237,27 @@
                 return status === "shipped" || status === "received";
             }
 
+            function selectedHasRemaining() {
+                var issue = selectedIssue();
+                if (!issue || !issue.lines) return false;
+                return issue.lines.some(function (line) {
+                    return parseInt(line.remaining, 10) > 0;
+                });
+            }
+
+            function setDiscrepancyColumnsVisible(visible) {
+                document.querySelectorAll(".discrepancy-col").forEach(function (node) {
+                    node.hidden = !visible;
+                });
+            }
+
             function syncActionButtons() {
                 var issue = selectedIssue();
                 var hasDispatch = Boolean(issue);
+                var hasRemaining = selectedHasRemaining();
                 var hint = document.getElementById("short-close-hint");
-                receiveBtn.disabled = !hasDispatch;
+                receiveBtn.disabled = !hasDispatch || !hasRemaining;
+                reportBtn.disabled = !hasDispatch || !hasRemaining || state.reportingDiscrepancies;
                 shortCloseBtn.disabled = !hasDispatch || !CAN_SHORT_CLOSE || !warehouseDone(issue && issue.request_status);
                 if (hint) {
                     var showHint = hasDispatch && issue.request_status === "fulfilling";
@@ -243,6 +273,9 @@
             function apiErrorMessage(payload) {
                 if (payload && payload.code === "branch_short_close_warehouse_open") {
                     return t("shortCloseWarehouseOpen");
+                }
+                if (payload && payload.code === "discrepancy_reason_required") {
+                    return t("discrepancyReasonRequired");
                 }
                 return (payload && payload.error) || t("requestFailed");
             }
@@ -277,6 +310,8 @@
                 if (typeof BranchOffline !== "undefined" && !BranchOffline.isOnline()) {
                     state.issues = [];
                     state.selectedId = null;
+                    state.reportingDiscrepancies = false;
+                    setDiscrepancyColumnsVisible(false);
                     issueBody.textContent = "";
                     lineBody.textContent = "";
                     detailTitle.textContent = t("detailTitle");
@@ -292,15 +327,15 @@
                 });
             }
 
-            function clampReceiveQty(input) {
+            function clampActualQty(input) {
                 var max = parseInt(input.max, 10);
-                if (!Number.isFinite(max) || max <= 0) {
+                if (!Number.isFinite(max) || max < 0) {
                     input.value = "";
                     return;
                 }
                 if (input.value === "") return;
                 var n = parseInt(input.value, 10);
-                if (!Number.isFinite(n) || n < 1) {
+                if (!Number.isFinite(n) || n < 0) {
                     input.value = "";
                     return;
                 }
@@ -314,6 +349,7 @@
                     status: statusLabel(issue.request_status),
                 });
                 lineBody.textContent = "";
+                setDiscrepancyColumnsVisible(state.reportingDiscrepancies);
                 issue.lines.forEach(function (line) {
                     var remaining = parseInt(line.remaining, 10);
                     if (!Number.isFinite(remaining) || remaining < 0) remaining = 0;
@@ -323,28 +359,58 @@
                     tr.appendChild(el("td", line.quantity_issued));
                     tr.appendChild(el("td", line.received));
                     tr.appendChild(el("td", line.remaining));
-                    var td = document.createElement("td");
-                    var input = document.createElement("input");
-                    input.type = "number";
-                    input.step = "1";
-                    input.min = "1";
-                    input.max = String(remaining);
-                    input.className = "qty";
-                    input.dataset.lineId = line.line_id;
-                    input.disabled = issue.request_status === "closed" || remaining <= 0;
-                    if (!input.disabled) {
-                        input.value = String(remaining);
-                        input.addEventListener("input", function () { clampReceiveQty(input); });
-                        input.addEventListener("change", function () { clampReceiveQty(input); });
+                    var tdLocked = document.createElement("td");
+                    var locked = document.createElement("input");
+                    locked.type = "number";
+                    locked.step = "1";
+                    locked.min = "0";
+                    locked.max = String(remaining);
+                    locked.className = "qty";
+                    locked.dataset.lineId = line.line_id;
+                    locked.disabled = true;
+                    if (issue.request_status !== "closed" && remaining > 0) {
+                        locked.value = String(remaining);
                     }
-                    td.appendChild(input);
-                    tr.appendChild(td);
+                    tdLocked.appendChild(locked);
+                    tr.appendChild(tdLocked);
+
+                    var tdActual = document.createElement("td");
+                    tdActual.className = "discrepancy-col";
+                    tdActual.hidden = !state.reportingDiscrepancies;
+                    var actual = document.createElement("input");
+                    actual.type = "number";
+                    actual.step = "1";
+                    actual.min = "0";
+                    actual.max = String(remaining);
+                    actual.className = "qty";
+                    actual.dataset.actualLineId = line.line_id;
+                    actual.disabled = issue.request_status === "closed" || remaining <= 0;
+                    if (!actual.disabled) {
+                        actual.value = String(remaining);
+                        actual.addEventListener("input", function () { clampActualQty(actual); });
+                        actual.addEventListener("change", function () { clampActualQty(actual); });
+                    }
+                    tdActual.appendChild(actual);
+                    tr.appendChild(tdActual);
+
+                    var tdReorder = document.createElement("td");
+                    tdReorder.className = "discrepancy-col";
+                    tdReorder.hidden = !state.reportingDiscrepancies;
+                    var reorder = document.createElement("input");
+                    reorder.type = "checkbox";
+                    reorder.dataset.reorderLineId = line.line_id;
+                    reorder.disabled = issue.request_status === "closed" || remaining <= 0;
+                    tdReorder.appendChild(reorder);
+                    tr.appendChild(tdReorder);
+
                     lineBody.appendChild(tr);
                 });
             }
 
             function select(id) {
                 state.selectedId = id;
+                state.reportingDiscrepancies = false;
+                setDiscrepancyColumnsVisible(false);
                 clearError();
                 api("/api/branch/receipts/issues/" + id + "/").then(function (d) {
                     renderDetail(d.goods_issue);
@@ -378,14 +444,50 @@
             function receive() {
                 clearError();
                 var lines = [];
-                lineBody.querySelectorAll("input[data-line-id]").forEach(function (input) {
-                    clampReceiveQty(input);
-                    if (input.value) lines.push({ line_id: parseInt(input.dataset.lineId, 10), quantity_received: input.value });
-                });
+                var hasShort = false;
+                if (state.reportingDiscrepancies) {
+                    lineBody.querySelectorAll("input[data-actual-line-id]").forEach(function (input) {
+                        clampActualQty(input);
+                        if (input.value === "" || input.disabled) return;
+                        var remaining = parseInt(input.max, 10);
+                        var qty = parseInt(input.value, 10);
+                        if (Number.isFinite(qty) && Number.isFinite(remaining) && qty < remaining) {
+                            hasShort = true;
+                        }
+                        var reorder = lineBody.querySelector(
+                            'input[data-reorder-line-id="' + input.dataset.actualLineId + '"]'
+                        );
+                        lines.push({
+                            line_id: parseInt(input.dataset.actualLineId, 10),
+                            quantity_received: input.value,
+                            reorder: Boolean(reorder && reorder.checked),
+                        });
+                    });
+                } else {
+                    lineBody.querySelectorAll("input[data-line-id]").forEach(function (input) {
+                        if (input.value === "") return;
+                        lines.push({
+                            line_id: parseInt(input.dataset.lineId, 10),
+                            quantity_received: input.value,
+                        });
+                    });
+                }
                 if (!lines.length) { showError(t("needQty")); return; }
-                api("/api/branch/receipts/issues/" + state.selectedId + "/receive/", "POST", { lines: lines })
+                var payload = { lines: lines };
+                if (hasShort) {
+                    var reason = prompt(t("discrepancyReasonPrompt"));
+                    if (reason === null) return;
+                    payload.reason = reason;
+                }
+                api("/api/branch/receipts/issues/" + state.selectedId + "/receive/", "POST", payload)
                     .then(function () { return afterAction(t("receiptRecorded")); })
                     .catch(showError);
+            }
+
+            function reportDiscrepancies() {
+                state.reportingDiscrepancies = true;
+                setDiscrepancyColumnsVisible(true);
+                syncActionButtons();
             }
 
             function shortClose() {
@@ -407,6 +509,7 @@
             }
 
             receiveBtn.addEventListener("click", receive);
+            reportBtn.addEventListener("click", reportDiscrepancies);
             shortCloseBtn.addEventListener("click", shortClose);
             document.getElementById("adjust-btn").addEventListener("click", adjust);
             if (CAN_ADJUST) document.getElementById("adjust-row").hidden = false;
@@ -425,7 +528,7 @@
             load().catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=13"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=14"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

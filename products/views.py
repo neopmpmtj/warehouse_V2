@@ -4,10 +4,11 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
 from accounts.authz import deny_if_inactive
-from accounts.capabilities import can_edit_approval_policy
+from accounts.capabilities import can_approve_purchase_order, can_edit_approval_policy
 from accounts.groups import warehouse_group_name
 from branches.navigation import branch_dashboard_cards
 from branches.services import BRANCH_SELECT_URL, get_active_memberships, post_login_landing
+from inventory.services import unread_alert_count
 
 from .permissions import can_view_catalog
 
@@ -77,6 +78,17 @@ def staff_dashboard(request):
                 "url": "/manage/threads/",
             },
         ]
+        if can_approve_purchase_order(user):
+            warehouse_cards.append(
+                {
+                    "title_key": "cardAlerts",
+                    "desc_key": "cardAlertsDesc",
+                    "title": "Alerts",
+                    "desc": "Receipt discrepancies",
+                    "url": "/manage/alerts/",
+                    "unread": unread_alert_count(user),
+                }
+            )
         if can_edit_policy:
             warehouse_cards.append(
                 {

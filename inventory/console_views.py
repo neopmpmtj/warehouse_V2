@@ -12,12 +12,14 @@ from branches.capabilities import can_adjust_branch_stock, can_approve_request
 from branches.permissions import active_branch_required
 
 from . import services
-from .models import GoodsIssue, GoodsReceipt, StockMovement
+from .models import BranchReceipt, GoodsIssue, GoodsReceipt, StockMovement
 from .permissions import (
     ADD_GOODS_RECEIPT,
     ADJUST_STOCK,
+    branch_alerts_required,
     deny_unless,
     inventory_required,
+    warehouse_alerts_required,
 )
 
 logger = get_logger("centcompras.inventory")
@@ -385,10 +387,15 @@ def branch_receipt_receive(request, issue_id):
             request.user,
             reference=str(payload.get("reference", "")),
             notes=str(payload.get("notes", "")),
+            reason=str(payload.get("reason", "")),
         )
     except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
         return _inv_error(exc)
-    return JsonResponse({"branch_receipt_id": receipt.id}, status=201)
+    payload_out = {"branch_receipt_id": receipt.id}
+    follow_up_id = getattr(receipt, "follow_up_request_id", None)
+    if follow_up_id:
+        payload_out["follow_up_request_id"] = follow_up_id
+    return JsonResponse(payload_out, status=201)
 
 
 @active_branch_required
@@ -445,3 +452,54 @@ def branch_stock_adjust(request):
     return JsonResponse(
         {"item_id": movement.item_id, "quantity": _dec(movement.quantity)}
     )
+
+
+@warehouse_alerts_required
+@require_GET
+def manage_alerts_list(request):
+    alerts = services.list_alerts(request.user)
+    return JsonResponse(
+        {
+            "alerts": alerts,
+            "unread_count": services.unread_alert_count(request.user),
+        }
+    )
+
+
+@warehouse_alerts_required
+@require_POST
+def manage_alerts_mark_read(request, receipt_id):
+    try:
+        receipt = services.get_critical_receipt(receipt_id)
+    except BranchReceipt.DoesNotExist:
+        return _json_error("Alert not found.", status=404)
+    services.mark_alert_read(receipt, request.user)
+    return JsonResponse({"id": receipt.id, "unread": False})
+
+
+@active_branch_required
+@branch_alerts_required
+@require_GET
+def branch_alerts_list(request):
+    branch = request.active_branch
+    alerts = services.list_alerts(request.user, branch=branch)
+    return JsonResponse(
+        {
+            "alerts": alerts,
+            "unread_count": services.unread_alert_count(request.user, branch=branch),
+        }
+    )
+
+
+@active_branch_required
+@branch_alerts_required
+@require_POST
+def branch_alerts_mark_read(request, receipt_id):
+    try:
+        receipt = services.get_critical_receipt(
+            receipt_id, branch=request.active_branch
+        )
+    except BranchReceipt.DoesNotExist:
+        return _json_error("Alert not found.", status=404)
+    services.mark_alert_read(receipt, request.user)
+    return JsonResponse({"id": receipt.id, "unread": False})
