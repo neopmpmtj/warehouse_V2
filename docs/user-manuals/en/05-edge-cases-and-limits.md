@@ -127,7 +127,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Enter at least one issue quantity.` | A request is selected but every issue quantity is empty | Type a quantity on at least one line |
 | `A reason is required to short-close a request.` | Warehouse short-close needs a reason | Type one |
 
-**Branch receipt, branch stock & consumption (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`)**
+**Branch receipt, branch stock, consumption & send to warehouse (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`, `/branch/send-to-warehouse/`)**
 
 | Message | Why | What to do |
 |---------|-----|------------|
@@ -148,6 +148,19 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Consumption quantity must be at least 1.` | Qty is 0, empty, or negative | Enter 1 or more |
 | `Item 'X' is not on this branch's stock list.` | Item was never received/adjusted here | Receive it first, or pick a local item |
 | `Cannot consume X of 'Y': Z on hand.` | Qty is more than this branch's on-hand | Lower it |
+| `Only branch managers and admins can send items to the warehouse.` | Operator tried to send or cancel | Manager/admin only |
+| `A reason is required to send items to the warehouse.` | Send needs a reason | Type one |
+| `No lines to send.` | Send with no item lines | Add at least one line |
+| `An item was provided more than once in this send.` | Duplicate item on the send | One line per item |
+| `Send quantity must be at least 1.` | Qty is 0, empty, or negative | Enter 1 or more |
+| `Item 'X' is not on this branch's stock list.` | Item was never received/adjusted here | Receive it first, or pick a local item |
+| `Cannot send X of 'Y': Z on hand.` | Qty is more than this branch's on-hand | Lower it |
+| `Cannot send inactive item 'X'.` | Item is deactivated in the catalogue | Reactivate, or pick an active item |
+| `Cannot cancel a shipment with status 'X'.` | Already received or cancelled | Only **in transit** can be cancelled |
+| `A reason is required to cancel a send to the warehouse.` | Cancel needs a reason | Type one |
+| `Cannot receive a shipment with status 'X'.` | Already received or cancelled | Only **in transit** can be received |
+| `Received quantity X exceeds sent remaining Y.` | Over-receive vs the send | Lower it |
+| `A reason is required when receiving less than the sent quantity.` | Short arrival | Type a reason; the missing qty is written off |
 
 ### 2.4 Requisição interna (`/branch/requests/`) & branches
 

@@ -33,4 +33,19 @@ urlpatterns = [
         views.branch_alerts_console,
         name="branch_alerts_console",
     ),
+    path(
+        "branch/send-to-warehouse/",
+        views.branch_send_to_warehouse_console,
+        name="branch_send_to_warehouse_console",
+    ),
+    path(
+        "manage/incoming-from-branches/",
+        views.warehouse_inbound_console,
+        name="warehouse_inbound_console",
+    ),
+    path(
+        "manage/stock-at-branches/",
+        views.stock_at_branches_console,
+        name="stock_at_branches_console",
+    ),
 ]

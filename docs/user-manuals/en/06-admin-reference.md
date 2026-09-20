@@ -216,7 +216,8 @@ Most business tables in `/admin/` are **read-only on purpose** — day-to-day ch
 | Approval limits | `/manage/approval-limits/` |
 | Goods receipts, stock movements | `/manage/goods-receipts/` |
 | Internal requests, goods issues | `/manage/internal-requests/` + `/branch/…` |
-| Branch receipts, branch stock, consumption | `/branch/receipts/` + `/branch/stock/` + `/branch/consumption/` |
+| Branch receipts, branch stock, consumption, send to warehouse | `/branch/receipts/` + `/branch/stock/` + `/branch/consumption/` + `/branch/send-to-warehouse/` |
+| Incoming from branches, stock at branches | `/manage/incoming-from-branches/` + `/manage/stock-at-branches/` |
 | Receipt discrepancy alerts (read-state) | `/manage/alerts/` + `/branch/alerts/` (admin is inspect-only) |
 | Request threads | `/branch/threads/` + `/manage/threads/` (admin is inspect-only) |
 | Parle | `/company-voice/` (admin is inspect-only; **no hard delete**) |

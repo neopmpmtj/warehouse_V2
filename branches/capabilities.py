@@ -37,3 +37,8 @@ def can_approve_request(user, branch):
 def can_adjust_branch_stock(user, branch):
     """Branch admin only may adjust branch stock."""
     return branch_role(user, branch) == ROLE_ADMIN
+
+
+def can_send_to_warehouse(user, branch):
+    """Manager or admin may send surplus to the warehouse (and cancel in transit)."""
+    return can_approve_request(user, branch)

@@ -229,6 +229,9 @@
                 <li><a href="/api/branch/stock/" target="_blank" rel="noopener noreferrer">/api/branch/stock/</a> — on-hand by item</li>
                 <li>/api/branch/stock/movements/ — branch stock ledger</li>
                 <li>/api/branch/stock/adjust/ — branch stock adjustment (POST)</li>
+                <li>/api/branch/send-to-warehouse/ — send surplus to the warehouse</li>
+                <li>/api/manage/incoming-from-branches/ — warehouse inbound from branches</li>
+                <li>/api/manage/stock-at-branches/ — read-only stock at every branch</li>
             </ul>
 
             <h2>Parle API</h2>
@@ -244,7 +247,7 @@
         </details>
     </main>
 
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=16"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=17"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

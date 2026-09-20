@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Stock at branches — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            var lang = "pt";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "pt";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
+            if (String(lang).toLowerCase().indexOf("pt") === 0) {
+                lang = "pt-PT";
+            } else {
+                lang = "en";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=28">
+    <style>
+        .toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+        .muted { color: #666; font-size: .9rem; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-title">
+            {% include "products/includes/console_eyebrow.html" %}
+            <h1 data-i18n="title">Stock at branches</h1>
+        </div>
+        {% include "products/includes/warehouse_page_nav.html" with active_nav="branch_stock" %}
+        <div class="topbar-actions">
+            {% include "products/includes/account_settings.html" %}
+        </div>
+    </header>
+
+    <main class="page">
+        <p id="banner" class="banner" hidden></p>
+        <p class="muted" data-i18n="hint">Read-only. This is surplus sitting at branches — not warehouse stock and not a return list.</p>
+        <div class="toolbar">
+            <label>
+                <span data-i18n="filterBranch">Branch</span>
+                <select id="branch-filter"></select>
+            </label>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-i18n="colBranch">Branch</th>
+                        <th data-i18n="colCode">Code</th>
+                        <th data-i18n="colDescription">Description</th>
+                        <th data-i18n="colOnHand">On hand</th>
+                        <th data-i18n="colActive">Catalogue</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-body"></tbody>
+            </table>
+        </div>
+        <p id="empty" class="muted" hidden data-i18n="empty">No branch stock recorded.</p>
+    </main>
+
+    <script src="{% static 'products/js/select_fill.js' %}?v=2"></script>
+    <script src="{% static 'inventory/js/stock_at_branches_i18n.js' %}?v=1"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
+    <script src="{% static 'inventory/js/stock_at_branches.js' %}?v=1"></script>
+</body>
+</html>

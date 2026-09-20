@@ -2,7 +2,11 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
 from accounts.capabilities import inventory_permission_flags, procurement_permission_flags
-from branches.capabilities import can_adjust_branch_stock, can_approve_request
+from branches.capabilities import (
+    can_adjust_branch_stock,
+    can_approve_request,
+    can_send_to_warehouse,
+)
 from branches.navigation import branch_page_context
 from branches.permissions import active_branch_required
 
@@ -94,3 +98,37 @@ def branch_alerts_console(request):
         }
     )
     return render(request, "inventory/branch_alerts.html", context)
+
+
+@active_branch_required
+@require_GET
+def branch_send_to_warehouse_console(request):
+    context = branch_page_context(request)
+    context.update(
+        {
+            "page_title": "Send to warehouse",
+            "page_title_key": "navBranchSend",
+            "active_nav": "send",
+            "can_send": can_send_to_warehouse(request.user, request.active_branch),
+        }
+    )
+    return render(request, "inventory/branch_send_to_warehouse.html", context)
+
+
+@inventory_required
+@require_GET
+def warehouse_inbound_console(request):
+    flags = inventory_permission_flags(request.user)
+    return render(
+        request,
+        "inventory/warehouse_inbound.html",
+        {
+            "can_receive": flags["add_goodsreceipt"],
+        },
+    )
+
+
+@inventory_required
+@require_GET
+def stock_at_branches_console(request):
+    return render(request, "inventory/stock_at_branches.html")

@@ -8,6 +8,9 @@ from .models import (
     BranchReceiptLine,
     BranchReceiptReadState,
     BranchStockMovement,
+    BranchWarehouseShipment,
+    BranchWarehouseShipmentChangeLog,
+    BranchWarehouseShipmentLine,
     GoodsIssue,
     GoodsIssueLine,
     GoodsReceipt,
@@ -298,6 +301,82 @@ class BranchConsumptionAdmin(admin.ModelAdmin):
         "reason",
         "notes",
     )
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class BranchWarehouseShipmentLineInline(admin.TabularInline):
+    model = BranchWarehouseShipmentLine
+    extra = 0
+    can_delete = False
+    readonly_fields = (
+        "item",
+        "quantity_sent",
+        "quantity_received",
+        "quantity_written_off",
+    )
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BranchWarehouseShipment)
+class BranchWarehouseShipmentAdmin(admin.ModelAdmin):
+    list_display = ("id", "branch", "status", "sent_by", "sent_at", "reason")
+    search_fields = ("reason", "notes", "branch__name", "sent_by__email")
+    list_filter = ("status", "branch")
+    inlines = (BranchWarehouseShipmentLineInline,)
+    readonly_fields = (
+        "branch",
+        "status",
+        "sent_by",
+        "sent_at",
+        "reason",
+        "notes",
+        "received_by",
+        "received_at",
+        "receive_reason",
+        "cancelled_by",
+        "cancelled_at",
+        "cancel_reason",
+    )
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BranchWarehouseShipmentChangeLog)
+class BranchWarehouseShipmentChangeLogAdmin(admin.ModelAdmin):
+    list_display = ("id", "shipment", "action", "user", "created_at")
+    readonly_fields = ("shipment", "user", "action", "changes", "reason", "created_at")
 
     def has_module_permission(self, request):
         return request.user.is_superuser

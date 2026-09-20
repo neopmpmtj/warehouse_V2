@@ -8,11 +8,22 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 
 from logging_utils import get_logger
 
-from branches.capabilities import can_adjust_branch_stock, can_approve_request
+from branches.capabilities import (
+    can_adjust_branch_stock,
+    can_approve_request,
+    can_send_to_warehouse,
+)
 from branches.permissions import active_branch_required
 
 from . import services
-from .models import BranchConsumption, BranchReceipt, GoodsIssue, GoodsReceipt, StockMovement
+from .models import (
+    BranchConsumption,
+    BranchReceipt,
+    BranchWarehouseShipment,
+    GoodsIssue,
+    GoodsReceipt,
+    StockMovement,
+)
 from .permissions import (
     ADD_GOODS_RECEIPT,
     ADJUST_STOCK,
@@ -129,11 +140,13 @@ def _serialize_receipt(receipt, include_lines=True):
     return payload
 
 
-def _serialize_movement(movement, receipt=None):
+def _serialize_movement(movement, receipt=None, shipment=None):
     if receipt is not None:
         reference = f"GR #{receipt.id}"
         if receipt.reference:
             reference += f" — {receipt.reference}"
+    elif shipment is not None:
+        reference = f"BWS #{shipment.id}"
     elif movement.content_type_id is not None:
         reference = f"{movement.content_type.model} #{movement.object_id}"
     else:
@@ -280,18 +293,30 @@ def manage_stock_movements(request):
         services.get_stock_movements(item=item_id).order_by("-id"), request
     )
     receipt_ct = ContentType.objects.get_for_model(GoodsReceipt)
+    shipment_ct = ContentType.objects.get_for_model(BranchWarehouseShipment)
     receipt_ids = [
         m.object_id
         for m in movements
         if m.content_type_id == receipt_ct.id and m.object_id
     ]
+    shipment_ids = [
+        m.object_id
+        for m in movements
+        if m.content_type_id == shipment_ct.id and m.object_id
+    ]
     receipts = {r.id: r for r in GoodsReceipt.objects.filter(pk__in=receipt_ids)}
+    shipments = {
+        s.id: s for s in BranchWarehouseShipment.objects.filter(pk__in=shipment_ids)
+    }
     payload = {
         "stock_movements": [
             _serialize_movement(
                 m,
                 receipt=receipts.get(m.object_id)
                 if m.content_type_id == receipt_ct.id
+                else None,
+                shipment=shipments.get(m.object_id)
+                if m.content_type_id == shipment_ct.id
                 else None,
             )
             for m in movements
@@ -362,11 +387,13 @@ def _serialize_branch_receipt(receipt):
     }
 
 
-def _serialize_branch_movement(movement, receipt=None, consumption=None):
+def _serialize_branch_movement(movement, receipt=None, consumption=None, shipment=None):
     if receipt is not None:
         reference = f"BR #{receipt.id}"
     elif consumption is not None:
         reference = f"BC #{consumption.id}"
+    elif shipment is not None:
+        reference = f"BWS #{shipment.id}"
     elif movement.content_type_id is not None:
         reference = f"{movement.content_type.model} #{movement.object_id}"
     else:
@@ -395,6 +422,7 @@ def _serialize_branch_on_hand(item):
         "sub_family": sub.name if sub is not None else "",
         "unit_of_measure": item.unit_of_measure,
         "on_hand": _dec(item.on_hand),
+        "is_active": item.is_active,
     }
 
 
@@ -430,6 +458,7 @@ def branch_stock_movement_list(request):
     )
     receipt_ct = ContentType.objects.get_for_model(BranchReceipt)
     consumption_ct = ContentType.objects.get_for_model(BranchConsumption)
+    shipment_ct = ContentType.objects.get_for_model(BranchWarehouseShipment)
     receipt_ids = [
         m.object_id
         for m in movements
@@ -440,9 +469,17 @@ def branch_stock_movement_list(request):
         for m in movements
         if m.content_type_id == consumption_ct.id and m.object_id
     ]
+    shipment_ids = [
+        m.object_id
+        for m in movements
+        if m.content_type_id == shipment_ct.id and m.object_id
+    ]
     receipts = {r.id: r for r in BranchReceipt.objects.filter(pk__in=receipt_ids)}
     consumptions = {
         c.id: c for c in BranchConsumption.objects.filter(pk__in=consumption_ids)
+    }
+    shipments = {
+        s.id: s for s in BranchWarehouseShipment.objects.filter(pk__in=shipment_ids)
     }
     payload = {
         "stock_movements": [
@@ -453,6 +490,9 @@ def branch_stock_movement_list(request):
                 else None,
                 consumption=consumptions.get(m.object_id)
                 if m.content_type_id == consumption_ct.id
+                else None,
+                shipment=shipments.get(m.object_id)
+                if m.content_type_id == shipment_ct.id
                 else None,
             )
             for m in movements
@@ -715,3 +755,267 @@ def branch_alerts_mark_read(request, receipt_id):
         return _json_error("Alert not found.", status=404)
     services.mark_alert_read(receipt, request.user)
     return JsonResponse({"id": receipt.id, "unread": False})
+
+
+def _serialize_bws_line(line):
+    item = line.item
+    return {
+        "id": line.id,
+        "item_id": item.id,
+        "internal_code": item.internal_code or "",
+        "description": item.description,
+        "is_active": item.is_active,
+        "quantity_sent": _dec(line.quantity_sent),
+        "quantity_received": _dec(line.quantity_received),
+        "quantity_written_off": _dec(line.quantity_written_off),
+    }
+
+
+def _serialize_bws(shipment, include_lines=False):
+    lines = list(shipment.lines.all())
+    branch_name = ""
+    if shipment.branch_id and hasattr(shipment, "branch"):
+        branch_name = shipment.branch.name
+    payload = {
+        "id": shipment.id,
+        "branch_id": shipment.branch_id,
+        "branch_name": branch_name,
+        "status": shipment.status,
+        "sent_by": shipment.sent_by.email if shipment.sent_by_id else None,
+        "sent_at": shipment.sent_at.isoformat(),
+        "reason": shipment.reason,
+        "notes": shipment.notes,
+        "received_by": shipment.received_by.email if shipment.received_by_id else None,
+        "received_at": shipment.received_at.isoformat() if shipment.received_at else None,
+        "receive_reason": shipment.receive_reason,
+        "cancelled_by": shipment.cancelled_by.email if shipment.cancelled_by_id else None,
+        "cancelled_at": shipment.cancelled_at.isoformat() if shipment.cancelled_at else None,
+        "cancel_reason": shipment.cancel_reason,
+        "line_count": len(lines),
+        "total_sent": _dec(sum((line.quantity_sent for line in lines), 0)),
+        "total_received": _dec(sum((line.quantity_received for line in lines), 0)),
+    }
+    if include_lines:
+        payload["lines"] = [_serialize_bws_line(line) for line in lines]
+    return payload
+
+
+def _parse_send_payload(payload):
+    lines = payload.get("lines")
+    if not isinstance(lines, list) or not lines:
+        raise ValidationError("lines must be a non-empty list.")
+    parsed_lines = []
+    for entry in lines:
+        if not isinstance(entry, dict):
+            raise ValidationError("lines must be a non-empty list.")
+        parsed_lines.append(
+            {
+                "item_id": _parse_int_id(entry.get("item_id"), "item_id"),
+                "quantity": entry.get("quantity"),
+            }
+        )
+    return parsed_lines
+
+
+@active_branch_required
+@require_http_methods(["GET", "POST"])
+def branch_send_to_warehouse_list(request):
+    if request.method == "GET":
+        shipments, meta = _paginate(
+            services.get_branch_warehouse_shipments(request.active_branch), request
+        )
+        payload = {
+            "shipments": [_serialize_bws(row) for row in shipments],
+            "can_send": can_send_to_warehouse(request.user, request.active_branch),
+        }
+        if meta is not None:
+            payload.update(meta)
+        return JsonResponse(payload)
+
+    if not can_send_to_warehouse(request.user, request.active_branch):
+        return _json_error(
+            "Only branch managers and admins can send items to the warehouse.",
+            status=403,
+            code="branch_send_forbidden",
+        )
+    try:
+        payload = _parse_json(request)
+        shipment = services.send_to_warehouse(
+            request.active_branch,
+            _parse_send_payload(payload),
+            request.user,
+            reason=str(payload.get("reason", "")),
+            notes=str(payload.get("notes", "")),
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        status = 403 if getattr(exc, "code", None) == "branch_send_forbidden" else None
+        if status == 403:
+            return _json_error(exc.messages[0], status=403, code=exc.code)
+        return _inv_error(exc)
+    shipment = services.get_branch_warehouse_shipment(
+        request.active_branch, shipment.id
+    )
+    return JsonResponse(_serialize_bws(shipment, include_lines=True), status=201)
+
+
+@active_branch_required
+@require_GET
+def branch_send_to_warehouse_detail(request, shipment_id):
+    try:
+        shipment = services.get_branch_warehouse_shipment(
+            request.active_branch, shipment_id
+        )
+    except BranchWarehouseShipment.DoesNotExist:
+        return _json_error("Shipment not found.", status=404)
+    return JsonResponse(
+        {
+            "shipment": _serialize_bws(shipment, include_lines=True),
+            "can_send": can_send_to_warehouse(request.user, request.active_branch),
+        }
+    )
+
+
+@active_branch_required
+@require_POST
+def branch_send_to_warehouse_cancel(request, shipment_id):
+    if not can_send_to_warehouse(request.user, request.active_branch):
+        return _json_error(
+            "Only branch managers and admins can cancel a send to the warehouse.",
+            status=403,
+            code="branch_send_forbidden",
+        )
+    try:
+        shipment = services.get_branch_warehouse_shipment(
+            request.active_branch, shipment_id
+        )
+    except BranchWarehouseShipment.DoesNotExist:
+        return _json_error("Shipment not found.", status=404)
+    try:
+        payload = _parse_json(request)
+        shipment = services.cancel_branch_warehouse_shipment(
+            shipment,
+            request.user,
+            reason=str(payload.get("reason", "")),
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        status = 403 if getattr(exc, "code", None) == "branch_send_forbidden" else None
+        if status == 403:
+            return _json_error(exc.messages[0], status=403, code=exc.code)
+        return _inv_error(exc)
+    shipment = services.get_branch_warehouse_shipment(
+        request.active_branch, shipment.id
+    )
+    return JsonResponse(_serialize_bws(shipment, include_lines=True))
+
+
+@inventory_required
+@require_GET
+def manage_inbound_from_branches_list(request):
+    status = (request.GET.get("status") or "").strip()
+    allowed = {choice[0] for choice in BranchWarehouseShipment.Status.choices}
+    if status and status not in allowed:
+        return _json_error("Invalid status.", status=400, code="invalid_status")
+    shipments, meta = _paginate(
+        services.get_warehouse_inbound_shipments(status=status or None), request
+    )
+    payload = {
+        "shipments": [_serialize_bws(row, include_lines=False) for row in shipments]
+    }
+    if meta is not None:
+        payload.update(meta)
+    return JsonResponse(payload)
+
+
+@inventory_required
+@require_GET
+def manage_inbound_from_branches_detail(request, shipment_id):
+    try:
+        shipment = services.get_warehouse_inbound_shipment(shipment_id)
+    except BranchWarehouseShipment.DoesNotExist:
+        return _json_error("Shipment not found.", status=404)
+    return JsonResponse({"shipment": _serialize_bws(shipment, include_lines=True)})
+
+
+@inventory_required
+@require_POST
+def manage_inbound_from_branches_receive(request, shipment_id):
+    denied = deny_unless(request, ADD_GOODS_RECEIPT)
+    if denied:
+        return denied
+    try:
+        shipment = services.get_warehouse_inbound_shipment(shipment_id)
+    except BranchWarehouseShipment.DoesNotExist:
+        return _json_error("Shipment not found.", status=404)
+    try:
+        payload = _parse_json(request)
+        lines = payload.get("lines")
+        if not isinstance(lines, list) or not lines:
+            raise ValidationError("lines must be a non-empty list.")
+        normalized = []
+        for entry in lines:
+            if not isinstance(entry, dict):
+                raise ValidationError("lines must be a non-empty list.")
+            line_id = entry.get("line_id", entry.get("shipment_line_id"))
+            normalized.append(
+                {
+                    "line_id": _parse_int_id(line_id, "line_id"),
+                    "quantity_received": entry.get("quantity_received"),
+                }
+            )
+        shipment = services.receive_from_branch(
+            shipment,
+            normalized,
+            request.user,
+            reason=str(payload.get("reason", "")),
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        return _inv_error(exc)
+    shipment = services.get_warehouse_inbound_shipment(shipment.id)
+    return JsonResponse(_serialize_bws(shipment, include_lines=True))
+
+
+@inventory_required
+@require_GET
+def manage_stock_at_branches(request):
+    branch_id = request.GET.get("branch_id")
+    item_id = request.GET.get("item_id")
+    try:
+        branch = _parse_int_id(branch_id, "branch_id") if branch_id else None
+        item = _parse_int_id(item_id, "item_id") if item_id else None
+    except ValidationError:
+        return _json_error("Invalid filter id.", status=400)
+    rows = services.get_stock_at_branches(branch=branch, item=item)
+    branches = {}
+    items = {}
+    stock_rows = []
+    for row in rows:
+        branches[row.branch_id] = row.branch.name
+        items[row.item_id] = {
+            "id": row.item_id,
+            "internal_code": row.item.internal_code or "",
+            "description": row.item.description,
+            "is_active": row.item.is_active,
+        }
+        stock_rows.append(
+            {
+                "branch_id": row.branch_id,
+                "branch_name": row.branch.name,
+                "item_id": row.item_id,
+                "internal_code": row.item.internal_code or "",
+                "description": row.item.description,
+                "is_active": row.item.is_active,
+                "on_hand": _dec(row.quantity),
+            }
+        )
+    return JsonResponse(
+        {
+            "rows": stock_rows,
+            "branches": [
+                {"id": pk, "name": name}
+                for pk, name in sorted(
+                    branches.items(), key=lambda pair: pair[1].lower()
+                )
+            ],
+            "items": list(items.values()),
+        }
+    )

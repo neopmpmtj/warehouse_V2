@@ -72,6 +72,7 @@ class StockMovement(models.Model):
         RECEIPT = "receipt", "Receipt"
         GOODS_ISSUE = "goods_issue", "Goods issue"
         ADJUSTMENT = "adjustment", "Adjustment"
+        BRANCH_INBOUND = "branch_inbound", "From branch"
 
     item = models.ForeignKey(
         "products.Item",
@@ -317,6 +318,7 @@ class BranchStockMovement(models.Model):
         RECEIPT = "receipt", "Receipt"
         ADJUSTMENT = "adjustment", "Adjustment"
         CONSUMPTION = "consumption", "Consumption"
+        SEND_TO_WAREHOUSE = "send_to_warehouse", "Send to warehouse"
 
     branch = models.ForeignKey(
         "branches.Branch",
@@ -425,3 +427,135 @@ class BranchConsumptionLine(models.Model):
 
     def __str__(self):
         return f"BC #{self.consumption_id}: item {self.item_id} x {self.quantity}"
+
+
+class BranchWarehouseShipment(models.Model):
+    """A branch sends on-hand items to the central warehouse (not a return of a guia)."""
+
+    class Status(models.TextChoices):
+        IN_TRANSIT = "in_transit", "In transit"
+        RECEIVED = "received", "Received"
+        CANCELLED = "cancelled", "Cancelled"
+
+    branch = models.ForeignKey(
+        "branches.Branch",
+        on_delete=models.PROTECT,
+        related_name="warehouse_shipments",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.IN_TRANSIT,
+        db_index=True,
+    )
+    sent_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="branch_warehouse_shipments_sent",
+    )
+    sent_at = models.DateTimeField(auto_now_add=True)
+    reason = models.CharField(max_length=255)
+    notes = models.TextField(blank=True)
+    received_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="branch_warehouse_shipments_received",
+        null=True,
+        blank=True,
+    )
+    received_at = models.DateTimeField(null=True, blank=True)
+    receive_reason = models.CharField(max_length=255, blank=True)
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="branch_warehouse_shipments_cancelled",
+        null=True,
+        blank=True,
+    )
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancel_reason = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-sent_at", "-id"]
+
+    def __str__(self):
+        return f"BWS #{self.pk} — {self.branch_id} {self.status}"
+
+    def total_sent(self):
+        return sum((line.quantity_sent for line in self.lines.all()), 0)
+
+    def total_received(self):
+        return sum((line.quantity_received for line in self.lines.all()), 0)
+
+
+class BranchWarehouseShipmentLine(models.Model):
+    shipment = models.ForeignKey(
+        BranchWarehouseShipment,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    item = models.ForeignKey(
+        "products.Item",
+        on_delete=models.PROTECT,
+        related_name="branch_warehouse_shipment_lines",
+    )
+    quantity_sent = models.IntegerField()
+    quantity_received = models.IntegerField(default=0)
+    quantity_written_off = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["shipment", "item"],
+                name="unique_branch_warehouse_shipment_line",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_sent__gte=1),
+                name="bws_line_sent_gte_one",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_received__gte=0),
+                name="bws_line_received_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_written_off__gte=0),
+                name="bws_line_written_off_gte_zero",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"BWS #{self.shipment_id}: item {self.item_id} "
+            f"x {self.quantity_sent}"
+        )
+
+
+class BranchWarehouseShipmentChangeLog(models.Model):
+    class Action(models.TextChoices):
+        CREATED = "created", "Created"
+        RECEIVED = "received", "Received"
+        CANCELLED = "cancelled", "Cancelled"
+
+    shipment = models.ForeignKey(
+        BranchWarehouseShipment,
+        on_delete=models.CASCADE,
+        related_name="change_logs",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="branch_warehouse_shipment_change_logs",
+    )
+    action = models.CharField(max_length=20, choices=Action.choices)
+    changes = models.JSONField(default=dict, blank=True)
+    reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"BWS #{self.shipment_id} {self.action}"
