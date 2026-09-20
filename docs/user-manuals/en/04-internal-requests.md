@@ -252,12 +252,12 @@ Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your bra
 ### 8.1 Receive against a dispatch
 
 1. Select a dispatch.
-2. For each line, type the **received quantity** (what actually arrived — damage or shortage means you type less).
+2. **Receive qty** is pre-filled with **Remaining** (the still-unreceived part of what was shipped on this dispatch — the full shipped quantity when nothing has been received yet). Change it if damage or shortage means less arrived.
 3. Click **Receive** (*Receber*).
 
 Rules:
 
-- **Receive qty** cannot exceed **Remaining** on that line (issued on this dispatch minus already received). The field will not accept a higher number via typing or the arrows.
+- **Receive qty** cannot exceed **Remaining** on that line (issued on this dispatch minus already received). The field will not accept a higher number via typing or the arrows. Leave the pre-filled number to receive the full remaining quantity.
 - While the request is still **fulfilling**, receiving a dispatch does **not** change the request status (the warehouse still has remainder). Branch stock still goes up.
 - After the warehouse is done (**shipped**): **partial** receipt → request stays **received** (more still expected on that or another dispatch). **Full** receipt of every issued unit → **closed**.
 

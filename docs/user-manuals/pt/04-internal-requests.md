@@ -252,12 +252,12 @@ Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial 
 ### 8.1 Receber face a uma expedição
 
 1. Selecione uma expedição.
-2. Para cada linha, indique a **quantidade recebida** (o que chegou de facto — dano ou falta significa indicar menos).
+2. A **Qtd a receber** vem preenchida com o **Restante** (a parte ainda não recebida do que foi expedido nesta expedição — a quantidade expedida completa quando ainda nada foi recebido). Altere-a se dano ou falta significar que chegou menos.
 3. Clique em **Receive** (Receber).
 
 Regras:
 
-- A **Qtd a receber** não pode exceder o **Restante** nessa linha (emitido nesta expedição menos o já recebido). O campo não aceita um número maior, nem ao escrever nem com as setas.
+- A **Qtd a receber** não pode exceder o **Restante** nessa linha (emitido nesta expedição menos o já recebido). O campo não aceita um número maior, nem ao escrever nem com as setas. Deixe o número pré-preenchido para receber todo o restante.
 - Enquanto a requisição ainda está **fulfilling**, receber uma expedição **não** altera o estado da requisição (o armazém ainda tem restante). O stock da filial sobe na mesma.
 - Depois de o armazém concluir (**shipped**): **receção parcial** → a requisição mantém-se **received** (ainda se espera mais nesta ou noutra expedição). **Receção completa** de todas as unidades emitidas → **closed** (fechada).
 

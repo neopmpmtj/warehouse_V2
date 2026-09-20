@@ -333,6 +333,7 @@
                     input.dataset.lineId = line.line_id;
                     input.disabled = issue.request_status === "closed" || remaining <= 0;
                     if (!input.disabled) {
+                        input.value = String(remaining);
                         input.addEventListener("input", function () { clampReceiveQty(input); });
                         input.addEventListener("change", function () { clampReceiveQty(input); });
                     }
