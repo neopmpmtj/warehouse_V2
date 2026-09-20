@@ -351,7 +351,7 @@ class ServiceWorkerTests(TestCase):
         response = self.client.get("/service-worker.js")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/javascript")
-        self.assertContains(response, "centcompras-branch-v25")
+        self.assertContains(response, "centcompras-branch-v26")
         self.assertContains(response, "select_fill.js")
         self.assertContains(response, "/api/")
         self.assertContains(response, "/manage/")

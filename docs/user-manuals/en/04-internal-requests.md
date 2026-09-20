@@ -283,9 +283,9 @@ When a branch books **fewer** units than the warehouse shipped on that dispatch,
 - Warehouse: **`/`** → **Alerts** → `/manage/alerts/` (every branch). Shown to warehouse **admins** and **managers grade 2+**.
 - Branch: **`/branch/`** → **Alerts** → `/branch/alerts/` (the **active branch** only). Shown to branch **managers** and **admins**.
 
-The card shows how many rows you have not opened yet (for example a badge **3**). Opening the page does **not** clear that number. Click a row to mark it seen **for you**; other people still see it unread. Seen rows stay in the list.
+The card shows how many alerts you have not opened yet (for example a badge **3**). Opening the page does **not** clear that number. Click a card to mark it seen **for you**; other people still see it unread. Seen cards stay in the list.
 
-Each row shows **when**, the **request** number, the **dispatch** (*guia*) number, the qty mismatch (code, shipped, received, missing), the **reason**, and the **follow-up request** number when Reorder was ticked (otherwise —). The warehouse list also shows the **branch** name. Operators have no card; the URL returns **403**.
+Each discrepancy is its own card: **when**, the **request** number, the **dispatch** (*guia*) number, the qty mismatch (code, shipped, received, missing), and the **reason**. The warehouse list also shows the **branch** name. **See more** (*Ver mais*) always shows **Reorder** as **true** or **false**. When **true**, it also shows the **follow-up request** number and each reordered item with its qty (which may be less than the shortfall). **See less** (*Ver menos*) hides that block again. Operators have no dashboard card; the URL returns **403**.
 
 There is **no email** for this. The warehouse issue document is not changed.
 
@@ -439,7 +439,7 @@ Offline drafts are tied to the branch where you created them. If you switch to a
 No, if you **Sign out**. Sign out clears this browser's offline draft queue. Drafts are also tied to your user id: another person who signs in on the same tablet will not auto-sync your leftover rows. Always sign out at the end of a shift.
 
 **Q19. I reported a discrepancy — who is told?**
-Nobody is emailed. Warehouse **admins** and **managers grade 2+** get an **Alerts** card on `/`; branch **managers** and **admins** get one on `/branch/`. Open the row to mark it seen for yourself. Operators do not see the card.
+Nobody is emailed. Warehouse **admins** and **managers grade 2+** get an **Alerts** card on `/`; branch **managers** and **admins** get one on `/branch/`. Open the card to mark it seen for yourself. Operators do not see the card.
 
 **Q20. I ticked Reorder on a discrepancy — why isn't the new request waiting for a manager?**
 That's intended. A follow-up from **Report discrepancies** is created already **approved** and goes to `/manage/internal-requests/`, even if you lowered Reorder qty, and even if an operator reported it. Branch EUR caps do not apply on this path. The original request still closes out as usual.

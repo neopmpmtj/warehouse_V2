@@ -283,9 +283,9 @@ Quando a filial regista **menos** unidades do que o armazém expediu nessa exped
 - Armazém: **`/`** → **Alertas** → `/manage/alerts/` (todas as filiais). Visível a **administradores** do armazém e **gestores grau 2+**.
 - Filial: **`/branch/`** → **Alertas** → `/branch/alerts/` (só a **filial ativa**). Visível a **gestores** e **administradores** da filial.
 
-O cartão mostra quantas linhas ainda não abriu (por exemplo um distintivo **3**). Abrir a página **não** limpa esse número. Clique numa linha para a marcar como vista **para si**; as outras pessoas continuam a vê-la por ler. As linhas já vistas permanecem na lista.
+O cartão mostra quantos alertas ainda não abriu (por exemplo um distintivo **3**). Abrir a página **não** limpa esse número. Clique num cartão para o marcar como visto **para si**; as outras pessoas continuam a vê-lo por ler. Os cartões já vistos permanecem na lista.
 
-Cada linha mostra **quando**, o número do **pedido**, o número da **expedição** (*guia*), o desvio de quantidade (código, expedido, recebido, em falta), o **motivo**, e o número do **pedido de seguimento** quando Requisitar em falta foi marcado (senão —). A lista do armazém também mostra o nome da **filial**. Os operadores não têm cartão; o URL devolve **403**.
+Cada discrepância é o seu próprio cartão: **quando**, o número do **pedido**, o número da **expedição** (*guia*), o desvio de quantidade (código, expedido, recebido, em falta), e o **motivo**. A lista do armazém também mostra o nome da **filial**. **See more** (*Ver mais*) mostra sempre **Requisitar em falta** como **verdadeiro** ou **falso**. Quando é **verdadeiro**, mostra também o número do **pedido de seguimento** e cada artigo requisitado com a quantidade (que pode ser inferior ao em falta). **See less** (*Ver menos*) volta a esconder esse bloco. Os operadores não têm cartão no painel; o URL devolve **403**.
 
 **Não há e-mail** para isto. O documento de emissão do armazém não é alterado.
 
@@ -439,7 +439,7 @@ Rascunhos offline ficam ligados à filial onde os criou. Se mudar para outra fil
 Não, se **Terminar sessão**. Terminar sessão limpa a fila de rascunhos offline deste browser. Os rascunhos também ficam ligados ao seu id de utilizador: outra pessoa que inicie sessão no mesmo tablet não sincroniza automaticamente as suas linhas pendentes. Termine sempre sessão no fim do turno.
 
 **P19. Comuniquei uma discrepância — quem é avisado?**
-Ninguém recebe e-mail. Os **administradores** do armazém e os **gestores grau 2+** têm um cartão **Alertas** em `/`; os **gestores** e **administradores** da filial têm um em `/branch/`. Abra a linha para a marcar como vista para si. Os operadores não vêem o cartão.
+Ninguém recebe e-mail. Os **administradores** do armazém e os **gestores grau 2+** têm um cartão **Alertas** em `/`; os **gestores** e **administradores** da filial têm um em `/branch/`. Abra o cartão para o marcar como visto para si. Os operadores não vêem o cartão.
 
 **P20. Marquei Requisitar em falta numa discrepância — porque é que o pedido novo não espera pelo gestor?**
 É o comportamento previsto. Um pedido de seguimento de **Comunicar discrepâncias** nasce já **aprovado** e vai para `/manage/internal-requests/`, mesmo se baixar a Qtd a requisitar, e mesmo se um operador tiver comunicado. Os tetos EUR da filial não se aplicam neste caminho. A requisição original continua a encerrar como habitual.

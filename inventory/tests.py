@@ -1593,6 +1593,7 @@ class BranchReceiptAlertTests(TestCase):
         page = self.client.get(reverse("warehouse_alerts_console"))
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, "Receipt discrepancies")
+        self.assertContains(page, 'id="alerts-list"')
         response = self.client.get(reverse("manage_alerts_list"))
         self.assertEqual(response.status_code, 200)
         payload = response.json()
@@ -1609,8 +1610,13 @@ class BranchReceiptAlertTests(TestCase):
         self.assertEqual(north_row["lines"][0]["shipped"], 5)
         self.assertEqual(north_row["lines"][0]["received"], 4)
         self.assertEqual(north_row["lines"][0]["missing"], 1)
+        self.assertTrue(north_row["reorder"])
+        self.assertEqual(len(north_row["follow_up_lines"]), 1)
+        self.assertEqual(north_row["follow_up_lines"][0]["quantity"], 1)
         south_row = next(row for row in payload["alerts"] if row["id"] == south_receipt.id)
         self.assertIsNone(south_row["follow_up_request_id"])
+        self.assertFalse(south_row["reorder"])
+        self.assertEqual(south_row["follow_up_lines"], [])
 
     def test_branch_list_is_scoped_and_other_branch_mark_read_404(self):
         north_req, north_gi, north_receipt = self._critical_receipt(
@@ -1623,6 +1629,7 @@ class BranchReceiptAlertTests(TestCase):
         self._login_branch(self.manager, self.north)
         page = self.client.get(reverse("branch_alerts_console"))
         self.assertEqual(page.status_code, 200)
+        self.assertContains(page, 'id="alerts-list"')
         response = self.client.get(reverse("branch_alerts_list"))
         self.assertEqual(response.status_code, 200)
         payload = response.json()
@@ -1633,6 +1640,8 @@ class BranchReceiptAlertTests(TestCase):
         self.assertEqual(row["request_id"], north_req.id)
         self.assertEqual(row["dispatch_id"], north_gi.id)
         self.assertEqual(row["follow_up_request_id"], north_receipt.follow_up_request_id)
+        self.assertTrue(row["reorder"])
+        self.assertEqual(len(row["follow_up_lines"]), 1)
         mark = self.client.post(reverse("branch_alerts_mark_read", args=[south_receipt.id]))
         self.assertEqual(mark.status_code, 404)
 

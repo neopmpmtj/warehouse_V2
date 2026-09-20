@@ -1434,7 +1434,11 @@ def critical_receipts_qs(branch=None):
                 queryset=BranchReceiptLine.objects.select_related(
                     "goods_issue_line__internal_request_line__item"
                 ),
-            )
+            ),
+            Prefetch(
+                "follow_up_request__lines",
+                queryset=InternalRequestLine.objects.select_related("item"),
+            ),
         )
         .order_by("-received_at", "-id")
     )
@@ -1466,6 +1470,18 @@ def serialize_alert(receipt, unread):
             }
         )
     request = receipt.goods_issue.internal_request
+    reorder = receipt.follow_up_request_id is not None
+    follow_up_lines = []
+    if reorder and receipt.follow_up_request is not None:
+        for follow_line in receipt.follow_up_request.lines.all():
+            follow_up_lines.append(
+                {
+                    "internal_code": follow_line.internal_code
+                    or getattr(follow_line.item, "internal_code", "")
+                    or "",
+                    "quantity": follow_line.quantity,
+                }
+            )
     return {
         "id": receipt.id,
         "received_at": receipt.received_at.isoformat(),
@@ -1474,6 +1490,8 @@ def serialize_alert(receipt, unread):
         "dispatch_id": receipt.goods_issue_id,
         "reason": receipt.discrepancy_reason,
         "follow_up_request_id": receipt.follow_up_request_id,
+        "reorder": reorder,
+        "follow_up_lines": follow_up_lines,
         "unread": unread,
         "lines": lines,
     }

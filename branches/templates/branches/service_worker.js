@@ -1,7 +1,7 @@
 {% load static %}
 "use strict";
 
-var CACHE_NAME = "centcompras-branch-v25";
+var CACHE_NAME = "centcompras-branch-v26";
 
 var APP_SHELL = [
     "{% static 'products/css/settings_menu.css' %}?v=5",

@@ -123,7 +123,11 @@
         return MARK_READ_TEMPLATE.replace("{id}", String(id));
     }
 
-    function markRead(id, row) {
+    function markRead(id, card) {
+        if (!card.classList.contains("is-unread") || card.dataset.marking === "1") {
+            return Promise.resolve();
+        }
+        card.dataset.marking = "1";
         return fetch(markReadUrl(id), {
             method: "POST",
             headers: {
@@ -132,21 +136,76 @@
             },
             body: "{}",
             credentials: "same-origin",
-        }).then(function (response) {
-            if (!response.ok) {
-                throw new Error("mark-read");
-            }
-            row.classList.remove("is-unread");
-        });
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error("mark-read");
+                }
+                card.classList.remove("is-unread");
+            })
+            .finally(function () {
+                delete card.dataset.marking;
+            });
+    }
+
+    function metaRow(label, valueHtml) {
+        return (
+            '<div class="alert-field">' +
+            "<dt>" +
+            escapeHtml(label) +
+            "</dt>" +
+            "<dd>" +
+            valueHtml +
+            "</dd>" +
+            "</div>"
+        );
+    }
+
+    function moreHtml(alert) {
+        const reorderValue = alert.reorder ? t("reorderTrue") : t("reorderFalse");
+        let html =
+            '<p class="alert-reorder">' +
+            escapeHtml(t("reorder")) +
+            ": " +
+            escapeHtml(reorderValue) +
+            "</p>";
+        if (!alert.reorder) {
+            return html;
+        }
+        const followId =
+            alert.follow_up_request_id == null
+                ? t("dash")
+                : String(alert.follow_up_request_id);
+        html +=
+            '<p class="alert-follow-up">' +
+            escapeHtml(t("followUpRequest", { id: followId })) +
+            "</p>";
+        const followLines = alert.follow_up_lines || [];
+        if (followLines.length) {
+            const items = followLines.map(function (line) {
+                return (
+                    "<li>" +
+                    escapeHtml(
+                        t("followUpLine", {
+                            code: line.internal_code || t("dash"),
+                            qty: line.quantity,
+                        })
+                    ) +
+                    "</li>"
+                );
+            });
+            html += '<ul class="alerts-lines">' + items.join("") + "</ul>";
+        }
+        return html;
     }
 
     function render(alerts) {
-        const body = document.getElementById("alerts-body");
+        const list = document.getElementById("alerts-list");
         const empty = document.getElementById("alerts-empty");
-        if (!body) {
+        if (!list) {
             return;
         }
-        body.replaceChildren();
+        list.replaceChildren();
         if (!alerts.length) {
             if (empty) {
                 empty.hidden = false;
@@ -157,34 +216,46 @@
             empty.hidden = true;
         }
         alerts.forEach(function (alert) {
-            const row = document.createElement("tr");
-            row.dataset.id = String(alert.id);
+            const card = document.createElement("article");
+            card.className = "alert-card";
+            card.dataset.id = String(alert.id);
             if (alert.unread) {
-                row.classList.add("is-unread");
+                card.classList.add("is-unread");
             }
-            const followUp =
-                alert.follow_up_request_id == null
-                    ? t("dash")
-                    : "#" + alert.follow_up_request_id;
-            const cells = [];
-            cells.push(escapeHtml(formatWhen(alert.received_at)));
+            const fields = [];
+            fields.push(metaRow(t("colWhen"), escapeHtml(formatWhen(alert.received_at))));
             if (SIDE === "warehouse") {
-                cells.push(escapeHtml(alert.branch_name || t("dash")));
+                fields.push(
+                    metaRow(t("colBranch"), escapeHtml(alert.branch_name || t("dash")))
+                );
             }
-            cells.push("#" + escapeHtml(alert.request_id));
-            cells.push("#" + escapeHtml(alert.dispatch_id));
-            cells.push(discrepancyHtml(alert.lines));
-            cells.push(escapeHtml(alert.reason || t("dash")));
-            cells.push(escapeHtml(followUp));
-            row.innerHTML = cells.map(function (html) {
-                return "<td>" + html + "</td>";
-            }).join("");
-            row.addEventListener("click", function () {
-                markRead(alert.id, row).catch(function () {
+            fields.push(metaRow(t("colRequest"), "#" + escapeHtml(alert.request_id)));
+            fields.push(metaRow(t("colDispatch"), "#" + escapeHtml(alert.dispatch_id)));
+            fields.push(metaRow(t("colDiscrepancy"), discrepancyHtml(alert.lines)));
+            fields.push(metaRow(t("colReason"), escapeHtml(alert.reason || t("dash"))));
+            card.innerHTML =
+                '<dl class="alert-fields">' +
+                fields.join("") +
+                "</dl>" +
+                '<details class="alert-more">' +
+                "<summary>" +
+                escapeHtml(t("seeMore")) +
+                "</summary>" +
+                '<div class="alert-more-body">' +
+                moreHtml(alert) +
+                "</div>" +
+                "</details>";
+            const details = card.querySelector("details");
+            const summary = card.querySelector("summary");
+            details.addEventListener("toggle", function () {
+                summary.textContent = details.open ? t("seeLess") : t("seeMore");
+            });
+            card.addEventListener("click", function () {
+                markRead(alert.id, card).catch(function () {
                     showBanner(t("markReadError"));
                 });
             });
-            body.appendChild(row);
+            list.appendChild(card);
         });
     }
 
