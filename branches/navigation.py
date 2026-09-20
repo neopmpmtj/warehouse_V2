@@ -47,6 +47,13 @@ def branch_work_cards(*, include_picker=False):
                 "desc": "On-hand quantity for this branch",
                 "url": "/branch/stock/",
             },
+            {
+                "title_key": "cardBranchConsume",
+                "desc_key": "cardBranchConsumeDesc",
+                "title": "Consume",
+                "desc": "Take items off this branch's stock",
+                "url": "/branch/consumption/",
+            },
         ]
     )
     return cards

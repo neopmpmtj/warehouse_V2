@@ -127,7 +127,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Enter at least one issue quantity.` | A request is selected but every issue quantity is empty | Type a quantity on at least one line |
 | `A reason is required to short-close a request.` | Warehouse short-close needs a reason | Type one |
 
-**Branch receipt & branch stock (`/branch/receipts/`, `/branch/stock/`)**
+**Branch receipt, branch stock & consumption (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`)**
 
 | Message | Why | What to do |
 |---------|-----|------------|
@@ -142,6 +142,12 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Branch stock cannot be adjusted below zero.` | Negative branch balance | Check your quantities |
 | `A reason is required to adjust branch stock.` | Branch adjustment needs a reason | Type one |
 | `A reason is required to short-close a request.` | Branch short-close needs a reason | Type one |
+| `A reason is required to record consumption.` | Consumption ticket needs a reason | Type one |
+| `No lines to consume.` | Record with no item lines | Add at least one line |
+| `An item was provided more than once in this consumption.` | Duplicate item on the ticket | One line per item |
+| `Consumption quantity must be at least 1.` | Qty is 0, empty, or negative | Enter 1 or more |
+| `Item 'X' is not on this branch's stock list.` | Item was never received/adjusted here | Receive it first, or pick a local item |
+| `Cannot consume X of 'Y': Z on hand.` | Qty is more than this branch's on-hand | Lower it |
 
 ### 2.4 Requisição interna (`/branch/requests/`) & branches
 

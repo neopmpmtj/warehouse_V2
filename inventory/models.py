@@ -316,6 +316,7 @@ class BranchStockMovement(models.Model):
     class Type(models.TextChoices):
         RECEIPT = "receipt", "Receipt"
         ADJUSTMENT = "adjustment", "Adjustment"
+        CONSUMPTION = "consumption", "Consumption"
 
     branch = models.ForeignKey(
         "branches.Branch",
@@ -367,3 +368,60 @@ class BranchStockMovement(models.Model):
 
     def __str__(self):
         return f"{self.branch_id}/{self.item_id} {self.movement_type} {self.quantity:+}"
+
+
+class BranchConsumption(models.Model):
+    """A booked consumption ticket: stock leaving the branch (used, sold, scrapped)."""
+
+    branch = models.ForeignKey(
+        "branches.Branch",
+        on_delete=models.PROTECT,
+        related_name="consumptions",
+    )
+    consumed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="branch_consumptions",
+    )
+    consumed_at = models.DateTimeField(auto_now_add=True)
+    reason = models.CharField(max_length=255)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-consumed_at", "-id"]
+
+    def __str__(self):
+        return f"BC #{self.pk} — {self.branch_id}"
+
+    def total_quantity(self):
+        return sum((line.quantity for line in self.lines.all()), 0)
+
+
+class BranchConsumptionLine(models.Model):
+    consumption = models.ForeignKey(
+        BranchConsumption,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    item = models.ForeignKey(
+        "products.Item",
+        on_delete=models.PROTECT,
+        related_name="branch_consumption_lines",
+    )
+    quantity = models.IntegerField()
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["consumption", "item"],
+                name="unique_branch_consumption_line",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1),
+                name="branch_consumption_line_qty_gte_one",
+            ),
+        ]
+
+    def __str__(self):
+        return f"BC #{self.consumption_id}: item {self.item_id} x {self.quantity}"

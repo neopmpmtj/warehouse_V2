@@ -1,0 +1,143 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{{ branch.name }} — Consume — CentCompras</title>
+    <script>
+        (function () {
+            var theme = "light";
+            var lang = "pt";
+            try {
+                theme = localStorage.getItem("cc-theme") || "light";
+                lang = localStorage.getItem("cc-lang") || "pt";
+            } catch (e) {
+                /* ignore blocked storage; keep defaults */
+            }
+            if (String(lang).toLowerCase().indexOf("pt") === 0) {
+                lang = "pt-PT";
+            } else {
+                lang = "en";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("lang", lang);
+        })();
+    </script>
+    <style>
+        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; --surface: #fff; }
+        main { display: flex; flex-direction: column; gap: 20px; padding: 20px; }
+        .consume-work { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .consume-work { grid-template-columns: 1fr; } }
+        .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+        h2 { margin: 0 0 10px; font-size: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+        th { color: var(--muted); font-weight: 600; font-size: .8rem; }
+        .btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
+        .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+        input, select { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
+        .qty { width: 80px; }
+        .reason { min-width: 16rem; flex: 1; }
+        .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: #b00020; margin-top: 10px; }
+        .banner-info { background: #e8f0fe; color: #0b57d0; }
+        .offline-empty { color: var(--muted); font-size: .9rem; margin: 8px 0 0; }
+        .selected { background: #eef4fe; }
+        .pagination { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+        .pagination-label { color: var(--muted); font-size: .85rem; }
+        .table-wrap { overflow-x: auto; }
+        label.reason-label { display: flex; gap: 8px; align-items: center; flex: 1; font-size: .9rem; }
+    </style>
+    <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
+    {% include "branches/includes/offline_assets.html" %}
+</head>
+<body data-branch-id="{{ branch.id }}" data-user-id="{{ user.id }}">
+    {% include "branches/includes/branch_work_page_header.html" %}
+
+    <main>
+        <p id="offline-banner" class="banner banner-info" hidden></p>
+        <p id="banner" class="banner" hidden></p>
+        <p id="no-stock-hint" class="offline-empty" hidden data-i18n="noStock">No items with on-hand stock. Receive a dispatch first.</p>
+
+        <section class="panel">
+            <h2 data-i18n="newTitle">New consumption</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="colItem">Item</th>
+                            <th data-i18n="colOnHand">On hand</th>
+                            <th data-i18n="colQty">Qty</th>
+                            <th data-i18n="colRemove">Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody id="line-body"></tbody>
+                </table>
+            </div>
+            <div class="row">
+                <button type="button" id="add-line-btn" class="btn" data-i18n="addLine">Add line</button>
+                <label class="reason-label">
+                    <span data-i18n="reason">Reason</span>
+                    <input type="text" id="consume-reason" class="reason" maxlength="255" required>
+                </label>
+                <button type="button" id="record-btn" class="btn btn-primary" data-i18n="record">Record</button>
+            </div>
+        </section>
+
+        <div class="consume-work">
+            <section class="panel">
+                <h2 data-i18n="historyTitle">Consumption</h2>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-i18n="colId">#</th>
+                                <th data-i18n="colWhen">When</th>
+                                <th data-i18n="colBy">By</th>
+                                <th data-i18n="colReason">Reason</th>
+                                <th data-i18n="colLines">Lines</th>
+                                <th data-i18n="colTotal">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+                <p id="history-empty" class="offline-empty" hidden data-i18n="empty">No consumption yet.</p>
+                <div class="pagination">
+                    <button type="button" id="history-prev" class="btn" data-i18n="prev">‹ Prev</button>
+                    <span id="history-page-label" class="pagination-label"></span>
+                    <button type="button" id="history-next" class="btn" data-i18n="next">Next ›</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2 id="detail-title" data-i18n="detailTitle">Ticket</h2>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-i18n="colCode">Code</th>
+                                <th data-i18n="colDescription">Description</th>
+                                <th data-i18n="colQty">Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detail-body"></tbody>
+                    </table>
+                </div>
+                <p id="detail-empty" class="offline-empty" data-i18n="noMatch">Select a ticket to see its lines.</p>
+            </section>
+        </div>
+    </main>
+
+    {% include "branches/includes/offline_scripts.html" %}
+    <script src="{% static 'products/js/select_fill.js' %}?v=2"></script>
+    <script src="{% static 'inventory/js/branch_consumption_i18n.js' %}?v=1"></script>
+    <script src="{% static 'inventory/js/branch_consumption.js' %}?v=1"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=16"></script>
+    <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
+</body>
+</html>

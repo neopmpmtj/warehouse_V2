@@ -1727,6 +1727,174 @@ class BranchStockVisibilityApiTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+class BranchConsumptionApiTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.north = create_branch("North Consume")
+        self.south = create_branch("South Consume")
+        self.operator = _make_branch_user("consume-op@example.com", self.north, ROLE_OPERATOR)
+        self.manager = _make_branch_user("consume-mgr@example.com", self.north, ROLE_MANAGER)
+        self.admin = _make_branch_user("consume-adm@example.com", self.north, ROLE_ADMIN)
+        self.south_op = _make_branch_user("consume-south@example.com", self.south, ROLE_OPERATOR)
+        self.wh_admin = make_warehouse_user("consume-wh@example.com")
+        self.item = _make_issue_item("Consume Widget", wholesale="5.00", quantity="20")
+        self.other = _make_issue_item("Unlisted Widget", wholesale="5.00", quantity="10")
+
+    def _login(self, user, branch):
+        self.client.force_login(user)
+        session = self.client.session
+        session[SESSION_KEY] = branch.id
+        session.save()
+
+    def _seed(self, qty="5"):
+        services.adjust_branch_stock(self.north, self.item, qty, "seed", self.admin)
+
+    def _post(self, payload):
+        return self.client.post(
+            reverse("branch_consumption_list"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+    def test_operator_can_open_page(self):
+        self._login(self.operator, self.north)
+        response = self.client.get(reverse("branch_consumption_console"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "branch_consumption.js")
+        self.assertContains(response, "navBranchConsume")
+
+    def test_operator_consume_drops_on_hand(self):
+        self._seed("5")
+        self._login(self.operator, self.north)
+        response = self._post(
+            {
+                "reason": "used on site",
+                "lines": [{"item_id": self.item.id, "quantity": "2"}],
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        payload = response.json()
+        self.assertEqual(payload["line_count"], 1)
+        self.assertEqual(payload["total_quantity"], "2")
+        self.assertEqual(payload["reason"], "used on site")
+        stock = self.client.get(reverse("branch_stock_list")).json()["items"]
+        row = next(item for item in stock if item["id"] == self.item.id)
+        self.assertEqual(row["on_hand"], "3")
+        listed = self.client.get(reverse("branch_consumption_list")).json()["consumptions"]
+        self.assertEqual(len(listed), 1)
+        self.assertEqual(listed[0]["id"], payload["id"])
+        movements = self.client.get(reverse("branch_stock_movement_list")).json()["stock_movements"]
+        consume_rows = [
+            row for row in movements if row["movement_type"] == BranchStockMovement.Type.CONSUMPTION
+        ]
+        self.assertEqual(len(consume_rows), 1)
+        self.assertEqual(consume_rows[0]["quantity"], "-2")
+        self.assertEqual(consume_rows[0]["reference"], f"BC #{payload['id']}")
+
+    def test_manager_can_consume(self):
+        self._seed("4")
+        self._login(self.manager, self.north)
+        response = self._post(
+            {
+                "reason": "counter sale",
+                "lines": [{"item_id": self.item.id, "quantity": "1"}],
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_exceeds_on_hand(self):
+        self._seed("2")
+        self._login(self.operator, self.north)
+        response = self._post(
+            {
+                "reason": "too much",
+                "lines": [{"item_id": self.item.id, "quantity": "3"}],
+            }
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "branch_consume_exceeds_on_hand")
+        self.assertIn("Cannot consume 3 of", response.json()["error"])
+
+    def test_reason_required(self):
+        self._seed("2")
+        self._login(self.operator, self.north)
+        response = self._post(
+            {"reason": "  ", "lines": [{"item_id": self.item.id, "quantity": "1"}]}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "branch_consume_reason_required")
+
+    def test_duplicate_item(self):
+        self._seed("5")
+        self._login(self.operator, self.north)
+        response = self._post(
+            {
+                "reason": "dup",
+                "lines": [
+                    {"item_id": self.item.id, "quantity": "1"},
+                    {"item_id": self.item.id, "quantity": "1"},
+                ],
+            }
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "duplicate_branch_consume_line")
+
+    def test_item_not_on_local_list(self):
+        self._seed("5")
+        self._login(self.operator, self.north)
+        response = self._post(
+            {
+                "reason": "unknown",
+                "lines": [{"item_id": self.other.id, "quantity": "1"}],
+            }
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "branch_consume_item_not_in_stock")
+
+    def test_other_branch_cannot_see_ticket(self):
+        self._seed("5")
+        self._login(self.operator, self.north)
+        created = self._post(
+            {
+                "reason": "north only",
+                "lines": [{"item_id": self.item.id, "quantity": "1"}],
+            }
+        )
+        self.assertEqual(created.status_code, 201)
+        ticket_id = created.json()["id"]
+        self._login(self.south_op, self.south)
+        listed = self.client.get(reverse("branch_consumption_list"))
+        self.assertEqual(listed.json()["consumptions"], [])
+        detail = self.client.get(reverse("branch_consumption_detail", args=[ticket_id]))
+        self.assertEqual(detail.status_code, 404)
+
+    def test_warehouse_user_forbidden(self):
+        self.client.force_login(self.wh_admin)
+        page = self.client.get(reverse("branch_consumption_console"))
+        self.assertEqual(page.status_code, 403)
+        api = self._post(
+            {
+                "reason": "no",
+                "lines": [{"item_id": self.item.id, "quantity": "1"}],
+            }
+        )
+        self.assertEqual(api.status_code, 403)
+
+    def test_full_consume_keeps_zero_row(self):
+        self._seed("3")
+        self._login(self.operator, self.north)
+        response = self._post(
+            {
+                "reason": "used all",
+                "lines": [{"item_id": self.item.id, "quantity": "3"}],
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        stock = self.client.get(reverse("branch_stock_list")).json()["items"]
+        row = next(item for item in stock if item["id"] == self.item.id)
+        self.assertEqual(row["on_hand"], "0")
+
+
 class BranchReceiptAlertTests(TestCase):
     def setUp(self):
         self.north = create_branch("North Alerts")

@@ -1,6 +1,8 @@
 from django.contrib import admin
 
 from .models import (
+    BranchConsumption,
+    BranchConsumptionLine,
     BranchItemStock,
     BranchReceipt,
     BranchReceiptLine,
@@ -252,6 +254,49 @@ class BranchStockMovementAdmin(admin.ModelAdmin):
         "reason",
         "created_by",
         "created_at",
+    )
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class BranchConsumptionLineInline(admin.TabularInline):
+    model = BranchConsumptionLine
+    extra = 0
+    can_delete = False
+    readonly_fields = ("item", "quantity")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BranchConsumption)
+class BranchConsumptionAdmin(admin.ModelAdmin):
+    list_display = ("id", "branch", "consumed_by", "consumed_at", "reason")
+    search_fields = ("reason", "notes", "branch__name", "consumed_by__email")
+    list_filter = ("branch",)
+    inlines = (BranchConsumptionLineInline,)
+    readonly_fields = (
+        "branch",
+        "consumed_by",
+        "consumed_at",
+        "reason",
+        "notes",
     )
 
     def has_module_permission(self, request):

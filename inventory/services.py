@@ -17,6 +17,8 @@ from procurement.models import (
 )
 
 from .models import (
+    BranchConsumption,
+    BranchConsumptionLine,
     BranchItemStock,
     BranchReceipt,
     BranchReceiptLine,
@@ -995,6 +997,69 @@ class BranchStockNegativeError(ValidationError):
         )
 
 
+class BranchConsumptionForbiddenError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Branch membership is required to record consumption.",
+            code="branch_consumption_forbidden",
+        )
+
+
+class BranchConsumeReasonRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A reason is required to record consumption.",
+            code="branch_consume_reason_required",
+        )
+
+
+class NoBranchLinesToConsumeError(ValidationError):
+    def __init__(self):
+        super().__init__("No lines to consume.", code="no_branch_lines_to_consume")
+
+
+class InvalidBranchConsumeLineError(ValidationError):
+    def __init__(
+        self,
+        message="Each consumption line must be a valid object with item_id and quantity.",
+    ):
+        super().__init__(message, code="invalid_branch_consume_line")
+
+
+class DuplicateBranchConsumeLineError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "An item was provided more than once in this consumption.",
+            code="duplicate_branch_consume_line",
+        )
+
+
+class InvalidBranchConsumeQuantityError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Consumption quantity must be at least 1.",
+            code="invalid_branch_consume_quantity",
+        )
+
+
+class BranchConsumeItemNotInStockError(ValidationError):
+    def __init__(self, item):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or item.pk
+        super().__init__(
+            f"Item '{label}' is not on this branch's stock list.",
+            code="branch_consume_item_not_in_stock",
+        )
+
+
+class BranchConsumeExceedsOnHandError(ValidationError):
+    def __init__(self, item, qty, on_hand):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or item.pk
+        super().__init__(
+            f"Cannot consume {qty} of '{label}': {on_hand} on hand.",
+            code="branch_consume_exceeds_on_hand",
+        )
+
+
 def _resolve_goods_issue(goods_issue):
     if isinstance(goods_issue, GoodsIssue):
         return goods_issue
@@ -1369,6 +1434,106 @@ def adjust_branch_stock(branch, item, quantity, reason, user):
         getattr(user, "email", None),
     )
     return movement
+
+
+@transaction.atomic
+def consume_at_branch(branch, lines, user, reason="", notes=""):
+    """Book a consumption ticket and take qty off this branch's local stock."""
+    from branches.capabilities import branch_role
+
+    if branch_role(user, branch) is None:
+        raise BranchConsumptionForbiddenError()
+
+    reason = (reason or "").strip()
+    if not reason:
+        raise BranchConsumeReasonRequiredError()
+
+    if not isinstance(lines, list) or not lines:
+        raise NoBranchLinesToConsumeError()
+
+    parsed = []
+    seen_ids = set()
+    for entry in lines:
+        if not isinstance(entry, dict):
+            raise InvalidBranchConsumeLineError()
+        item_id = entry.get("item_id")
+        if item_id is None:
+            raise InvalidBranchConsumeLineError(
+                "Each consumption line requires an item_id."
+            )
+        if "quantity" not in entry:
+            raise InvalidBranchConsumeLineError(
+                "Each consumption line requires quantity."
+            )
+        item = _resolve_item(item_id)
+        if item.pk in seen_ids:
+            raise DuplicateBranchConsumeLineError()
+        seen_ids.add(item.pk)
+        qty = _parse_decimal_quantity(entry.get("quantity"))
+        if qty < 1:
+            raise InvalidBranchConsumeQuantityError()
+        parsed.append((item, qty))
+
+    item_ids = sorted(item.pk for item, _qty in parsed)
+    stocks = {
+        row.item_id: row
+        for row in BranchItemStock.objects.select_for_update()
+        .filter(branch=branch, item_id__in=item_ids)
+        .order_by("item_id")
+    }
+    for item, qty in parsed:
+        stock = stocks.get(item.pk)
+        if stock is None:
+            raise BranchConsumeItemNotInStockError(item)
+        on_hand = int(stock.quantity or 0)
+        if qty > on_hand:
+            raise BranchConsumeExceedsOnHandError(item, qty, on_hand)
+
+    consumption = BranchConsumption.objects.create(
+        branch=branch,
+        consumed_by=user,
+        reason=reason,
+        notes=(notes or "").strip(),
+    )
+    for item, qty in parsed:
+        BranchConsumptionLine.objects.create(
+            consumption=consumption,
+            item=item,
+            quantity=qty,
+        )
+        _write_branch_movement(
+            branch,
+            item,
+            -qty,
+            BranchStockMovement.Type.CONSUMPTION,
+            user,
+            content_object=consumption,
+            reason=reason,
+        )
+
+    logger.info(
+        "Consumed at branch=%s consumption=%s lines=%s user=%s",
+        branch.id,
+        consumption.id,
+        len(parsed),
+        getattr(user, "email", None),
+    )
+    return consumption
+
+
+def get_branch_consumptions(branch):
+    """Booked consumption tickets for one branch, newest first."""
+    return (
+        BranchConsumption.objects.filter(branch=branch)
+        .select_related("consumed_by")
+        .prefetch_related("lines__item")
+        .order_by("-consumed_at", "-id")
+    )
+
+
+def get_branch_consumption(branch, consumption_id):
+    """One consumption ticket scoped to this branch, or DoesNotExist."""
+    return get_branch_consumptions(branch).get(pk=consumption_id)
 
 
 def get_branch_receipts(branch):

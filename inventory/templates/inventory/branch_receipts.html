@@ -270,6 +270,7 @@
                     dash: "—",
                     "movement_type.receipt": "Receipt",
                     "movement_type.adjustment": "Adjustment",
+                    "movement_type.consumption": "Consumption",
                     shortClosePrompt: "Reason for short-close:",
                     discrepancyReasonPrompt: "Reason for short-close (received less than shipped):",
                     discrepancyReasonRequired: "A reason is required to report a receipt discrepancy.",
@@ -345,6 +346,7 @@
                     dash: "—",
                     "movement_type.receipt": "Receção",
                     "movement_type.adjustment": "Ajuste",
+                    "movement_type.consumption": "Consumo",
                     shortClosePrompt: "Motivo do encerramento parcial:",
                     discrepancyReasonPrompt: "Motivo do encerramento parcial (recebido menos do que expedido):",
                     discrepancyReasonRequired: "É obrigatório indicar um motivo para comunicar uma discrepância de receção.",
@@ -1032,7 +1034,7 @@
             loadCatalogItems().then(function () { return load(); }).catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=15"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=16"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

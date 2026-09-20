@@ -42,6 +42,7 @@ Sem stock? O armazém levanta primeiro uma **encomenda de compra** a um forneced
 | Filial (gestor / administrador) | `/branch/requests/` | Aprovar / rejeitar |
 | Filial (qualquer função) | `/branch/receipts/` | Confirmar chegada face a uma expedição |
 | Filial (qualquer função) | `/branch/stock/` | Ver a quantidade em mão desta filial |
+| Filial (qualquer função) | `/branch/consumption/` | Retirar artigos do stock desta filial |
 | Filial (gestor / administrador) | `/branch/alerts/` | Discrepâncias de receção (por ler até abrir a linha) |
 | Filial (qualquer função) | `/company-voice/` | Caixa de sugestões da empresa |
 | Armazém | `/manage/internal-requests/` | Fila de requisições aprovadas + saída de mercadoria |
@@ -68,11 +69,12 @@ Existem **três funções de filial** (definidas pela sede) e as habituais **fun
 | Cancelar requisição **aprovada** | ❌ | ✅ | ✅ |
 | Confirmar chegada (receção na filial) | ✅ | ✅ | ✅ |
 | Ver stock em mão (`/branch/stock/`) | ✅ | ✅ | ✅ |
+| Consumir stock da filial (`/branch/consumption/`) | ✅ | ✅ | ✅ |
 | Alertas de discrepância de receção | ❌ | ✅ | ✅ |
 | Encerramento parcial na filial | ❌ | ✅ | ✅ |
 | Ajustar stock da filial | ❌ | ❌ | ✅ |
 
-- O **operador** faz o dia a dia (catálogo, requisição, receção) mas nunca aprova nem faz encerramento parcial.
+- O **operador** faz o dia a dia (catálogo, requisição, receção, consumo) mas nunca aprova nem faz encerramento parcial.
 - O **gestor** acrescenta aprovação/rejeição/encerramento parcial. Por omissão a aprovação é **sim/não às quantidades** (sem teto em euros). Se o superutilizador ligar o modo **com preços**, os gestores ficam limitados por **tetos em EUR bruto** (próprio vs outros — ver §8).
 - O **administrador** é o utilizador avançado da filial: aprovação ilimitada, mais **ajustes de stock da filial**.
 - O ecrã Django **`/admin/`** é **só para o superutilizador do sítio**. O pessoal de filial nunca entra em `/admin/`. A sede cria o seu início de sessão e a função de filial aí.
@@ -98,7 +100,7 @@ Pode pertencer a **uma filial, várias filiais ou a nenhuma**. Depois de iniciar
 | **Várias filiais** | Aterra em `/branch/select/` — escolha uma, depois continue para o painel. |
 | **Sem filial** | O seletor diz *"You have no active branch access."* (Não tem acesso ativo a nenhuma filial.) Peça ajuda ao administrador. |
 
-No painel, **A sua filial** tem **Catálogo**, **Requisição interna**, **Receções** e **Stock da filial**. **Comunicação** tem **Conversas**, depois **Parle**. Em **Catálogo**, **Pedidos**, **Receções**, **Stock** e **Conversas**, a barra superior também tem **Início**, **Catálogo**, **Pedidos**, **Receções**, **Stock** e **Conversas** (Conversas é o último) — não no painel em si.
+No painel, **A sua filial** tem **Catálogo**, **Requisição interna**, **Receções**, **Stock da filial** e **Consumo**. **Comunicação** tem **Conversas**, depois **Parle**. Em **Catálogo**, **Pedidos**, **Receções**, **Stock**, **Consumo** e **Conversas**, a barra superior também tem **Início**, **Catálogo**, **Pedidos**, **Receções**, **Stock**, **Consumo** e **Conversas** (Conversas é o último) — não no painel em si.
 
 **Mudar filial** só aparece quando pertence a **mais do que uma** filial. Se só viu uma filial na sua vida, essa ligação fica oculta — não pode consultar outras filiais.
 
@@ -301,6 +303,17 @@ Abra **`/branch/stock/`** (qualquer função de filial). Lista só o stock **rec
 - Aqui nunca vê a quantidade do armazém, o custo nem os preços de venda — isso fica em `/branch/catalog/` (indicação + preços opcionais).
 - A página precisa de Wi-Fi. Não guarda o stock em mão offline.
 
+### 8.5 Consumo (retirar stock da filial)
+
+Abra **`/branch/consumption/`** (qualquer função de filial). Este ecrã regista um **ticket de consumo** numerado (BC n.º) e retira de imediato quantidade do stock **desta filial**.
+
+1. Adicione uma ou mais linhas. O seletor lista só o stock local com em mão **maior que 0** (A–Z, `-----` primeiro — nada pré-selecionado).
+2. Indique a **Qtd** (número inteiro, pelo menos 1, não mais do que o em mão) e um **Motivo** (obrigatório).
+3. Clique em **Registar**. Cada linha torna-se um movimento negativo de **Consumo** (referência **BC n.º**). `/branch/stock/` mostra o novo em mão. Quantidade **0 permanece na lista**.
+4. O ticket aparece na tabela de histórico. Clique numa linha para reabrir as suas linhas.
+
+Não pode consumir um artigo que esta filial nunca recebeu (nem que um administrador nunca tenha ajustado para a lista local). Um artigo por linha do ticket — não adicione o mesmo artigo duas vezes. Não há rascunho nem anulação: se registou a quantidade errada, um **administrador** da filial usa **Ajustar stock** em `/branch/receipts/` para repor. Esta página precisa de Wi-Fi.
+
 ---
 
 ## 9. Ajuste de stock da filial (só administrador)
@@ -371,6 +384,7 @@ As *guias* emitidas podem ser recebidas enquanto a requisição ainda está **fu
 - **Encerramento parcial** na receção da filial enquanto o armazém ainda tem restante (**fulfilling**).
 - Encerramento parcial como **operador** (em qualquer dos lados).
 - Ajustar stock da filial a menos que seja **administrador** da filial.
+- **Consumir** mais do que esta filial tem em mão, ou um artigo que não está na lista de stock local.
 
 ---
 
@@ -436,7 +450,7 @@ A reserva é libertada de imediato e oferecida à requisição seguinte em esper
 O stock já está em movimento. Depois da primeira saída de mercadoria a única forma de terminar cedo é **encerramento parcial** (lado armazém) ou **encerramento parcial na filial** (lado filial).
 
 **P14. Em que difere o stock da filial do stock do armazém?**
-Dois livros-razão separados. O stock do armazém vive no artigo; o **stock da filial** vive por `(filial, artigo)` e só se move quando recebe uma expedição ou um administrador ajusta. `/branch/stock/` lista **só essas linhas locais** — não o catálogo completo do armazém. Depois de receber, o artigo aparece aí (ou a quantidade em mão sobe se já estava listado). As tabelas Receções / Movimentos de stock no fundo de `/branch/receipts/` são o livro-razão. A lista de expedições abertas só mostra guias ainda em curso.
+Dois livros-razão separados. O stock do armazém vive no artigo; o **stock da filial** vive por `(filial, artigo)` e só se move quando recebe uma expedição, **consome**, ou um administrador ajusta. `/branch/stock/` lista **só essas linhas locais** — não o catálogo completo do armazém. Depois de receber, o artigo aparece aí (ou a quantidade em mão sobe se já estava listado). As tabelas Receções / Movimentos de stock no fundo de `/branch/receipts/` são o livro-razão. **Consumo** em `/branch/consumption/` é como o em mão desce no uso do dia a dia. A lista de expedições abertas só mostra guias ainda em curso.
 
 **P14a. Recebi mercadoria — porque é que `/branch/stock/` não mostra todos os artigos do catálogo?**
 Não é o catálogo do armazém. Uma linha aparece na primeira vez que esta filial recebe esse artigo (ou um administrador o ajusta). Quantidade 0 permanece na lista. Encomende em `/branch/catalog/` como antes.
@@ -458,3 +472,6 @@ Ninguém recebe e-mail. Os **administradores** do armazém e os **gestores grau 
 
 **P20. Marquei Requisitar em falta numa discrepância — porque é que o pedido novo não espera pelo gestor?**
 É o comportamento previsto. Um pedido de seguimento de **Comunicar discrepâncias** nasce já **aprovado** e vai para `/manage/internal-requests/`, mesmo se baixar a Qtd a requisitar, e mesmo se um operador tiver comunicado. Os tetos EUR da filial não se aplicam neste caminho. A requisição original continua a encerrar como habitual.
+
+**P21. Recebi mercadoria — como retiro do stock da filial quando usamos os artigos?**
+Abra **`/branch/consumption/`**, acrescente linhas a partir do em mão desta filial, indique um **Motivo** e clique em **Registar**. Isso cria um ticket BC e um movimento de consumo negativo. Não toca no stock do armazém (esse já desceu na saída de mercadoria). Não pode ir abaixo do em mão.

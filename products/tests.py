@@ -3955,5 +3955,6 @@ process.stdout.write(JSON.stringify(ctx.__export));
         self.assertIn("cardAlerts:", source)
         self.assertIn('cardAlerts: "Alerts"', source)
         self.assertIn("cardBranchStock:", source)
+        self.assertIn("cardBranchConsume:", source)
         self.assertIn("Stock da filial", source)
         self.assertIn("Discrepâncias de receção", source)

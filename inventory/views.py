@@ -56,6 +56,20 @@ def branch_stock_console(request):
     return render(request, "inventory/branch_stock.html", context)
 
 
+@active_branch_required
+@require_GET
+def branch_consumption_console(request):
+    context = branch_page_context(request)
+    context.update(
+        {
+            "page_title": "Consume",
+            "page_title_key": "navBranchConsume",
+            "active_nav": "consumption",
+        }
+    )
+    return render(request, "inventory/branch_consumption.html", context)
+
+
 @warehouse_alerts_required
 @require_GET
 def warehouse_alerts_console(request):

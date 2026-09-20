@@ -69,6 +69,16 @@ urlpatterns = [
         name="branch_stock_adjust",
     ),
     path(
+        "branch/consumption/",
+        console_views.branch_consumption_list,
+        name="branch_consumption_list",
+    ),
+    path(
+        "branch/consumption/<int:consumption_id>/",
+        console_views.branch_consumption_detail,
+        name="branch_consumption_detail",
+    ),
+    path(
         "manage/alerts/",
         console_views.manage_alerts_list,
         name="manage_alerts_list",

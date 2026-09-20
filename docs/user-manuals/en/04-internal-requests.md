@@ -42,6 +42,7 @@ Out of stock? The warehouse raises a **purchase order** to a supplier first — 
 | Branch (manager / admin) | `/branch/requests/` | Approve / reject |
 | Branch (any role) | `/branch/receipts/` | Confirm arrival against a dispatch |
 | Branch (any role) | `/branch/stock/` | See this branch's on-hand quantity |
+| Branch (any role) | `/branch/consumption/` | Take items off this branch's stock |
 | Branch (manager / admin) | `/branch/alerts/` | Receipt discrepancies (unread until you open a row) |
 | Branch (any role) | `/company-voice/` | Company-wide suggestion box |
 | Warehouse | `/manage/internal-requests/` | Queue of approved requests + goods issue |
@@ -68,11 +69,12 @@ There are **three branch roles** (set for you by the head office) and the usual 
 | Cancel an **approved** request | ❌ | ✅ | ✅ |
 | Confirm arrival (branch receipt) | ✅ | ✅ | ✅ |
 | View branch on-hand (`/branch/stock/`) | ✅ | ✅ | ✅ |
+| Consume branch stock (`/branch/consumption/`) | ✅ | ✅ | ✅ |
 | Receipt discrepancy alerts | ❌ | ✅ | ✅ |
 | Branch short-close | ❌ | ✅ | ✅ |
 | Adjust branch stock | ❌ | ❌ | ✅ |
 
-- **Operator** can do the day-to-day (catalogue, request, receipt) but never approves and never short-closes.
+- **Operator** can do the day-to-day (catalogue, request, receipt, consume) but never approves and never short-closes.
 - **Manager** adds approval/rejection/short-close. By default approval is **yes/no on quantities** (no euro cap). If the superuser turns on **priced** mode, managers are limited by **EUR gross caps** (self vs others — see §8).
 - **Admin** is the branch power user: unlimited approval, plus **branch stock adjustments**.
 - The Django **`/admin/`** screen is for the **site superuser only**. Branch staff never log into `/admin/`. Head office creates your login and your branch role there.
@@ -98,7 +100,7 @@ You may belong to **one branch, several branches, or none**. After signing in:
 | **Several branches** | You land on `/branch/select/` — pick one, then continue to the dashboard. |
 | **No branch** | The picker says *"You have no active branch access."* Ask your administrator. |
 
-From the dashboard, **Your branch** has **Catalog**, **Internal request**, **Receipts**, and **Branch stock**. **Communication** has **Threads**, then **Parle**. On **Catalog**, **Requests**, **Receipts**, **Stock**, and **Threads**, the top bar also has **Home**, **Catalog**, **Requests**, **Receipts**, **Stock**, and **Threads** (Threads is last) — not on the dashboard itself.
+From the dashboard, **Your branch** has **Catalog**, **Internal request**, **Receipts**, **Branch stock**, and **Consume**. **Communication** has **Threads**, then **Parle**. On **Catalog**, **Requests**, **Receipts**, **Stock**, **Consume**, and **Threads**, the top bar also has **Home**, **Catalog**, **Requests**, **Receipts**, **Stock**, **Consume**, and **Threads** (Threads is last) — not on the dashboard itself.
 
 **Switch branch** appears only when you belong to **more than one** branch. If you see only one branch in your life, that link is hidden — you cannot browse other branches.
 
@@ -301,6 +303,17 @@ Open **`/branch/stock/`** (any branch role). This lists **this branch's** receiv
 - You never see warehouse quantity, cost, or selling prices here — those stay on `/branch/catalog/` (hint + optional prices).
 - The page needs Wi-Fi. It does not cache on-hand offline.
 
+### 8.5 Consume (take stock off the branch)
+
+Open **`/branch/consumption/`** (any branch role). This books a numbered **consumption ticket** (BC #) and immediately takes quantity off **this branch's** on-hand.
+
+1. Add one or more lines. The item picker lists only local stock with on-hand **greater than 0** (A–Z, `-----` first — nothing pre-selected).
+2. Enter **Qty** (whole number, at least 1, not more than on-hand) and a **Reason** (required).
+3. Click **Record**. Each line becomes a negative **Consumption** movement (reference **BC #**). `/branch/stock/` shows the new on-hand. Quantity **0 stays listed**.
+4. The ticket appears in the history table. Click a row to reopen its lines.
+
+You cannot consume an item this branch has never received (or that an admin has never adjusted onto the local list). One item per ticket line — do not add the same item twice. There is no draft and no void: if you booked the wrong qty, a branch **admin** uses **Adjust stock** on `/branch/receipts/` to put it back. This page needs Wi-Fi.
+
 ---
 
 ## 9. Branch stock adjustment (admin only)
@@ -371,6 +384,7 @@ Issued *guias* can be received while the request is still **fulfilling**; that r
 - **Short-close** a branch receipt while the warehouse still has remainder (**fulfilling**).
 - Short-close as an **operator** (either side).
 - Adjust branch stock unless you are the branch **admin**.
+- **Consume** more than this branch has on hand, or an item that is not on the local stock list.
 
 ---
 
@@ -436,7 +450,7 @@ The hold is released immediately and offered to the next waiting requisição (o
 Stock is already in motion. After the first goods issue the only way to finish early is **short-close** (warehouse side) or **branch short-close** (branch side).
 
 **Q14. How is branch stock different from warehouse stock?**
-Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it. `/branch/stock/` lists **only those local rows** — not the full warehouse catalogue. After you receive, the item appears there (or its on-hand goes up if it was already listed). Receipts / Stock movements at the bottom of `/branch/receipts/` are the ledger. The open dispatch list only shows guias still in progress.
+Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch, you **consume**, or an admin adjusts it. `/branch/stock/` lists **only those local rows** — not the full warehouse catalogue. After you receive, the item appears there (or its on-hand goes up if it was already listed). Receipts / Stock movements at the bottom of `/branch/receipts/` are the ledger. **Consume** at `/branch/consumption/` is how on-hand goes down in day-to-day use. The open dispatch list only shows guias still in progress.
 
 **Q14a. I received goods — why doesn't `/branch/stock/` show every catalogue item?**
 It is not the warehouse catalogue. A row appears the first time this branch receives that item (or an admin adjusts it). Quantity 0 stays listed. Order from `/branch/catalog/` as before.
@@ -458,3 +472,6 @@ Nobody is emailed. Warehouse **admins** and **managers grade 2+** get an **Alert
 
 **Q20. I ticked Reorder on a discrepancy — why isn't the new request waiting for a manager?**
 That's intended. A follow-up from **Report discrepancies** is created already **approved** and goes to `/manage/internal-requests/`, even if you lowered Reorder qty, and even if an operator reported it. Branch EUR caps do not apply on this path. The original request still closes out as usual.
+
+**Q21. I received goods — how do I take them off branch stock when we use them?**
+Open **`/branch/consumption/`**, add lines from this branch's on-hand, type a **Reason**, and **Record**. That writes a BC ticket and a negative consumption movement. It does not touch warehouse stock (that already fell at goods issue). You cannot go below on-hand.

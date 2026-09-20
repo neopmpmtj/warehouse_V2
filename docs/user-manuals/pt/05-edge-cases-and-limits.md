@@ -128,7 +128,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `No lines to issue.` (Sem linhas para emitir.) | Emissão vazia | Adicione uma linha |
 | `A reason is required to short-close a request.` (É obrigatório indicar um motivo para encerrar parcialmente uma requisição.) | Encerramento parcial no armazém exige motivo | Escreva um |
 
-**Receção na filial e stock da filial (`/branch/receipts/`, `/branch/stock/`)**
+**Receção na filial, stock da filial e consumo (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`)**
 
 | Mensagem | Porquê | O que fazer |
 |---------|-----|------------|
@@ -143,6 +143,12 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Branch stock cannot be adjusted below zero.` (O stock da filial não pode ser ajustado abaixo de zero.) | Saldo negativo na filial | Verifique as quantidades |
 | `A reason is required to adjust branch stock.` (É obrigatório indicar um motivo para ajustar o stock da filial.) | Ajuste na filial exige motivo | Escreva um |
 | `A reason is required to short-close a request.` (É obrigatório indicar um motivo para encerrar parcialmente uma requisição.) | Encerramento parcial na filial exige motivo | Escreva um |
+| `A reason is required to record consumption.` (É obrigatório indicar um motivo para registar o consumo.) | O ticket de consumo exige motivo | Escreva um |
+| `No lines to consume.` (Sem linhas para consumir.) | Registar sem linhas de artigo | Adicione pelo menos uma linha |
+| `An item was provided more than once in this consumption.` (Um artigo foi indicado mais do que uma vez neste consumo.) | Artigo duplicado no ticket | Uma linha por artigo |
+| `Consumption quantity must be at least 1.` (A quantidade de consumo tem de ser pelo menos 1.) | Qtd é 0, vazia, ou negativa | Indique 1 ou mais |
+| `Item 'X' is not on this branch's stock list.` (O artigo 'X' não está na lista de stock desta filial.) | O artigo nunca foi recebido/ajustado aqui | Receba-o primeiro, ou escolha um artigo local |
+| `Cannot consume X of 'Y': Z on hand.` (Não é possível consumir X de 'Y': Z em mão.) | A qtd é maior do que o em mão desta filial | Reduza |
 
 ### 2.4 Requisição interna (`/branch/requests/`) e filiais
 

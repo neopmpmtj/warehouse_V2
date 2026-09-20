@@ -12,7 +12,7 @@ from branches.capabilities import can_adjust_branch_stock, can_approve_request
 from branches.permissions import active_branch_required
 
 from . import services
-from .models import BranchReceipt, GoodsIssue, GoodsReceipt, StockMovement
+from .models import BranchConsumption, BranchReceipt, GoodsIssue, GoodsReceipt, StockMovement
 from .permissions import (
     ADD_GOODS_RECEIPT,
     ADJUST_STOCK,
@@ -362,9 +362,11 @@ def _serialize_branch_receipt(receipt):
     }
 
 
-def _serialize_branch_movement(movement, receipt=None):
+def _serialize_branch_movement(movement, receipt=None, consumption=None):
     if receipt is not None:
         reference = f"BR #{receipt.id}"
+    elif consumption is not None:
+        reference = f"BC #{consumption.id}"
     elif movement.content_type_id is not None:
         reference = f"{movement.content_type.model} #{movement.object_id}"
     else:
@@ -427,18 +429,30 @@ def branch_stock_movement_list(request):
         request,
     )
     receipt_ct = ContentType.objects.get_for_model(BranchReceipt)
+    consumption_ct = ContentType.objects.get_for_model(BranchConsumption)
     receipt_ids = [
         m.object_id
         for m in movements
         if m.content_type_id == receipt_ct.id and m.object_id
     ]
+    consumption_ids = [
+        m.object_id
+        for m in movements
+        if m.content_type_id == consumption_ct.id and m.object_id
+    ]
     receipts = {r.id: r for r in BranchReceipt.objects.filter(pk__in=receipt_ids)}
+    consumptions = {
+        c.id: c for c in BranchConsumption.objects.filter(pk__in=consumption_ids)
+    }
     payload = {
         "stock_movements": [
             _serialize_branch_movement(
                 m,
                 receipt=receipts.get(m.object_id)
                 if m.content_type_id == receipt_ct.id
+                else None,
+                consumption=consumptions.get(m.object_id)
+                if m.content_type_id == consumption_ct.id
                 else None,
             )
             for m in movements
@@ -559,6 +573,97 @@ def branch_stock_adjust(request):
     return JsonResponse(
         {"item_id": movement.item_id, "quantity": _dec(movement.quantity)}
     )
+
+
+def _serialize_branch_consumption_line(line):
+    item = line.item
+    return {
+        "id": line.id,
+        "item_id": item.id,
+        "internal_code": item.internal_code or "",
+        "description": item.description,
+        "quantity": _dec(line.quantity),
+    }
+
+
+def _serialize_branch_consumption(consumption, include_lines=False):
+    lines = list(consumption.lines.all())
+    payload = {
+        "id": consumption.id,
+        "consumed_by": consumption.consumed_by.email if consumption.consumed_by_id else None,
+        "consumed_at": consumption.consumed_at.isoformat(),
+        "reason": consumption.reason,
+        "notes": consumption.notes,
+        "line_count": len(lines),
+        "total_quantity": _dec(sum((line.quantity for line in lines), 0)),
+    }
+    if include_lines:
+        payload["lines"] = [_serialize_branch_consumption_line(line) for line in lines]
+    return payload
+
+
+@active_branch_required
+@require_http_methods(["GET", "POST"])
+def branch_consumption_list(request):
+    if request.method == "GET":
+        tickets, meta = _paginate(
+            services.get_branch_consumptions(request.active_branch), request
+        )
+        payload = {
+            "consumptions": [
+                _serialize_branch_consumption(ticket) for ticket in tickets
+            ]
+        }
+        if meta is not None:
+            payload.update(meta)
+        return JsonResponse(payload)
+
+    try:
+        payload = _parse_json(request)
+        lines = payload.get("lines")
+        if not isinstance(lines, list) or not lines:
+            raise ValidationError("lines must be a non-empty list.")
+        parsed_lines = []
+        for entry in lines:
+            if not isinstance(entry, dict):
+                raise ValidationError("lines must be a non-empty list.")
+            parsed_lines.append(
+                {
+                    "item_id": _parse_int_id(entry.get("item_id"), "item_id"),
+                    "quantity": entry.get("quantity"),
+                }
+            )
+        consumption = services.consume_at_branch(
+            request.active_branch,
+            parsed_lines,
+            request.user,
+            reason=str(payload.get("reason", "")),
+            notes=str(payload.get("notes", "")),
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        status = 403 if getattr(exc, "code", None) == "branch_consumption_forbidden" else None
+        if status == 403:
+            return _json_error(exc.messages[0], status=403, code=exc.code)
+        return _inv_error(exc)
+    return JsonResponse(
+        _serialize_branch_consumption(consumption, include_lines=True),
+        status=201,
+    )
+
+
+@active_branch_required
+@require_GET
+def branch_consumption_detail(request, consumption_id):
+    try:
+        consumption = services.get_branch_consumption(
+            request.active_branch, consumption_id
+        )
+    except BranchConsumption.DoesNotExist:
+        return _json_error("Consumption not found.", status=404)
+    return JsonResponse(
+        {"consumption": _serialize_branch_consumption(consumption, include_lines=True)}
+    )
+
 
 
 @warehouse_alerts_required
