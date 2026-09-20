@@ -93,13 +93,15 @@ The receipts list is a log. There is no “open / edit” drawer on a receipt ro
 | Column | Meaning |
 |--------|---------|
 | **Item** | Internal code — description |
-| **Type** | Receipt / Adjustment / Goods issue |
+| **Type** | Receipt / Adjustment / Goods issue / From branch |
 | **Quantity** | Signed amount (`+10` in, `−2` out) |
 | **Reference** | For a receipt: `GR #12` and the delivery-note text if you entered one |
 | **Reason** | Filled on adjustments |
 | **By** / **When** | Who and when |
 
 Use the **item filter** (*All items* / *Todos os artigos*) above the movements table to see one item’s history. Items in that list (and in **Adjust stock**) are **A–Z by the code — description shown**.
+
+**From branch** movements are stock that a branch sent in (BWS #). Confirm those on **`/manage/incoming-from-branches/`** — do **not** book them as a supplier goods receipt on this page. To see surplus still sitting at branches, open **`/manage/stock-at-branches/`**.
 
 ---
 

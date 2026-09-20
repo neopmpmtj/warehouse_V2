@@ -40,6 +40,7 @@ from .models import (
     BranchReceipt,
     BranchReceiptReadState,
     BranchStockMovement,
+    BranchWarehouseShipment,
     GoodsIssue,
     GoodsIssueLine,
     GoodsReceipt,
@@ -2068,3 +2069,280 @@ class BranchReceiptAlertTests(TestCase):
         self.assertContains(response, 'href="/branch/alerts/"')
         self.assertContains(response, 'class="dash-card-badge"')
         self.assertContains(response, ">1</span>")
+
+
+class BranchWarehouseShipmentTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.north = create_branch("North Send")
+        self.south = create_branch("South Send")
+        self.operator = _make_branch_user("send-op@example.com", self.north, ROLE_OPERATOR)
+        self.manager = _make_branch_user("send-mgr@example.com", self.north, ROLE_MANAGER)
+        self.admin = _make_branch_user("send-adm@example.com", self.north, ROLE_ADMIN)
+        self.south_mgr = _make_branch_user(
+            "send-south@example.com", self.south, ROLE_MANAGER
+        )
+        self.south_admin = _make_branch_user(
+            "send-south-adm@example.com", self.south, ROLE_ADMIN
+        )
+        self.wh_admin = make_warehouse_user("send-wh@example.com")
+        self.wh_op1 = make_warehouse_user(
+            "send-wh-op1@example.com", group_name=GROUP_OPERATORS
+        )
+        self.item = _make_issue_item("Send Cement", wholesale="5.00", quantity="0")
+
+    def _login_branch(self, user, branch):
+        self.client.force_login(user)
+        session = self.client.session
+        session[SESSION_KEY] = branch.id
+        session.save()
+
+    def _seed(self, branch, qty="8", user=None):
+        services.adjust_branch_stock(branch, self.item, qty, "seed", user or self.admin)
+
+    def _post_send(self, payload):
+        return self.client.post(
+            reverse("branch_send_to_warehouse_list"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+    def test_operator_can_open_page_but_cannot_send(self):
+        self._seed(self.north)
+        self._login_branch(self.operator, self.north)
+        page = self.client.get(reverse("branch_send_to_warehouse_console"))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "branch_send.js")
+        self.assertContains(page, 'data-can-send="false"')
+        listed = self.client.get(reverse("branch_send_to_warehouse_list"))
+        self.assertEqual(listed.status_code, 200)
+        self.assertFalse(listed.json()["can_send"])
+        response = self._post_send(
+            {
+                "reason": "surplus",
+                "lines": [{"item_id": self.item.id, "quantity": "2"}],
+            }
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["code"], "branch_send_forbidden")
+
+    def test_manager_send_drops_branch_stock(self):
+        self._seed(self.north, "8")
+        self._login_branch(self.manager, self.north)
+        response = self._post_send(
+            {
+                "reason": "surplus for warehouse",
+                "lines": [{"item_id": self.item.id, "quantity": "3"}],
+            }
+        )
+        self.assertEqual(response.status_code, 201)
+        payload = response.json()
+        self.assertEqual(payload["status"], BranchWarehouseShipment.Status.IN_TRANSIT)
+        self.assertEqual(payload["total_sent"], "3")
+        stock = self.client.get(reverse("branch_stock_list")).json()["items"]
+        row = next(item for item in stock if item["id"] == self.item.id)
+        self.assertEqual(row["on_hand"], "5")
+        movements = self.client.get(reverse("branch_stock_movement_list")).json()[
+            "stock_movements"
+        ]
+        send_rows = [
+            row
+            for row in movements
+            if row["movement_type"] == BranchStockMovement.Type.SEND_TO_WAREHOUSE
+        ]
+        self.assertEqual(len(send_rows), 1)
+        self.assertEqual(send_rows[0]["quantity"], "-3")
+        self.assertEqual(send_rows[0]["reference"], f"BWS #{payload['id']}")
+
+    def test_inactive_item_rejected(self):
+        self._seed(self.north, "4")
+        deactivate_item(self.wh_admin, self.item, reason="retired")
+        self._login_branch(self.manager, self.north)
+        response = self._post_send(
+            {
+                "reason": "try inactive",
+                "lines": [{"item_id": self.item.id, "quantity": "1"}],
+            }
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "branch_send_inactive_item")
+
+    def test_cancel_restores_branch_stock(self):
+        self._seed(self.north, "6")
+        self._login_branch(self.manager, self.north)
+        created = self._post_send(
+            {
+                "reason": "will cancel",
+                "lines": [{"item_id": self.item.id, "quantity": "2"}],
+            }
+        )
+        self.assertEqual(created.status_code, 201)
+        shipment_id = created.json()["id"]
+        cancel = self.client.post(
+            reverse("branch_send_to_warehouse_cancel", args=[shipment_id]),
+            data=json.dumps({"reason": "van did not leave"}),
+            content_type="application/json",
+        )
+        self.assertEqual(cancel.status_code, 200)
+        self.assertEqual(cancel.json()["status"], BranchWarehouseShipment.Status.CANCELLED)
+        stock = self.client.get(reverse("branch_stock_list")).json()["items"]
+        row = next(item for item in stock if item["id"] == self.item.id)
+        self.assertEqual(row["on_hand"], "6")
+
+    def test_other_branch_cannot_see_or_cancel(self):
+        self._seed(self.north, "5")
+        self._login_branch(self.manager, self.north)
+        created = self._post_send(
+            {
+                "reason": "north only",
+                "lines": [{"item_id": self.item.id, "quantity": "1"}],
+            }
+        )
+        shipment_id = created.json()["id"]
+        self._login_branch(self.south_mgr, self.south)
+        listed = self.client.get(reverse("branch_send_to_warehouse_list"))
+        self.assertEqual(listed.json()["shipments"], [])
+        detail = self.client.get(
+            reverse("branch_send_to_warehouse_detail", args=[shipment_id])
+        )
+        self.assertEqual(detail.status_code, 404)
+        cancel = self.client.post(
+            reverse("branch_send_to_warehouse_cancel", args=[shipment_id]),
+            data=json.dumps({"reason": "no"}),
+            content_type="application/json",
+        )
+        self.assertEqual(cancel.status_code, 404)
+
+    def test_warehouse_receive_increases_stock_and_allocates(self):
+        self._seed(self.south, "5", user=self.south_admin)
+        req = order_services.create_internal_request(self.north, self.operator)
+        line = order_services.add_line(req, self.item, "4", self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        line.refresh_from_db()
+        self.assertEqual(int(line.quantity_reserved), 0)
+
+        self._login_branch(self.south_mgr, self.south)
+        created = self._post_send(
+            {
+                "reason": "surplus cement",
+                "lines": [{"item_id": self.item.id, "quantity": "4"}],
+            }
+        )
+        self.assertEqual(created.status_code, 201)
+        shipment_id = created.json()["id"]
+        self.item.refresh_from_db()
+        self.assertEqual(int(self.item.quantity), 0)
+
+        self.client.force_login(self.wh_admin)
+        page = self.client.get(reverse("warehouse_inbound_console"))
+        self.assertEqual(page.status_code, 200)
+        queue = self.client.get(
+            reverse("manage_inbound_from_branches_list") + "?status=in_transit"
+        )
+        self.assertEqual(len(queue.json()["shipments"]), 1)
+        receive = self.client.post(
+            reverse("manage_inbound_from_branches_receive", args=[shipment_id]),
+            data=json.dumps(
+                {
+                    "lines": [
+                        {
+                            "line_id": created.json()["lines"][0]["id"],
+                            "quantity_received": "4",
+                        }
+                    ]
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(receive.status_code, 200)
+        self.assertEqual(receive.json()["status"], BranchWarehouseShipment.Status.RECEIVED)
+        self.item.refresh_from_db()
+        self.assertEqual(int(self.item.quantity), 4)
+        line.refresh_from_db()
+        self.assertEqual(int(line.quantity_reserved), 4)
+        movements = self.client.get(reverse("manage_stock_movements")).json()[
+            "stock_movements"
+        ]
+        inbound = [
+            row
+            for row in movements
+            if row["movement_type"] == StockMovement.Type.BRANCH_INBOUND
+        ]
+        self.assertEqual(len(inbound), 1)
+        self.assertEqual(inbound[0]["quantity"], "4")
+        self.assertEqual(inbound[0]["reference"], f"BWS #{shipment_id}")
+
+    def test_short_receive_requires_reason(self):
+        self._seed(self.north, "4")
+        self._login_branch(self.manager, self.north)
+        created = self._post_send(
+            {
+                "reason": "send three",
+                "lines": [{"item_id": self.item.id, "quantity": "3"}],
+            }
+        )
+        line_id = created.json()["lines"][0]["id"]
+        shipment_id = created.json()["id"]
+        self.client.force_login(self.wh_admin)
+        missing = self.client.post(
+            reverse("manage_inbound_from_branches_receive", args=[shipment_id]),
+            data=json.dumps(
+                {"lines": [{"line_id": line_id, "quantity_received": "2"}]}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(missing.status_code, 400)
+        self.assertEqual(missing.json()["code"], "branch_inbound_short_reason_required")
+        ok = self.client.post(
+            reverse("manage_inbound_from_branches_receive", args=[shipment_id]),
+            data=json.dumps(
+                {
+                    "reason": "one bag damaged",
+                    "lines": [{"line_id": line_id, "quantity_received": "2"}],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(ok.json()["total_received"], "2")
+        self.item.refresh_from_db()
+        self.assertEqual(int(self.item.quantity), 2)
+
+    def test_warehouse_operator_grade_1_cannot_receive(self):
+        self._seed(self.north, "3")
+        self._login_branch(self.manager, self.north)
+        created = self._post_send(
+            {
+                "reason": "op1",
+                "lines": [{"item_id": self.item.id, "quantity": "1"}],
+            }
+        )
+        shipment_id = created.json()["id"]
+        line_id = created.json()["lines"][0]["id"]
+        self.client.force_login(self.wh_op1)
+        page = self.client.get(reverse("warehouse_inbound_console"))
+        self.assertEqual(page.status_code, 200)
+        receive = self.client.post(
+            reverse("manage_inbound_from_branches_receive", args=[shipment_id]),
+            data=json.dumps(
+                {"lines": [{"line_id": line_id, "quantity_received": "1"}]}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(receive.status_code, 403)
+
+    def test_stock_at_branches_is_read_only_for_warehouse(self):
+        self._seed(self.south, "7", user=self.south_admin)
+        self.client.force_login(self.wh_admin)
+        page = self.client.get(reverse("stock_at_branches_console"))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "stock_at_branches.js")
+        payload = self.client.get(reverse("manage_stock_at_branches")).json()
+        row = next(item for item in payload["rows"] if item["item_id"] == self.item.id)
+        self.assertEqual(row["branch_id"], self.south.id)
+        self.assertEqual(row["on_hand"], "7")
+        self._login_branch(self.manager, self.north)
+        forbidden = self.client.get(reverse("manage_stock_at_branches"))
+        self.assertEqual(forbidden.status_code, 403)

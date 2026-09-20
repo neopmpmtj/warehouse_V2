@@ -5,5 +5,7 @@
     <a href="{% url 'purchase_order_console' %}" class="topbar-nav-link{% if active_nav == "purchase_orders" %} is-active{% endif %}"{% if active_nav == "purchase_orders" %} aria-current="page"{% endif %} data-i18n="navWarehousePOs">POs</a>
     <a href="{% url 'goods_receipt_console' %}" class="topbar-nav-link{% if active_nav == "receipts" %} is-active{% endif %}"{% if active_nav == "receipts" %} aria-current="page"{% endif %} data-i18n="navWarehouseReceipts">Receipts</a>
     <a href="{% url 'internal_request_queue_console' %}" class="topbar-nav-link{% if active_nav == "requests" %} is-active{% endif %}"{% if active_nav == "requests" %} aria-current="page"{% endif %} data-i18n="navWarehouseRequests">Requests</a>
+    <a href="{% url 'warehouse_inbound_console' %}" class="topbar-nav-link{% if active_nav == "incoming" %} is-active{% endif %}"{% if active_nav == "incoming" %} aria-current="page"{% endif %} data-i18n="navWarehouseIncoming">From branches</a>
+    <a href="{% url 'stock_at_branches_console' %}" class="topbar-nav-link{% if active_nav == "branch_stock" %} is-active{% endif %}"{% if active_nav == "branch_stock" %} aria-current="page"{% endif %} data-i18n="navWarehouseBranchStock">At branches</a>
     <a href="{% url 'warehouse_thread_console' %}" class="topbar-nav-link{% if active_nav == "threads" %} is-active{% endif %}"{% if active_nav == "threads" %} aria-current="page"{% endif %} data-i18n="navWarehouseThreads">Threads</a>
 </nav>

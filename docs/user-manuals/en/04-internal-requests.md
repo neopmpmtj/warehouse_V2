@@ -43,9 +43,12 @@ Out of stock? The warehouse raises a **purchase order** to a supplier first — 
 | Branch (any role) | `/branch/receipts/` | Confirm arrival against a dispatch |
 | Branch (any role) | `/branch/stock/` | See this branch's on-hand quantity |
 | Branch (any role) | `/branch/consumption/` | Take items off this branch's stock |
+| Branch (any role) | `/branch/send-to-warehouse/` | See sends to the warehouse (manager/admin send) |
 | Branch (manager / admin) | `/branch/alerts/` | Receipt discrepancies (unread until you open a row) |
 | Branch (any role) | `/company-voice/` | Company-wide suggestion box |
 | Warehouse | `/manage/internal-requests/` | Queue of approved requests + goods issue |
+| Warehouse | `/manage/incoming-from-branches/` | Confirm items a branch sent to the warehouse |
+| Warehouse | `/manage/stock-at-branches/` | Read-only on-hand at every branch |
 | Warehouse (admin, or manager grade 2+) | `/manage/alerts/` | Receipt discrepancies from every branch |
 | Warehouse admin | `/manage/branch-approval-limits/` | Branch manager approval caps |
 
@@ -70,6 +73,8 @@ There are **three branch roles** (set for you by the head office) and the usual 
 | Confirm arrival (branch receipt) | ✅ | ✅ | ✅ |
 | View branch on-hand (`/branch/stock/`) | ✅ | ✅ | ✅ |
 | Consume branch stock (`/branch/consumption/`) | ✅ | ✅ | ✅ |
+| View sends to the warehouse | ✅ | ✅ | ✅ |
+| Send surplus to the warehouse / cancel in transit | ❌ | ✅ | ✅ |
 | Receipt discrepancy alerts | ❌ | ✅ | ✅ |
 | Branch short-close | ❌ | ✅ | ✅ |
 | Adjust branch stock | ❌ | ❌ | ✅ |
@@ -84,6 +89,8 @@ There are **three branch roles** (set for you by the head office) and the usual 
 | Capability | Who |
 |-----------|-----|
 | See the request queue + issue goods | Operator grade 2+, manager, admin |
+| Confirm incoming from branches | Operator grade 2+, manager, admin |
+| See stock at branches (read-only) | Anyone who can open goods receipts |
 | Receipt discrepancy alerts (`/manage/alerts/`) | Manager grade 2+ or admin |
 | Warehouse short-close | Manager grade 2+ or admin |
 | Edit branch approval caps | Warehouse admin (`/manage/branch-approval-limits/`) |
@@ -100,7 +107,7 @@ You may belong to **one branch, several branches, or none**. After signing in:
 | **Several branches** | You land on `/branch/select/` — pick one, then continue to the dashboard. |
 | **No branch** | The picker says *"You have no active branch access."* Ask your administrator. |
 
-From the dashboard, **Your branch** has **Catalog**, **Internal request**, **Receipts**, **Branch stock**, and **Consume**. **Communication** has **Threads**, then **Parle**. On **Catalog**, **Requests**, **Receipts**, **Stock**, **Consume**, and **Threads**, the top bar also has **Home**, **Catalog**, **Requests**, **Receipts**, **Stock**, **Consume**, and **Threads** (Threads is last) — not on the dashboard itself.
+From the dashboard, **Your branch** has **Catalog**, **Internal request**, **Receipts**, **Branch stock**, **Consume**, and **Send to warehouse**. **Communication** has **Threads**, then **Parle**. On **Catalog**, **Requests**, **Receipts**, **Stock**, **Consume**, **Send**, and **Threads**, the top bar also has **Home**, **Catalog**, **Requests**, **Receipts**, **Stock**, **Consume**, **Send**, and **Threads** (Threads is last) — not on the dashboard itself.
 
 **Switch branch** appears only when you belong to **more than one** branch. If you see only one branch in your life, that link is hidden — you cannot browse other branches.
 
@@ -314,6 +321,22 @@ Open **`/branch/consumption/`** (any branch role). This books a numbered **consu
 
 You cannot consume an item this branch has never received (or that an admin has never adjusted onto the local list). One item per ticket line — do not add the same item twice. There is no draft and no void: if you booked the wrong qty, a branch **admin** uses **Adjust stock** on `/branch/receipts/` to put it back. This page needs Wi-Fi.
 
+### 8.6 Send to warehouse (surplus, not a return)
+
+Open **`/branch/send-to-warehouse/`**. This is **not** a return of a warehouse dispatch and it is **not** booked on `/branch/receipts/`.
+
+A manager or admin sends on-hand items back to the **central warehouse** so another branch can be served from there.
+
+1. Add lines from **active** items with on-hand greater than 0 (A–Z, `-----` first).
+2. Enter **Qty** (whole number, at least 1, not more than on-hand) and a **Reason** (required).
+3. Click **Send**. Branch stock goes **down** immediately. The send is **in transit** (BWS #).
+4. The warehouse confirms arrival on `/manage/incoming-from-branches/`. Then warehouse stock goes **up** and waiting requisições can take a hold (oldest first).
+5. While **in transit**, the same manager/admin may **Cancel send** with a reason — stock returns to this branch. The warehouse cannot cancel or refuse (stock does not bounce back from the warehouse screen).
+
+Operators can read the history. Inactive catalogue items cannot be sent even if they still appear on `/branch/stock/`. This page needs Wi-Fi.
+
+The warehouse also has a read-only **Stock at branches** page at `/manage/stock-at-branches/` so staff can see which branch has surplus before asking them to send.
+
 ---
 
 ## 9. Branch stock adjustment (admin only)
@@ -385,6 +408,7 @@ Issued *guias* can be received while the request is still **fulfilling**; that r
 - Short-close as an **operator** (either side).
 - Adjust branch stock unless you are the branch **admin**.
 - **Consume** more than this branch has on hand, or an item that is not on the local stock list.
+- **Send to warehouse** as an operator, send an **inactive** item, send more than on-hand, or cancel a send after the warehouse has already received it.
 
 ---
 
@@ -450,7 +474,7 @@ The hold is released immediately and offered to the next waiting requisição (o
 Stock is already in motion. After the first goods issue the only way to finish early is **short-close** (warehouse side) or **branch short-close** (branch side).
 
 **Q14. How is branch stock different from warehouse stock?**
-Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch, you **consume**, or an admin adjusts it. `/branch/stock/` lists **only those local rows** — not the full warehouse catalogue. After you receive, the item appears there (or its on-hand goes up if it was already listed). Receipts / Stock movements at the bottom of `/branch/receipts/` are the ledger. **Consume** at `/branch/consumption/` is how on-hand goes down in day-to-day use. The open dispatch list only shows guias still in progress.
+Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch, you **consume**, you **send to the warehouse**, or an admin adjusts it. `/branch/stock/` lists **only those local rows** — not the full warehouse catalogue. After you receive, the item appears there (or its on-hand goes up if it was already listed). Receipts / Stock movements at the bottom of `/branch/receipts/` are the ledger. **Consume** at `/branch/consumption/` is how on-hand goes down in day-to-day use. **Send to warehouse** at `/branch/send-to-warehouse/` is how surplus goes back to the warehouse (not a return of a *guia*). The open dispatch list only shows guias still in progress.
 
 **Q14a. I received goods — why doesn't `/branch/stock/` show every catalogue item?**
 It is not the warehouse catalogue. A row appears the first time this branch receives that item (or an admin adjusts it). Quantity 0 stays listed. Order from `/branch/catalog/` as before.
@@ -475,3 +499,6 @@ That's intended. A follow-up from **Report discrepancies** is created already **
 
 **Q21. I received goods — how do I take them off branch stock when we use them?**
 Open **`/branch/consumption/`**, add lines from this branch's on-hand, type a **Reason**, and **Record**. That writes a BC ticket and a negative consumption movement. It does not touch warehouse stock (that already fell at goods issue). You cannot go below on-hand.
+
+**Q22. Branch B has surplus cement and Branch A is waiting — is that a return?**
+No. Do **not** use `/branch/receipts/`. A North/South **manager** or **admin** opens **`/branch/send-to-warehouse/`**, sends the surplus, and the warehouse confirms it on **`/manage/incoming-from-branches/`**. Warehouse stock rises; Branch A's approved requisição can then take a hold automatically. The warehouse can look up surplus first on **`/manage/stock-at-branches/`**.

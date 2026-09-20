@@ -71,6 +71,20 @@ def staff_dashboard(request):
                 "url": "/manage/internal-requests/",
             },
             {
+                "title_key": "cardIncomingFromBranches",
+                "desc_key": "cardIncomingFromBranchesDesc",
+                "title": "Incoming from branches",
+                "desc": "Confirm items a branch sent to the warehouse",
+                "url": "/manage/incoming-from-branches/",
+            },
+            {
+                "title_key": "cardStockAtBranches",
+                "desc_key": "cardStockAtBranchesDesc",
+                "title": "Stock at branches",
+                "desc": "Read-only on-hand quantity at every branch",
+                "url": "/manage/stock-at-branches/",
+            },
+            {
                 "title_key": "cardRequestThreads",
                 "desc_key": "cardRequestThreadsDesc",
                 "title": "Request threads",

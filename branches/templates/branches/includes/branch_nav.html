@@ -5,5 +5,6 @@
     <a href="{% url 'branch_receipt_console' %}"{% if active_nav == "receipts" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchReceipts">Receipts</a>
     <a href="{% url 'branch_stock_console' %}"{% if active_nav == "stock" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchStock">Stock</a>
     <a href="{% url 'branch_consumption_console' %}"{% if active_nav == "consumption" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchConsume">Consume</a>
+    <a href="{% url 'branch_send_to_warehouse_console' %}"{% if active_nav == "send" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchSend">Send</a>
     <a href="{% url 'branch_thread_console' %}"{% if active_nav == "threads" %} class="is-active" aria-current="page"{% endif %} data-i18n="navBranchThreads">Threads</a>
 </nav>

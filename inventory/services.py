@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F, IntegerField, OuterRef, Prefetch, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from logging_utils import get_logger
 
@@ -24,6 +25,9 @@ from .models import (
     BranchReceiptLine,
     BranchReceiptReadState,
     BranchStockMovement,
+    BranchWarehouseShipment,
+    BranchWarehouseShipmentChangeLog,
+    BranchWarehouseShipmentLine,
     GoodsIssue,
     GoodsIssueLine,
     GoodsReceipt,
@@ -1060,6 +1064,147 @@ class BranchConsumeExceedsOnHandError(ValidationError):
         )
 
 
+class BranchSendForbiddenError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Only branch managers and admins can send items to the warehouse.",
+            code="branch_send_forbidden",
+        )
+
+
+class BranchSendReasonRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A reason is required to send items to the warehouse.",
+            code="branch_send_reason_required",
+        )
+
+
+class NoBranchLinesToSendError(ValidationError):
+    def __init__(self):
+        super().__init__("No lines to send.", code="no_branch_lines_to_send")
+
+
+class InvalidBranchSendLineError(ValidationError):
+    def __init__(
+        self,
+        message="Each send line must be a valid object with item_id and quantity.",
+    ):
+        super().__init__(message, code="invalid_branch_send_line")
+
+
+class DuplicateBranchSendLineError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "An item was provided more than once in this send.",
+            code="duplicate_branch_send_line",
+        )
+
+
+class InvalidBranchSendQuantityError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Send quantity must be at least 1.",
+            code="invalid_branch_send_quantity",
+        )
+
+
+class BranchSendItemNotInStockError(ValidationError):
+    def __init__(self, item):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or item.pk
+        super().__init__(
+            f"Item '{label}' is not on this branch's stock list.",
+            code="branch_send_item_not_in_stock",
+        )
+
+
+class BranchSendExceedsOnHandError(ValidationError):
+    def __init__(self, item, qty, on_hand):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or item.pk
+        super().__init__(
+            f"Cannot send {qty} of '{label}': {on_hand} on hand.",
+            code="branch_send_exceeds_on_hand",
+        )
+
+
+class BranchSendInactiveItemError(ValidationError):
+    def __init__(self, item):
+        label = getattr(item, "internal_code", None) or getattr(item, "description", None) or item.pk
+        super().__init__(
+            f"Cannot send inactive item '{label}'.",
+            code="branch_send_inactive_item",
+        )
+
+
+class BranchShipmentNotCancellableError(ValidationError):
+    def __init__(self, status):
+        super().__init__(
+            f"Cannot cancel a shipment with status '{status}'.",
+            code="branch_shipment_not_cancellable",
+        )
+
+
+class BranchShipmentCancelReasonRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A reason is required to cancel a send to the warehouse.",
+            code="branch_shipment_cancel_reason_required",
+        )
+
+
+class BranchShipmentNotReceivableError(ValidationError):
+    def __init__(self, status):
+        super().__init__(
+            f"Cannot receive a shipment with status '{status}'.",
+            code="branch_shipment_not_receivable",
+        )
+
+
+class BranchShipmentLineNotFoundError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Shipment line not found on this send.",
+            code="branch_shipment_line_not_found",
+        )
+
+
+class InvalidBranchInboundQuantityError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Received quantity must be a whole number of 0 or more.",
+            code="invalid_branch_inbound_quantity",
+        )
+
+
+class BranchInboundExceedsSentError(ValidationError):
+    def __init__(self, remaining, qty):
+        super().__init__(
+            f"Received quantity {qty} exceeds sent remaining {remaining}.",
+            code="branch_inbound_exceeds_sent",
+        )
+
+
+class DuplicateBranchInboundLineError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A shipment line was provided more than once.",
+            code="duplicate_branch_inbound_line",
+        )
+
+
+class NoBranchInboundLinesError(ValidationError):
+    def __init__(self):
+        super().__init__("No lines to receive.", code="no_branch_inbound_lines")
+
+
+class BranchInboundShortReasonRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A reason is required when receiving less than the sent quantity.",
+            code="branch_inbound_short_reason_required",
+        )
+
+
 def _resolve_goods_issue(goods_issue):
     if isinstance(goods_issue, GoodsIssue):
         return goods_issue
@@ -1534,6 +1679,329 @@ def get_branch_consumptions(branch):
 def get_branch_consumption(branch, consumption_id):
     """One consumption ticket scoped to this branch, or DoesNotExist."""
     return get_branch_consumptions(branch).get(pk=consumption_id)
+
+
+def _parse_send_lines(lines):
+    if not isinstance(lines, list) or not lines:
+        raise NoBranchLinesToSendError()
+    parsed = []
+    seen_ids = set()
+    for entry in lines:
+        if not isinstance(entry, dict):
+            raise InvalidBranchSendLineError()
+        item_id = entry.get("item_id")
+        if item_id is None:
+            raise InvalidBranchSendLineError(
+                "Each send line requires an item_id."
+            )
+        if "quantity" not in entry:
+            raise InvalidBranchSendLineError(
+                "Each send line requires quantity."
+            )
+        item = _resolve_item(item_id)
+        if item.pk in seen_ids:
+            raise DuplicateBranchSendLineError()
+        seen_ids.add(item.pk)
+        qty = _parse_decimal_quantity(entry.get("quantity"))
+        if qty < 1:
+            raise InvalidBranchSendQuantityError()
+        parsed.append((item, qty))
+    return parsed
+
+
+@transaction.atomic
+def send_to_warehouse(branch, lines, user, reason="", notes=""):
+    """Dispatch surplus from a branch to the warehouse; stock leaves the branch."""
+    from branches.capabilities import can_send_to_warehouse
+
+    if not can_send_to_warehouse(user, branch):
+        raise BranchSendForbiddenError()
+
+    reason = (reason or "").strip()
+    if not reason:
+        raise BranchSendReasonRequiredError()
+
+    parsed = _parse_send_lines(lines)
+    item_ids = sorted(item.pk for item, _qty in parsed)
+    active_ids = set(
+        Item.objects.filter(pk__in=item_ids, is_active=True).values_list("pk", flat=True)
+    )
+    stocks = {
+        row.item_id: row
+        for row in BranchItemStock.objects.select_for_update()
+        .filter(branch=branch, item_id__in=item_ids)
+        .order_by("item_id")
+    }
+    for item, qty in parsed:
+        if item.pk not in active_ids:
+            raise BranchSendInactiveItemError(item)
+        stock = stocks.get(item.pk)
+        if stock is None:
+            raise BranchSendItemNotInStockError(item)
+        on_hand = int(stock.quantity or 0)
+        if qty > on_hand:
+            raise BranchSendExceedsOnHandError(item, qty, on_hand)
+
+    shipment = BranchWarehouseShipment.objects.create(
+        branch=branch,
+        sent_by=user,
+        reason=reason,
+        notes=(notes or "").strip(),
+    )
+    changelog_lines = []
+    for item, qty in parsed:
+        BranchWarehouseShipmentLine.objects.create(
+            shipment=shipment,
+            item=item,
+            quantity_sent=qty,
+        )
+        _write_branch_movement(
+            branch,
+            item,
+            -qty,
+            BranchStockMovement.Type.SEND_TO_WAREHOUSE,
+            user,
+            content_object=shipment,
+            reason=reason,
+        )
+        changelog_lines.append({"item_id": item.pk, "quantity_sent": qty})
+
+    BranchWarehouseShipmentChangeLog.objects.create(
+        shipment=shipment,
+        user=user,
+        action=BranchWarehouseShipmentChangeLog.Action.CREATED,
+        changes={"lines": changelog_lines},
+        reason=reason,
+    )
+    logger.info(
+        "Sent to warehouse shipment=%s branch=%s lines=%s user=%s",
+        shipment.id,
+        branch.id,
+        len(parsed),
+        getattr(user, "email", None),
+    )
+    return shipment
+
+
+@transaction.atomic
+def cancel_branch_warehouse_shipment(shipment, user, reason=""):
+    """Return in-transit qty to the sending branch. Warehouse cannot cancel."""
+    from branches.capabilities import can_send_to_warehouse
+
+    shipment = BranchWarehouseShipment.objects.select_for_update().get(
+        pk=shipment.pk if isinstance(shipment, BranchWarehouseShipment) else shipment
+    )
+    if not can_send_to_warehouse(user, shipment.branch):
+        raise BranchSendForbiddenError()
+    if shipment.status != BranchWarehouseShipment.Status.IN_TRANSIT:
+        raise BranchShipmentNotCancellableError(shipment.status)
+
+    reason = (reason or "").strip()
+    if not reason:
+        raise BranchShipmentCancelReasonRequiredError()
+
+    item_ids = sorted(shipment.lines.values_list("item_id", flat=True))
+    list(
+        BranchItemStock.objects.filter(branch=shipment.branch, item_id__in=item_ids)
+        .order_by("item_id")
+        .select_for_update()
+    )
+    for line in shipment.lines.select_related("item").order_by("item_id"):
+        _write_branch_movement(
+            shipment.branch,
+            line.item,
+            line.quantity_sent,
+            BranchStockMovement.Type.SEND_TO_WAREHOUSE,
+            user,
+            content_object=shipment,
+            reason=reason,
+        )
+
+    shipment.status = BranchWarehouseShipment.Status.CANCELLED
+    shipment.cancelled_by = user
+    shipment.cancelled_at = timezone.now()
+    shipment.cancel_reason = reason
+    shipment.save(
+        update_fields=[
+            "status",
+            "cancelled_by",
+            "cancelled_at",
+            "cancel_reason",
+        ]
+    )
+    BranchWarehouseShipmentChangeLog.objects.create(
+        shipment=shipment,
+        user=user,
+        action=BranchWarehouseShipmentChangeLog.Action.CANCELLED,
+        changes={"status": shipment.status},
+        reason=reason,
+    )
+    logger.info(
+        "Cancelled warehouse shipment=%s user=%s",
+        shipment.id,
+        getattr(user, "email", None),
+    )
+    return shipment
+
+
+def _validate_inbound_qty(value):
+    qty = _parse_decimal_quantity(value)
+    if qty < 0:
+        raise InvalidBranchInboundQuantityError()
+    return qty
+
+
+@transaction.atomic
+def receive_from_branch(shipment, lines, user, reason=""):
+    """Book warehouse inbound from a branch send; then FIFO-allocate available stock."""
+    shipment = BranchWarehouseShipment.objects.select_for_update().get(
+        pk=shipment.pk if isinstance(shipment, BranchWarehouseShipment) else shipment
+    )
+    if shipment.status != BranchWarehouseShipment.Status.IN_TRANSIT:
+        raise BranchShipmentNotReceivableError(shipment.status)
+
+    if not isinstance(lines, list) or not lines:
+        raise NoBranchInboundLinesError()
+
+    seen = set()
+    normalized = []
+    for entry in lines:
+        if not isinstance(entry, dict):
+            raise InvalidBranchSendLineError(
+                "Each receive line must be an object with line_id and quantity_received."
+            )
+        line_id = entry.get("line_id", entry.get("shipment_line_id"))
+        if line_id is None:
+            raise InvalidBranchSendLineError("Each receive line requires a line_id.")
+        if "quantity_received" not in entry:
+            raise InvalidBranchSendLineError(
+                "Each receive line requires quantity_received."
+            )
+        qty = _validate_inbound_qty(entry["quantity_received"])
+        try:
+            line = shipment.lines.select_related("item").get(pk=line_id)
+        except BranchWarehouseShipmentLine.DoesNotExist:
+            raise BranchShipmentLineNotFoundError()
+        if line.id in seen:
+            raise DuplicateBranchInboundLineError()
+        seen.add(line.id)
+        if qty > line.quantity_sent:
+            raise BranchInboundExceedsSentError(line.quantity_sent, qty)
+        written_off = line.quantity_sent - qty
+        normalized.append((line, qty, written_off))
+
+    if not normalized:
+        raise NoBranchInboundLinesError()
+    if {line.id for line, _qty, _wo in normalized} != set(
+        shipment.lines.values_list("id", flat=True)
+    ):
+        raise NoBranchInboundLinesError()
+
+    is_short = any(written_off > 0 for _line, _qty, written_off in normalized)
+    reason_text = (reason or "").strip()
+    if is_short and not reason_text:
+        raise BranchInboundShortReasonRequiredError()
+
+    item_ids = sorted({line.item_id for line, qty, _wo in normalized if qty > 0})
+    if item_ids:
+        list(
+            Item.objects.filter(pk__in=item_ids)
+            .order_by("pk")
+            .select_for_update()
+        )
+
+    now = timezone.now()
+    for line, qty, written_off in normalized:
+        line.quantity_received = qty
+        line.quantity_written_off = written_off
+        line.save(update_fields=["quantity_received", "quantity_written_off"])
+        if qty > 0:
+            _write_movement(
+                line.item,
+                qty,
+                StockMovement.Type.BRANCH_INBOUND,
+                user,
+                content_object=shipment,
+                reason=reason_text,
+            )
+
+    for item_id in item_ids:
+        allocate_available_stock(item_id, user)
+
+    shipment.status = BranchWarehouseShipment.Status.RECEIVED
+    shipment.received_by = user
+    shipment.received_at = now
+    shipment.receive_reason = reason_text
+    shipment.save(
+        update_fields=["status", "received_by", "received_at", "receive_reason"]
+    )
+    BranchWarehouseShipmentChangeLog.objects.create(
+        shipment=shipment,
+        user=user,
+        action=BranchWarehouseShipmentChangeLog.Action.RECEIVED,
+        changes={
+            "lines": [
+                {
+                    "line_id": line.id,
+                    "quantity_received": qty,
+                    "written_off": written_off,
+                }
+                for line, qty, written_off in normalized
+            ]
+        },
+        reason=reason_text,
+    )
+    logger.info(
+        "Received from branch shipment=%s lines=%s user=%s",
+        shipment.id,
+        len(normalized),
+        getattr(user, "email", None),
+    )
+    return shipment
+
+
+def get_branch_warehouse_shipments(branch):
+    """Sends from one branch, newest first."""
+    return (
+        BranchWarehouseShipment.objects.filter(branch=branch)
+        .select_related("branch", "sent_by", "received_by", "cancelled_by")
+        .prefetch_related("lines__item")
+        .order_by("-sent_at", "-id")
+    )
+
+
+def get_branch_warehouse_shipment(branch, shipment_id):
+    return get_branch_warehouse_shipments(branch).get(pk=shipment_id)
+
+
+def get_warehouse_inbound_shipments(status=None):
+    """All branch-to-warehouse sends for the warehouse queue."""
+    queryset = (
+        BranchWarehouseShipment.objects.select_related(
+            "branch", "sent_by", "received_by", "cancelled_by"
+        )
+        .prefetch_related("lines__item")
+        .order_by("-sent_at", "-id")
+    )
+    if status:
+        queryset = queryset.filter(status=status)
+    return queryset
+
+
+def get_warehouse_inbound_shipment(shipment_id):
+    return get_warehouse_inbound_shipments().get(pk=shipment_id)
+
+
+def get_stock_at_branches(branch=None, item=None):
+    """Read-only on-hand across branches for the warehouse."""
+    queryset = BranchItemStock.objects.select_related(
+        "branch", "item", "item__family", "item__sub_family"
+    )
+    if branch is not None:
+        queryset = queryset.filter(branch=branch)
+    if item is not None:
+        queryset = queryset.filter(item=item)
+    return queryset.order_by("branch__name", "item__internal_code", "item_id")
 
 
 def get_branch_receipts(branch):

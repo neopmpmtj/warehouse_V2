@@ -1,13 +1,13 @@
 {% load static %}
 "use strict";
 
-var CACHE_NAME = "centcompras-branch-v29";
+var CACHE_NAME = "centcompras-branch-v30";
 
 var APP_SHELL = [
     "{% static 'products/css/settings_menu.css' %}?v=5",
     "{% static 'branches/css/branch_chrome.css' %}?v=1",
     "{% static 'branches/css/branch_catalog.css' %}?v=1",
-    "{% static 'products/js/preferences_bar.js' %}?v=16",
+    "{% static 'products/js/preferences_bar.js' %}?v=17",
     "{% static 'products/js/console_settings_menu.js' %}?v=4",
     "{% static 'branches/js/db.js' %}?v=5",
     "{% static 'branches/js/register_sw.js' %}?v=2",
@@ -24,6 +24,8 @@ var APP_SHELL = [
     "{% static 'inventory/js/branch_stock.js' %}?v=2",
     "{% static 'inventory/js/branch_consumption_i18n.js' %}?v=1",
     "{% static 'inventory/js/branch_consumption.js' %}?v=1",
+    "{% static 'inventory/js/branch_send_i18n.js' %}?v=1",
+    "{% static 'inventory/js/branch_send.js' %}?v=1",
     "{% static 'branches/manifest.webmanifest' %}",
     "{% static 'branches/icons/icon.svg' %}",
 ];

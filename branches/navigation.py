@@ -54,6 +54,13 @@ def branch_work_cards(*, include_picker=False):
                 "desc": "Take items off this branch's stock",
                 "url": "/branch/consumption/",
             },
+            {
+                "title_key": "cardSendToWarehouse",
+                "desc_key": "cardSendToWarehouseDesc",
+                "title": "Send to warehouse",
+                "desc": "Send surplus on-hand items to the warehouse",
+                "url": "/branch/send-to-warehouse/",
+            },
         ]
     )
     return cards

@@ -98,4 +98,39 @@ urlpatterns = [
         console_views.branch_alerts_mark_read,
         name="branch_alerts_mark_read",
     ),
+    path(
+        "branch/send-to-warehouse/",
+        console_views.branch_send_to_warehouse_list,
+        name="branch_send_to_warehouse_list",
+    ),
+    path(
+        "branch/send-to-warehouse/<int:shipment_id>/",
+        console_views.branch_send_to_warehouse_detail,
+        name="branch_send_to_warehouse_detail",
+    ),
+    path(
+        "branch/send-to-warehouse/<int:shipment_id>/cancel/",
+        console_views.branch_send_to_warehouse_cancel,
+        name="branch_send_to_warehouse_cancel",
+    ),
+    path(
+        "manage/incoming-from-branches/",
+        console_views.manage_inbound_from_branches_list,
+        name="manage_inbound_from_branches_list",
+    ),
+    path(
+        "manage/incoming-from-branches/<int:shipment_id>/",
+        console_views.manage_inbound_from_branches_detail,
+        name="manage_inbound_from_branches_detail",
+    ),
+    path(
+        "manage/incoming-from-branches/<int:shipment_id>/receive/",
+        console_views.manage_inbound_from_branches_receive,
+        name="manage_inbound_from_branches_receive",
+    ),
+    path(
+        "manage/stock-at-branches/",
+        console_views.manage_stock_at_branches,
+        name="manage_stock_at_branches",
+    ),
 ]

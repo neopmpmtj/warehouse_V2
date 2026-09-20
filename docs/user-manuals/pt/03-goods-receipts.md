@@ -93,13 +93,15 @@ A lista de receções é um registo. Não há painel lateral "abrir / editar" nu
 | Coluna | Significado |
 |--------|---------|
 | **Artigo** | Código interno — descrição |
-| **Tipo** | Receção / Ajuste / Saída de mercadoria |
+| **Tipo** | Receção / Ajuste / Saída de mercadoria / Da filial |
 | **Quantidade** | Montante com signo (`+10` entrada, `−2` saída) |
 | **Referência** | Para uma receção: `GR #12` e o texto da guia de entrega se introduziu um |
 | **Motivo** | Preenchido nos ajustes |
 | **Por** / **Quando** | Quem e quando |
 
 Use o **filtro de artigo** (*Todos os artigos*) acima da tabela de movimentos para ver o histórico de um artigo. Os artigos nessa lista (e em **Ajustar stock**) estão **A–Z pelo código — descrição visível**.
+
+Os movimentos **Da filial** são stock que uma filial enviou (BWS n.º). Confirme-os em **`/manage/incoming-from-branches/`** — **não** os registe como receção de fornecedor nesta página. Para ver o excesso ainda nas filiais, abra **`/manage/stock-at-branches/`**.
 
 ---
 

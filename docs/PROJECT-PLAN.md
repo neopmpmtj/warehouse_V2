@@ -2,7 +2,7 @@
 
 > **Living document.** Update the [Status tracker](#status-tracker) after every working session: tick `[x]` what is done, add notes, move the "current phase" marker. Keep "Done" sections as a record of decisions, not as a changelog.
 
-- **Last updated:** 17 September 2026, 10:15 WEST
+- **Last updated:** 20 September 2026, 12:15 WEST
 - **Current phase:** Phases 0–6 **complete** ✅. **Immediate next:** presentation deck cleanup (remove TEMP viewBox debug; optional slides 10–16 polish). **Then Phase 7** (production deployment readiness). OAuth + shared chrome = **Phase 8**; email = **Phase 9**. See [`docs/handoff.md`](handoff.md).
 - **Scope of this plan:** central warehouse + satellite branches (Phases 0–5 built). Offline = Phase 6; deploy = Phase 7; OAuth/chrome = Phase 8; email = Phase 9.
 
@@ -115,6 +115,7 @@ So "dynamically updated wherever possible" applies to **cost prices** and **stoc
 | D40 | Parle product name | User-visible rename of Company Voice / Voz da Empresa → **Parle** in **both** EN and PT. URLs (`/company-voice/`), Django app `company_voice`, and code identifiers unchanged. Presentation **slide 12** title **Parle — your ongoing channel** / **Parle — o seu canal permanente** (Sep 2026). |
 | D41 | Requisição selling price | `InternalRequestLine.unit_price` snapshots **`Item.retail_price`** on add-line and again at approve. Add/submit/approve reject retail `== 0`. Phase 5 lock 6 (wholesale) is **superseded**. D37 unpriced still hides money in the UI; warehouse still freezes `approved_*`. |
 | D42 | Per-dispatch branch receipt | Each `GoodsIssue` appears on `/branch/receipts/` as soon as issued (`fulfilling` / `shipped` / `received`). Receiving while `fulfilling` does **not** change request status. Branch short-close only after warehouse done (`shipped` / `received`). Each `issue_goods` call keeps its own GI number. |
+| D43 | Branch send to warehouse | Two confirmations: branch **Send** (`in_transit`, stock leaves the branch) then warehouse **Receive** (warehouse stock rises; D32 FIFO allocates). Manager/admin send and in-transit cancel; warehouse cannot refuse. Active catalogue items only. No link to a requisição. Separate cards — not a return and not mixed with `/branch/receipts/` or PO goods receipts. Read-only warehouse **Stock at branches**. |
 | D10 | Branches | **built** (Phase 5 ✅); `Item` stays global (no `branch_id`) |
 | D11 | `SupplierItemPrice.primary` semantics | preferred supplier for the item — auto-suggest on PO lines is a **later** enhancement; **always overridable** |
 | D12 | PO line with no supplier price | **rejected** — no cross-supplier fallback |
@@ -152,7 +153,7 @@ None. O1 was resolved as Option A (see locked table).
 
 **Live facts:** [`docs/handoff.md`](handoff.md). Do not use the list below as “today.”
 
-**Current (17 Sep 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 + D39 + D40 + **D41** (requisição snapshots **retail**, not wholesale) landed. Presentation deck **v2.8**: **26 slides** — Part I visual (1–17) + Part II verbose reference (18–26); `flow-node` CSS restored (`deck.css?v=24`); **TEMP** viewBox debug still on slides 2–9. **Immediate next:** remove viewBox debug; optional deck polish (slides 10–16). **Then:** Phase 7. OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
+**Current (20 Sep 2026):** phases 0–6 complete; 1205 production-readiness review **applied**; D37 + D38 + D39 + D40 + D41 + **D43** (branch send-to-warehouse, two confirmations, FIFO restock) landed. Presentation deck **v2.8**: **26 slides** — Part I visual (1–17) + Part II verbose reference (18–26); `flow-node` CSS restored (`deck.css?v=24`); **TEMP** viewBox debug still on slides 2–9. **Immediate next:** remove viewBox debug; optional deck polish (slides 10–16). **Then:** Phase 7. OAuth + remaining shared chrome deferred to Phase 8; email to Phase 9.
 
 The following was the **Phase-0 snapshot** when this plan was first written (pre-pricing, pre-procurement, pre-stock). Kept as a record of the starting point:
 
@@ -574,6 +575,7 @@ Unify the **persistent shell** (header, nav, account controls) across warehouse,
 - [x] Presentation deck v2.7 (11 Sep) — reorder; slides 2–9 SVG graphics; unified 710 viewBox (3–5/7–9); larger in-box SVG labels; slide 8 arrow spacing; plan [`docs/presentation/PLAN-en.md`](presentation/PLAN-en.md)
 - [x] Presentation deck Part II v2.8 (11 Sep evening) — slides 18–26 verbose reference; slide 12 Parle (D40); `SLIDE_COUNT` 26; plan v2.8
 - [x] Requisição line price = **retail** (D41) — Phase 5 lock 6 wholesale superseded; gate + snapshot + offline estimate + manuals
+- [x] Branch send-to-warehouse (D43) — two confirmations; manager/admin send; warehouse receive; FIFO restocks the pool; read-only Stock at branches
 - [ ] Presentation deck polish — remove TEMP viewBox debug; slides 10–16 graphics (optional before Phase 7)
 - [ ] Phase 7 — production deployment readiness — after the deck pass ([`DEPLOYMENT.md`](DEPLOYMENT.md))
 - [ ] Phase 8 — Google OAuth production rollout + shared chrome

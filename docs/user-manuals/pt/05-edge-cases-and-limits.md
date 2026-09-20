@@ -128,7 +128,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `No lines to issue.` (Sem linhas para emitir.) | Emissão vazia | Adicione uma linha |
 | `A reason is required to short-close a request.` (É obrigatório indicar um motivo para encerrar parcialmente uma requisição.) | Encerramento parcial no armazém exige motivo | Escreva um |
 
-**Receção na filial, stock da filial e consumo (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`)**
+**Receção na filial, stock da filial, consumo e envio ao armazém (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`, `/branch/send-to-warehouse/`)**
 
 | Mensagem | Porquê | O que fazer |
 |---------|-----|------------|
@@ -149,6 +149,15 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Consumption quantity must be at least 1.` (A quantidade de consumo tem de ser pelo menos 1.) | Qtd é 0, vazia, ou negativa | Indique 1 ou mais |
 | `Item 'X' is not on this branch's stock list.` (O artigo 'X' não está na lista de stock desta filial.) | O artigo nunca foi recebido/ajustado aqui | Receba-o primeiro, ou escolha um artigo local |
 | `Cannot consume X of 'Y': Z on hand.` (Não é possível consumir X de 'Y': Z em mão.) | A qtd é maior do que o em mão desta filial | Reduza |
+| `Only branch managers and admins can send items to the warehouse.` (Só gestores e administradores da filial podem enviar artigos ao armazém.) | O operador tentou enviar ou cancelar | Só gestor/administrador |
+| `A reason is required to send items to the warehouse.` (É obrigatório um motivo para enviar artigos ao armazém.) | O envio exige motivo | Escreva um |
+| `No lines to send.` (Não há linhas para enviar.) | Envio sem linhas | Adicione pelo menos uma |
+| `An item was provided more than once in this send.` (Um artigo foi indicado mais do que uma vez neste envio.) | Artigo duplicado | Uma linha por artigo |
+| `Send quantity must be at least 1.` (A quantidade a enviar tem de ser pelo menos 1.) | Qtd é 0, vazia ou negativa | Indique 1 ou mais |
+| `Cannot send X of 'Y': Z on hand.` (Não é possível enviar X de 'Y': Z em mão.) | A qtd é maior do que o em mão | Reduza |
+| `Cannot send inactive item 'X'.` (Não é possível enviar o artigo inativo 'X'.) | Artigo desativado no catálogo | Reative ou escolha um ativo |
+| `A reason is required to cancel a send to the warehouse.` (É obrigatório um motivo para cancelar um envio ao armazém.) | O cancelamento exige motivo | Escreva um |
+| `A reason is required when receiving less than the sent quantity.` (É obrigatório um motivo quando se recebe menos do que o enviado.) | Chegada a menos | Escreva um motivo; a qtd em falta é dada como baixa |
 
 ### 2.4 Requisição interna (`/branch/requests/`) e filiais
 
