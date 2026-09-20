@@ -284,6 +284,7 @@ cancelled                                cancelled         ▼               shi
 - Receção enquanto a requisição ainda está **`fulfilling`** → o estado **mantém-se `fulfilling`** (o armazém ainda tem restante).
 - A primeira receção que conclui o lado da filial **depois** de o armazém ter terminado → **`shipped → closed`** diretamente (nunca persiste `received`).
 - Encerramento parcial no armazém a partir de **`fulfilling`** quando a filial já recebeu todas as unidades emitidas → **`shipped → closed`** na mesma ação.
+- Requisitar em falta numa discrepância de receção → a requisição de seguimento nasce já **aprovada** (nunca fica **submitted**), incluindo quando a Qtd a requisitar é inferior ao em falta. Os papéis da filial e os tetos EUR não se aplicam neste caminho.
 
 **Dois encerramentos parciais:**
 

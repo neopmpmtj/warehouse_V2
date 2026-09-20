@@ -264,7 +264,7 @@ Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your bra
 Rules:
 
 - **Receive qty** cannot exceed **Remaining** on that line (issued on this dispatch minus already received, minus any earlier discrepancy write-off). Leave the pre-filled number and click Receive to book the full remaining quantity.
-- A discrepancy **finishes that dispatch line**. You cannot receive the missing units later on this guia. The warehouse issue document is **not** changed. If you still need some of the missing units, tick **Reorder** — the app creates **one new submitted** requisição (manager queue) for the **Reorder qty** on each ticked line (the full shortfall unless you lower it); several ticked lines go on the same new request. The write-off on this guia is still the full shortfall.
+- A discrepancy **finishes that dispatch line**. You cannot receive the missing units later on this guia. The warehouse issue document is **not** changed. If you still need some of the missing units, tick **Reorder** — the app creates **one new already-approved** requisição (warehouse queue, not the branch manager queue) for the **Reorder qty** on each ticked line (the full shortfall unless you lower it); several ticked lines go on the same new request. The write-off on this guia is still the full shortfall. This auto-approve happens even when an operator reports the discrepancy, and even when Reorder qty is less than the shortfall.
 - While the request is still **fulfilling**, receiving a dispatch does **not** change the request status (the warehouse still has remainder). Branch stock still goes up by the actual qty.
 - After the warehouse is done (**shipped**): if every issued unit is received or settled as a discrepancy → **closed**. If another dispatch still has unreceived qty → **received**.
 
@@ -330,7 +330,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
                                                                                        └── short-close ──────┘
 ```
 
-Issued *guias* can be received while the request is still **fulfilling**; that receipt does not change the header status.
+Issued *guias* can be received while the request is still **fulfilling**; that receipt does not change the header status. A **Reorder** follow-up from **Report discrepancies** is created already **approved** (it never sits in **submitted**).
 
 | Status | Meaning |
 |--------|---------|
@@ -440,3 +440,6 @@ No, if you **Sign out**. Sign out clears this browser's offline draft queue. Dra
 
 **Q19. I reported a discrepancy — who is told?**
 Nobody is emailed. Warehouse **admins** and **managers grade 2+** get an **Alerts** card on `/`; branch **managers** and **admins** get one on `/branch/`. Open the row to mark it seen for yourself. Operators do not see the card.
+
+**Q20. I ticked Reorder on a discrepancy — why isn't the new request waiting for a manager?**
+That's intended. A follow-up from **Report discrepancies** is created already **approved** and goes to `/manage/internal-requests/`, even if you lowered Reorder qty, and even if an operator reported it. Branch EUR caps do not apply on this path. The original request still closes out as usual.

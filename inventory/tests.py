@@ -1083,7 +1083,7 @@ class BranchReceiptTests(TestCase):
             .exists()
         )
 
-    def test_discrepancy_with_reorder_creates_submitted_follow_up(self):
+    def test_discrepancy_with_reorder_creates_approved_follow_up(self):
         req, goods_issue = self._shipped_issue("5")
         issue_line = goods_issue.lines.get()
         receipt = services.receive_at_branch(
@@ -1100,9 +1100,10 @@ class BranchReceiptTests(TestCase):
         follow_up = InternalRequest.objects.get(pk=receipt.follow_up_request_id)
         receipt.refresh_from_db()
         self.assertEqual(receipt.follow_up_request_id, follow_up.id)
-        self.assertEqual(follow_up.status, InternalRequest.Status.SUBMITTED)
+        self.assertEqual(follow_up.status, InternalRequest.Status.APPROVED)
         self.assertEqual(follow_up.branch_id, self.branch.id)
         self.assertEqual(follow_up.created_by_id, self.operator.id)
+        self.assertEqual(follow_up.approved_by_id, self.operator.id)
         follow_line = follow_up.lines.get()
         self.assertEqual(follow_line.item_id, self.item.id)
         self.assertEqual(follow_line.quantity, 1)
@@ -1131,7 +1132,8 @@ class BranchReceiptTests(TestCase):
         self.assertEqual(receipt_line.quantity_received, 0)
         self.assertEqual(receipt_line.quantity_written_off, 5)
         follow_up = InternalRequest.objects.get(pk=receipt.follow_up_request_id)
-        self.assertEqual(follow_up.status, InternalRequest.Status.SUBMITTED)
+        self.assertEqual(follow_up.status, InternalRequest.Status.APPROVED)
+        self.assertEqual(follow_up.approved_by_id, self.operator.id)
         self.assertEqual(follow_up.lines.get().quantity, 3)
 
     def test_discrepancy_reorder_qty_rejects_zero_and_over_missing(self):
@@ -1200,7 +1202,7 @@ class BranchReceiptTests(TestCase):
         follow_up = InternalRequest.objects.exclude(pk=req.pk).get(
             branch=self.branch, created_by=self.operator
         )
-        self.assertEqual(follow_up.status, InternalRequest.Status.SUBMITTED)
+        self.assertEqual(follow_up.status, InternalRequest.Status.APPROVED)
         self.assertEqual(follow_up.lines.get().quantity, 1)
         summary = services.get_branch_issue_summary(goods_issue)[0]
         self.assertEqual(summary["remaining"], "0")
@@ -1392,7 +1394,8 @@ class BranchReceiptApiTests(TestCase):
         self.assertEqual(r.status_code, 201)
         self.assertIn("follow_up_request_id", r.json())
         follow_up = InternalRequest.objects.get(pk=r.json()["follow_up_request_id"])
-        self.assertEqual(follow_up.status, InternalRequest.Status.SUBMITTED)
+        self.assertEqual(follow_up.status, InternalRequest.Status.APPROVED)
+        self.assertEqual(follow_up.approved_by_id, self.operator.id)
         self.assertEqual(follow_up.lines.get().quantity, 1)
         req, goods_issue = self._shipped_issue("4")
         self._login(self.operator)
@@ -1419,6 +1422,7 @@ class BranchReceiptApiTests(TestCase):
         )
         self.assertEqual(r.status_code, 201)
         follow_up = InternalRequest.objects.get(pk=r.json()["follow_up_request_id"])
+        self.assertEqual(follow_up.status, InternalRequest.Status.APPROVED)
         self.assertEqual(follow_up.lines.get().quantity, 3)
         receipt = BranchReceipt.objects.get(goods_issue=goods_issue)
         self.assertEqual(receipt.lines.get().quantity_written_off, 5)

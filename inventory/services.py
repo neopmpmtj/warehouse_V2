@@ -1123,11 +1123,11 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason="
 
     Qty less than remaining is a discrepancy: reason required, the guia line is
     settled (written off), issued documents are not changed. Optional ``reorder``
-    on a short line creates one submitted follow-up request. ``reorder_qty``
+    on a short line creates one auto-approved follow-up request. ``reorder_qty``
     (1 to the missing qty) may order less than the shortfall; omitted defaults
     to the full missing qty.
     """
-    from orders.services import add_line, create_internal_request, mark_closed, mark_received, submit
+    from orders.services import add_line, approve, create_internal_request, mark_closed, mark_received, submit
 
     goods_issue = GoodsIssue.objects.select_for_update().get(
         pk=_resolve_goods_issue(goods_issue).pk
@@ -1249,6 +1249,12 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason="
         for item_id, missing_qty in reorder_by_item.items():
             add_line(follow_up, item_id, missing_qty, user)
         follow_up = submit(follow_up, user)
+        follow_up = approve(
+            follow_up,
+            user,
+            reason=reason_text or f"Follow-up for dispatch #{goods_issue.id}.",
+            skip_approval_gate=True,
+        )
         InternalRequestChangeLog.objects.create(
             internal_request=follow_up,
             user=user,

@@ -283,6 +283,7 @@ cancelled                                cancelled         ▼               shi
 - Receipt while the request is still **`fulfilling`** → status **stays `fulfilling`** (the warehouse still has remainder).
 - First receipt that finishes the branch side **after** the warehouse is done → **`shipped → closed`** directly (never persists `received`).
 - Warehouse short-close from **`fulfilling`** when the branch already received every issued unit → **`shipped → closed`** in the same action.
+- Reorder on a receipt discrepancy → the follow-up requisição is created already **approved** (never sits in **submitted**), including when Reorder qty is less than the shortfall. Branch role gates and EUR caps do not apply on this path.
 
 **Two short-closes:**
 

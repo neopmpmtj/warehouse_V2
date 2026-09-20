@@ -264,7 +264,7 @@ Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial 
 Regras:
 
 - A **Qtd a receber** não pode exceder o **Restante** nessa linha (emitido nesta expedição menos o já recebido, menos qualquer baixa de discrepância anterior). Deixe o número pré-preenchido e clique em Receber para registar todo o restante.
-- Uma discrepância **termina essa linha da expedição**. Não pode receber mais tarde nesta guia as unidades em falta. O documento de emissão do armazém **não** é alterado. Se ainda precisar de algumas das unidades, marque **Requisitar em falta** — a aplicação cria **uma nova requisição já submetida** (fila do gestor) com a **Qtd a requisitar** de cada linha marcada (o em falta completo, salvo se baixar o número); várias linhas marcadas ficam no mesmo pedido novo. A baixa nesta guia continua a ser o em falta completo.
+- Uma discrepância **termina essa linha da expedição**. Não pode receber mais tarde nesta guia as unidades em falta. O documento de emissão do armazém **não** é alterado. Se ainda precisar de algumas das unidades, marque **Requisitar em falta** — a aplicação cria **uma nova requisição já aprovada** (fila do armazém, não a fila do gestor da filial) com a **Qtd a requisitar** de cada linha marcada (o em falta completo, salvo se baixar o número); várias linhas marcadas ficam no mesmo pedido novo. A baixa nesta guia continua a ser o em falta completo. Esta aprovação automática acontece mesmo quando um operador comunica a discrepância, e mesmo quando a Qtd a requisitar é inferior ao em falta.
 - Enquanto a requisição ainda está **fulfilling**, receber uma expedição **não** altera o estado da requisição (o armazém ainda tem restante). O stock da filial sobe pela quantidade efectiva.
 - Depois de o armazém concluir (**shipped**): se todas as unidades emitidas foram recebidas ou acertadas como discrepância → **closed**. Se outra expedição ainda tem quantidade por receber → **received**.
 
@@ -330,7 +330,7 @@ draft ──submit──▶ submitted ──approve──▶ approved ──issu
                                                                                        └── short-close ──────┘
 ```
 
-As *guias* emitidas podem ser recebidas enquanto a requisição ainda está **fulfilling**; essa receção não altera o estado do cabeçalho.
+As *guias* emitidas podem ser recebidas enquanto a requisição ainda está **fulfilling**; essa receção não altera o estado do cabeçalho. Um pedido de seguimento **Requisitar em falta** de **Comunicar discrepâncias** nasce já **aprovado** (nunca fica **submitted**).
 
 | Estado | Significado |
 |--------|---------|
@@ -440,3 +440,6 @@ Não, se **Terminar sessão**. Terminar sessão limpa a fila de rascunhos offlin
 
 **P19. Comuniquei uma discrepância — quem é avisado?**
 Ninguém recebe e-mail. Os **administradores** do armazém e os **gestores grau 2+** têm um cartão **Alertas** em `/`; os **gestores** e **administradores** da filial têm um em `/branch/`. Abra a linha para a marcar como vista para si. Os operadores não vêem o cartão.
+
+**P20. Marquei Requisitar em falta numa discrepância — porque é que o pedido novo não espera pelo gestor?**
+É o comportamento previsto. Um pedido de seguimento de **Comunicar discrepâncias** nasce já **aprovado** e vai para `/manage/internal-requests/`, mesmo se baixar a Qtd a requisitar, e mesmo se um operador tiver comunicado. Os tetos EUR da filial não se aplicam neste caminho. A requisição original continua a encerrar como habitual.

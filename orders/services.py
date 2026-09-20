@@ -685,7 +685,7 @@ def submit(request, user=None):
 
 
 @transaction.atomic
-def approve(request, user=None, reason=""):
+def approve(request, user=None, reason="", *, skip_approval_gate=False):
     request = InternalRequest.objects.select_for_update().get(pk=request.pk)
     _transition(request, InternalRequest.Status.APPROVED)
     _ensure_branch_active(request.branch)
@@ -703,7 +703,11 @@ def approve(request, user=None, reason=""):
         line.save(update_fields=["unit_price", "updated_at"])
 
     net, vat, gross = request.totals()
-    _assert_can_approve(request, user, gross)
+    if skip_approval_gate:
+        if user is None or not getattr(user, "pk", None):
+            raise ApproverRequiredError()
+    else:
+        _assert_can_approve(request, user, gross)
     for total in (net, vat, gross):
         if total.copy_abs() >= MAX_APPROVED_TOTAL:
             raise ApprovalTotalOverflowError()
