@@ -18,6 +18,7 @@ HELP_MANUAL_BY_URL_NAME = {
     "branch_catalog": "04-internal-requests",
     "request_console": "04-internal-requests",
     "branch_receipt_console": "04-internal-requests",
+    "branch_stock_console": "04-internal-requests",
     "branch_thread_console": "08-request-threads",
 }
 DEFAULT_HELP_MANUAL = "01-items"

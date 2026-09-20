@@ -128,7 +128,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `No lines to issue.` (Sem linhas para emitir.) | Emissão vazia | Adicione uma linha |
 | `A reason is required to short-close a request.` (É obrigatório indicar um motivo para encerrar parcialmente uma requisição.) | Encerramento parcial no armazém exige motivo | Escreva um |
 
-**Receção na filial e stock da filial (`/branch/receipts/`)**
+**Receção na filial e stock da filial (`/branch/receipts/`, `/branch/stock/`)**
 
 | Mensagem | Porquê | O que fazer |
 |---------|-----|------------|

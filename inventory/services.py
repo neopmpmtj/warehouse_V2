@@ -1371,6 +1371,42 @@ def adjust_branch_stock(branch, item, quantity, reason, user):
     return movement
 
 
+def get_branch_receipts(branch):
+    """Booked branch receipts for one branch, newest first."""
+    return (
+        BranchReceipt.objects.filter(goods_issue__internal_request__branch=branch)
+        .select_related("goods_issue__internal_request", "received_by")
+        .prefetch_related("lines")
+        .order_by("-received_at", "-id")
+    )
+
+
+def get_branch_stock_movements(branch, item=None):
+    """Append-only branch stock ledger for one branch, newest first."""
+    queryset = BranchStockMovement.objects.filter(branch=branch).select_related(
+        "item", "created_by", "content_type"
+    )
+    if item is not None:
+        queryset = queryset.filter(item=item)
+    return queryset.order_by("-id")
+
+
+def get_branch_on_hand(branch):
+    """Items this branch has received or adjusted, with cached on-hand (0 stays listed)."""
+    stock_qty = Subquery(
+        BranchItemStock.objects.filter(branch=branch, item_id=OuterRef("pk")).values(
+            "quantity"
+        )[:1],
+        output_field=IntegerField(),
+    )
+    return (
+        Item.objects.select_related("family", "sub_family")
+        .filter(branch_stock__branch=branch)
+        .annotate(on_hand=stock_qty)
+        .order_by("internal_code", "id")
+    )
+
+
 def get_branch_goods_issues(branch):
     """Dispatches awaiting/partially received by a branch (issued guias)."""
     return (

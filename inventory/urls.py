@@ -29,6 +29,11 @@ urlpatterns = [
         name="manage_stock_adjustment",
     ),
     path(
+        "branch/receipts/",
+        console_views.branch_receipt_history_list,
+        name="branch_receipt_history_list",
+    ),
+    path(
         "branch/receipts/issues/",
         console_views.branch_receipt_issue_list,
         name="branch_receipt_issue_list",
@@ -47,6 +52,16 @@ urlpatterns = [
         "branch/receipts/issues/<int:issue_id>/short-close/",
         console_views.branch_receipt_short_close,
         name="branch_receipt_short_close",
+    ),
+    path(
+        "branch/stock/",
+        console_views.branch_stock_list,
+        name="branch_stock_list",
+    ),
+    path(
+        "branch/stock/movements/",
+        console_views.branch_stock_movement_list,
+        name="branch_stock_movement_list",
     ),
     path(
         "branch/stock/adjust/",

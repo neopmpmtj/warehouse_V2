@@ -41,6 +41,7 @@ Out of stock? The warehouse raises a **purchase order** to a supplier first — 
 | Branch (any role) | `/branch/threads/` | Request items not in the catalogue |
 | Branch (manager / admin) | `/branch/requests/` | Approve / reject |
 | Branch (any role) | `/branch/receipts/` | Confirm arrival against a dispatch |
+| Branch (any role) | `/branch/stock/` | See this branch's on-hand quantity |
 | Branch (manager / admin) | `/branch/alerts/` | Receipt discrepancies (unread until you open a row) |
 | Branch (any role) | `/company-voice/` | Company-wide suggestion box |
 | Warehouse | `/manage/internal-requests/` | Queue of approved requests + goods issue |
@@ -66,6 +67,7 @@ There are **three branch roles** (set for you by the head office) and the usual 
 | Approve / reject | ❌ | ✅ (yes/no; EUR caps only if priced mode is on) | ✅ (unlimited) |
 | Cancel an **approved** request | ❌ | ✅ | ✅ |
 | Confirm arrival (branch receipt) | ✅ | ✅ | ✅ |
+| View branch on-hand (`/branch/stock/`) | ✅ | ✅ | ✅ |
 | Receipt discrepancy alerts | ❌ | ✅ | ✅ |
 | Branch short-close | ❌ | ✅ | ✅ |
 | Adjust branch stock | ❌ | ❌ | ✅ |
@@ -96,7 +98,7 @@ You may belong to **one branch, several branches, or none**. After signing in:
 | **Several branches** | You land on `/branch/select/` — pick one, then continue to the dashboard. |
 | **No branch** | The picker says *"You have no active branch access."* Ask your administrator. |
 
-From the dashboard, **Your branch** has **Catalog**, **Internal request**, and **Receipts**. **Communication** has **Threads**, then **Parle**. On **Catalog**, **Requests**, **Receipts**, and **Threads**, the top bar also has **Home**, **Catalog**, **Requests**, **Receipts**, and **Threads** (Threads is last) — not on the dashboard itself.
+From the dashboard, **Your branch** has **Catalog**, **Internal request**, **Receipts**, and **Branch stock**. **Communication** has **Threads**, then **Parle**. On **Catalog**, **Requests**, **Receipts**, **Stock**, and **Threads**, the top bar also has **Home**, **Catalog**, **Requests**, **Receipts**, **Stock**, and **Threads** (Threads is last) — not on the dashboard itself.
 
 **Switch branch** appears only when you belong to **more than one** branch. If you see only one branch in your life, that link is hidden — you cannot browse other branches.
 
@@ -268,7 +270,7 @@ Rules:
 - While the request is still **fulfilling**, receiving a dispatch does **not** change the request status (the warehouse still has remainder). Branch stock still goes up by the actual qty.
 - After the warehouse is done (**shipped**): if every issued unit is received or settled as a discrepancy → **closed**. If another dispatch still has unreceived qty → **received**.
 
-Receiving **increments branch stock** immediately.
+Receiving **increments branch stock** immediately. The booked receipt appears in the **Receipts** table at the bottom of this page (BR #, dispatch, request, who, when, total, whether it was a discrepancy). A matching row appears in **Stock movements** (positive qty, type Receipt, reference **BR #**). After a full receive the dispatch may leave the open list (the request is **closed**) — the history and movements stay. Open **`/branch/stock/`** to see the new on-hand quantity.
 
 ### 8.2 Branch short-close
 
@@ -289,17 +291,27 @@ Each discrepancy is its own card: **when**, the **request** number, the **dispat
 
 There is **no email** for this. The warehouse issue document is not changed.
 
+### 8.4 Branch stock (on-hand)
+
+Open **`/branch/stock/`** (any branch role). This lists **this branch's** received stock only (not the warehouse catalogue):
+
+- Only items this branch has **received** or an admin has **adjusted** are listed. A new item is added on first receive (or first admin adjust). Quantity **0 stays listed**.
+- `/branch/catalog/` remains the warehouse catalogue for ordering. This page is the branch's local stock list, not a copy of every warehouse item.
+- Columns: code, description, family, sub-family, unit, **on-hand**. Search and family / sub-family filters work in the browser. Click a column header to sort.
+- You never see warehouse quantity, cost, or selling prices here — those stay on `/branch/catalog/` (hint + optional prices).
+- The page needs Wi-Fi. It does not cache on-hand offline.
+
 ---
 
 ## 9. Branch stock adjustment (admin only)
 
 Branch **admin** may correct branch stock directly — for counts, damage, or mistakes.
 
-1. On `/branch/receipts/`, use the **Adjust stock** area.
-2. Enter **Item**, **Quantity** (positive to add, negative to remove — `0` is rejected), and a **Reason**.
-3. Click **Adjust stock**.
+1. On `/branch/receipts/`, click **Adjust stock**.
+2. Choose the **Item** from the list, enter **Quantity** (positive to add, negative to remove — `0` is rejected), and a **Reason**.
+3. Click **Adjust**. The movement appears in **Stock movements** on the same page; `/branch/stock/` shows the new on-hand.
 
-Managers and operators do not see this option. Branch stock is a ledger like warehouse stock — every receipt and adjustment is recorded and the balance is computed, never typed onto the item.
+Managers and operators do not see this button. Branch stock is a ledger like warehouse stock — every receipt and adjustment is recorded and the balance is computed, never typed onto the item.
 
 ---
 
@@ -424,7 +436,10 @@ The hold is released immediately and offered to the next waiting requisição (o
 Stock is already in motion. After the first goods issue the only way to finish early is **short-close** (warehouse side) or **branch short-close** (branch side).
 
 **Q14. How is branch stock different from warehouse stock?**
-Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it.
+Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it. `/branch/stock/` lists **only those local rows** — not the full warehouse catalogue. After you receive, the item appears there (or its on-hand goes up if it was already listed). Receipts / Stock movements at the bottom of `/branch/receipts/` are the ledger. The open dispatch list only shows guias still in progress.
+
+**Q14a. I received goods — why doesn't `/branch/stock/` show every catalogue item?**
+It is not the warehouse catalogue. A row appears the first time this branch receives that item (or an admin adjusts it). Quantity 0 stays listed. Order from `/branch/catalog/` as before.
 
 **Q15. Can I build a requisição while offline?**
 Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** (confirm first) and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically when you open any branch page that loads the offline scripts (catalog, requisição, dashboard, etc.). **Submit**, **Approve**, **Reject**, and **Cancel Internal Request** still require Wi-Fi.

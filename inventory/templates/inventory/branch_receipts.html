@@ -7,23 +7,45 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>Receipts — CentCompras</title>
     <style>
-        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; }
-        main { display: grid; grid-template-columns: 340px 1fr; gap: 20px; padding: 20px; }
-        @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+        :root { --border: #ddd; --muted: #666; --brand: #0b57d0; --surface: #fff; }
+        main { display: flex; flex-direction: column; gap: 20px; padding: 20px; }
+        .receipt-work { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+        @media (max-width: 800px) { .receipt-work { grid-template-columns: 1fr; } }
         .panel { border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
         h2 { margin: 0 0 10px; font-size: 1rem; }
+        .section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .section-head h2 { margin: 0; }
+        .toolbar-spacer { flex: 1; }
         table { width: 100%; border-collapse: collapse; font-size: .9rem; }
         th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
         th { color: var(--muted); font-weight: 600; font-size: .8rem; }
         .btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
         .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
         .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
-        input { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
+        input, select, textarea { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: inherit; }
         .qty { width: 80px; }
         .banner { padding: 8px 12px; border-radius: 4px; background: #fdecea; color: #b00020; margin-top: 10px; }
         .banner-info { background: #e8f0fe; color: #0b57d0; }
         .offline-empty { color: var(--muted); font-size: .9rem; margin: 8px 0 0; }
         .selected { background: #eef4fe; }
+        .pagination { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+        .pagination-label { color: var(--muted); font-size: .85rem; }
+        .table-wrap { overflow-x: auto; }
+        .field-error { margin: 0; color: #b00020; font-size: .85rem; }
+        .drawer-help { margin: 0; color: var(--muted); font-size: .85rem; }
+        .drawer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .dialog[hidden], .backdrop[hidden], .field-error[hidden] { display: none !important; }
+        .dialog-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 12; }
+        .dialog {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: min(28rem, calc(100% - 2rem)); background: var(--surface);
+            border: 1px solid var(--border); border-radius: 8px; z-index: 13;
+            padding: 1.1rem; display: grid; gap: 0.75rem;
+        }
+        .dialog h2 { margin: 0; }
+        .dialog label { display: grid; gap: 0.3rem; font-size: .9rem; }
+        #movement-item-filter { max-width: 16rem; }
     </style>
     <link rel="stylesheet" href="{% static 'products/css/settings_menu.css' %}?v=5">
     <link rel="stylesheet" href="{% static 'branches/css/branch_chrome.css' %}?v=1">
@@ -33,6 +55,7 @@
     {% include "branches/includes/branch_work_page_header.html" %}
 
     <main>
+        <div class="receipt-work">
         <section class="panel">
             <h2 data-i18n="listTitle">Dispatches</h2>
             <p id="offline-banner" class="banner banner-info" hidden></p>
@@ -63,19 +86,96 @@
                 <button id="receive-btn" class="btn btn-primary" data-i18n="receive" disabled>Receive</button>
                 <button id="report-discrepancies-btn" class="btn" data-i18n="reportDiscrepancies" disabled>Report discrepancies</button>
                 <button id="short-close-btn" class="btn" data-i18n="shortClose" disabled>Short close</button>
+                <button id="adjust-btn" class="btn" data-i18n="adjustStock" hidden>Adjust stock</button>
             </div>
             <p id="short-close-hint" class="offline-empty" hidden></p>
-            <div class="row" id="adjust-row" hidden>
-                <input id="adjust-item" data-i18n-placeholder="itemId" placeholder="Item ID">
-                <input id="adjust-qty" type="number" step="1" data-i18n-placeholder="colQty" placeholder="Qty">
-                <input id="adjust-reason" data-i18n-placeholder="reason" placeholder="Reason">
-                <button id="adjust-btn" class="btn" data-i18n="adjustStock">Adjust stock</button>
-            </div>
             <p id="banner" class="banner" hidden></p>
+        </section>
+        </div>
+
+        <section class="panel">
+            <h2 data-i18n="historyTitle">Receipts</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="colReceiptId">BR #</th>
+                            <th data-i18n="colDispatch">Dispatch</th>
+                            <th data-i18n="colRequest">Request</th>
+                            <th data-i18n="colReceivedBy">Received by</th>
+                            <th data-i18n="colReceivedAt">Received at</th>
+                            <th data-i18n="colTotalReceived">Total</th>
+                            <th data-i18n="colCritical">Critical</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
+            <p id="history-empty" class="offline-empty" hidden data-i18n="noReceipts">No receipts yet.</p>
+            <div class="pagination">
+                <button type="button" id="history-prev" class="btn" data-i18n="prev">‹ Prev</button>
+                <span id="history-page-label" class="pagination-label"></span>
+                <button type="button" id="history-next" class="btn" data-i18n="next">Next ›</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="section-head">
+                <h2 data-i18n="movementsTitle">Stock movements</h2>
+                <div class="toolbar-spacer"></div>
+                <select id="movement-item-filter" aria-label="Item filter"></select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="colItem">Item</th>
+                            <th data-i18n="colType">Type</th>
+                            <th data-i18n="colQuantity">Quantity</th>
+                            <th data-i18n="colReference">Reference</th>
+                            <th data-i18n="colReason">Reason</th>
+                            <th data-i18n="colBy">By</th>
+                            <th data-i18n="colWhen">When</th>
+                        </tr>
+                    </thead>
+                    <tbody id="movements-body"></tbody>
+                </table>
+            </div>
+            <p id="movements-empty" class="offline-empty" hidden data-i18n="noMovements">No stock movements yet.</p>
+            <div class="pagination">
+                <button type="button" id="movements-prev" class="btn" data-i18n="prev">‹ Prev</button>
+                <span id="movements-page-label" class="pagination-label"></span>
+                <button type="button" id="movements-next" class="btn" data-i18n="next">Next ›</button>
+            </div>
         </section>
     </main>
 
+    <div id="adjust-dialog-backdrop" class="backdrop dialog-backdrop" hidden></div>
+    <div id="adjust-dialog" class="dialog" hidden>
+        <h2 data-i18n="adjustStock">Adjust stock</h2>
+        <label>
+            <span data-i18n="item">Item</span>
+            <select id="adjust-item" required></select>
+        </label>
+        <label>
+            <span data-i18n="adjustQuantity">Quantity</span>
+            <input type="number" id="adjust-quantity" step="1" required>
+        </label>
+        <p class="drawer-help" data-i18n="adjustQuantityHint">Positive adds stock, negative removes stock.</p>
+        <label>
+            <span data-i18n="reason">Reason</span>
+            <input type="text" id="adjust-reason" maxlength="255">
+        </label>
+        <p id="adjust-error" class="field-error" hidden></p>
+        <div class="drawer-actions">
+            <button type="button" id="adjust-confirm" class="btn btn-primary" data-i18n="adjust">Adjust</button>
+            <button type="button" id="adjust-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+
     {% include "branches/includes/offline_scripts.html" %}
+    <script src="{% static 'products/js/select_fill.js' %}?v=2"></script>
+    <script src="{% static 'products/js/console_escape_close.js' %}?v=1"></script>
     <script>
         (function () {
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
@@ -93,7 +193,20 @@
                 closed: "statusClosed",
                 cancelled: "statusCancelled",
             };
-            var state = { selectedId: null, issues: [], reportingDiscrepancies: false };
+            var state = {
+                selectedId: null,
+                issues: [],
+                reportingDiscrepancies: false,
+                catalogItems: [],
+                history: [],
+                movements: [],
+                historyPage: 1,
+                historyPageSize: 50,
+                historyNumPages: 0,
+                movementsPage: 1,
+                movementsPageSize: 50,
+                movementsNumPages: 0,
+            };
 
             var I18N = {
                 en: {
@@ -118,15 +231,45 @@
                     invalidReorderQuantity: "Reorder quantity must be between 1 and the missing quantity.",
                     reportDiscrepancies: "Report discrepancies",
                     shortClose: "Short close",
-                    itemId: "Item ID",
-                    colQty: "Qty",
+                    item: "Item",
+                    adjustQuantity: "Quantity",
+                    adjustQuantityHint: "Positive adds stock, negative removes stock.",
                     reason: "Reason",
                     adjustStock: "Adjust stock",
+                    adjust: "Adjust",
+                    cancel: "Cancel",
                     requestFailed: "Request failed.",
                     needQty: "Enter at least one received quantity.",
                     receiptRecorded: "Receipt recorded.",
                     requestClosed: "Request closed.",
                     stockAdjusted: "Stock adjusted.",
+                    itemRequired: "Choose an item.",
+                    adjustQuantityRequired: "Enter a non-zero quantity.",
+                    historyTitle: "Receipts",
+                    movementsTitle: "Stock movements",
+                    colReceiptId: "BR #",
+                    colDispatch: "Dispatch",
+                    colReceivedBy: "Received by",
+                    colReceivedAt: "Received at",
+                    colTotalReceived: "Total",
+                    colCritical: "Critical",
+                    colItem: "Item",
+                    colType: "Type",
+                    colQuantity: "Quantity",
+                    colReference: "Reference",
+                    colBy: "By",
+                    colWhen: "When",
+                    noReceipts: "No receipts yet.",
+                    noMovements: "No stock movements yet.",
+                    prev: "‹ Prev",
+                    next: "Next ›",
+                    pageOf: "Page {page} of {pages}",
+                    allItems: "All items",
+                    yes: "yes",
+                    no: "no",
+                    dash: "—",
+                    "movement_type.receipt": "Receipt",
+                    "movement_type.adjustment": "Adjustment",
                     shortClosePrompt: "Reason for short-close:",
                     discrepancyReasonPrompt: "Reason for short-close (received less than shipped):",
                     discrepancyReasonRequired: "A reason is required to report a receipt discrepancy.",
@@ -163,15 +306,45 @@
                     invalidReorderQuantity: "A quantidade a requisitar tem de estar entre 1 e as unidades em falta.",
                     reportDiscrepancies: "Comunicar discrepâncias",
                     shortClose: "Encerramento parcial",
-                    itemId: "ID do artigo",
-                    colQty: "Qtd",
+                    item: "Artigo",
+                    adjustQuantity: "Quantidade",
+                    adjustQuantityHint: "Positivo acrescenta stock, negativo retira stock.",
                     reason: "Motivo",
                     adjustStock: "Ajustar stock",
+                    adjust: "Ajustar",
+                    cancel: "Cancelar",
                     requestFailed: "O pedido falhou.",
                     needQty: "Indique pelo menos uma quantidade recebida.",
                     receiptRecorded: "Receção registada.",
                     requestClosed: "Pedido encerrado.",
                     stockAdjusted: "Stock ajustado.",
+                    itemRequired: "Escolha um artigo.",
+                    adjustQuantityRequired: "Indique uma quantidade diferente de zero.",
+                    historyTitle: "Receções",
+                    movementsTitle: "Movimentos de stock",
+                    colReceiptId: "BR n.º",
+                    colDispatch: "Expedição",
+                    colReceivedBy: "Recebido por",
+                    colReceivedAt: "Recebido em",
+                    colTotalReceived: "Total",
+                    colCritical: "Crítico",
+                    colItem: "Artigo",
+                    colType: "Tipo",
+                    colQuantity: "Quantidade",
+                    colReference: "Referência",
+                    colBy: "Por",
+                    colWhen: "Quando",
+                    noReceipts: "Ainda não há receções.",
+                    noMovements: "Ainda não há movimentos de stock.",
+                    prev: "‹ Ant.",
+                    next: "Seg. ›",
+                    pageOf: "Página {page} de {pages}",
+                    allItems: "Todos os artigos",
+                    yes: "sim",
+                    no: "não",
+                    dash: "—",
+                    "movement_type.receipt": "Receção",
+                    "movement_type.adjustment": "Ajuste",
                     shortClosePrompt: "Motivo do encerramento parcial:",
                     discrepancyReasonPrompt: "Motivo do encerramento parcial (recebido menos do que expedido):",
                     discrepancyReasonRequired: "É obrigatório indicar um motivo para comunicar uma discrepância de receção.",
@@ -214,12 +387,14 @@
             function applyStaticI18n() {
                 document.documentElement.lang = currentLang() === "pt" ? "pt-PT" : "en";
                 document.title = t("pageTitle") + " — CentCompras";
-                document.querySelectorAll("main [data-i18n]").forEach(function (node) {
+                document.querySelectorAll("main [data-i18n], .dialog [data-i18n]").forEach(function (node) {
                     node.textContent = t(node.getAttribute("data-i18n"));
                 });
-                document.querySelectorAll("main [data-i18n-placeholder]").forEach(function (node) {
+                document.querySelectorAll("main [data-i18n-placeholder], .dialog [data-i18n-placeholder]").forEach(function (node) {
                     node.setAttribute("placeholder", t(node.getAttribute("data-i18n-placeholder")));
                 });
+                var filter = document.getElementById("movement-item-filter");
+                if (filter) filter.setAttribute("aria-label", t("colItem"));
             }
 
             var issueBody = document.getElementById("issue-body");
@@ -306,6 +481,129 @@
                 });
             }
 
+            function formatDateTime(isoString) {
+                var date = new Date(isoString);
+                if (Number.isNaN(date.getTime())) return isoString || t("dash");
+                var pad = function (value) { return String(value).padStart(2, "0"); };
+                return (
+                    pad(date.getDate()) + "/" +
+                    pad(date.getMonth() + 1) + "/" +
+                    date.getFullYear() + " " +
+                    pad(date.getHours()) + ":" +
+                    pad(date.getMinutes())
+                );
+            }
+
+            function formatMovementQty(quantity) {
+                var s = String(quantity);
+                return s.indexOf("-") === 0 ? s : "+" + s;
+            }
+
+            function itemLabel(item) {
+                return (item.internal_code || t("dash")) + " — " + (item.description || "");
+            }
+
+            function fillCatalogSelects() {
+                var options = state.catalogItems.map(function (item) {
+                    return { value: String(item.id), label: itemLabel(item) };
+                });
+                if (typeof fillSelect === "function") {
+                    fillSelect(
+                        document.getElementById("movement-item-filter"),
+                        options,
+                        t("allItems")
+                    );
+                }
+            }
+
+            function loadCatalogItems() {
+                return api("/api/branch/catalog/").then(function (d) {
+                    state.catalogItems = d.catalog || [];
+                    fillCatalogSelects();
+                }).catch(function () {
+                    state.catalogItems = [];
+                    fillCatalogSelects();
+                });
+            }
+
+            function renderPagination(prefix, page, numPages) {
+                var prev = document.getElementById(prefix + "-prev");
+                var next = document.getElementById(prefix + "-next");
+                var label = document.getElementById(prefix + "-page-label");
+                if (!prev || !next || !label) return;
+                label.textContent = t("pageOf", { page: page, pages: Math.max(numPages, 1) });
+                prev.disabled = page <= 1;
+                next.disabled = page >= numPages;
+            }
+
+            function renderHistory() {
+                var body = document.getElementById("history-body");
+                var empty = document.getElementById("history-empty");
+                if (!body) return;
+                body.textContent = "";
+                if (empty) empty.hidden = state.history.length > 0;
+                renderPagination("history", state.historyPage, state.historyNumPages);
+                state.history.forEach(function (receipt) {
+                    var tr = document.createElement("tr");
+                    tr.appendChild(el("td", "#" + receipt.id));
+                    tr.appendChild(el("td", "#" + receipt.dispatch_id));
+                    tr.appendChild(el("td", "#" + receipt.request_id));
+                    tr.appendChild(el("td", receipt.received_by || t("dash")));
+                    tr.appendChild(el("td", formatDateTime(receipt.received_at)));
+                    tr.appendChild(el("td", receipt.total_received));
+                    tr.appendChild(el("td", receipt.is_critical ? t("yes") : t("no")));
+                    body.appendChild(tr);
+                });
+            }
+
+            function renderMovements() {
+                var body = document.getElementById("movements-body");
+                var empty = document.getElementById("movements-empty");
+                if (!body) return;
+                body.textContent = "";
+                if (empty) empty.hidden = state.movements.length > 0;
+                renderPagination("movements", state.movementsPage, state.movementsNumPages);
+                state.movements.forEach(function (movement) {
+                    var tr = document.createElement("tr");
+                    tr.appendChild(el("td", itemLabel(movement)));
+                    tr.appendChild(el("td", t("movement_type." + movement.movement_type)));
+                    tr.appendChild(el("td", formatMovementQty(movement.quantity)));
+                    tr.appendChild(el("td", movement.reference || t("dash")));
+                    tr.appendChild(el("td", movement.reason || t("dash")));
+                    tr.appendChild(el("td", movement.created_by || t("dash")));
+                    tr.appendChild(el("td", formatDateTime(movement.created_at)));
+                    body.appendChild(tr);
+                });
+            }
+
+            function loadHistory() {
+                var params = "page=" + state.historyPage + "&page_size=" + state.historyPageSize;
+                return api("/api/branch/receipts/?" + params).then(function (d) {
+                    state.history = d.branch_receipts || [];
+                    state.historyNumPages = d.num_pages || 0;
+                    renderHistory();
+                });
+            }
+
+            function loadMovements() {
+                var params = "page=" + state.movementsPage + "&page_size=" + state.movementsPageSize;
+                var itemId = document.getElementById("movement-item-filter");
+                if (itemId && itemId.value) params += "&item_id=" + encodeURIComponent(itemId.value);
+                return api("/api/branch/stock/movements/?" + params).then(function (d) {
+                    state.movements = d.stock_movements || [];
+                    state.movementsNumPages = d.num_pages || 0;
+                    renderMovements();
+                });
+            }
+
+            function loadLedgers() {
+                return Promise.all([loadHistory(), loadMovements()]).catch(showError);
+            }
+
+            function isOffline() {
+                return typeof BranchOffline !== "undefined" && !BranchOffline.isOnline();
+            }
+
             function renderList() {
                 issueBody.textContent = "";
                 state.issues.forEach(function (issue) {
@@ -322,16 +620,22 @@
 
             function load() {
                 var offlineEmpty = document.getElementById("offline-empty");
-                if (typeof BranchOffline !== "undefined" && !BranchOffline.isOnline()) {
+                if (isOffline()) {
                     state.issues = [];
                     state.selectedId = null;
                     state.reportingDiscrepancies = false;
+                    state.history = [];
+                    state.movements = [];
                     setDiscrepancyColumnsVisible(false);
                     issueBody.textContent = "";
                     lineBody.textContent = "";
+                    document.getElementById("history-body").textContent = "";
+                    document.getElementById("movements-body").textContent = "";
                     detailTitle.textContent = t("detailTitle");
                     if (offlineEmpty) offlineEmpty.hidden = false;
                     syncActionButtons();
+                    renderHistory();
+                    renderMovements();
                     return Promise.resolve();
                 }
                 if (offlineEmpty) offlineEmpty.hidden = true;
@@ -339,6 +643,7 @@
                     state.issues = d.goods_issues || [];
                     renderList();
                     syncActionButtons();
+                    return loadLedgers();
                 });
             }
 
@@ -610,25 +915,113 @@
                     .catch(showError);
             }
 
-            function adjust() {
+            function closeAdjustDialog() {
+                document.getElementById("adjust-dialog-backdrop").hidden = true;
+                document.getElementById("adjust-dialog").hidden = true;
+            }
+
+            function openAdjustDialog() {
+                if (!CAN_ADJUST) return;
+                var error = document.getElementById("adjust-error");
+                error.hidden = true;
+                document.getElementById("adjust-quantity").value = "";
+                document.getElementById("adjust-reason").value = "";
+                var open = function () {
+                    if (typeof fillActionSelect === "function") {
+                        fillActionSelect(
+                            document.getElementById("adjust-item"),
+                            state.catalogItems.map(function (item) {
+                                return { value: String(item.id), label: itemLabel(item) };
+                            })
+                        );
+                    }
+                    document.getElementById("adjust-dialog-backdrop").hidden = false;
+                    document.getElementById("adjust-dialog").hidden = false;
+                    document.getElementById("adjust-item").focus();
+                };
+                if (state.catalogItems.length) {
+                    open();
+                    return;
+                }
+                loadCatalogItems().then(open).catch(showError);
+            }
+
+            function submitAdjustment() {
                 clearError();
+                var itemId = document.getElementById("adjust-item").value;
+                var quantity = document.getElementById("adjust-quantity").value;
+                var error = document.getElementById("adjust-error");
+                if (!itemId) {
+                    error.textContent = t("itemRequired");
+                    error.hidden = false;
+                    return;
+                }
+                if (quantity === "" || Number(quantity) === 0) {
+                    error.textContent = t("adjustQuantityRequired");
+                    error.hidden = false;
+                    return;
+                }
                 api("/api/branch/stock/adjust/", "POST", {
-                    item_id: document.getElementById("adjust-item").value,
-                    quantity: document.getElementById("adjust-qty").value,
+                    item_id: parseInt(itemId, 10),
+                    quantity: quantity,
                     reason: document.getElementById("adjust-reason").value
-                }).then(function () { banner.textContent = t("stockAdjusted"); banner.hidden = false; }).catch(showError);
+                }).then(function () {
+                    closeAdjustDialog();
+                    banner.textContent = t("stockAdjusted");
+                    banner.hidden = false;
+                    return loadMovements();
+                }).catch(function (err) {
+                    error.textContent = err.message;
+                    error.hidden = false;
+                });
             }
 
             receiveBtn.addEventListener("click", receive);
             reportBtn.addEventListener("click", reportDiscrepancies);
             shortCloseBtn.addEventListener("click", shortClose);
-            document.getElementById("adjust-btn").addEventListener("click", adjust);
-            if (CAN_ADJUST) document.getElementById("adjust-row").hidden = false;
+            if (CAN_ADJUST) {
+                document.getElementById("adjust-btn").hidden = false;
+                document.getElementById("adjust-btn").addEventListener("click", openAdjustDialog);
+                document.getElementById("adjust-confirm").addEventListener("click", submitAdjustment);
+                document.getElementById("adjust-cancel").addEventListener("click", closeAdjustDialog);
+                document.getElementById("adjust-dialog-backdrop").addEventListener("click", closeAdjustDialog);
+            }
+            document.getElementById("history-prev").addEventListener("click", function () {
+                if (state.historyPage > 1) {
+                    state.historyPage -= 1;
+                    loadHistory().catch(showError);
+                }
+            });
+            document.getElementById("history-next").addEventListener("click", function () {
+                if (state.historyPage < state.historyNumPages) {
+                    state.historyPage += 1;
+                    loadHistory().catch(showError);
+                }
+            });
+            document.getElementById("movements-prev").addEventListener("click", function () {
+                if (state.movementsPage > 1) {
+                    state.movementsPage -= 1;
+                    loadMovements().catch(showError);
+                }
+            });
+            document.getElementById("movements-next").addEventListener("click", function () {
+                if (state.movementsPage < state.movementsNumPages) {
+                    state.movementsPage += 1;
+                    loadMovements().catch(showError);
+                }
+            });
+            document.getElementById("movement-item-filter").addEventListener("change", function () {
+                state.movementsPage = 1;
+                loadMovements().catch(showError);
+            });
 
             applyStaticI18n();
             document.addEventListener("cc-lang-changed", function () {
                 applyStaticI18n();
+                fillCatalogSelects();
                 renderList();
+                renderHistory();
+                renderMovements();
                 if (state.selectedId) {
                     select(state.selectedId);
                 } else {
@@ -636,10 +1029,10 @@
                     syncActionButtons();
                 }
             });
-            load().catch(showError);
+            loadCatalogItems().then(function () { return load(); }).catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=14"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=15"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

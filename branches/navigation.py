@@ -37,8 +37,15 @@ def branch_work_cards(*, include_picker=False):
                 "title_key": "cardBranchReceipts",
                 "desc_key": "cardBranchReceiptsDesc",
                 "title": "Branch receipts",
-                "desc": "Receive goods and view branch stock",
+                "desc": "Receive goods against a dispatch",
                 "url": "/branch/receipts/",
+            },
+            {
+                "title_key": "cardBranchStock",
+                "desc_key": "cardBranchStockDesc",
+                "title": "Branch stock",
+                "desc": "On-hand quantity for this branch",
+                "url": "/branch/stock/",
             },
         ]
     )

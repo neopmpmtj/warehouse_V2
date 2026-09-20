@@ -19,6 +19,11 @@ urlpatterns = [
         name="branch_receipt_console",
     ),
     path(
+        "branch/stock/",
+        views.branch_stock_console,
+        name="branch_stock_console",
+    ),
+    path(
         "branch/alerts/",
         views.branch_alerts_console,
         name="branch_alerts_console",

@@ -127,7 +127,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Enter at least one issue quantity.` | A request is selected but every issue quantity is empty | Type a quantity on at least one line |
 | `A reason is required to short-close a request.` | Warehouse short-close needs a reason | Type one |
 
-**Branch receipt & branch stock (`/branch/receipts/`)**
+**Branch receipt & branch stock (`/branch/receipts/`, `/branch/stock/`)**
 
 | Message | Why | What to do |
 |---------|-----|------------|

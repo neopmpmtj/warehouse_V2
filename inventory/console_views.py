@@ -349,6 +349,113 @@ def _serialize_branch_goods_issue(goods_issue):
     }
 
 
+def _serialize_branch_receipt(receipt):
+    total = sum((line.quantity_received for line in receipt.lines.all()), 0)
+    return {
+        "id": receipt.id,
+        "dispatch_id": receipt.goods_issue_id,
+        "request_id": receipt.goods_issue.internal_request_id,
+        "received_by": receipt.received_by.email if receipt.received_by_id else None,
+        "received_at": receipt.received_at.isoformat(),
+        "total_received": _dec(total),
+        "is_critical": receipt.is_critical,
+    }
+
+
+def _serialize_branch_movement(movement, receipt=None):
+    if receipt is not None:
+        reference = f"BR #{receipt.id}"
+    elif movement.content_type_id is not None:
+        reference = f"{movement.content_type.model} #{movement.object_id}"
+    else:
+        reference = ""
+    return {
+        "id": movement.id,
+        "item_id": movement.item_id,
+        "internal_code": movement.item.internal_code,
+        "description": movement.item.description,
+        "quantity": _dec(movement.quantity),
+        "movement_type": movement.movement_type,
+        "reference": reference,
+        "reason": movement.reason,
+        "created_by": movement.created_by.email if movement.created_by_id else None,
+        "created_at": movement.created_at.isoformat(),
+    }
+
+
+def _serialize_branch_on_hand(item):
+    sub = item.sub_family
+    return {
+        "id": item.id,
+        "internal_code": item.internal_code or "",
+        "description": item.description,
+        "family": item.family.name,
+        "sub_family": sub.name if sub is not None else "",
+        "unit_of_measure": item.unit_of_measure,
+        "on_hand": _dec(item.on_hand),
+    }
+
+
+@active_branch_required
+@require_GET
+def branch_receipt_history_list(request):
+    receipts, meta = _paginate(
+        services.get_branch_receipts(request.active_branch), request
+    )
+    payload = {
+        "branch_receipts": [_serialize_branch_receipt(receipt) for receipt in receipts]
+    }
+    if meta is not None:
+        payload.update(meta)
+    return JsonResponse(payload)
+
+
+@active_branch_required
+@require_GET
+def branch_stock_movement_list(request):
+    item_id = request.GET.get("item_id")
+    if item_id:
+        try:
+            item_id = _parse_int_id(item_id, "item_id")
+        except ValidationError:
+            return _json_error("Invalid item_id.", status=400)
+    else:
+        item_id = None
+
+    movements, meta = _paginate(
+        services.get_branch_stock_movements(request.active_branch, item=item_id),
+        request,
+    )
+    receipt_ct = ContentType.objects.get_for_model(BranchReceipt)
+    receipt_ids = [
+        m.object_id
+        for m in movements
+        if m.content_type_id == receipt_ct.id and m.object_id
+    ]
+    receipts = {r.id: r for r in BranchReceipt.objects.filter(pk__in=receipt_ids)}
+    payload = {
+        "stock_movements": [
+            _serialize_branch_movement(
+                m,
+                receipt=receipts.get(m.object_id)
+                if m.content_type_id == receipt_ct.id
+                else None,
+            )
+            for m in movements
+        ]
+    }
+    if meta is not None:
+        payload.update(meta)
+    return JsonResponse(payload)
+
+
+@active_branch_required
+@require_GET
+def branch_stock_list(request):
+    items = services.get_branch_on_hand(request.active_branch)
+    return JsonResponse({"items": [_serialize_branch_on_hand(item) for item in items]})
+
+
 @active_branch_required
 @require_GET
 def branch_receipt_issue_list(request):

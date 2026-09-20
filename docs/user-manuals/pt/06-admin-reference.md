@@ -216,7 +216,7 @@ A maior parte das tabelas de negócio em `/admin/` é **só de leitura de propó
 | Approval limits | `/manage/approval-limits/` |
 | Goods receipts, stock movements | `/manage/goods-receipts/` |
 | Internal requests, goods issues | `/manage/internal-requests/` + `/branch/…` |
-| Branch receipts, branch stock | `/branch/receipts/` |
+| Receções da filial, stock da filial | `/branch/receipts/` + `/branch/stock/` |
 | Alertas de discrepância de receção (estado de leitura) | `/manage/alerts/` + `/branch/alerts/` (admin só inspeção) |
 | Conversas de pedido | `/branch/threads/` + `/manage/threads/` (admin só inspeção) |
 | Parle | `/company-voice/` (admin só inspeção; **sem eliminação permanente**) |

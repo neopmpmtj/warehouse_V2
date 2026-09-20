@@ -24,6 +24,7 @@ from products.services import (
     create_item,
     create_supplier,
     create_supplier_item_price,
+    deactivate_item,
     reactivate_item,
 )
 from procurement import services as po_services
@@ -1353,6 +1354,10 @@ class BranchReceiptApiTests(TestCase):
         self.assertContains(r, "Catalog")
         self.assertContains(r, 'id="report-discrepancies-btn"')
         self.assertContains(r, "colReorderQty")
+        self.assertContains(r, 'id="history-body"')
+        self.assertContains(r, 'id="movements-body"')
+        self.assertContains(r, 'id="adjust-dialog"')
+        self.assertNotContains(r, 'id="adjust-row"')
         self.assertContains(r, "Requests")
         self.assertNotContains(r, 'id="language-select"')
         self.assertNotContains(r, 'id="theme-toggle"')
@@ -1515,6 +1520,211 @@ class BranchReceiptApiTests(TestCase):
         self.assertEqual(r.status_code, 201)
         req.refresh_from_db()
         self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+
+
+class BranchStockVisibilityApiTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.north = create_branch("North Stock")
+        self.south = create_branch("South Stock")
+        self.operator = _make_branch_user("stock-op@example.com", self.north, ROLE_OPERATOR)
+        self.manager = _make_branch_user("stock-mgr@example.com", self.north, ROLE_MANAGER)
+        self.admin = _make_branch_user("stock-adm@example.com", self.north, ROLE_ADMIN)
+        self.south_op = _make_branch_user("stock-south@example.com", self.south, ROLE_OPERATOR)
+        self.wh_admin = make_warehouse_user("stock-wh@example.com")
+        self.item = _make_issue_item("Stock Widget", wholesale="5.00", quantity="20")
+
+    def _login(self, user, branch):
+        self.client.force_login(user)
+        session = self.client.session
+        session[SESSION_KEY] = branch.id
+        session.save()
+
+    def _ship(self, qty="4", item=None):
+        item = item or self.item
+        req = order_services.create_internal_request(self.north, self.operator)
+        line = order_services.add_line(req, item, qty, self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(
+            req, [{"line_id": line.id, "quantity_issued": qty}], self.wh_admin
+        )
+        req.refresh_from_db()
+        return req, goods_issue
+
+    def _receive(self, goods_issue, qty, reason=""):
+        issue_line = goods_issue.lines.get()
+        payload = {"lines": [{"line_id": issue_line.id, "quantity_received": qty}]}
+        if reason:
+            payload["reason"] = reason
+        return self.client.post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+    def test_operator_can_open_stock_page(self):
+        self._login(self.operator, self.north)
+        response = self.client.get(reverse("branch_stock_console"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="stock-body"')
+        self.assertContains(response, "navBranchStock")
+        self.assertContains(response, "branch_stock.js")
+        self.assertContains(response, "No stock yet. Receive a dispatch to add items.")
+
+    def test_on_hand_empty_then_received_qty(self):
+        self._login(self.operator, self.north)
+        empty = self.client.get(reverse("branch_stock_list"))
+        self.assertEqual(empty.status_code, 200)
+        self.assertEqual(empty.json()["items"], [])
+
+        req, goods_issue = self._ship("4")
+        receive = self._receive(goods_issue, "4")
+        self.assertEqual(receive.status_code, 201)
+
+        after = self.client.get(reverse("branch_stock_list"))
+        items = after.json()["items"]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["id"], self.item.id)
+        self.assertEqual(items[0]["on_hand"], "4")
+
+        history = self.client.get(reverse("branch_receipt_history_list"))
+        self.assertEqual(history.status_code, 200)
+        receipts = history.json()["branch_receipts"]
+        self.assertEqual(len(receipts), 1)
+        self.assertEqual(receipts[0]["dispatch_id"], goods_issue.id)
+        self.assertEqual(receipts[0]["total_received"], "4")
+        self.assertFalse(receipts[0]["is_critical"])
+
+        movements = self.client.get(reverse("branch_stock_movement_list"))
+        self.assertEqual(movements.status_code, 200)
+        rows = movements.json()["stock_movements"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["quantity"], "4")
+        self.assertEqual(rows[0]["movement_type"], BranchStockMovement.Type.RECEIPT)
+        self.assertEqual(rows[0]["reference"], f"BR #{receipts[0]['id']}")
+
+    def test_discrepancy_books_actual_qty_not_shipped(self):
+        req, goods_issue = self._ship("5")
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator, self.north)
+        receive = self.client.post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            data=json.dumps(
+                {
+                    "lines": [{"line_id": issue_line.id, "quantity_received": "4"}],
+                    "reason": "one missing",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(receive.status_code, 201)
+        stock = self.client.get(reverse("branch_stock_list"))
+        row = next(item for item in stock.json()["items"] if item["id"] == self.item.id)
+        self.assertEqual(row["on_hand"], "4")
+        history = self.client.get(reverse("branch_receipt_history_list")).json()
+        self.assertTrue(history["branch_receipts"][0]["is_critical"])
+
+    def test_other_branch_cannot_see_receipts_or_movements(self):
+        req, goods_issue = self._ship("4")
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator, self.north)
+        self.client.post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            data=json.dumps(
+                {"lines": [{"line_id": issue_line.id, "quantity_received": "4"}]}
+            ),
+            content_type="application/json",
+        )
+        self._login(self.south_op, self.south)
+        history = self.client.get(reverse("branch_receipt_history_list"))
+        self.assertEqual(history.json()["branch_receipts"], [])
+        movements = self.client.get(reverse("branch_stock_movement_list"))
+        self.assertEqual(movements.json()["stock_movements"], [])
+        stock = self.client.get(reverse("branch_stock_list"))
+        ids = [item["id"] for item in stock.json()["items"]]
+        self.assertNotIn(self.item.id, ids)
+
+    def test_second_receive_same_item_does_not_duplicate(self):
+        self._login(self.operator, self.north)
+        _, first = self._ship("4")
+        self.assertEqual(self._receive(first, "4").status_code, 201)
+        _, second = self._ship("3")
+        self.assertEqual(self._receive(second, "3").status_code, 201)
+        items = self.client.get(reverse("branch_stock_list")).json()["items"]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["id"], self.item.id)
+        self.assertEqual(items[0]["on_hand"], "7")
+
+    def test_receive_different_item_adds_second_row(self):
+        other = _make_issue_item("Other Widget", quantity="10")
+        self._login(self.operator, self.north)
+        _, first = self._ship("4")
+        self.assertEqual(self._receive(first, "4").status_code, 201)
+        _, second = self._ship("2", item=other)
+        self.assertEqual(self._receive(second, "2").status_code, 201)
+        items = self.client.get(reverse("branch_stock_list")).json()["items"]
+        ids = {row["id"]: row["on_hand"] for row in items}
+        self.assertEqual(len(ids), 2)
+        self.assertEqual(ids[self.item.id], "4")
+        self.assertEqual(ids[other.id], "2")
+
+    def test_admin_adjust_unseen_item_adds_row(self):
+        unseen = _make_issue_item("Unseen Widget", quantity="0")
+        self._login(self.admin, self.north)
+        before = self.client.get(reverse("branch_stock_list"))
+        self.assertEqual(before.json()["items"], [])
+        response = self.client.post(
+            reverse("branch_stock_adjust"),
+            data=json.dumps(
+                {"item_id": unseen.id, "quantity": "2", "reason": "opening balance"}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        items = self.client.get(reverse("branch_stock_list")).json()["items"]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["id"], unseen.id)
+        self.assertEqual(items[0]["on_hand"], "2")
+
+    def test_deactivated_warehouse_item_stays_listed(self):
+        self._login(self.operator, self.north)
+        _, goods_issue = self._ship("4")
+        self.assertEqual(self._receive(goods_issue, "4").status_code, 201)
+        deactivate_item(self.wh_admin, self.item, reason="retired")
+        items = self.client.get(reverse("branch_stock_list")).json()["items"]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["id"], self.item.id)
+        self.assertEqual(items[0]["on_hand"], "4")
+
+    def test_history_pagination(self):
+        req, goods_issue = self._ship("4")
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator, self.north)
+        self.client.post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            data=json.dumps(
+                {"lines": [{"line_id": issue_line.id, "quantity_received": "4"}]}
+            ),
+            content_type="application/json",
+        )
+        page = self.client.get(reverse("branch_receipt_history_list") + "?page=1&page_size=1")
+        self.assertEqual(page.status_code, 200)
+        payload = page.json()
+        self.assertEqual(payload["page"], 1)
+        self.assertEqual(payload["page_size"], 1)
+        self.assertEqual(len(payload["branch_receipts"]), 1)
+        self.assertGreaterEqual(payload["total"], 1)
+
+    def test_manager_adjust_dialog_still_403(self):
+        self._login(self.manager, self.north)
+        response = self.client.post(
+            reverse("branch_stock_adjust"),
+            data=json.dumps({"item_id": self.item.id, "quantity": "1", "reason": "x"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
 
 
 class BranchReceiptAlertTests(TestCase):

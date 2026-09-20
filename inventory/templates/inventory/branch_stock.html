@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ branch.name }} — Catalog — CentCompras</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{{ branch.name }} — Stock — CentCompras</title>
     <script>
         (function () {
             var theme = "light";
@@ -34,9 +35,9 @@
 
     <main class="page">
         <section class="toolbar" aria-label="Filters">
-            <input type="search" id="catalog-search" data-i18n-placeholder="searchPlaceholder" placeholder="Search code or description…">
-            <select id="catalog-family" aria-label="Family filter" data-i18n-aria="familyFilter"></select>
-            <select id="catalog-sub-family" aria-label="Sub-family filter" data-i18n-aria="subFamilyFilter"></select>
+            <input type="search" id="stock-search" data-i18n-placeholder="searchPlaceholder" placeholder="Search code or description…">
+            <select id="stock-family" aria-label="Family filter" data-i18n-aria="familyFilter"></select>
+            <select id="stock-sub-family" aria-label="Sub-family filter" data-i18n-aria="subFamilyFilter"></select>
         </section>
 
         <p id="offline-banner" class="banner banner-info" hidden></p>
@@ -45,7 +46,7 @@
         <div class="table-wrap">
             <table class="grid">
                 <thead>
-                    <tr id="catalog-head">
+                    <tr>
                         <th class="th-sortable" data-sort="internal_code" data-i18n-col="colCode" aria-sort="none">
                             <button type="button" class="sort-btn">
                                 <span data-i18n="colCode">Code</span>
@@ -76,24 +77,24 @@
                                 <span class="sort-indicator" aria-hidden="true"></span>
                             </button>
                         </th>
-                        <th class="th-sortable" data-sort="availability" data-i18n-col="colAvailability" aria-sort="none">
+                        <th class="th-sortable" data-sort="on_hand" data-i18n-col="colOnHand" aria-sort="none">
                             <button type="button" class="sort-btn">
-                                <span data-i18n="colAvailability">Availability</span>
+                                <span data-i18n="colOnHand">On hand</span>
                                 <span class="sort-indicator" aria-hidden="true"></span>
                             </button>
                         </th>
                     </tr>
                 </thead>
-                <tbody id="catalog-body"></tbody>
+                <tbody id="stock-body"></tbody>
             </table>
         </div>
-        <p id="catalog-empty" class="empty-note" hidden>No items to show.</p>
+        <p id="stock-empty" class="empty-note" hidden data-i18n="empty">No stock yet. Receive a dispatch to add items.</p>
     </main>
 
     {% include "branches/includes/offline_scripts.html" %}
     <script src="{% static 'products/js/select_fill.js' %}?v=2"></script>
-    <script src="{% static 'branches/js/branch_catalog_i18n.js' %}?v=2"></script>
-    <script src="{% static 'branches/js/branch_catalog.js' %}?v=5"></script>
+    <script src="{% static 'inventory/js/branch_stock_i18n.js' %}?v=2"></script>
+    <script src="{% static 'inventory/js/branch_stock.js' %}?v=2"></script>
     <script src="{% static 'products/js/preferences_bar.js' %}?v=15"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
