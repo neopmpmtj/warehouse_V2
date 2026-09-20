@@ -8,9 +8,9 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 ## Project status
 
-*Last updated: 17 September 2026, 10:15 WEST.*
+*Last updated: 20 September 2026, 12:15 WEST.*
 
-**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** EN+PT, including presentation slide 12). Requisição line price is **retail** (**D41**). Warehouse `/manage/internal-requests/` i18n complete. Presentation deck **v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26). Full-tree production-readiness review **applied** (26 Aug 1205). **Pick up:** remove TEMP viewBox debug on deck; optional slides 10–16 polish — see [`docs/handoff.md`](docs/handoff.md). Then Phase 7 (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. `orders`/`inventory`/`branches` **175 OK**.
+**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** EN+PT, including presentation slide 12). Requisição line price is **retail** (**D41**). Branch send-to-warehouse **D43** (two confirmations; FIFO restocks the warehouse pool; read-only Stock at branches). Warehouse `/manage/internal-requests/` i18n complete. Presentation deck **v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26). Full-tree production-readiness review **applied** (26 Aug 1205). **Pick up:** remove TEMP viewBox debug on deck; optional slides 10–16 polish — see [`docs/handoff.md`](docs/handoff.md). Then Phase 7 (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9. Full suite **673 OK**.
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -351,5 +351,5 @@ Canonical list of “next / later” is the phase table in [`docs/handoff.md`](d
 - **Production deployment readiness** (Phase 7 — **Next**) — [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - **Google OAuth production rollout + shared chrome** (Phase 8)
 - **Email automation** (Phase 9 — wire notify stubs to real email; stub exists today)
-- Integration tests (unit suites: **607 OK**)
+- Integration tests (unit suites: **673 OK**)
 - ~~Login rate limiting~~ — done (DB-backed throttle, 5 failures / 15 min, configurable)

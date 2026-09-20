@@ -1,6 +1,6 @@
 # CentCompras — Session Handoff
 
-> **Read this first when resuming work.** Last updated: 20 September 2026, 07:00 WEST.
+> **Read this first when resuming work.** Last updated: 20 September 2026, 12:15 WEST.
 
 ---
 
@@ -32,11 +32,22 @@
 | 8 — Google OAuth production rollout + shared chrome | ⏸ After Phase 7 |
 | 9 — Email automation (supplier notifications) | ⏸ **Late phase** |
 
-**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Presentation deck v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26); slide **12** → **Parle** (D40). Requisição `unit_price` snapshots **retail** (D41). **Immediate next:** remove **TEMP** viewBox debug borders; optional slides 10–16 / slide 8 viewBox polish — then **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
+**Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Presentation deck v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26); slide **12** → **Parle** (D40). Requisição `unit_price` snapshots **retail** (D41). **Branch send-to-warehouse (D43)** — two confirmations, manager/admin send, warehouse receive, FIFO restocks the pool; read-only **Stock at branches**. **Immediate next:** remove **TEMP** viewBox debug borders; optional slides 10–16 / slide 8 viewBox polish — then **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
 
-**Tests:** `orders` + `inventory` + `branches` **175 OK** (17 Sep; D41 retail snapshot).
+**Tests:** full suite **673 OK** (20 Sep; D43 send-to-warehouse).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
+
+## This session (20 Sep 2026) — branch send-to-warehouse (D43) ✅
+
+Sul (or any branch) can send surplus on-hand to the warehouse. Distinct from a return and not mixed with `/branch/receipts/` or PO goods receipts.
+
+- Two confirmations: branch **Send** (`in_transit`, stock leaves the branch) then warehouse **Receive** (`branch_inbound`; D32 FIFO allocates to waiting requisições).
+- Send and in-transit cancel: branch manager/admin only. Warehouse cannot refuse. Active catalogue items only. No destination-requisição link.
+- Pages: `/branch/send-to-warehouse/`, `/manage/incoming-from-branches/`, read-only `/manage/stock-at-branches/`.
+- Document `BranchWarehouseShipment` (BWS #). Short receive writes off the remainder. Online-only v1.
+- Manuals 03 / 04 / 05 / 06 EN+PT. Migration `inventory.0010_branch_warehouse_shipment`.
+- **Tests:** **673 OK**. Browser: Sul manager sent CEM-50; warehouse received; FIFO reserved the older Norte requisição.
 
 ## This session (20 Sep 2026) — branch users no longer stuck on `/` 403 ✅
 
