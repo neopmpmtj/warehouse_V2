@@ -55,6 +55,7 @@
                     <th data-i18n="colReceiveQty">Receive qty</th>
                     <th data-i18n="colActualReceived" class="discrepancy-col" hidden>Actual received</th>
                     <th data-i18n="colReorder" class="discrepancy-col" hidden>Reorder</th>
+                    <th data-i18n="colReorderQty" class="reorder-qty-col" hidden>Reorder qty</th>
                 </tr></thead>
                 <tbody id="line-body"></tbody>
             </table>
@@ -112,7 +113,9 @@
                     colReceiveQty: "Receive qty",
                     colActualReceived: "Actual received",
                     colReorder: "Reorder",
+                    colReorderQty: "Reorder qty",
                     receive: "Receive",
+                    invalidReorderQuantity: "Reorder quantity must be between 1 and the missing quantity.",
                     reportDiscrepancies: "Report discrepancies",
                     shortClose: "Short close",
                     itemId: "Item ID",
@@ -155,7 +158,9 @@
                     colReceiveQty: "Qtd a receber",
                     colActualReceived: "Qtd efectivamente recebida",
                     colReorder: "Requisitar em falta",
+                    colReorderQty: "Qtd a requisitar",
                     receive: "Receber",
+                    invalidReorderQuantity: "A quantidade a requisitar tem de estar entre 1 e as unidades em falta.",
                     reportDiscrepancies: "Comunicar discrepâncias",
                     shortClose: "Encerramento parcial",
                     itemId: "ID do artigo",
@@ -245,10 +250,17 @@
                 });
             }
 
+            function setReorderQtyColumnVisible(visible) {
+                document.querySelectorAll(".reorder-qty-col").forEach(function (node) {
+                    node.hidden = !visible;
+                });
+            }
+
             function setDiscrepancyColumnsVisible(visible) {
                 document.querySelectorAll(".discrepancy-col").forEach(function (node) {
                     node.hidden = !visible;
                 });
+                if (!visible) setReorderQtyColumnVisible(false);
             }
 
             function syncActionButtons() {
@@ -276,6 +288,9 @@
                 }
                 if (payload && payload.code === "discrepancy_reason_required") {
                     return t("discrepancyReasonRequired");
+                }
+                if (payload && payload.code === "invalid_reorder_quantity") {
+                    return t("invalidReorderQuantity");
                 }
                 return (payload && payload.error) || t("requestFailed");
             }
@@ -342,6 +357,68 @@
                 if (n > max) input.value = String(max);
             }
 
+            function missingQty(actualInput) {
+                var remaining = parseInt(actualInput.max, 10);
+                var qty = parseInt(actualInput.value, 10);
+                if (!Number.isFinite(remaining) || remaining < 0) remaining = 0;
+                if (!Number.isFinite(qty)) qty = remaining;
+                var missing = remaining - qty;
+                return missing > 0 ? missing : 0;
+            }
+
+            function clampReorderQty(input) {
+                var max = parseInt(input.max, 10);
+                if (!Number.isFinite(max) || max < 1) {
+                    input.value = "";
+                    return;
+                }
+                if (input.value === "") {
+                    input.value = String(max);
+                    return;
+                }
+                var n = parseInt(input.value, 10);
+                if (!Number.isFinite(n) || n < 1) {
+                    input.value = String(max);
+                    return;
+                }
+                if (n > max) input.value = String(max);
+            }
+
+            function anyReorderTicked() {
+                return Array.prototype.some.call(
+                    lineBody.querySelectorAll("input[data-reorder-line-id]"),
+                    function (cb) { return cb.checked; }
+                );
+            }
+
+            function syncReorderQtyForLine(lineId) {
+                var actual = lineBody.querySelector(
+                    'input[data-actual-line-id="' + lineId + '"]'
+                );
+                var cb = lineBody.querySelector(
+                    'input[data-reorder-line-id="' + lineId + '"]'
+                );
+                var qtyInput = lineBody.querySelector(
+                    'input[data-reorder-qty-line-id="' + lineId + '"]'
+                );
+                if (!qtyInput) return;
+                var missing = actual ? missingQty(actual) : 0;
+                if (cb && cb.checked && missing < 1) {
+                    cb.checked = false;
+                }
+                if (cb && cb.checked && missing > 0) {
+                    qtyInput.disabled = false;
+                    qtyInput.min = "1";
+                    qtyInput.max = String(missing);
+                    clampReorderQty(qtyInput);
+                } else {
+                    qtyInput.disabled = true;
+                    qtyInput.value = "";
+                    qtyInput.removeAttribute("max");
+                }
+                setReorderQtyColumnVisible(anyReorderTicked());
+            }
+
             function renderDetail(issue) {
                 detailTitle.textContent = t("detailTitleNum", {
                     id: issue.id,
@@ -387,8 +464,14 @@
                     actual.disabled = issue.request_status === "closed" || remaining <= 0;
                     if (!actual.disabled) {
                         actual.value = String(remaining);
-                        actual.addEventListener("input", function () { clampActualQty(actual); });
-                        actual.addEventListener("change", function () { clampActualQty(actual); });
+                        actual.addEventListener("input", function () {
+                            clampActualQty(actual);
+                            syncReorderQtyForLine(line.line_id);
+                        });
+                        actual.addEventListener("change", function () {
+                            clampActualQty(actual);
+                            syncReorderQtyForLine(line.line_id);
+                        });
                     }
                     tdActual.appendChild(actual);
                     tr.appendChild(tdActual);
@@ -400,8 +483,26 @@
                     reorder.type = "checkbox";
                     reorder.dataset.reorderLineId = line.line_id;
                     reorder.disabled = issue.request_status === "closed" || remaining <= 0;
+                    reorder.addEventListener("change", function () {
+                        syncReorderQtyForLine(line.line_id);
+                    });
                     tdReorder.appendChild(reorder);
                     tr.appendChild(tdReorder);
+
+                    var tdReorderQty = document.createElement("td");
+                    tdReorderQty.className = "reorder-qty-col";
+                    tdReorderQty.hidden = true;
+                    var reorderQty = document.createElement("input");
+                    reorderQty.type = "number";
+                    reorderQty.step = "1";
+                    reorderQty.min = "1";
+                    reorderQty.className = "qty";
+                    reorderQty.dataset.reorderQtyLineId = line.line_id;
+                    reorderQty.disabled = true;
+                    reorderQty.addEventListener("input", function () { clampReorderQty(reorderQty); });
+                    reorderQty.addEventListener("change", function () { clampReorderQty(reorderQty); });
+                    tdReorderQty.appendChild(reorderQty);
+                    tr.appendChild(tdReorderQty);
 
                     lineBody.appendChild(tr);
                 });
@@ -457,11 +558,21 @@
                         var reorder = lineBody.querySelector(
                             'input[data-reorder-line-id="' + input.dataset.actualLineId + '"]'
                         );
-                        lines.push({
+                        var row = {
                             line_id: parseInt(input.dataset.actualLineId, 10),
                             quantity_received: input.value,
                             reorder: Boolean(reorder && reorder.checked),
-                        });
+                        };
+                        if (row.reorder) {
+                            var reorderQty = lineBody.querySelector(
+                                'input[data-reorder-qty-line-id="' + input.dataset.actualLineId + '"]'
+                            );
+                            if (reorderQty) {
+                                clampReorderQty(reorderQty);
+                                row.reorder_qty = parseInt(reorderQty.value, 10);
+                            }
+                        }
+                        lines.push(row);
                     });
                 } else {
                     lineBody.querySelectorAll("input[data-line-id]").forEach(function (input) {

@@ -258,13 +258,13 @@ Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your bra
 1. Select a dispatch.
 2. **Receive qty** is pre-filled with **Remaining** (the still-unreceived part of what was shipped on this dispatch — the full shipped quantity when nothing has been received yet). The field is **view-only**.
 3. If every line arrived as shipped, click **Receive** (*Receber*).
-4. If a count does not match, click **Report discrepancies** (*Comunicar discrepâncias*). An **Actual received** column and a **Reorder** (*Requisitar em falta*) checkbox appear. Change only the wrong lines (you may enter **0**). Tick **Reorder** on a line if you still need the missing units.
+4. If a count does not match, click **Report discrepancies** (*Comunicar discrepâncias*). An **Actual received** column and a **Reorder** (*Requisitar em falta*) checkbox appear. Change only the wrong lines (you may enter **0**). Tick **Reorder** on a line if you still need some of the missing units — a **Reorder qty** field appears, pre-filled with the shortfall (Remaining − Actual received). You may lower it (minimum **1**); you cannot order more than the shortfall. To order none, untick Reorder.
 5. Click **Receive**. If any actual qty is less than Remaining, you must give **one reason** for the dispatch. **Cancel** on that prompt does nothing.
 
 Rules:
 
 - **Receive qty** cannot exceed **Remaining** on that line (issued on this dispatch minus already received, minus any earlier discrepancy write-off). Leave the pre-filled number and click Receive to book the full remaining quantity.
-- A discrepancy **finishes that dispatch line**. You cannot receive the missing units later on this guia. The warehouse issue document is **not** changed. If you still need the missing units, tick **Reorder** — the app creates **one new submitted** requisição (manager queue) for the shortfall; several ticked lines go on the same new request.
+- A discrepancy **finishes that dispatch line**. You cannot receive the missing units later on this guia. The warehouse issue document is **not** changed. If you still need some of the missing units, tick **Reorder** — the app creates **one new submitted** requisição (manager queue) for the **Reorder qty** on each ticked line (the full shortfall unless you lower it); several ticked lines go on the same new request. The write-off on this guia is still the full shortfall.
 - While the request is still **fulfilling**, receiving a dispatch does **not** change the request status (the warehouse still has remainder). Branch stock still goes up by the actual qty.
 - After the warehouse is done (**shipped**): if every issued unit is received or settled as a discrepancy → **closed**. If another dispatch still has unreceived qty → **received**.
 

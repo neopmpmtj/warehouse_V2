@@ -137,6 +137,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Goods issue line not found on this dispatch.` (Linha de saída de mercadoria não encontrada nesta expedição.) | Id de linha errado | Selecione de novo |
 | `A goods issue line was provided more than once in this receipt.` (Uma linha de saída foi indicada mais do que uma vez nesta receção.) | Linha duplicada | Uma linha por linha de emissão |
 | `A reason is required to report a receipt discrepancy.` (É obrigatório indicar um motivo para comunicar uma discrepância de receção.) | A quantidade efectiva é menor do que o Restante | Indique um motivo; essa linha da expedição fica concluída |
+| `Reorder quantity must be between 1 and X.` (A quantidade a requisitar tem de estar entre 1 e X.) | Qtd a requisitar é 0, vazia, ou maior do que o em falta | Indique 1 até às unidades em falta, ou desmarque Requisitar em falta |
 | `Received quantity X exceeds shipped remaining Y.` (Quantidade recebida X excede o restante expedido Y.) | Sobre-receção face à expedição | Reduza |
 | `Only branch admins can adjust branch stock.` (Só administradores de filial podem ajustar o stock da filial.) | Não-administrador tentou `adjust_branch_stock` | Só administrador de filial |
 | `Branch stock cannot be adjusted below zero.` (O stock da filial não pode ser ajustado abaixo de zero.) | Saldo negativo na filial | Verifique as quantidades |

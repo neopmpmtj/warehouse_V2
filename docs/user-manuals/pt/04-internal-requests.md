@@ -258,13 +258,13 @@ Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial 
 1. Selecione uma expedição.
 2. A **Qtd a receber** vem preenchida com o **Restante** (a parte ainda não recebida do que foi expedido nesta expedição — a quantidade expedida completa quando ainda nada foi recebido). O campo é **só de leitura**.
 3. Se todas as linhas chegaram como expedido, clique em **Receive** (Receber).
-4. Se a contagem não coincidir, clique em **Report discrepancies** (Comunicar discrepâncias). Aparecem a coluna **Qtd efectivamente recebida** e a caixa **Requisitar em falta**. Altere só as linhas erradas (pode indicar **0**). Marque **Requisitar em falta** se ainda precisar das unidades em falta.
+4. Se a contagem não coincidir, clique em **Report discrepancies** (Comunicar discrepâncias). Aparecem a coluna **Qtd efectivamente recebida** e a caixa **Requisitar em falta**. Altere só as linhas erradas (pode indicar **0**). Marque **Requisitar em falta** se ainda precisar de algumas das unidades em falta — aparece **Qtd a requisitar**, pré-preenchida com o em falta (Restante − Qtd efectivamente recebida). Pode baixar o número (mínimo **1**); não pode pedir mais do que o em falta. Para não pedir nada, desmarque Requisitar em falta.
 5. Clique em **Receive**. Se alguma quantidade efectiva for menor do que o Restante, tem de indicar **um motivo** para a expedição. **Cancelar** nesse pedido não faz nada.
 
 Regras:
 
 - A **Qtd a receber** não pode exceder o **Restante** nessa linha (emitido nesta expedição menos o já recebido, menos qualquer baixa de discrepância anterior). Deixe o número pré-preenchido e clique em Receber para registar todo o restante.
-- Uma discrepância **termina essa linha da expedição**. Não pode receber mais tarde nesta guia as unidades em falta. O documento de emissão do armazém **não** é alterado. Se ainda precisar das unidades, marque **Requisitar em falta** — a aplicação cria **uma nova requisição já submetida** (fila do gestor) para o em falta; várias linhas marcadas ficam no mesmo pedido novo.
+- Uma discrepância **termina essa linha da expedição**. Não pode receber mais tarde nesta guia as unidades em falta. O documento de emissão do armazém **não** é alterado. Se ainda precisar de algumas das unidades, marque **Requisitar em falta** — a aplicação cria **uma nova requisição já submetida** (fila do gestor) com a **Qtd a requisitar** de cada linha marcada (o em falta completo, salvo se baixar o número); várias linhas marcadas ficam no mesmo pedido novo. A baixa nesta guia continua a ser o em falta completo.
 - Enquanto a requisição ainda está **fulfilling**, receber uma expedição **não** altera o estado da requisição (o armazém ainda tem restante). O stock da filial sobe pela quantidade efectiva.
 - Depois de o armazém concluir (**shipped**): se todas as unidades emitidas foram recebidas ou acertadas como discrepância → **closed**. Se outra expedição ainda tem quantidade por receber → **received**.
 

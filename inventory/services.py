@@ -950,6 +950,14 @@ class DiscrepancyReasonRequiredError(ValidationError):
         )
 
 
+class InvalidReorderQuantityError(ValidationError):
+    def __init__(self, maximum):
+        super().__init__(
+            f"Reorder quantity must be between 1 and {maximum}.",
+            code="invalid_reorder_quantity",
+        )
+
+
 class NoBranchLinesToReceiveError(ValidationError):
     def __init__(self):
         super().__init__("No lines to receive.", code="no_branch_lines_to_receive")
@@ -1067,6 +1075,19 @@ def _validate_branch_received_qty(value):
     return qty
 
 
+def _parse_reorder_qty(entry, written_off):
+    """Return 1..written_off, or written_off when reorder_qty is omitted."""
+    if "reorder_qty" not in entry:
+        return written_off
+    try:
+        qty = _parse_decimal_quantity(entry.get("reorder_qty"))
+    except ValidationError as exc:
+        raise InvalidReorderQuantityError(written_off) from exc
+    if qty < 1 or qty > written_off:
+        raise InvalidReorderQuantityError(written_off)
+    return qty
+
+
 def _write_branch_movement(branch, item, quantity, movement_type, user, content_object=None, reason=""):
     stock, _ = BranchItemStock.objects.get_or_create(branch=branch, item=item)
     stock = BranchItemStock.objects.select_for_update().get(pk=stock.pk)
@@ -1102,7 +1123,9 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason="
 
     Qty less than remaining is a discrepancy: reason required, the guia line is
     settled (written off), issued documents are not changed. Optional ``reorder``
-    on a short line creates one submitted follow-up request for the missing qty.
+    on a short line creates one submitted follow-up request. ``reorder_qty``
+    (1 to the missing qty) may order less than the shortfall; omitted defaults
+    to the full missing qty.
     """
     from orders.services import add_line, create_internal_request, mark_closed, mark_received, submit
 
@@ -1157,17 +1180,18 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason="
             raise InvalidBranchReceivedQuantityError()
         written_off = remaining - qty
         reorder = bool(entry.get("reorder")) and written_off > 0
-        normalized.append((issue_line, qty, written_off, remaining, reorder))
+        reorder_qty = _parse_reorder_qty(entry, written_off) if reorder else 0
+        normalized.append((issue_line, qty, written_off, remaining, reorder, reorder_qty))
 
     if not normalized:
         raise NoBranchLinesToReceiveError()
 
-    is_critical = any(written_off > 0 for _line, _qty, written_off, _remaining, _reorder in normalized)
+    is_critical = any(written_off > 0 for _line, _qty, written_off, _remaining, _reorder, _rq in normalized)
     if is_critical and not reason_text:
         raise DiscrepancyReasonRequiredError()
 
     branch = request.branch
-    item_ids = sorted({issue_line.internal_request_line.item_id for issue_line, qty, _wo, _rem, _re in normalized if qty > 0})
+    item_ids = sorted({issue_line.internal_request_line.item_id for issue_line, qty, _wo, _rem, _re, _rq in normalized if qty > 0})
     for item_id in item_ids:
         stock, _ = BranchItemStock.objects.get_or_create(branch=branch, item_id=item_id)
         BranchItemStock.objects.select_for_update().get(pk=stock.pk)
@@ -1182,7 +1206,7 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason="
     )
 
     changelog_lines = []
-    for issue_line, qty, written_off, remaining, reorder in normalized:
+    for issue_line, qty, written_off, remaining, reorder, reorder_qty in normalized:
         BranchReceiptLine.objects.create(
             branch_receipt=receipt,
             goods_issue_line=issue_line,
@@ -1205,16 +1229,17 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason="
                 "quantity_received": qty,
                 "written_off": written_off,
                 "reorder": reorder,
+                "reorder_qty": reorder_qty,
             }
         )
 
     follow_up = None
     reorder_by_item = {}
-    for issue_line, _qty, written_off, _remaining, reorder in normalized:
-        if not reorder or written_off <= 0:
+    for issue_line, _qty, written_off, _remaining, reorder, reorder_qty in normalized:
+        if not reorder or written_off <= 0 or reorder_qty <= 0:
             continue
         item = issue_line.internal_request_line.item
-        reorder_by_item[item.id] = reorder_by_item.get(item.id, 0) + written_off
+        reorder_by_item[item.id] = reorder_by_item.get(item.id, 0) + reorder_qty
     if reorder_by_item:
         follow_up = create_internal_request(
             branch,

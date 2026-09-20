@@ -136,6 +136,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Goods issue line not found on this dispatch.` | Wrong line id | Re-select |
 | `A goods issue line was provided more than once in this receipt.` | Duplicate line | One row per issue line |
 | `A reason is required to report a receipt discrepancy.` | Actual received is less than Remaining | Type a reason; the dispatch line is then finished |
+| `Reorder quantity must be between 1 and X.` | Reorder qty is 0, empty, or more than the shortfall | Enter 1 up to the missing qty, or untick Reorder |
 | `Received quantity X exceeds shipped remaining Y.` | Over-receipt vs the dispatch | Lower it |
 | `Only branch admins can adjust branch stock.` | Non-admin tried `adjust_branch_stock` | Branch admin only |
 | `Branch stock cannot be adjusted below zero.` | Negative branch balance | Check your quantities |

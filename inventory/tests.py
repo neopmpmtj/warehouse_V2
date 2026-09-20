@@ -1107,6 +1107,69 @@ class BranchReceiptTests(TestCase):
         self.assertEqual(follow_line.item_id, self.item.id)
         self.assertEqual(follow_line.quantity, 1)
 
+    def test_discrepancy_reorder_qty_can_be_less_than_missing(self):
+        req, goods_issue = self._shipped_issue("5")
+        issue_line = goods_issue.lines.get()
+        receipt = services.receive_at_branch(
+            goods_issue,
+            [
+                {
+                    "line_id": issue_line.id,
+                    "quantity_received": "0",
+                    "reorder": True,
+                    "reorder_qty": "3",
+                }
+            ],
+            self.operator,
+            reason="keep three only",
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+        issue_line.refresh_from_db()
+        self.assertEqual(issue_line.quantity_issued, 5)
+        receipt_line = receipt.lines.get()
+        self.assertEqual(receipt_line.quantity_received, 0)
+        self.assertEqual(receipt_line.quantity_written_off, 5)
+        follow_up = InternalRequest.objects.get(pk=receipt.follow_up_request_id)
+        self.assertEqual(follow_up.status, InternalRequest.Status.SUBMITTED)
+        self.assertEqual(follow_up.lines.get().quantity, 3)
+
+    def test_discrepancy_reorder_qty_rejects_zero_and_over_missing(self):
+        req, goods_issue = self._shipped_issue("5")
+        issue_line = goods_issue.lines.get()
+        with self.assertRaises(services.InvalidReorderQuantityError) as ctx:
+            services.receive_at_branch(
+                goods_issue,
+                [
+                    {
+                        "line_id": issue_line.id,
+                        "quantity_received": "0",
+                        "reorder": True,
+                        "reorder_qty": "0",
+                    }
+                ],
+                self.operator,
+                reason="zero",
+            )
+        self.assertEqual(ctx.exception.code, "invalid_reorder_quantity")
+        with self.assertRaises(services.InvalidReorderQuantityError):
+            services.receive_at_branch(
+                goods_issue,
+                [
+                    {
+                        "line_id": issue_line.id,
+                        "quantity_received": "0",
+                        "reorder": True,
+                        "reorder_qty": "6",
+                    }
+                ],
+                self.operator,
+                reason="too many",
+            )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.SHIPPED)
+        self.assertFalse(BranchReceipt.objects.filter(goods_issue=goods_issue).exists())
+
     def test_discrepancy_zero_received_writes_off_all(self):
         req, goods_issue = self._shipped_issue("4")
         issue_line = goods_issue.lines.get()
@@ -1287,6 +1350,7 @@ class BranchReceiptApiTests(TestCase):
         self.assertContains(r, 'id="settings-toggle"')
         self.assertContains(r, "Catalog")
         self.assertContains(r, 'id="report-discrepancies-btn"')
+        self.assertContains(r, "colReorderQty")
         self.assertContains(r, "Requests")
         self.assertNotContains(r, 'id="language-select"')
         self.assertNotContains(r, 'id="theme-toggle"')
@@ -1334,6 +1398,51 @@ class BranchReceiptApiTests(TestCase):
         self._login(self.operator)
         r = self._post(reverse("branch_receipt_short_close", args=[goods_issue.id]), {"reason": "x"})
         self.assertEqual(r.status_code, 403)
+
+    def test_operator_discrepancy_reorder_qty_less_than_missing(self):
+        req, goods_issue = self._shipped_issue("5")
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator)
+        r = self._post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            {
+                "lines": [
+                    {
+                        "line_id": issue_line.id,
+                        "quantity_received": "0",
+                        "reorder": True,
+                        "reorder_qty": 3,
+                    }
+                ],
+                "reason": "keep three",
+            },
+        )
+        self.assertEqual(r.status_code, 201)
+        follow_up = InternalRequest.objects.get(pk=r.json()["follow_up_request_id"])
+        self.assertEqual(follow_up.lines.get().quantity, 3)
+        receipt = BranchReceipt.objects.get(goods_issue=goods_issue)
+        self.assertEqual(receipt.lines.get().quantity_written_off, 5)
+
+    def test_operator_discrepancy_reorder_qty_over_missing_is_400(self):
+        req, goods_issue = self._shipped_issue("5")
+        issue_line = goods_issue.lines.get()
+        self._login(self.operator)
+        r = self._post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            {
+                "lines": [
+                    {
+                        "line_id": issue_line.id,
+                        "quantity_received": "0",
+                        "reorder": True,
+                        "reorder_qty": 6,
+                    }
+                ],
+                "reason": "too many",
+            },
+        )
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json()["code"], "invalid_reorder_quantity")
 
     def test_manager_can_short_close(self):
         req, goods_issue = self._shipped_issue("4")
