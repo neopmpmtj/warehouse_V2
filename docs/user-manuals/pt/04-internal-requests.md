@@ -136,7 +136,8 @@ Abra **`/branch/requests/`**.
 ### 4.1 Criar um rascunho
 
 1. Clique em **New request** (Nova requisição).
-2. A requisição começa como **rascunho** (`draft`).
+2. Confirme **Iniciar uma nova requisição?** (*Start a new request?*). **Cancelar** não faz nada; **OK** cria o rascunho.
+3. A requisição começa como **rascunho** (`draft`).
 
 ### 4.2 Adicionar linhas
 
@@ -406,7 +407,7 @@ O stock já está em movimento. Depois da primeira saída de mercadoria a única
 Dois livros-razão separados. O stock do armazém vive no artigo; o **stock da filial** vive por `(filial, artigo)` e só se move quando recebe uma expedição ou um administrador ajusta.
 
 **P15. Posso construir uma requisição offline?**
-Sim, **só rascunhos**. Abra `/branch/requests/` depois de ter visitado o catálogo online pelo menos uma vez (para a lista de artigos ficar em cache). Offline pode iniciar **New request** (Nova requisição) e adicionar linhas a partir do catálogo em cache. A requisição mostra **pending sync** (sincronização pendente) até o Wi-Fi voltar; depois carrega automaticamente quando abrir qualquer página da filial que carregue os scripts offline (catálogo, requisição, painel, etc.). **Submit** (Submeter), **Approve** (Aprovar), **Reject** (Rejeitar) e **Cancelar requisição interna** continuam a exigir Wi-Fi.
+Sim, **só rascunhos**. Abra `/branch/requests/` depois de ter visitado o catálogo online pelo menos uma vez (para a lista de artigos ficar em cache). Offline pode iniciar **New request** (Nova requisição — confirme primeiro) e adicionar linhas a partir do catálogo em cache. A requisição mostra **pending sync** (sincronização pendente) até o Wi-Fi voltar; depois carrega automaticamente quando abrir qualquer página da filial que carregue os scripts offline (catálogo, requisição, painel, etc.). **Submit** (Submeter), **Approve** (Aprovar), **Reject** (Rejeitar) e **Cancelar requisição interna** continuam a exigir Wi-Fi.
 
 **P16. O aviso offline do catálogo diz que a disponibilidade pode estar desatualizada — porquê?**
 O modo offline mostra o **último catálogo descarregado** para a **filial ativa**. O stock do armazém e as indicações de disponibilidade podem mudar enquanto estava desligado. As colunas de preço de venda seguem esse último descarregamento: se foi **sem preços** (ou a cache não tem flag de modo), os preços ficam ocultos. Depois de se ligar uma vez, a app remove os campos de preço guardados na cache offline; até lá, as colunas seguem o último descarregamento. Ligue-se uma vez depois de uma mudança de modo comercial para a cache coincidir. Se mudar de filial offline, a app avisa que a cache pertence a outra filial — ligue o Wi-Fi na filial atual para descarregar o respetivo catálogo.

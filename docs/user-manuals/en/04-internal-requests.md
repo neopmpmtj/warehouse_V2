@@ -136,7 +136,8 @@ Open **`/branch/requests/`**.
 ### 4.1 Create a draft
 
 1. Click **New request** (*Nova requisição*).
-2. The request starts as a **draft**.
+2. Confirm **Start a new request?** (*Iniciar uma nova requisição?*). **Cancel** does nothing; **OK** creates the draft.
+3. The request starts as a **draft**.
 
 ### 4.2 Add lines
 
@@ -406,7 +407,7 @@ Stock is already in motion. After the first goods issue the only way to finish e
 Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch or an admin adjusts it.
 
 **Q15. Can I build a requisição while offline?**
-Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically when you open any branch page that loads the offline scripts (catalog, requisição, dashboard, etc.). **Submit**, **Approve**, **Reject**, and **Cancel Internal Request** still require Wi-Fi.
+Yes, for **drafts only**. Open `/branch/requests/` after you have visited the catalogue online at least once (so the item list is cached). While offline you can start a **New request** (confirm first) and add lines from the cached catalogue. The request shows **pending sync** until Wi-Fi returns; it then uploads automatically when you open any branch page that loads the offline scripts (catalog, requisição, dashboard, etc.). **Submit**, **Approve**, **Reject**, and **Cancel Internal Request** still require Wi-Fi.
 
 **Q16. The catalogue offline banner says availability may be outdated — why?**
 Offline mode shows the **last downloaded** catalogue for the **active branch**. Warehouse stock and availability hints can change while you were disconnected. Selling-price columns follow that last successful download: if it was **unpriced** (or the cache has no mode flag), prices stay hidden. After you reconnect once, the app drops stored price fields from the offline cache; until then, columns still follow the last download. Connect once after a commercial-mode change so the cache matches. If you switch branch while offline, the app warns that the cache belongs to another branch — connect to Wi-Fi on the current branch to download its catalogue.

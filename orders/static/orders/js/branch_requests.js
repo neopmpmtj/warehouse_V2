@@ -597,6 +597,9 @@
     }
 
     newRequestBtn.addEventListener("click", function () {
+        if (!confirm(t("newRequestConfirm"))) {
+            return;
+        }
         clearError();
         if (BranchOffline.isOnline()) {
             createOnlineRequest().catch(showError);
