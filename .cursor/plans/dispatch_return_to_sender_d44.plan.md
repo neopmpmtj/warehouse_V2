@@ -3,8 +3,8 @@ name: Dispatch return to sender (D44)
 overview: "Plan only (no implementation until approved). Fourth branch-receipt action: return a dispatch to the warehouse. New warehouse console to restock or write off returned lines. Staged alerts. Distinct from D43 surplus send and from discrepancy reorder."
 todos:
   - id: lock-questions
-    content: "Resolve open product questions Q1–Q8 in this plan before writing code"
-    status: pending
+    content: "Q1–Q5, Q7, Q8 locked 21 Sep. Only Q6 remains (return only on a still-unbooked dispatch?)"
+    status: in_progress
   - id: models-services
     content: "DispatchReturn document + lines + changelog; receive_return / restock / write_off in inventory.services"
     status: pending
@@ -57,9 +57,9 @@ Return to sender  →  in transit back  →  opaque alerts (no qty)
         ↓
 Warehouse console (NEW page)
    ├─ Restock fit units  →  warehouse stock UP + D32 FIFO
-   │                      →  detailed qty alerts (warehouse + related branches)
+   │                      →  detailed qty alerts (warehouse + returning branch)
    └─ Write off damaged  →  stock stays down (already issued); audit row
-                          →  detailed qty alerts
+                          →  detailed qty alerts (warehouse + returning branch)
 ```
 
 Branch stock **does not go up** for returned qty (they never received it). This is not Consume and not Adjust.
@@ -68,60 +68,62 @@ Branch stock **does not go up** for returned qty (they never received it). This 
 
 ## 3. Proposed locked decisions (approve or amend)
 
-These are **recommendations**. Anything in §4 overrides them.
+Locked **21 Sep 2026** except **P4 / Q6**.
 
-| ID | Topic | Proposed choice |
-|----|--------|-----------------|
-| **P1** | **Where the button lives** | Fourth action on `/branch/receipts/` next to Receive / Report discrepancies / Short close. Label EN **Return to sender** / PT **Devolver ao armazém**. |
-| **P2** | **What is returned** | The **remaining unreceived qty of the selected dispatch** (all open lines on that *guia*). Not the whole request. Later warehouse issues keep their own GI numbers (D42). |
-| **P3** | **Exclusive with receive** | One click does not mix “keep some, return some”. Full remaining = Receive. Count dispute = Report discrepancies. Physical reject = Return. (Use discrepancy if some units actually stayed at the branch.) |
-| **P4** | **After a partial receive** | Remaining on that same *guia* may still be returned. |
-| **P5** | **Who on the branch** | **Manager / admin** (same bar as short-close). Operators keep Receive + Report discrepancies. Rejecting a pallet is a reasoned override. |
-| **P6** | **Confirm** | Native `confirm()` then a required **reason** `prompt()` (same pattern as short-close / discrepancy). Online-only (receipts are already out of Phase 6 offline). |
-| **P7** | **Issue document** | **Do not reverse** `GoodsIssue` / `GoodsIssueLine`. Match discrepancy: the *guia* stays as shipped. Returned remaining is settled so it cannot be received later on this GI. |
-| **P8** | **Request header** | While `fulfilling`, **no status change** (warehouse may still ship). After warehouse is done: if nothing remains to receive on any GI (received + discrepancy write-off + returned), **closed**. |
-| **P9** | **No auto-reorder** | Warehouse processing has **Write off**, not Reorder. If the branch still needs the item, they raise a **new requisição** (or wait for a later issue on the same request if it is still `fulfilling`). |
-| **P10** | **Warehouse page** | **New** `/manage/returned-dispatches/` + dashboard card. **Not** mixed into `/manage/incoming-from-branches/`, `/manage/goods-receipts/`, or `/manage/internal-requests/`. New sibling-nav item (e.g. **Returns**). |
-| **P11** | **Warehouse who** | Same as inbound receive: viewers with inventory can **see**; `inventory.add_goodsreceipt` (manager/admin) **processes**. Warehouse **cannot refuse** the return; they must restock and/or write off until remaining is 0. |
-| **P12** | **Line mix at warehouse** | Per line, restock qty + write-off qty must sum to remaining returned. Some bottles on a pallet can go back on the shelf and some can be scrapped. Write-off requires a **reason**. |
-| **P13** | **Restock ledger** | New `StockMovement.Type` e.g. `dispatch_return` (positive). Then D32 `allocate_available_stock` (FIFO to waiting `approved`/`fulfilling` lines). Not `receipt` (that is PO) and not `branch_inbound` (that is D43). |
-| **P14** | **Write-off ledger** | **No** second `StockMovement` (warehouse qty already fell at issue). Persist write-off on the return **line** + append-only **changelog** (who, when, item, qty, reason). Superuser `/admin/` inspect-only. |
-| **P15** | **Cancel in transit** | **v1: no.** Once the branch confirms, the document is `in_transit` until the warehouse processes. |
-| **P16** | **Alerts destination** | **Same** `/manage/alerts/` and `/branch/alerts/` (typed cards). Do not invent a third alerts app. Discrepancy cards stay as they are. |
-| **P17** | **Alert audiences** | Same as discrepancy: warehouse **admin / manager g2+**; branch **manager / admin**. Operators 403. Per-user read-state. No email (Phase 9). |
+| ID | Topic | Choice |
+|----|--------|--------|
+| **P1** | **Where the button lives** | Fourth action on `/branch/receipts/`. Label EN **Return to sender** / PT **Devolver ao armazém**. |
+| **P2** | **What is returned** | **All remaining** on the selected dispatch (every open line on that *guia*). Not the whole request. Later warehouse issues keep their own GI numbers (D42). |
+| **P3** | **Exclusive with receive** | One click does not mix “keep some, return some”. Full remaining = Receive. Count dispute = Report discrepancies. Physical reject = Return. |
+| **P4** | **Unbooked dispatch only?** | **Open — Q6.** See §4. |
+| **P5** | **Who on the branch** | **Manager / admin**. Button **hidden** for operators. Operators keep Receive + Report discrepancies. |
+| **P6** | **Confirm** | Native `confirm()` then a required **reason** `prompt()`. Online-only. |
+| **P7** | **Issue document** | **Do not reverse** `GoodsIssue` / `GoodsIssueLine`. Restocked units join the **FIFO pool**. |
+| **P8** | **Request header** | While `fulfilling`, **no status change**. After warehouse is done: if nothing remains to receive on any GI (received + discrepancy write-off + returned), **closed**. |
+| **P9** | **No auto-reorder** | Warehouse processing has **Write off**, not Reorder. |
+| **P10** | **Warehouse page** | **New** `/manage/returned-dispatches/` + dashboard card. Not mixed with D43 inbound or PO receipts. New sibling-nav item (e.g. **Returns**). |
+| **P11** | **Warehouse who** | Inventory viewers can **see**; `inventory.add_goodsreceipt` **processes**. Warehouse cannot refuse. |
+| **P12** | **Line mix at warehouse** | Per line, restock + write-off must cover remaining returned. Write-off requires a **reason**. |
+| **P13** | **Restock ledger** | New `StockMovement.Type` e.g. `dispatch_return` (positive) + D32 FIFO. |
+| **P14** | **Write-off ledger** | **No** second `StockMovement`. Line qty + append-only changelog. |
+| **P15** | **Cancel in transit** | **No.** |
+| **P16** | **Alerts destination** | Same `/manage/alerts/` and `/branch/alerts/`. |
+| **P17** | **Alert audiences** | Warehouse **admin / manager g2+**; **returning** branch **manager / admin** only. No other branches. Operators 403. No email. |
 | **P18** | **Alert payloads** | See §6. |
-| **P19** | **Document number** | `DispatchReturn` shown as **DR #**. One DR per return action, FK to `GoodsIssue`. |
-| **P20** | **i18n / manuals** | EN + PT in the same change. Manuals `04`, `05`, `03`, `06`. PROJECT-PLAN **D44**. |
+| **P19** | **Document number** | `DispatchReturn` shown as **DR #**. |
+| **P20** | **i18n / manuals** | EN + PT same change. Manuals `04`, `05`, `03`, `06`. PROJECT-PLAN **D44**. |
 
 ---
 
-## 4. Open questions (need your answer)
+## 4. Decisions from review (21 Sep) + remaining Q6
 
-Please confirm or correct. Recommended defaults are in §3.
+| Q | Answer |
+|---|--------|
+| Q1 | Return **all** remaining on the selected dispatch. |
+| Q2 | Restocked units join the **FIFO pool** (do not reverse the original issue). |
+| Q3 | Alerts: **returning branch + warehouse** only. |
+| Q4 | Write-off alerts: **warehouse + returning branch** only. |
+| Q5 | **Hide** Return from operators. |
+| Q7 | **No** in-transit cancel. |
+| Q8 | **Return to sender** / **Devolver ao armazém**. |
 
-**Q1 — Pallet vs lines on the branch.**  
-Is v1 “return **all remaining** on this dispatch” (pallet reject), or should the branch pick **lines / qty** to return (mirror Actual received)?
+### Q6 — still open (rephrased)
 
-**Q2 — Original requisição after restock.**  
-P7 says the GI is frozen, so restocked units join the **FIFO pool** and may be reserved for **another** branch that approved earlier. Alternative: reverse the issue (un-issue qty, restore reservation on request #37). Which do you want?
+This is **not** about a later warehouse issue (that is a new dispatch #). It is only about **one** selected *guia*.
 
-**Q3 — “Related branches” on restock alerts.**  
-Options: (a) only the returning branch + warehouse; (b) every branch that currently has `approved`/`fulfilling` remaining for those items; (c) every branch. Recommendation: **(b)** for restock (qty details), **(a)** for write-off (scrap is not other branches’ business).
+Today, **Receive** books the **whole remaining** of that dispatch in one click. **Report discrepancies** also finishes those lines (shortfall is written off, not left open). After either action, remaining on that dispatch is **0**, so Return would already be off.
 
-**Q4 — Write-off alerts.**  
-Same audience as restock, or warehouse + returning branch only?
+Q6 only matters if anything on **this same dispatch** was already booked into branch stock (or written off as a discrepancy) and some qty were somehow still open.
 
-**Q5 — Operator.**  
-P5 hides Return from operators. Should an operator be allowed to reject a pallet (like they can report a discrepancy)?
+**Example.** Dispatch **#10** shipped 10 bags.
 
-**Q6 — Partial receive then return.**  
-P4 allows returning leftover qty on the same *guia*. Should Return be allowed **only when nothing has been received** on that dispatch?
+- Branch has **not** clicked Receive or Report discrepancies → remaining 10. **Return to sender** sends the whole pallet back. This is the damaged-pallet story. Always allowed (given Q1).
+- Branch already clicked **Receive** for the 10 → they are in Norte stock. Sending them back is **D43 Send**, not Return. Return stays hidden (nothing left on the *guia*).
+- Hypothetical leftover: 4 bags already received on #10, 6 still showing remaining. May they Return the 6? Current UI does not create that leftover; the question is whether we should **forbid Return as soon as this dispatch has any receipt**.
 
-**Q7 — In-transit cancel.**  
-P15 says no. Do you want a manager/admin **Cancel return** (stock conceptually still “out”, document voided so they could Receive after all)?
+**Recommended default:** Return only when **this dispatch has no branch receipt yet** (nothing booked, nothing discrepancy-written-off). Once they have confirmed even one unit on this *guia*, Return is hidden; shorts use discrepancy; owned stock going back uses D43.
 
-**Q8 — Button copy.**  
-**Return to sender** / **Devolver ao armazém**, or **Return items** / **Devolver**, or **Reject dispatch** / **Recusar expedição**?
+Please answer Q6 as: **unbooked dispatch only** (recommended), or **allow whenever remaining > 0**.
 
 ---
 
@@ -169,13 +171,13 @@ issued − already_received − discrepancy_write_off − returned
 
 ### 5.2 Services
 
-- `return_dispatch(goods_issue, user, reason)` — manager/admin; remaining > 0; creates DR + lines for every line with remaining; opaque alerts.
+- `return_dispatch(goods_issue, user, reason)` — manager/admin; remaining > 0; Q6 may also require “no prior BranchReceipt on this GI”; creates DR + lines for every remaining line; opaque alerts.
 - `process_dispatch_return(dr, lines, user)` — each entry `{line_id, quantity_restocked, quantity_written_off}`; write-off reason required if any write-off > 0; restock writes `StockMovement` + FIFO; write-off only line + changelog; emit detailed alerts per outcome present in that POST.
 - Guards: cannot receive/discrepancy qty that is already on an open or processed DR; cannot return qty already received or discrepancy-written-off; cannot process twice beyond remaining.
 
 ### 5.3 Branch UI (`/branch/receipts/`)
 
-- Button **Return to sender**, enabled when a dispatch is selected, remaining > 0, and role is manager/admin. Disabled for operators (hidden or disabled + hint).
+- Button **Return to sender** **hidden** for operators. Shown for manager/admin when a dispatch is selected, remaining > 0, and Q6’s unbooked rule if adopted.
 - Confirm + reason. On success the dispatch leaves the open list if remaining is 0; history can show a Returns/DR row (or a column on Receipts — prefer a small **Returns** table or a type on history so BR and DR are not confused).
 - Short close unchanged (whole request, warehouse done, never booked). Return is per *guia* and can happen while `fulfilling`.
 
@@ -194,7 +196,7 @@ Dashboard: warehouse card **Returned dispatches**. Do **not** put this queue on 
 
 On restock only: same helper as PO receipt and D43 inbound (`allocate_available_stock`). Write-off does **not** free warehouse on-hand (it was already issued). Negative `adjust_stock` still cannot go below reserved (R11).
 
-If Q2 chooses **reverse the issue** instead of P7, restock would instead restore `quantity_reserved` on the **original** lines and reduce `quantity_issued` (or add a negative GI adjustment). That is a larger change to D42 and is **not** the default.
+Q2 is locked: do **not** reverse the issue. Restocked units are free warehouse stock and FIFO may reserve them for a different waiting requisição.
 
 ---
 
@@ -203,8 +205,8 @@ If Q2 chooses **reverse the issue** instead of P7, restock would instead restore
 | Event | Details on the card | Who |
 |-------|---------------------|-----|
 | Branch confirms return | **No item/qty.** When, branch, request #, dispatch #, DR #. Reason **omitted** on the card (staff open the warehouse/branch work page if they need it) — or show reason without lines; confirm in Q-extra if you want reason visible. | Warehouse alerts + **returning** branch alerts |
-| Warehouse restocks (qty > 0) | **Qty details:** code, qty restocked, DR #, dispatch #. | Warehouse + **related branches** (Q3) |
-| Warehouse writes off (qty > 0) | **Qty details:** code, qty written off, reason, DR #. | Q4 |
+| Warehouse restocks (qty > 0) | **Qty details:** code, qty restocked, DR #, dispatch #. | Warehouse + **returning** branch |
+| Warehouse writes off (qty > 0) | **Qty details:** code, qty written off, reason, DR #. | Warehouse + **returning** branch |
 
 Unread badge on the existing Alerts dashboard card counts **all** unread kinds. Opening a card marks **that event** seen for that user.
 
@@ -245,4 +247,4 @@ Unread badge on the existing Alerts dashboard card counts **all** unread kinds. 
 
 ## 10. How to approve
 
-Reply with: **approved as written**, or **approved except** (list P-ids / Q-ids). Implementation starts only after that reply.
+Answer **Q6**, then reply **approved** (or list remaining exceptions). Implementation starts only after that.
