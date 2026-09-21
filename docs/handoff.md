@@ -42,7 +42,7 @@
 
 Fourth action on `/branch/receipts/`: manager/admin **Return to sender** / **Devolver ao armazém** on an **unbooked** dispatch (no `BranchReceipt`). Returns **all remaining** on that *guia*. `DispatchReturn` (DR #) `in_transit` → `processed`. Warehouse **`/manage/returned-dispatches/`** (nav **Returns**, not mixed with D43 inbound or PO receipts): restock (`StockMovement.dispatch_return` + D32 FIFO) and/or write off (checkbox + capped qty, Reorder analogue; no second movement). No in-transit cancel; warehouse cannot refuse; no auto-reorder. Alerts: opened (no qty) then restocked/written-off (qty) to warehouse admin/manager g2+ and the returning branch manager/admin only. Migration `inventory.0011_dispatch_return`. Manuals 03 / 04 / 05 / 06 EN+PT.
 
-- **Tests:** **683 OK**.
+- **Tests:** **683 OK**. Browser (21 Sep): Norte manager returned unbooked GI #1 (CEM-50 × 5, reason damaged pallet); warehouse restocked 3 / wrote off 2 (damaged bags); FIFO on-hand 15 → 18; typed alerts on warehouse + returning branch; operator has no Return button and 403 on `/branch/alerts/`.
 
 ## This session (20 Sep 2026) — branch send-to-warehouse (D43) ✅
 
