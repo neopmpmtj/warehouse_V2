@@ -324,6 +324,23 @@ As mesmas páginas de Alertas listam também **devoluções de expedição**. Um
 
 **Não há e-mail** para isto. O documento de emissão do armazém não é alterado.
 
+### 8.4a Documentos novos no Início
+
+Os painéis **Início** (`/` no armazém, `/branch/` na filial) mostram um número no cartão quando um **documento novo** chegou a essa secção desde que **você** abriu a página de trabalho. A faixa de navegação das páginas de trabalho **não** mostra estes números.
+
+| Cartão no Início | O que conta como novo | Limpa quando |
+|------------------|-----------------------|--------------|
+| **Pedidos internos** (armazém) | Uma requisição fica **aprovada** (incluindo um pedido de seguimento de discrepância). Continua a contar enquanto **em cumprimento**. | Abre `/manage/internal-requests/` |
+| **Entradas das filiais** (armazém) | Um envio da filial está **em trânsito**. | Abre `/manage/incoming-from-branches/` |
+| **Expedições devolvidas** (armazém) | Uma devolução de expedição está **em trânsito**. | Abre `/manage/returned-dispatches/` |
+| **Receções da filial** (filial) | Uma expedição do armazém (*guia*) ainda tem restante a registar. | Abre `/branch/receipts/` |
+| **Conversas** | A mesma regra de não lido que o distintivo **«novo»** na lista. | **Clica na conversa** (não basta abrir a lista) |
+| **Alertas** | Sem alteração — clique no cartão do alerta. Abrir Alertas **não** limpa o número no Início. | Clica nesse alerta |
+
+Abrir o **Início** só *mostra* o número; não marca nada como visto. Outra pessoa continua a ver o seu próprio número. Documentos que já estavam na fila antes de usar o Início **não** geram distintivo — o número olha para a frente. **Não há atualização em direto**: volte ao Início (ou recarregue) para ver uma chegada nova. Isto **não** é «quantos ainda estão na fila»; a lista é a fila.
+
+Os operadores vêem os mesmos números no Início em Pedidos / Entrada / Devoluções / Receções / Conversas que qualquer pessoa que possa abrir essas páginas. Continuam sem cartão de Alertas.
+
 ### 8.5 Stock da filial (em mão)
 
 Abra **`/branch/stock/`** (qualquer função de filial). Lista só o stock **recebido nesta filial** (não o catálogo do armazém):
@@ -529,3 +546,6 @@ Abra **`/branch/consumption/`**, acrescente linhas a partir do em mão desta fil
 
 **P22. A filial B tem cimento a mais e a filial A está à espera — isto é uma devolução?**
 Não. **Não** use `/branch/receipts/`. Um **gestor** ou **administrador** abre **`/branch/send-to-warehouse/`**, envia o excesso, e o armazém confirma em **`/manage/incoming-from-branches/`**. O stock do armazém sobe; a requisição aprovada da filial A pode então ficar com reserva automaticamente. O armazém pode ver o excesso primeiro em **`/manage/stock-at-branches/`**.
+
+**P23. O que significa o número num cartão do Início?**
+Chegou um **documento novo** a essa secção desde que **você** abriu a página de trabalho (por exemplo uma requisição aprovada em **Pedidos internos**, ou uma *guia* nova em **Receções da filial**). Abra a página de trabalho para o limpar para si. **Alertas** continuam a exigir um clique no alerta. **Conversas** continuam a exigir um clique na conversa. O número não é «quantos estão à espera na fila» e não aparece na faixa de navegação das páginas de trabalho. Recarregar o Início é como vê uma chegada posterior — não há distintivo em direto.

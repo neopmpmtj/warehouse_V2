@@ -390,6 +390,7 @@ These are deliberate deferrals — ask before assuming they exist:
 - **Timezone:** every user has a timezone (default `Europe/Lisbon`); invalid timezones are rejected at save. Server-rendered dates are shown in the viewer's timezone; stored in UTC.
 - **`/admin/`** is **superuser-only**. Warehouse and branch staff never log into Django admin.
 - **Dual warehouse + branch user:** after login they land on the **warehouse dashboard** (`/`); branch pages are still reachable by URL/picker.
+- **Home card numbers (D45)** are computed when you load `/` or `/branch/`. They do not update while you sit on Home. The work-page nav strip has no badges.
 
 ---
 

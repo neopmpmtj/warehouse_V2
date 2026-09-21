@@ -324,6 +324,23 @@ The same Alerts pages also list **dispatch returns**. A card titled **Dispatch r
 
 There is **no email** for this. The warehouse issue document is not changed.
 
+### 8.4a New documents on Home
+
+The **Home** dashboards (`/` warehouse, `/branch/` branch) show a number on a card when a **new** document arrived in that section since **you** last opened the work page. The work-page nav strip does **not** show these numbers.
+
+| Home card | What counts as new | Cleared when |
+|-----------|--------------------|--------------|
+| **Internal requests** (warehouse) | A requisição becomes **approved** (including a discrepancy follow-up). Still counts while **fulfilling**. | You open `/manage/internal-requests/` |
+| **Incoming from branches** (warehouse) | A branch send is **in transit**. | You open `/manage/incoming-from-branches/` |
+| **Returned dispatches** (warehouse) | A dispatch return is **in transit**. | You open `/manage/returned-dispatches/` |
+| **Branch receipts** (branch) | A warehouse dispatch (*guia*) still has remaining to book. | You open `/branch/receipts/` |
+| **Request threads** / **Conversas** | Same unread rule as the **"new"** row on the thread list. | You **click the thread** (not merely open the list) |
+| **Alerts** | Unchanged — click the alert card. Opening Alerts does **not** clear the Home number. | You click that alert |
+
+Opening **Home** only *shows* the number; it does not mark anything seen. Another person still sees their own number. Documents that were already in the pile before you first used Home do **not** badge — the number is forward-looking. There is **no live refresh**: go back to Home (or reload) to see a new arrival. This is not the same as “how many are still in the queue”; the list is the queue.
+
+Operators see the same Home numbers on Requests / Incoming / Returns / Receipts / Threads as anyone else who can open those pages. They still have no Alerts card.
+
 ### 8.5 Branch stock (on-hand)
 
 Open **`/branch/stock/`** (any branch role). This lists **this branch's** received stock only (not the warehouse catalogue):
@@ -529,3 +546,6 @@ Open **`/branch/consumption/`**, add lines from this branch's on-hand, type a **
 
 **Q22. Branch B has surplus cement and Branch A is waiting — is that a return?**
 No. Do **not** use `/branch/receipts/`. A North/South **manager** or **admin** opens **`/branch/send-to-warehouse/`**, sends the surplus, and the warehouse confirms it on **`/manage/incoming-from-branches/`**. Warehouse stock rises; Branch A's approved requisição can then take a hold automatically. The warehouse can look up surplus first on **`/manage/stock-at-branches/`**.
+
+**Q23. What does the number on a Home card mean?**
+A **new** document arrived in that section since **you** last opened the work page (for example an approved requisição on **Internal requests**, or a new *guia* on **Branch receipts**). Open the work page to clear it for yourself. **Alerts** still need a click on the alert. **Threads** still need a click on the conversation. The number is not “how many are waiting in the queue,” and it does not appear on the work-page nav strip. Reloading Home is how you see a later arrival — there is no live badge.

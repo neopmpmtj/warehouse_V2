@@ -98,7 +98,7 @@ The thread always shows whose turn it is:
 
 A post flips the turn to the other side. Two posts in a row by the same side keep the state (the other side still owes a reply).
 
-**Unread:** new activity on a thread you haven't opened yet shows a **"new"** badge next to it. **Clicking the thread in the list** marks it read and clears the badge. The first thread is previewed when the page loads, but that preview does **not** mark it read (so a shared warehouse queue does not lose the badge just because someone opened the page).
+**Unread:** new activity on a thread you haven't opened yet shows a **"new"** badge next to it. **Clicking the thread in the list** marks it read and clears the badge. The first thread is previewed when the page loads, but that preview does **not** mark it read (so a shared warehouse queue does not lose the badge just because someone opened the page). The same unread count appears as a number on the **Home** card (**Request threads** on `/`, **Branch threads** on `/branch/`). Opening the thread list from Home does **not** clear that number — click the conversation.
 
 ---
 
@@ -194,7 +194,7 @@ Yes — that's the point. Warehouse staff see all branches' threads. Other **bra
 A branch manager/admin or warehouse admin can close any thread in exceptional cases (abandoned, duplicate). The thread history shows who did it and the reason.
 
 **Q7. What does the "new" badge mean?**
-Unread activity — a reply arrived since you last opened the thread. **Clicking the thread in the list** clears the badge. Loading the page (which previews the first thread) does not.
+Unread activity — a reply arrived since you last opened the thread. **Clicking the thread in the list** clears the badge. Loading the page (which previews the first thread) does not. The Home card number uses the same rule.
 
 **Q8. We need it again later — can we reopen?**
 No — closed is terminal. Open a new thread.

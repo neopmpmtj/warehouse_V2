@@ -79,7 +79,10 @@
             <div class="card-grid">
                 {% for card in branch_cards %}
                 <a class="dash-card" href="{{ card.url }}">
-                    <span class="dash-card-title" data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                    <span class="dash-card-title">
+                        <span data-i18n="{{ card.title_key }}">{{ card.title }}</span>
+                        {% if card.unread %}<span class="dash-card-badge">{{ card.unread }}</span>{% endif %}
+                    </span>
                     <span class="dash-card-desc" data-i18n="{{ card.desc_key }}">{{ card.desc }}</span>
                 </a>
                 {% endfor %}

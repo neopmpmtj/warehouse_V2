@@ -387,6 +387,7 @@ Estes são adiamentos deliberados — confirme antes de assumir que existem:
 - **Fuso horário:** cada utilizador tem um fuso horário (por defeito `Europe/Lisbon`); fusos inválidos são rejeitados ao guardar. Datas renderizadas no servidor aparecem no fuso do visualizador; guardadas em UTC.
 - **`/admin/`** é **só superutilizador**. Pessoal de armazém e de filial nunca entra no Django admin.
 - **Utilizador duplo armazém + filial:** depois do início de sessão aterram no **painel do armazém** (`/`); páginas da filial continuam acessíveis por URL/seletor.
+- **Números nos cartões do Início (D45)** são calculados quando carrega `/` ou `/branch/`. Não atualizam enquanto fica no Início. A faixa de navegação das páginas de trabalho não tem distintivos.
 
 ---
 

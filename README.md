@@ -10,7 +10,7 @@ This repository is an early-stage MVP built incrementally: one concept per phase
 
 *Last updated: 21 September 2026.*
 
-**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** EN+PT, including presentation slide 12). Requisição line price is **retail** (**D41**). Branch send-to-warehouse **D43**. Dispatch return to sender **D44** (unbooked GI; warehouse restock or write-off; FIFO; typed alerts). Warehouse `/manage/internal-requests/` i18n complete. Presentation deck **v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26). Full-tree production-readiness review **applied** (26 Aug 1205). **Pick up:** remove TEMP viewBox debug on deck; optional slides 10–16 polish — see [`docs/handoff.md`](docs/handoff.md). Then Phase 7 (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9.
+**Phases 0–6 are done.** Branch commercial mode **D37** (unpriced default). Dashboard vs work-page chrome **D38**. Product copy **D39** (PT **Conversas** for catalogue-gap threads) + **D40** (**Parle** EN+PT, including presentation slide 12). Requisição line price is **retail** (**D41**). Branch send-to-warehouse **D43**. Dispatch return to sender **D44** (unbooked GI; warehouse restock or write-off; FIFO; typed alerts). Home new-document badges **D45** (dashboard cards only). Warehouse `/manage/internal-requests/` i18n complete. Presentation deck **v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26). Full-tree production-readiness review **applied** (26 Aug 1205). **Pick up:** remove TEMP viewBox debug on deck; optional slides 10–16 polish — see [`docs/handoff.md`](docs/handoff.md). Then Phase 7 (production deployment readiness). OAuth + remaining shared chrome = Phase 8; email = Phase 9.
 
 > **Pick up here:** [`docs/handoff.md`](docs/handoff.md) — condensed state, locked decisions, and the exact next task. Sequencing: [`docs/PROJECT-PLAN.md`](docs/PROJECT-PLAN.md).
 
@@ -303,7 +303,7 @@ Practice logins: `armazem.admin@centcompras.dev`, `armazem.gestor@centcompras.de
 Tests:
 
 ```bash
-.venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice
+.venv/bin/python manage.py test products accounts procurement inventory branches orders threads company_voice inbox
 ```
 
 Migrations: `accounts/0001–0005`, `products/0001–0009`, `procurement/0001–0005`, `inventory/0001–0003`, `orders/0001–0003` (incl. `client_uuid`), `threads/0001–0003`, `company_voice/0001–0002`. Run `migrate` after pull if schema changed.
