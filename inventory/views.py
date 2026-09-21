@@ -9,6 +9,7 @@ from branches.capabilities import (
 )
 from branches.navigation import branch_page_context
 from branches.permissions import active_branch_required
+from inbox.services import Section, mark_section_seen
 
 from .permissions import branch_alerts_required, inventory_required, warehouse_alerts_required
 
@@ -33,6 +34,7 @@ def goods_receipt_console(request):
 @require_GET
 def branch_receipt_console(request):
     branch = request.active_branch
+    mark_section_seen(request.user, Section.BRANCH_RECEIPTS, branch=branch)
     context = branch_page_context(request)
     context.update(
         {
@@ -119,6 +121,7 @@ def branch_send_to_warehouse_console(request):
 @inventory_required
 @require_GET
 def warehouse_inbound_console(request):
+    mark_section_seen(request.user, Section.WAREHOUSE_INBOUND)
     flags = inventory_permission_flags(request.user)
     return render(
         request,
@@ -138,6 +141,7 @@ def stock_at_branches_console(request):
 @inventory_required
 @require_GET
 def warehouse_returns_console(request):
+    mark_section_seen(request.user, Section.WAREHOUSE_RETURNS)
     flags = inventory_permission_flags(request.user)
     return render(
         request,

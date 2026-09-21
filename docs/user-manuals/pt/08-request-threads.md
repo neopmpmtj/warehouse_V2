@@ -98,7 +98,7 @@ A conversa mostra sempre de quem é a vez:
 
 Uma publicação passa a vez para o outro lado. Duas publicações seguidas do mesmo lado mantêm o estado (o outro lado continua a dever resposta).
 
-**Não lidos:** atividade nova numa conversa que ainda não abriu mostra um distintivo **«novo»** ao lado. **Clicar na conversa na lista** marca como lido e limpa o distintivo. O primeira conversa é pré-visualizado quando a página carrega, mas essa pré-visualização **não** marca como lido (para uma fila partilhada do armazém não perder o distintivo só porque alguém abriu a página).
+**Não lidos:** atividade nova numa conversa que ainda não abriu mostra um distintivo **«novo»** ao lado. **Clicar na conversa na lista** marca como lido e limpa o distintivo. O primeira conversa é pré-visualizado quando a página carrega, mas essa pré-visualização **não** marca como lido (para uma fila partilhada do armazém não perder o distintivo só porque alguém abriu a página). O mesmo número de não lidos aparece no cartão do **Início** (**Conversas de pedido** em `/`, **Conversas da filial** em `/branch/`). Abrir a lista a partir do Início **não** limpa esse número — clique na conversa.
 
 ---
 
@@ -194,7 +194,7 @@ Sim — é para isso. O pessoal do armazém vê conversas de todas as filiais. O
 Um gestor/admin de filial ou administrador de armazém pode fechar qualquer conversa em casos excecionais (abandonado, duplicado). O histórico da conversa mostra quem o fez e o motivo.
 
 **P7. O que significa o distintivo «novo»?**
-Atividade por ler — chegou uma resposta desde a última vez que abriu a conversa. **Clicar na conversa na lista** limpa o distintivo. Carregar a página (que pré-visualiza o primeira conversa) não limpa.
+Atividade por ler — chegou uma resposta desde a última vez que abriu a conversa. **Clicar na conversa na lista** limpa o distintivo. Carregar a página (que pré-visualiza o primeira conversa) não limpa. O número no cartão do Início usa a mesma regra.
 
 **P8. Precisamos outra vez mais tarde — podemos reabrir?**
 Não — fechado é terminal. Abra uma conversa nova.

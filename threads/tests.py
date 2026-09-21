@@ -27,6 +27,7 @@ from .services import (
     create_thread,
     link_items,
     post_message,
+    unread_thread_count,
 )
 
 
@@ -249,6 +250,10 @@ class ThreadServiceTests(TestCase):
         thread = ItemRequestThread.objects.get(pk=thread.pk)
         self.assertFalse(thread.is_unread_for(self.opener))
         self.assertTrue(ThreadReadState.objects.filter(thread=thread, user=self.opener).exists())
+        self.assertEqual(unread_thread_count(self.wh_admin), 1)
+        self.assertEqual(unread_thread_count(self.opener), 0)
+        self.assertEqual(unread_thread_count(self.wh_admin, branch=self.north), 1)
+        self.assertEqual(unread_thread_count(self.wh_admin, branch=self.south), 0)
 
 
 class ThreadIsolationTests(TestCase):

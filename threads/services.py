@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from django.utils import timezone
 
 from logging_utils import get_logger
@@ -452,6 +453,19 @@ def mark_read(thread, user):
         user=user,
         defaults={"last_read_at": timezone.now()},
     )
+
+
+def unread_thread_count(user, branch=None):
+    """Threads this user has not caught up with (not list-capped)."""
+    queryset = ItemRequestThread.objects.all()
+    if branch is not None:
+        queryset = queryset.for_branch(branch)
+    caught_up = ThreadReadState.objects.filter(
+        thread_id=OuterRef("pk"),
+        user=user,
+        last_read_at__gte=OuterRef("last_activity_at"),
+    )
+    return queryset.annotate(_caught_up=Exists(caught_up)).filter(_caught_up=False).count()
 
 
 def get_thread_messages(thread):

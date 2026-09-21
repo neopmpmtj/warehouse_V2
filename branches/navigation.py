@@ -70,16 +70,16 @@ def branch_communication_cards(*, include_alerts=False, alerts_unread=0):
     """Messaging cards: optional Alerts, then threads, then Parle."""
     cards = []
     if include_alerts:
-        cards.append(
-            {
-                "title_key": "cardAlerts",
-                "desc_key": "cardAlertsDesc",
-                "title": "Alerts",
-                "desc": "Receipt discrepancies",
-                "url": "/branch/alerts/",
-                "unread": alerts_unread,
-            }
-        )
+        card = {
+            "title_key": "cardAlerts",
+            "desc_key": "cardAlertsDesc",
+            "title": "Alerts",
+            "desc": "Receipt discrepancies",
+            "url": "/branch/alerts/",
+        }
+        if alerts_unread:
+            card["unread"] = alerts_unread
+        cards.append(card)
     cards.extend(
         [
             {

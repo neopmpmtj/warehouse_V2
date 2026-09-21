@@ -8,7 +8,7 @@ from accounts.capabilities import can_approve_purchase_order, can_edit_approval_
 from accounts.groups import warehouse_group_name
 from branches.navigation import branch_dashboard_cards
 from branches.services import BRANCH_SELECT_URL, get_active_memberships, post_login_landing
-from inventory.services import unread_alert_count
+from inbox.services import apply_dashboard_unread, dashboard_badges
 
 from .permissions import can_view_catalog
 
@@ -107,7 +107,6 @@ def staff_dashboard(request):
                     "title": "Alerts",
                     "desc": "Receipt discrepancies and dispatch returns",
                     "url": "/manage/alerts/",
-                    "unread": unread_alert_count(user),
                 }
             )
         if can_edit_policy:
@@ -141,9 +140,14 @@ def staff_dashboard(request):
             )
 
     branch_cards = []
+    active_branch = getattr(request, "active_branch", None)
     if has_branch:
         memberships = list(get_active_memberships(user))
         branch_cards = branch_dashboard_cards(include_picker=len(memberships) > 1)
+        if active_branch is not None:
+            apply_dashboard_unread(branch_cards, dashboard_badges(user, branch=active_branch))
+    if is_warehouse:
+        apply_dashboard_unread(warehouse_cards, dashboard_badges(user))
 
     visualization_cards = []
     if is_warehouse:

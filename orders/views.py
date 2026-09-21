@@ -5,6 +5,7 @@ from accounts.capabilities import can_edit_approval_policy, inventory_permission
 from branches.capabilities import branch_role, can_approve_request
 from branches.navigation import branch_page_context
 from branches.permissions import active_branch_required
+from inbox.services import Section, mark_section_seen
 
 from .permissions import internal_request_queue_required
 
@@ -29,6 +30,7 @@ def request_console(request):
 @internal_request_queue_required
 @require_GET
 def internal_request_queue_console(request):
+    mark_section_seen(request.user, Section.WAREHOUSE_REQUESTS)
     flags = inventory_permission_flags(request.user)
     return render(
         request,
