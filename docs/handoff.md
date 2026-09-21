@@ -34,13 +34,15 @@
 
 **Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Presentation deck v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26); slide **12** → **Parle** (D40). Requisição `unit_price` snapshots **retail** (D41). **Branch send-to-warehouse (D43)**. **Dispatch return to sender (D44)** — unbooked GI, DR #, warehouse restock/write-off, FIFO, typed alerts. **Immediate next:** remove **TEMP** viewBox debug borders; optional slides 10–16 / slide 8 viewBox polish — then **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
 
-**Tests:** full suite pending D44 count (21 Sep).
+**Tests:** full suite **683 OK** (21 Sep; D44 dispatch return).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
 
 ## This session (21 Sep 2026) — dispatch return to sender (D44) ✅
 
 Fourth action on `/branch/receipts/`: manager/admin **Return to sender** / **Devolver ao armazém** on an **unbooked** dispatch (no `BranchReceipt`). Returns **all remaining** on that *guia*. `DispatchReturn` (DR #) `in_transit` → `processed`. Warehouse **`/manage/returned-dispatches/`** (nav **Returns**, not mixed with D43 inbound or PO receipts): restock (`StockMovement.dispatch_return` + D32 FIFO) and/or write off (checkbox + capped qty, Reorder analogue; no second movement). No in-transit cancel; warehouse cannot refuse; no auto-reorder. Alerts: opened (no qty) then restocked/written-off (qty) to warehouse admin/manager g2+ and the returning branch manager/admin only. Migration `inventory.0011_dispatch_return`. Manuals 03 / 04 / 05 / 06 EN+PT.
+
+- **Tests:** **683 OK**.
 
 ## This session (20 Sep 2026) — branch send-to-warehouse (D43) ✅
 

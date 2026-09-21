@@ -2453,15 +2453,21 @@ class DispatchReturnTests(TestCase):
         self.assertEqual(returned["lines"][0]["remaining"], "0")
 
     def test_cannot_return_a_booked_dispatch(self):
-        req, goods_issue = self._shipped_issue(
-            self.north, self.operator, self.manager, "4"
+        req = order_services.create_internal_request(self.north, self.operator)
+        line = order_services.add_line(req, self.item, "8", self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(
+            req, [{"line_id": line.id, "quantity_issued": "3"}], self.wh_admin
         )
-        issue_line = goods_issue.lines.get()
         services.receive_at_branch(
             goods_issue,
-            [{"line_id": issue_line.id, "quantity_received": "4"}],
+            [{"line_id": goods_issue.lines.get().id, "quantity_received": "3"}],
             self.operator,
         )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
         self._login_branch(self.manager, self.north)
         response = self._post(
             reverse("branch_receipt_return", args=[goods_issue.id]),
@@ -2471,8 +2477,13 @@ class DispatchReturnTests(TestCase):
         self.assertEqual(response.json()["code"], "dispatch_already_booked")
 
     def test_cannot_receive_after_return(self):
-        req, goods_issue = self._shipped_issue(
-            self.north, self.operator, self.manager, "2"
+        req = order_services.create_internal_request(self.north, self.operator)
+        line = order_services.add_line(req, self.item, "8", self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(
+            req, [{"line_id": line.id, "quantity_issued": "2"}], self.wh_admin
         )
         issue_line = goods_issue.lines.get()
         self._login_branch(self.manager, self.north)
