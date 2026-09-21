@@ -85,6 +85,7 @@
             <div class="row">
                 <button id="receive-btn" class="btn btn-primary" data-i18n="receive" disabled>Receive</button>
                 <button id="report-discrepancies-btn" class="btn" data-i18n="reportDiscrepancies" disabled>Report discrepancies</button>
+                <button id="return-btn" class="btn" data-i18n="returnToSender" hidden>Return to sender</button>
                 <button id="short-close-btn" class="btn" data-i18n="shortClose" disabled>Short close</button>
                 <button id="adjust-btn" class="btn" data-i18n="adjustStock" hidden>Adjust stock</button>
             </div>
@@ -116,6 +117,32 @@
                 <button type="button" id="history-prev" class="btn" data-i18n="prev">‹ Prev</button>
                 <span id="history-page-label" class="pagination-label"></span>
                 <button type="button" id="history-next" class="btn" data-i18n="next">Next ›</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2 data-i18n="returnsTitle">Returns</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="colReturnId">DR #</th>
+                            <th data-i18n="colDispatch">Dispatch</th>
+                            <th data-i18n="colRequest">Request</th>
+                            <th data-i18n="colStatus">Status</th>
+                            <th data-i18n="colReturnedBy">Returned by</th>
+                            <th data-i18n="colReturnedAt">Returned at</th>
+                            <th data-i18n="colTotalReturned">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="returns-body"></tbody>
+                </table>
+            </div>
+            <p id="returns-empty" class="offline-empty" hidden data-i18n="noReturns">No returns yet.</p>
+            <div class="pagination">
+                <button type="button" id="returns-prev" class="btn" data-i18n="prev">‹ Prev</button>
+                <span id="returns-page-label" class="pagination-label"></span>
+                <button type="button" id="returns-next" class="btn" data-i18n="next">Next ›</button>
             </div>
         </section>
 
@@ -180,6 +207,7 @@
         (function () {
             var CSRF = document.querySelector('meta[name="csrf-token"]').content;
             var CAN_SHORT_CLOSE = {{ can_short_close|yesno:"true,false" }};
+            var CAN_RETURN = {{ can_return|yesno:"true,false" }};
             var CAN_ADJUST = {{ can_adjust|yesno:"true,false" }};
             var LANG_KEY = "cc-lang";
             var STATUS_KEYS = {
@@ -199,10 +227,14 @@
                 reportingDiscrepancies: false,
                 catalogItems: [],
                 history: [],
+                returns: [],
                 movements: [],
                 historyPage: 1,
                 historyPageSize: 50,
                 historyNumPages: 0,
+                returnsPage: 1,
+                returnsPageSize: 50,
+                returnsNumPages: 0,
                 movementsPage: 1,
                 movementsPageSize: 50,
                 movementsNumPages: 0,
@@ -230,6 +262,11 @@
                     receive: "Receive",
                     invalidReorderQuantity: "Reorder quantity must be between 1 and the missing quantity.",
                     reportDiscrepancies: "Report discrepancies",
+                    returnToSender: "Return to sender",
+                    returnConfirm: "Return this dispatch to the warehouse? Nothing has been booked into branch stock.",
+                    returnPrompt: "Reason for return to sender:",
+                    returnReasonRequired: "A reason is required to return a dispatch to the warehouse.",
+                    returnRecorded: "Dispatch returned to the warehouse.",
                     shortClose: "Short close",
                     item: "Item",
                     adjustQuantity: "Quantity",
@@ -260,6 +297,14 @@
                     colBy: "By",
                     colWhen: "When",
                     noReceipts: "No receipts yet.",
+                    returnsTitle: "Returns",
+                    colReturnId: "DR #",
+                    colReturnedBy: "Returned by",
+                    colReturnedAt: "Returned at",
+                    colTotalReturned: "Total",
+                    noReturns: "No returns yet.",
+                    status_in_transit: "In transit",
+                    status_processed: "Processed",
                     noMovements: "No stock movements yet.",
                     prev: "‹ Prev",
                     next: "Next ›",
@@ -275,6 +320,10 @@
                     shortClosePrompt: "Reason for short-close:",
                     discrepancyReasonPrompt: "Reason for short-close (received less than shipped):",
                     discrepancyReasonRequired: "A reason is required to report a receipt discrepancy.",
+                    dispatch_already_booked: "Cannot return a dispatch that has already been received.",
+                    dispatch_already_returned: "This dispatch has already been returned to the warehouse.",
+                    dispatch_return_reason_required: "A reason is required to return a dispatch to the warehouse.",
+                    dispatch_returned_cannot_receive: "Cannot receive a dispatch that has been returned to the warehouse.",
                     shortCloseWarehouseOpen: "Cannot short-close while the warehouse still has remaining to ship.",
                     statusDraft: "draft",
                     statusSubmitted: "submitted",
@@ -307,6 +356,11 @@
                     receive: "Receber",
                     invalidReorderQuantity: "A quantidade a requisitar tem de estar entre 1 e as unidades em falta.",
                     reportDiscrepancies: "Comunicar discrepâncias",
+                    returnToSender: "Devolver ao armazém",
+                    returnConfirm: "Devolver esta expedição ao armazém? Nada foi registado no stock da filial.",
+                    returnPrompt: "Motivo da devolução ao armazém:",
+                    returnReasonRequired: "É obrigatório um motivo para devolver uma expedição ao armazém.",
+                    returnRecorded: "Expedição devolvida ao armazém.",
                     shortClose: "Encerramento parcial",
                     item: "Artigo",
                     adjustQuantity: "Quantidade",
@@ -337,6 +391,14 @@
                     colBy: "Por",
                     colWhen: "Quando",
                     noReceipts: "Ainda não há receções.",
+                    returnsTitle: "Devoluções",
+                    colReturnId: "DR n.º",
+                    colReturnedBy: "Devolvido por",
+                    colReturnedAt: "Devolvido em",
+                    colTotalReturned: "Total",
+                    noReturns: "Ainda não há devoluções.",
+                    status_in_transit: "Em trânsito",
+                    status_processed: "Processada",
                     noMovements: "Ainda não há movimentos de stock.",
                     prev: "‹ Ant.",
                     next: "Seg. ›",
@@ -352,6 +414,10 @@
                     shortClosePrompt: "Motivo do encerramento parcial:",
                     discrepancyReasonPrompt: "Motivo do encerramento parcial (recebido menos do que expedido):",
                     discrepancyReasonRequired: "É obrigatório indicar um motivo para comunicar uma discrepância de receção.",
+                    dispatch_already_booked: "Não é possível devolver uma expedição que já foi recebida.",
+                    dispatch_already_returned: "Esta expedição já foi devolvida ao armazém.",
+                    dispatch_return_reason_required: "É obrigatório um motivo para devolver uma expedição ao armazém.",
+                    dispatch_returned_cannot_receive: "Não é possível receber uma expedição que foi devolvida ao armazém.",
                     shortCloseWarehouseOpen: "Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.",
                     statusDraft: "rascunho",
                     statusSubmitted: "submetido",
@@ -407,7 +473,11 @@
             var detailTitle = document.getElementById("detail-title");
             var receiveBtn = document.getElementById("receive-btn");
             var reportBtn = document.getElementById("report-discrepancies-btn");
+            var returnBtn = document.getElementById("return-btn");
             var shortCloseBtn = document.getElementById("short-close-btn");
+            if (returnBtn) {
+                returnBtn.hidden = !CAN_RETURN;
+            }
 
             function selectedIssue() {
                 if (!state.selectedId) return null;
@@ -446,9 +516,14 @@
                 var issue = selectedIssue();
                 var hasDispatch = Boolean(issue);
                 var hasRemaining = selectedHasRemaining();
+                var unbooked = hasDispatch && !issue.has_receipt && !issue.has_return;
                 var hint = document.getElementById("short-close-hint");
-                receiveBtn.disabled = !hasDispatch || !hasRemaining;
-                reportBtn.disabled = !hasDispatch || !hasRemaining || state.reportingDiscrepancies;
+                receiveBtn.disabled = !hasDispatch || !hasRemaining || Boolean(issue && issue.has_return);
+                reportBtn.disabled = !hasDispatch || !hasRemaining || state.reportingDiscrepancies || Boolean(issue && issue.has_return);
+                if (returnBtn) {
+                    returnBtn.hidden = !CAN_RETURN;
+                    returnBtn.disabled = !CAN_RETURN || !unbooked || !hasRemaining;
+                }
                 shortCloseBtn.disabled = !hasDispatch || !CAN_SHORT_CLOSE || !warehouseDone(issue && issue.request_status);
                 if (hint) {
                     var showHint = hasDispatch && issue.request_status === "fulfilling";
@@ -467,6 +542,18 @@
                 }
                 if (payload && payload.code === "discrepancy_reason_required") {
                     return t("discrepancyReasonRequired");
+                }
+                if (payload && payload.code === "dispatch_already_booked") {
+                    return t("dispatch_already_booked");
+                }
+                if (payload && payload.code === "dispatch_already_returned") {
+                    return t("dispatch_already_returned");
+                }
+                if (payload && payload.code === "dispatch_return_reason_required") {
+                    return t("returnReasonRequired");
+                }
+                if (payload && payload.code === "dispatch_returned_cannot_receive") {
+                    return t("dispatch_returned_cannot_receive");
                 }
                 if (payload && payload.code === "invalid_reorder_quantity") {
                     return t("invalidReorderQuantity");
@@ -545,7 +632,10 @@
                 var empty = document.getElementById("history-empty");
                 if (!body) return;
                 body.textContent = "";
-                if (empty) empty.hidden = state.history.length > 0;
+                if (empty) {
+                    empty.hidden = state.history.length > 0;
+                    empty.textContent = t("noReceipts");
+                }
                 renderPagination("history", state.historyPage, state.historyNumPages);
                 state.history.forEach(function (receipt) {
                     var tr = document.createElement("tr");
@@ -556,6 +646,29 @@
                     tr.appendChild(el("td", formatDateTime(receipt.received_at)));
                     tr.appendChild(el("td", receipt.total_received));
                     tr.appendChild(el("td", receipt.is_critical ? t("yes") : t("no")));
+                    body.appendChild(tr);
+                });
+            }
+
+            function renderReturns() {
+                var body = document.getElementById("returns-body");
+                var empty = document.getElementById("returns-empty");
+                if (!body) return;
+                body.textContent = "";
+                if (empty) {
+                    empty.hidden = state.returns.length > 0;
+                    empty.textContent = t("noReturns");
+                }
+                renderPagination("returns", state.returnsPage, state.returnsNumPages);
+                state.returns.forEach(function (row) {
+                    var tr = document.createElement("tr");
+                    tr.appendChild(el("td", "#" + row.id));
+                    tr.appendChild(el("td", "#" + row.dispatch_id));
+                    tr.appendChild(el("td", "#" + row.request_id));
+                    tr.appendChild(el("td", t("status_" + row.status) || row.status));
+                    tr.appendChild(el("td", row.returned_by || t("dash")));
+                    tr.appendChild(el("td", formatDateTime(row.returned_at)));
+                    tr.appendChild(el("td", row.total_returned));
                     body.appendChild(tr);
                 });
             }
@@ -600,8 +713,17 @@
                 });
             }
 
+            function loadReturns() {
+                var params = "page=" + state.returnsPage + "&page_size=" + state.returnsPageSize;
+                return api("/api/branch/receipts/returns/?" + params).then(function (d) {
+                    state.returns = d.dispatch_returns || [];
+                    state.returnsNumPages = d.num_pages || 0;
+                    renderReturns();
+                });
+            }
+
             function loadLedgers() {
-                return Promise.all([loadHistory(), loadMovements()]).catch(showError);
+                return Promise.all([loadHistory(), loadReturns(), loadMovements()]).catch(showError);
             }
 
             function isOffline() {
@@ -611,6 +733,10 @@
             function renderList() {
                 issueBody.textContent = "";
                 state.issues.forEach(function (issue) {
+                    var open = (issue.lines || []).some(function (line) {
+                        return parseInt(line.remaining, 10) > 0;
+                    });
+                    if (!open) return;
                     var tr = document.createElement("tr");
                     if (issue.id === state.selectedId) tr.className = "selected";
                     tr.appendChild(el("td", issue.id));
@@ -629,16 +755,20 @@
                     state.selectedId = null;
                     state.reportingDiscrepancies = false;
                     state.history = [];
+                    state.returns = [];
                     state.movements = [];
                     setDiscrepancyColumnsVisible(false);
                     issueBody.textContent = "";
                     lineBody.textContent = "";
                     document.getElementById("history-body").textContent = "";
+                    var returnsBody = document.getElementById("returns-body");
+                    if (returnsBody) returnsBody.textContent = "";
                     document.getElementById("movements-body").textContent = "";
                     detailTitle.textContent = t("detailTitle");
                     if (offlineEmpty) offlineEmpty.hidden = false;
                     syncActionButtons();
                     renderHistory();
+                    renderReturns();
                     renderMovements();
                     return Promise.resolve();
                 }
@@ -919,6 +1049,17 @@
                     .catch(showError);
             }
 
+            function returnToSender() {
+                clearError();
+                if (!CAN_RETURN || !state.selectedId) return;
+                if (!confirm(t("returnConfirm"))) return;
+                var reason = prompt(t("returnPrompt"));
+                if (reason === null) return;
+                api("/api/branch/receipts/issues/" + state.selectedId + "/return/", "POST", { reason: reason })
+                    .then(function () { return afterAction(t("returnRecorded")); })
+                    .catch(showError);
+            }
+
             function closeAdjustDialog() {
                 document.getElementById("adjust-dialog-backdrop").hidden = true;
                 document.getElementById("adjust-dialog").hidden = true;
@@ -982,6 +1123,7 @@
 
             receiveBtn.addEventListener("click", receive);
             reportBtn.addEventListener("click", reportDiscrepancies);
+            if (returnBtn) returnBtn.addEventListener("click", returnToSender);
             shortCloseBtn.addEventListener("click", shortClose);
             if (CAN_ADJUST) {
                 document.getElementById("adjust-btn").hidden = false;
@@ -1000,6 +1142,18 @@
                 if (state.historyPage < state.historyNumPages) {
                     state.historyPage += 1;
                     loadHistory().catch(showError);
+                }
+            });
+            document.getElementById("returns-prev").addEventListener("click", function () {
+                if (state.returnsPage > 1) {
+                    state.returnsPage -= 1;
+                    loadReturns().catch(showError);
+                }
+            });
+            document.getElementById("returns-next").addEventListener("click", function () {
+                if (state.returnsPage < state.returnsNumPages) {
+                    state.returnsPage += 1;
+                    loadReturns().catch(showError);
                 }
             });
             document.getElementById("movements-prev").addEventListener("click", function () {
@@ -1025,6 +1179,7 @@
                 fillCatalogSelects();
                 renderList();
                 renderHistory();
+                renderReturns();
                 renderMovements();
                 if (state.selectedId) {
                     select(state.selectedId);
@@ -1036,7 +1191,7 @@
             loadCatalogItems().then(function () { return load(); }).catch(showError);
         })();
     </script>
-    <script src="{% static 'products/js/preferences_bar.js' %}?v=17"></script>
+    <script src="{% static 'products/js/preferences_bar.js' %}?v=18"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
 </body>
 </html>

@@ -20,8 +20,10 @@ from .models import (
     BranchConsumption,
     BranchReceipt,
     BranchWarehouseShipment,
+    DispatchReturn,
     GoodsIssue,
     GoodsReceipt,
+    InventoryAlert,
     StockMovement,
 )
 from .permissions import (
@@ -140,13 +142,15 @@ def _serialize_receipt(receipt, include_lines=True):
     return payload
 
 
-def _serialize_movement(movement, receipt=None, shipment=None):
+def _serialize_movement(movement, receipt=None, shipment=None, dispatch_return=None):
     if receipt is not None:
         reference = f"GR #{receipt.id}"
         if receipt.reference:
             reference += f" — {receipt.reference}"
     elif shipment is not None:
         reference = f"BWS #{shipment.id}"
+    elif dispatch_return is not None:
+        reference = f"DR #{dispatch_return.id}"
     elif movement.content_type_id is not None:
         reference = f"{movement.content_type.model} #{movement.object_id}"
     else:
@@ -294,6 +298,7 @@ def manage_stock_movements(request):
     )
     receipt_ct = ContentType.objects.get_for_model(GoodsReceipt)
     shipment_ct = ContentType.objects.get_for_model(BranchWarehouseShipment)
+    return_ct = ContentType.objects.get_for_model(DispatchReturn)
     receipt_ids = [
         m.object_id
         for m in movements
@@ -304,10 +309,16 @@ def manage_stock_movements(request):
         for m in movements
         if m.content_type_id == shipment_ct.id and m.object_id
     ]
+    return_ids = [
+        m.object_id
+        for m in movements
+        if m.content_type_id == return_ct.id and m.object_id
+    ]
     receipts = {r.id: r for r in GoodsReceipt.objects.filter(pk__in=receipt_ids)}
     shipments = {
         s.id: s for s in BranchWarehouseShipment.objects.filter(pk__in=shipment_ids)
     }
+    returns = {row.id: row for row in DispatchReturn.objects.filter(pk__in=return_ids)}
     payload = {
         "stock_movements": [
             _serialize_movement(
@@ -317,6 +328,9 @@ def manage_stock_movements(request):
                 else None,
                 shipment=shipments.get(m.object_id)
                 if m.content_type_id == shipment_ct.id
+                else None,
+                dispatch_return=returns.get(m.object_id)
+                if m.content_type_id == return_ct.id
                 else None,
             )
             for m in movements
@@ -363,6 +377,11 @@ def manage_stock_adjustment(request):
 
 
 def _serialize_branch_goods_issue(goods_issue):
+    has_receipt = any(True for _receipt in goods_issue.branch_receipts.all())
+    try:
+        has_return = goods_issue.dispatch_return is not None
+    except DispatchReturn.DoesNotExist:
+        has_return = False
     return {
         "id": goods_issue.id,
         "request_id": goods_issue.internal_request_id,
@@ -370,6 +389,8 @@ def _serialize_branch_goods_issue(goods_issue):
         "reference": goods_issue.reference,
         "notes": goods_issue.notes,
         "issued_at": goods_issue.issued_at.isoformat(),
+        "has_receipt": has_receipt,
+        "has_return": has_return,
         "lines": services.get_branch_issue_summary(goods_issue),
     }
 
@@ -587,6 +608,51 @@ def branch_receipt_short_close(request, issue_id):
 
 @active_branch_required
 @require_POST
+def branch_receipt_return(request, issue_id):
+    if not can_approve_request(request.user, request.active_branch):
+        return _json_error(
+            "Return to sender requires manager or admin.",
+            status=403,
+            code="dispatch_return_forbidden",
+        )
+    try:
+        issue = services.get_branch_goods_issues(request.active_branch).get(pk=issue_id)
+    except GoodsIssue.DoesNotExist:
+        return _json_error("Goods issue not found.", status=404)
+    try:
+        payload = _parse_json(request)
+        dispatch_return = services.return_dispatch(
+            issue,
+            request.user,
+            reason=str(payload.get("reason", "")),
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        status = 403 if getattr(exc, "code", None) == "dispatch_return_forbidden" else None
+        if status == 403:
+            return _json_error(exc.messages[0], status=403, code=exc.code)
+        return _inv_error(exc)
+    dispatch_return = services.get_dispatch_return(
+        dispatch_return.id, branch=request.active_branch
+    )
+    return JsonResponse(_serialize_dispatch_return(dispatch_return), status=201)
+
+
+@active_branch_required
+@require_GET
+def branch_dispatch_return_history_list(request):
+    returns, meta = _paginate(
+        services.get_dispatch_returns(branch=request.active_branch), request
+    )
+    payload = {
+        "dispatch_returns": [_serialize_dispatch_return(row) for row in returns]
+    }
+    if meta is not None:
+        payload.update(meta)
+    return JsonResponse(payload)
+
+
+@active_branch_required
+@require_POST
 def branch_stock_adjust(request):
     if not can_adjust_branch_stock(request.user, request.active_branch):
         return _json_error(
@@ -729,6 +795,17 @@ def manage_alerts_mark_read(request, receipt_id):
     return JsonResponse({"id": receipt.id, "unread": False})
 
 
+@warehouse_alerts_required
+@require_POST
+def manage_alerts_event_mark_read(request, alert_id):
+    try:
+        alert = services.get_inventory_alert(alert_id)
+    except InventoryAlert.DoesNotExist:
+        return _json_error("Alert not found.", status=404)
+    services.mark_inventory_alert_read(alert, request.user)
+    return JsonResponse({"id": alert.id, "kind": alert.kind, "unread": False})
+
+
 @active_branch_required
 @branch_alerts_required
 @require_GET
@@ -755,6 +832,67 @@ def branch_alerts_mark_read(request, receipt_id):
         return _json_error("Alert not found.", status=404)
     services.mark_alert_read(receipt, request.user)
     return JsonResponse({"id": receipt.id, "unread": False})
+
+
+@active_branch_required
+@branch_alerts_required
+@require_POST
+def branch_alerts_event_mark_read(request, alert_id):
+    try:
+        alert = services.get_inventory_alert(alert_id, branch=request.active_branch)
+    except InventoryAlert.DoesNotExist:
+        return _json_error("Alert not found.", status=404)
+    services.mark_inventory_alert_read(alert, request.user)
+    return JsonResponse({"id": alert.id, "kind": alert.kind, "unread": False})
+
+
+def _serialize_dispatch_return_line(line):
+    item = line.goods_issue_line.internal_request_line.item
+    remaining = line.remaining()
+    return {
+        "id": line.id,
+        "line_id": line.id,
+        "goods_issue_line_id": line.goods_issue_line_id,
+        "item_id": item.id,
+        "internal_code": item.internal_code or "",
+        "description": item.description,
+        "quantity_returned": _dec(line.quantity_returned),
+        "quantity_restocked": _dec(line.quantity_restocked),
+        "quantity_written_off": _dec(line.quantity_written_off),
+        "remaining": _dec(remaining),
+    }
+
+
+def _serialize_dispatch_return(dispatch_return, include_lines=True):
+    lines = list(dispatch_return.lines.all())
+    payload = {
+        "id": dispatch_return.id,
+        "status": dispatch_return.status,
+        "branch_id": dispatch_return.branch_id,
+        "branch_name": dispatch_return.branch.name if dispatch_return.branch_id else "",
+        "dispatch_id": dispatch_return.goods_issue_id,
+        "request_id": dispatch_return.goods_issue.internal_request_id,
+        "returned_by": dispatch_return.returned_by.email
+        if dispatch_return.returned_by_id
+        else None,
+        "returned_at": dispatch_return.returned_at.isoformat(),
+        "return_reason": dispatch_return.return_reason,
+        "processed_by": dispatch_return.processed_by.email
+        if dispatch_return.processed_by_id
+        else None,
+        "processed_at": dispatch_return.processed_at.isoformat()
+        if dispatch_return.processed_at
+        else None,
+        "process_reason": dispatch_return.process_reason,
+        "total_returned": _dec(sum((line.quantity_returned for line in lines), 0)),
+        "total_restocked": _dec(sum((line.quantity_restocked for line in lines), 0)),
+        "total_written_off": _dec(
+            sum((line.quantity_written_off for line in lines), 0)
+        ),
+    }
+    if include_lines:
+        payload["lines"] = [_serialize_dispatch_return_line(line) for line in lines]
+    return payload
 
 
 def _serialize_bws_line(line):
@@ -1018,4 +1156,65 @@ def manage_stock_at_branches(request):
             ],
             "items": list(items.values()),
         }
+    )
+
+
+@inventory_required
+@require_GET
+def manage_dispatch_return_list(request):
+    status = (request.GET.get("status") or "").strip()
+    allowed = {choice[0] for choice in DispatchReturn.Status.choices}
+    if status and status not in allowed:
+        return _json_error("Invalid status.", status=400, code="invalid_status")
+    returns, meta = _paginate(
+        services.get_dispatch_returns(status=status or None), request
+    )
+    payload = {
+        "dispatch_returns": [
+            _serialize_dispatch_return(row, include_lines=False) for row in returns
+        ]
+    }
+    if meta is not None:
+        payload.update(meta)
+    return JsonResponse(payload)
+
+
+@inventory_required
+@require_GET
+def manage_dispatch_return_detail(request, dispatch_return_id):
+    try:
+        dispatch_return = services.get_dispatch_return(dispatch_return_id)
+    except DispatchReturn.DoesNotExist:
+        return _json_error("Dispatch return not found.", status=404)
+    return JsonResponse(
+        {"dispatch_return": _serialize_dispatch_return(dispatch_return, include_lines=True)}
+    )
+
+
+@inventory_required
+@require_POST
+def manage_dispatch_return_process(request, dispatch_return_id):
+    denied = deny_unless(request, ADD_GOODS_RECEIPT)
+    if denied:
+        return denied
+    try:
+        dispatch_return = services.get_dispatch_return(dispatch_return_id)
+    except DispatchReturn.DoesNotExist:
+        return _json_error("Dispatch return not found.", status=404)
+    try:
+        payload = _parse_json(request)
+        lines = payload.get("lines")
+        if not isinstance(lines, list) or not lines:
+            raise ValidationError("lines must be a non-empty list.")
+        dispatch_return = services.process_dispatch_return(
+            dispatch_return,
+            lines,
+            request.user,
+            reason=str(payload.get("reason", "")),
+        )
+    except (ValidationError, ObjectDoesNotExist, ValueError, TypeError, DecimalException) as exc:
+        return _inv_error(exc)
+    dispatch_return = services.get_dispatch_return(dispatch_return.id)
+    return JsonResponse(
+        {"dispatch_return": _serialize_dispatch_return(dispatch_return, include_lines=True)}
     )

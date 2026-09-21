@@ -93,7 +93,7 @@ The receipts list is a log. There is no “open / edit” drawer on a receipt ro
 | Column | Meaning |
 |--------|---------|
 | **Item** | Internal code — description |
-| **Type** | Receipt / Adjustment / Goods issue / From branch |
+| **Type** | Receipt / Adjustment / Goods issue / From branch / Dispatch return |
 | **Quantity** | Signed amount (`+10` in, `−2` out) |
 | **Reference** | For a receipt: `GR #12` and the delivery-note text if you entered one |
 | **Reason** | Filled on adjustments |
@@ -102,6 +102,8 @@ The receipts list is a log. There is no “open / edit” drawer on a receipt ro
 Use the **item filter** (*All items* / *Todos os artigos*) above the movements table to see one item’s history. Items in that list (and in **Adjust stock**) are **A–Z by the code — description shown**.
 
 **From branch** movements are stock that a branch sent in (BWS #). Confirm those on **`/manage/incoming-from-branches/`** — do **not** book them as a supplier goods receipt on this page. To see surplus still sitting at branches, open **`/manage/stock-at-branches/`**.
+
+**Dispatch return** movements are units a branch sent back from an unbooked warehouse *guia* (DR #). Confirm those on **`/manage/returned-dispatches/`** — restock writes this positive movement; a write-off does not. Do **not** mix them with surplus incoming or PO receipts.
 
 ---
 

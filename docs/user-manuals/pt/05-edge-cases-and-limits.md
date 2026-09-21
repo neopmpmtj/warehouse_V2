@@ -128,7 +128,7 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `No lines to issue.` (Sem linhas para emitir.) | Emissão vazia | Adicione uma linha |
 | `A reason is required to short-close a request.` (É obrigatório indicar um motivo para encerrar parcialmente uma requisição.) | Encerramento parcial no armazém exige motivo | Escreva um |
 
-**Receção na filial, stock da filial, consumo e envio ao armazém (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`, `/branch/send-to-warehouse/`)**
+**Receção na filial, stock da filial, consumo, envio ao armazém e devolução (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`, `/branch/send-to-warehouse/`)**
 
 | Mensagem | Porquê | O que fazer |
 |---------|-----|------------|
@@ -158,6 +158,17 @@ Uma mensagem que "não o deixa" é a aplicação a **proteger o livro-razão** �
 | `Cannot send inactive item 'X'.` (Não é possível enviar o artigo inativo 'X'.) | Artigo desativado no catálogo | Reative ou escolha um ativo |
 | `A reason is required to cancel a send to the warehouse.` (É obrigatório um motivo para cancelar um envio ao armazém.) | O cancelamento exige motivo | Escreva um |
 | `A reason is required when receiving less than the sent quantity.` (É obrigatório um motivo quando se recebe menos do que o enviado.) | Chegada a menos | Escreva um motivo; a qtd em falta é dada como baixa |
+| `Return to sender requires manager or admin.` (Devolver ao armazém exige gestor ou administrador.) | Um operador tentou devolver uma expedição | Só gestor/administrador |
+| `A reason is required to return a dispatch to the warehouse.` (É obrigatório um motivo para devolver uma expedição ao armazém.) | A devolução exige motivo | Escreva um |
+| `Cannot return a dispatch that has already been received.` (Não é possível devolver uma expedição que já foi recebida.) | Esta *guia* já tem receção na filial | Use discrepância ou Enviar para o armazém |
+| `This dispatch has already been returned to the warehouse.` (Esta expedição já foi devolvida ao armazém.) | Segunda devolução na mesma GI | Um DR por expedição |
+| `Cannot return a dispatch for a request with status 'X'.` (Não é possível devolver uma expedição de uma requisição com estado 'X'.) | A requisição não está fulfilling / shipped / received | Aguarde uma expedição |
+| `No lines to return.` (Não há linhas para devolver.) | O restante nesta expedição é 0 | Nada a devolver |
+| `Cannot receive a dispatch that has been returned to the warehouse.` (Não é possível receber uma expedição que foi devolvida ao armazém.) | Tentou registar uma *guia* devolvida | Processe-a em Devoluções |
+| `Cannot process a dispatch return with status 'X'.` (Não é possível processar uma devolução com estado 'X'.) | Já processada | Uma ação do armazém por devolução |
+| `Write-off quantity must be between 1 and X.` (A quantidade a abater tem de estar entre 1 e X.) | A qtd a abater é 0, vazia ou maior do que o restante devolvido | Indique 1 até o restante, ou desmarque Abater |
+| `A reason is required to write off returned items.` (É obrigatório um motivo para abater artigos devolvidos.) | Qualquer abate exige motivo | Escreva um |
+| `No lines to process.` (Não há linhas para processar.) | Processar sem todas as linhas | Inclua todas as linhas devolvidas |
 
 ### 2.4 Requisição interna (`/branch/requests/`) e filiais
 

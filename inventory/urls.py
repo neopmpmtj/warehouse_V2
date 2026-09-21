@@ -54,6 +54,16 @@ urlpatterns = [
         name="branch_receipt_short_close",
     ),
     path(
+        "branch/receipts/issues/<int:issue_id>/return/",
+        console_views.branch_receipt_return,
+        name="branch_receipt_return",
+    ),
+    path(
+        "branch/receipts/returns/",
+        console_views.branch_dispatch_return_history_list,
+        name="branch_dispatch_return_history_list",
+    ),
+    path(
         "branch/stock/",
         console_views.branch_stock_list,
         name="branch_stock_list",
@@ -89,6 +99,11 @@ urlpatterns = [
         name="manage_alerts_mark_read",
     ),
     path(
+        "manage/alerts/events/<int:alert_id>/mark-read/",
+        console_views.manage_alerts_event_mark_read,
+        name="manage_alerts_event_mark_read",
+    ),
+    path(
         "branch/alerts/",
         console_views.branch_alerts_list,
         name="branch_alerts_list",
@@ -97,6 +112,11 @@ urlpatterns = [
         "branch/alerts/<int:receipt_id>/mark-read/",
         console_views.branch_alerts_mark_read,
         name="branch_alerts_mark_read",
+    ),
+    path(
+        "branch/alerts/events/<int:alert_id>/mark-read/",
+        console_views.branch_alerts_event_mark_read,
+        name="branch_alerts_event_mark_read",
     ),
     path(
         "branch/send-to-warehouse/",
@@ -132,5 +152,20 @@ urlpatterns = [
         "manage/stock-at-branches/",
         console_views.manage_stock_at_branches,
         name="manage_stock_at_branches",
+    ),
+    path(
+        "manage/returned-dispatches/",
+        console_views.manage_dispatch_return_list,
+        name="manage_dispatch_return_list",
+    ),
+    path(
+        "manage/returned-dispatches/<int:dispatch_return_id>/",
+        console_views.manage_dispatch_return_detail,
+        name="manage_dispatch_return_detail",
+    ),
+    path(
+        "manage/returned-dispatches/<int:dispatch_return_id>/process/",
+        console_views.manage_dispatch_return_process,
+        name="manage_dispatch_return_process",
     ),
 ]

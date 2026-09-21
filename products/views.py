@@ -78,6 +78,13 @@ def staff_dashboard(request):
                 "url": "/manage/incoming-from-branches/",
             },
             {
+                "title_key": "cardReturnedDispatches",
+                "desc_key": "cardReturnedDispatchesDesc",
+                "title": "Returned dispatches",
+                "desc": "Restock or write off dispatches a branch sent back",
+                "url": "/manage/returned-dispatches/",
+            },
+            {
                 "title_key": "cardStockAtBranches",
                 "desc_key": "cardStockAtBranchesDesc",
                 "title": "Stock at branches",
@@ -98,7 +105,7 @@ def staff_dashboard(request):
                     "title_key": "cardAlerts",
                     "desc_key": "cardAlertsDesc",
                     "title": "Alerts",
-                    "desc": "Receipt discrepancies",
+                    "desc": "Receipt discrepancies and dispatch returns",
                     "url": "/manage/alerts/",
                     "unread": unread_alert_count(user),
                 }
