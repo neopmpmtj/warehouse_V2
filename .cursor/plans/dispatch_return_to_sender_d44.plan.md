@@ -1,31 +1,31 @@
 ---
 name: Dispatch return to sender (D44)
-overview: "Q1–Q8 locked 21 Sep. Fourth branch-receipt action: return an unbooked dispatch to the warehouse. New warehouse console to restock or write off. Alerts to warehouse + returning branch only. Distinct from D43. Awaiting explicit approval before code."
+overview: "Q1–Q8 locked 21 Sep. Implemented: Return to sender on unbooked GI, warehouse restock/write-off console, typed alerts, tests and manuals."
 todos:
   - id: lock-questions
     content: "Q1–Q8 locked 21 Sep 2026 (Q6 = unbooked dispatch only)"
     status: completed
   - id: models-services
     content: "DispatchReturn document + lines + changelog; receive_return / restock / write_off in inventory.services"
-    status: pending
+    status: completed
   - id: branch-ui
     content: "Return to sender button + confirm/reason on /branch/receipts/; settle remaining on the selected guia"
-    status: pending
+    status: completed
   - id: warehouse-ui
     content: "New /manage/returned-dispatches/ console (not mixed with incoming-from-branches or goods receipts)"
-    status: pending
+    status: completed
   - id: alerts
     content: "Extend existing Alerts pages with typed cards: return opened (no qty), restocked (qty), written-off (qty)"
-    status: pending
+    status: completed
   - id: tests-docs
     content: "Django tests + EN/PT manuals 03/04/05/06 + PROJECT-PLAN D44 + i18n"
-    status: pending
+    status: completed
 isProject: false
 ---
 
 # D44 — Return to sender (dispatch return)
 
-**Status:** product questions **locked** 21 Sep 2026. **Do not implement** until the user replies **approved**.
+**Status:** **implemented** 21 Sep 2026 (Q1–Q8 locked, then approved).
 
 **Origin:** branch receipts today have three outcomes for an open dispatch: full **Receive**, **Report discrepancies** (optional Reorder), and **Short close**. This slice adds a fourth: the branch **rejects the arrival and sends the goods back**. The warehouse then either **puts them on the shelf** or **writes them off** (damaged / not fit for stock).
 

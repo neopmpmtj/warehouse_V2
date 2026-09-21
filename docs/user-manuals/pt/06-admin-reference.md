@@ -19,7 +19,7 @@ A administração Django em **`/admin/`** é **apenas para superutilizadores**.
 | **Pessoal do armazém** (grupo de armazém) | ❌ | ✅ |
 | **Pessoal de filial** (membro de filial) | ❌ | ✅ (`/branch/…`) |
 
-O pessoal do armazém chega a **`/`** após o início de sessão. O pessoal só de filial chega a **`/branch/`** (painel da filial). Esse painel lista todas as ferramentas da filial (catálogo, requisição, conversas, receções, Parle). Os **administradores** do armazém e os **gestores grau 2+** também vêem um cartão **Alertas** em `/` para discrepâncias de receção (`/manage/alerts/`); os **gestores** e **administradores** da filial vêem o mesmo cartão em `/branch/` (`/branch/alerts/`, só a filial ativa). Em cada página de consola **`/manage/…`**, a etiqueta **CentCompras** acima do título da página liga de volta a **`/`** (painel do armazém). Nas páginas de filial, **CentCompras** liga de volta a **`/branch/`**. **Terminar sessão** é uma ligação pequena na linha do título **Definições** (engrenagem, canto superior direito). **Ajuda** é o ícone azul **?** junto à engrenagem (placeholder).
+O pessoal do armazém chega a **`/`** após o início de sessão. O pessoal só de filial chega a **`/branch/`** (painel da filial). Esse painel lista todas as ferramentas da filial (catálogo, requisição, conversas, receções, Parle). Os **administradores** do armazém e os **gestores grau 2+** também vêem um cartão **Alertas** em `/` para discrepâncias de receção e devoluções de expedição (`/manage/alerts/`); os **gestores** e **administradores** da filial vêem o mesmo cartão em `/branch/` (`/branch/alerts/`, só a filial ativa). Em cada página de consola **`/manage/…`**, a etiqueta **CentCompras** acima do título da página liga de volta a **`/`** (painel do armazém). Nas páginas de filial, **CentCompras** liga de volta a **`/branch/`**. **Terminar sessão** é uma ligação pequena na linha do título **Definições** (engrenagem, canto superior direito). **Ajuda** é o ícone azul **?** junto à engrenagem (placeholder).
 
 Duas regras a recordar:
 
@@ -217,8 +217,8 @@ A maior parte das tabelas de negócio em `/admin/` é **só de leitura de propó
 | Goods receipts, stock movements | `/manage/goods-receipts/` |
 | Internal requests, goods issues | `/manage/internal-requests/` + `/branch/…` |
 | Receções da filial, stock da filial, consumo, envio ao armazém | `/branch/receipts/` + `/branch/stock/` + `/branch/consumption/` + `/branch/send-to-warehouse/` |
-| Entradas das filiais, stock nas filiais | `/manage/incoming-from-branches/` + `/manage/stock-at-branches/` |
-| Alertas de discrepância de receção (estado de leitura) | `/manage/alerts/` + `/branch/alerts/` (admin só inspeção) |
+| Entradas das filiais, expedições devolvidas, stock nas filiais | `/manage/incoming-from-branches/` + `/manage/returned-dispatches/` + `/manage/stock-at-branches/` |
+| Alertas de discrepância e de devolução (estado de leitura) | `/manage/alerts/` + `/branch/alerts/` (admin só inspeção) |
 | Conversas de pedido | `/branch/threads/` + `/manage/threads/` (admin só inspeção) |
 | Parle | `/company-voice/` (admin só inspeção; **sem eliminação permanente**) |
 | Change logs (todos os `*ChangeLog`) | Só leitura em todo o lado (auditoria) |

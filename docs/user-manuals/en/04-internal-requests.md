@@ -41,15 +41,17 @@ Out of stock? The warehouse raises a **purchase order** to a supplier first — 
 | Branch (any role) | `/branch/threads/` | Request items not in the catalogue |
 | Branch (manager / admin) | `/branch/requests/` | Approve / reject |
 | Branch (any role) | `/branch/receipts/` | Confirm arrival against a dispatch |
+| Branch (manager / admin) | `/branch/receipts/` | Return an unbooked dispatch to the warehouse |
 | Branch (any role) | `/branch/stock/` | See this branch's on-hand quantity |
 | Branch (any role) | `/branch/consumption/` | Take items off this branch's stock |
 | Branch (any role) | `/branch/send-to-warehouse/` | See sends to the warehouse (manager/admin send) |
-| Branch (manager / admin) | `/branch/alerts/` | Receipt discrepancies (unread until you open a row) |
+| Branch (manager / admin) | `/branch/alerts/` | Receipt discrepancies and dispatch returns (unread until you open a row) |
 | Branch (any role) | `/company-voice/` | Company-wide suggestion box |
 | Warehouse | `/manage/internal-requests/` | Queue of approved requests + goods issue |
 | Warehouse | `/manage/incoming-from-branches/` | Confirm items a branch sent to the warehouse |
+| Warehouse | `/manage/returned-dispatches/` | Restock or write off a dispatch the branch sent back |
 | Warehouse | `/manage/stock-at-branches/` | Read-only on-hand at every branch |
-| Warehouse (admin, or manager grade 2+) | `/manage/alerts/` | Receipt discrepancies from every branch |
+| Warehouse (admin, or manager grade 2+) | `/manage/alerts/` | Receipt discrepancies and dispatch returns from every branch |
 | Warehouse admin | `/manage/branch-approval-limits/` | Branch manager approval caps |
 
 *(During development on your own machine: `http://127.0.0.1:8015/…`.)*
@@ -71,6 +73,7 @@ There are **three branch roles** (set for you by the head office) and the usual 
 | Approve / reject | ❌ | ✅ (yes/no; EUR caps only if priced mode is on) | ✅ (unlimited) |
 | Cancel an **approved** request | ❌ | ✅ | ✅ |
 | Confirm arrival (branch receipt) | ✅ | ✅ | ✅ |
+| Return an unbooked dispatch to the warehouse | ❌ | ✅ | ✅ |
 | View branch on-hand (`/branch/stock/`) | ✅ | ✅ | ✅ |
 | Consume branch stock (`/branch/consumption/`) | ✅ | ✅ | ✅ |
 | View sends to the warehouse | ✅ | ✅ | ✅ |
@@ -91,7 +94,8 @@ There are **three branch roles** (set for you by the head office) and the usual 
 | See the request queue + issue goods | Operator grade 2+, manager, admin |
 | Confirm incoming from branches | Operator grade 2+, manager, admin |
 | See stock at branches (read-only) | Anyone who can open goods receipts |
-| Receipt discrepancy alerts (`/manage/alerts/`) | Manager grade 2+ or admin |
+| Process returned dispatches (`/manage/returned-dispatches/`) | Operator grade 2+, manager, admin |
+| Receipt discrepancy and dispatch-return alerts (`/manage/alerts/`) | Manager grade 2+ or admin |
 | Warehouse short-close | Manager grade 2+ or admin |
 | Edit branch approval caps | Warehouse admin (`/manage/branch-approval-limits/`) |
 
@@ -262,7 +266,7 @@ Only a **manager grade 2+ or admin** can do this.
 
 ## 8. Branch — confirm arrival (receipt)
 
-Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your branch as soon as the warehouse issues them — including while the request is still **fulfilling** (more still to ship). Each warehouse issue has its own dispatch **#**. **Receive** is enabled once you select a dispatch. **Short close** stays disabled until the warehouse has finished (request **shipped** or **received**).
+Open **`/branch/receipts/`**. It lists the **dispatches** (*guias*) for your branch as soon as the warehouse issues them — including while the request is still **fulfilling** (more still to ship). Each warehouse issue has its own dispatch **#**. **Receive** is enabled once you select a dispatch. **Return to sender** is shown to **managers and admins** when this dispatch has **no** branch receipt yet. **Short close** stays disabled until the warehouse has finished (request **shipped** or **received**).
 
 ### 8.1 Receive against a dispatch
 
@@ -281,13 +285,31 @@ Rules:
 
 Receiving **increments branch stock** immediately. The booked receipt appears in the **Receipts** table at the bottom of this page (BR #, dispatch, request, who, when, total, whether it was a discrepancy). A matching row appears in **Stock movements** (positive qty, type Receipt, reference **BR #**). After a full receive the dispatch may leave the open list (the request is **closed**) — the history and movements stay. Open **`/branch/stock/`** to see the new on-hand quantity.
 
-### 8.2 Branch short-close
+### 8.2 Return to sender
 
-If the warehouse has finished and a dispatch was **never booked into branch stock** (for example a refused damaged pallet), click **Short close** and give a **reason**. That is not the “we counted 4, they shipped 5” case — use **Report discrepancies** for a count dispute. Short close writes off the unreceived remainder of the **whole request** and the request becomes **closed**. Only a **manager or admin** can do this, and only after the warehouse has fully issued or short-closed (request **shipped** or **received**). While the request is still **fulfilling**, Short close is disabled (*Cannot short-close while the warehouse still has remaining to ship.*).
+If the pallet must **not** enter branch stock — damaged, wrong load, refused on the dock — a **manager or admin** clicks **Return to sender** (*Devolver ao armazém*). Operators do not see this button.
+
+This is **not** a count dispute (use **Report discrepancies**) and **not** surplus you already own (use **Send to warehouse**). Return is allowed only when this dispatch has **no** branch receipt yet (nothing booked, nothing discrepancy-written-off). After any receipt on this *guia*, the button is disabled.
+
+1. Select the dispatch. Remaining must still be open.
+2. Confirm, then type a **reason** (required). **Cancel** on that prompt does nothing. Needs Wi-Fi.
+3. The app returns **all remaining** on that dispatch (every open line on that *guia*). Later warehouse issues keep their own dispatch numbers.
+4. Branch stock does **not** go up. The warehouse issue document is **not** reversed. The return appears in the **Returns** table (DR #). The dispatch leaves the open list once remaining is 0.
+5. You cannot cancel a return in transit.
+
+While the request is still **fulfilling**, returning a dispatch does **not** change the request status. After the warehouse is done (**shipped** / **received**): if nothing remains to receive on any GI (received + discrepancy write-off + returned), the request is **closed**.
+
+The warehouse processes the pallet on **`/manage/returned-dispatches/`** (dashboard card **Returned dispatches**, nav **Returns**). That page is **not** mixed with surplus incoming from branches or supplier goods receipts. Staff who can view inventory can open it; processing needs the same permission as booking a goods receipt (operator grade 2+, manager, admin). The warehouse cannot refuse or bounce the pallet back.
+
+For each line: leave **Write off** unticked to **Restock** the whole remaining quantity into the warehouse FIFO pool. Tick **Write off** to show **Write-off qty**, pre-filled with remaining, minimum **1**, maximum the remaining returned qty. Lowering the qty restocks the rest. A **reason** is required if any line is written off. One **Restock** click processes every line. Restocked units can be held for a *different* waiting requisição (oldest first). Written-off units stay off the warehouse shelf (they were already issued); there is no second stock movement — only an audit row. There is **no** auto-reorder.
+
+### 8.3 Branch short-close
+
+If the warehouse has finished and remaining qty on the request will **not** be booked into branch stock (lost in transit, abandoned on the dock with no return), click **Short close** and give a **reason**. That is not the “we counted 4, they shipped 5” case — use **Report discrepancies** for a count dispute. It is also not “send this unbooked *guia* back” — use **Return to sender** for that. Short close writes off the unreceived remainder of the **whole request** and the request becomes **closed**. Only a **manager or admin** can do this, and only after the warehouse has fully issued or short-closed (request **shipped** or **received**). While the request is still **fulfilling**, Short close is disabled (*Cannot short-close while the warehouse still has remaining to ship.*).
 
 > 📷 **[SCREENSHOT — branch receipt with received quantities]**
 
-### 8.3 Manager alerts (receipt discrepancies)
+### 8.4 Manager alerts (receipt discrepancies and dispatch returns)
 
 When a branch books **fewer** units than the warehouse shipped on that dispatch, the receipt is stored as a discrepancy. **Managers** on both sides see it as an **Alerts** card on their dashboard (not on the work-page nav strip):
 
@@ -296,11 +318,13 @@ When a branch books **fewer** units than the warehouse shipped on that dispatch,
 
 The card shows how many alerts you have not opened yet (for example a badge **3**). Opening the page does **not** clear that number. Click a card to mark it seen **for you**; other people still see it unread. Seen cards stay in the list.
 
-Each discrepancy is its own card: **when**, the **request** number, the **dispatch** (*guia*) number, the qty mismatch (code, shipped, received, missing), and the **reason**. The warehouse list also shows the **branch** name. **See more** (*Ver mais*) always shows **Reorder** as **true** or **false**. When **true**, it also shows the **follow-up request** number and each reordered item with its qty (which may be less than the shortfall). **See less** (*Ver menos*) hides that block again. Operators have no dashboard card; the URL returns **403**.
+Each discrepancy is its own card: **when**, the **request** number, the **dispatch** (*guia*) number, the qty mismatch (code, shipped, received, missing), and the **reason**. The warehouse list also shows the **branch** name. **See more** (*Ver mais*) always shows **Reorder** as **true** or **false**. When **true**, it also shows the **follow-up request** number and each reordered item with its qty (which may be less than the shortfall). **See less** (*Ver menos*) hides that block again.
+
+The same Alerts pages also list **dispatch returns**. A card titled **Dispatch returned** shows when, branch, request #, dispatch #, and DR # — **no item or qty**. After the warehouse restocks, a **Returned stock restocked** card lists code and qty. After a write-off, **Returned stock written off** lists code, qty, and the warehouse reason. Only the **returning** branch (managers/admins) and warehouse alerts staff see these; other branches do not. Operators have no dashboard card; the URL returns **403**.
 
 There is **no email** for this. The warehouse issue document is not changed.
 
-### 8.4 Branch stock (on-hand)
+### 8.5 Branch stock (on-hand)
 
 Open **`/branch/stock/`** (any branch role). This lists **this branch's** received stock only (not the warehouse catalogue):
 
@@ -310,7 +334,7 @@ Open **`/branch/stock/`** (any branch role). This lists **this branch's** receiv
 - You never see warehouse quantity, cost, or selling prices here — those stay on `/branch/catalog/` (hint + optional prices).
 - The page needs Wi-Fi. It does not cache on-hand offline.
 
-### 8.5 Consume (take stock off the branch)
+### 8.6 Consume (take stock off the branch)
 
 Open **`/branch/consumption/`** (any branch role). This books a numbered **consumption ticket** (BC #) and immediately takes quantity off **this branch's** on-hand.
 
@@ -321,7 +345,7 @@ Open **`/branch/consumption/`** (any branch role). This books a numbered **consu
 
 You cannot consume an item this branch has never received (or that an admin has never adjusted onto the local list). One item per ticket line — do not add the same item twice. There is no draft and no void: if you booked the wrong qty, a branch **admin** uses **Adjust stock** on `/branch/receipts/` to put it back. This page needs Wi-Fi.
 
-### 8.6 Send to warehouse (surplus, not a return)
+### 8.7 Send to warehouse (surplus, not a return)
 
 Open **`/branch/send-to-warehouse/`**. This is **not** a return of a warehouse dispatch and it is **not** booked on `/branch/receipts/`.
 
@@ -455,6 +479,9 @@ You're an **operator** (operators never approve), or the request isn't **submitt
 **Q7. I can't see "Short close" — why?**
 Short-close is manager/admin only, on both the warehouse and branch side.
 
+**Q7a. I can't see "Return to sender" — why?**
+The button is **manager/admin** only (operators keep Receive and Report discrepancies). It is also hidden or disabled when this dispatch already has a branch receipt, remaining is 0, or it has already been returned. Use **Send to warehouse** for surplus you already booked.
+
 **Q8. Can I request the same item twice?**
 No — one line per item per request. **Edit** the line's quantity instead of adding a second line.
 
@@ -474,7 +501,7 @@ The hold is released immediately and offered to the next waiting requisição (o
 Stock is already in motion. After the first goods issue the only way to finish early is **short-close** (warehouse side) or **branch short-close** (branch side).
 
 **Q14. How is branch stock different from warehouse stock?**
-Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch, you **consume**, you **send to the warehouse**, or an admin adjusts it. `/branch/stock/` lists **only those local rows** — not the full warehouse catalogue. After you receive, the item appears there (or its on-hand goes up if it was already listed). Receipts / Stock movements at the bottom of `/branch/receipts/` are the ledger. **Consume** at `/branch/consumption/` is how on-hand goes down in day-to-day use. **Send to warehouse** at `/branch/send-to-warehouse/` is how surplus goes back to the warehouse (not a return of a *guia*). The open dispatch list only shows guias still in progress.
+Two separate ledgers. Warehouse stock lives on the item; **branch stock** lives per `(branch, item)` and only moves when you receive a dispatch, you **consume**, you **send to the warehouse**, or an admin adjusts it. `/branch/stock/` lists **only those local rows** — not the full warehouse catalogue. After you receive, the item appears there (or its on-hand goes up if it was already listed). Receipts / Returns / Stock movements at the bottom of `/branch/receipts/` are the ledger. **Consume** at `/branch/consumption/` is how on-hand goes down in day-to-day use. **Send to warehouse** at `/branch/send-to-warehouse/` is how surplus goes back to the warehouse (not a return of a *guia*). **Return to sender** on `/branch/receipts/` sends an **unbooked** *guia* back without raising branch stock. The open dispatch list only shows guias still in progress.
 
 **Q14a. I received goods — why doesn't `/branch/stock/` show every catalogue item?**
 It is not the warehouse catalogue. A row appears the first time this branch receives that item (or an admin adjusts it). Quantity 0 stays listed. Order from `/branch/catalog/` as before.

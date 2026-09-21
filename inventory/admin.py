@@ -11,10 +11,15 @@ from .models import (
     BranchWarehouseShipment,
     BranchWarehouseShipmentChangeLog,
     BranchWarehouseShipmentLine,
+    DispatchReturn,
+    DispatchReturnChangeLog,
+    DispatchReturnLine,
     GoodsIssue,
     GoodsIssueLine,
     GoodsReceipt,
     GoodsReceiptLine,
+    InventoryAlert,
+    InventoryAlertReadState,
     StockMovement,
 )
 
@@ -377,6 +382,129 @@ class BranchWarehouseShipmentAdmin(admin.ModelAdmin):
 class BranchWarehouseShipmentChangeLogAdmin(admin.ModelAdmin):
     list_display = ("id", "shipment", "action", "user", "created_at")
     readonly_fields = ("shipment", "user", "action", "changes", "reason", "created_at")
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class DispatchReturnLineInline(admin.TabularInline):
+    model = DispatchReturnLine
+    extra = 0
+    can_delete = False
+    readonly_fields = (
+        "goods_issue_line",
+        "quantity_returned",
+        "quantity_restocked",
+        "quantity_written_off",
+    )
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(DispatchReturn)
+class DispatchReturnAdmin(admin.ModelAdmin):
+    list_display = ("id", "goods_issue", "branch", "status", "returned_by", "returned_at")
+    search_fields = ("return_reason", "branch__name", "goods_issue__id")
+    list_filter = ("status", "branch")
+    inlines = (DispatchReturnLineInline,)
+    readonly_fields = (
+        "goods_issue",
+        "branch",
+        "status",
+        "returned_by",
+        "returned_at",
+        "return_reason",
+        "processed_by",
+        "processed_at",
+        "process_reason",
+    )
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(DispatchReturnChangeLog)
+class DispatchReturnChangeLogAdmin(admin.ModelAdmin):
+    list_display = ("id", "dispatch_return", "action", "user", "created_at")
+    readonly_fields = (
+        "dispatch_return",
+        "user",
+        "action",
+        "changes",
+        "reason",
+        "created_at",
+    )
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(InventoryAlert)
+class InventoryAlertAdmin(admin.ModelAdmin):
+    list_display = ("id", "kind", "dispatch_return", "branch", "created_at")
+    list_filter = ("kind",)
+    readonly_fields = ("kind", "dispatch_return", "branch", "payload", "created_at")
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(InventoryAlertReadState)
+class InventoryAlertReadStateAdmin(admin.ModelAdmin):
+    list_display = ("id", "alert", "user", "read_at")
+    readonly_fields = ("alert", "user", "read_at")
 
     def has_module_permission(self, request):
         return request.user.is_superuser

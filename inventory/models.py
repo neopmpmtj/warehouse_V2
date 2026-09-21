@@ -73,6 +73,7 @@ class StockMovement(models.Model):
         GOODS_ISSUE = "goods_issue", "Goods issue"
         ADJUSTMENT = "adjustment", "Adjustment"
         BRANCH_INBOUND = "branch_inbound", "From branch"
+        DISPATCH_RETURN = "dispatch_return", "Dispatch return"
 
     item = models.ForeignKey(
         "products.Item",
@@ -559,3 +560,204 @@ class BranchWarehouseShipmentChangeLog(models.Model):
 
     def __str__(self):
         return f"BWS #{self.shipment_id} {self.action}"
+
+
+class DispatchReturn(models.Model):
+    """A branch rejects an unbooked warehouse dispatch and sends it back (DR #)."""
+
+    class Status(models.TextChoices):
+        IN_TRANSIT = "in_transit", "In transit"
+        PROCESSED = "processed", "Processed"
+
+    goods_issue = models.OneToOneField(
+        GoodsIssue,
+        on_delete=models.PROTECT,
+        related_name="dispatch_return",
+    )
+    branch = models.ForeignKey(
+        "branches.Branch",
+        on_delete=models.PROTECT,
+        related_name="dispatch_returns",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.IN_TRANSIT,
+        db_index=True,
+    )
+    returned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="dispatch_returns_opened",
+    )
+    returned_at = models.DateTimeField(auto_now_add=True)
+    return_reason = models.CharField(max_length=255)
+    processed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="dispatch_returns_processed",
+        null=True,
+        blank=True,
+    )
+    processed_at = models.DateTimeField(null=True, blank=True)
+    process_reason = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-returned_at", "-id"]
+
+    def __str__(self):
+        return f"DR #{self.pk} — GI #{self.goods_issue_id}"
+
+    def total_returned(self):
+        return sum((line.quantity_returned for line in self.lines.all()), 0)
+
+    def total_restocked(self):
+        return sum((line.quantity_restocked for line in self.lines.all()), 0)
+
+    def total_written_off(self):
+        return sum((line.quantity_written_off for line in self.lines.all()), 0)
+
+
+class DispatchReturnLine(models.Model):
+    dispatch_return = models.ForeignKey(
+        DispatchReturn,
+        on_delete=models.CASCADE,
+        related_name="lines",
+    )
+    goods_issue_line = models.ForeignKey(
+        GoodsIssueLine,
+        on_delete=models.PROTECT,
+        related_name="dispatch_return_lines",
+    )
+    quantity_returned = models.IntegerField()
+    quantity_restocked = models.IntegerField(default=0)
+    quantity_written_off = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["dispatch_return", "goods_issue_line"],
+                name="unique_dispatch_return_line",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_returned__gte=1),
+                name="dispatch_return_line_returned_gte_one",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_restocked__gte=0),
+                name="dispatch_return_line_restocked_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_written_off__gte=0),
+                name="dispatch_return_line_written_off_gte_zero",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    quantity_restocked__lte=models.F("quantity_returned")
+                    - models.F("quantity_written_off")
+                ),
+                name="dispatch_return_line_processed_lte_returned",
+            ),
+        ]
+
+    def remaining(self):
+        leftover = (
+            self.quantity_returned - self.quantity_restocked - self.quantity_written_off
+        )
+        return leftover if leftover > 0 else 0
+
+    def __str__(self):
+        return (
+            f"DR #{self.dispatch_return_id}: GI line {self.goods_issue_line_id} "
+            f"x {self.quantity_returned}"
+        )
+
+
+class DispatchReturnChangeLog(models.Model):
+    class Action(models.TextChoices):
+        RETURNED = "returned", "Returned"
+        RESTOCKED = "restocked", "Restocked"
+        WRITTEN_OFF = "written_off", "Written off"
+
+    dispatch_return = models.ForeignKey(
+        DispatchReturn,
+        on_delete=models.CASCADE,
+        related_name="change_logs",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="dispatch_return_change_logs",
+    )
+    action = models.CharField(max_length=20, choices=Action.choices)
+    changes = models.JSONField(default=dict, blank=True)
+    reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"DR #{self.dispatch_return_id} {self.action}"
+
+
+class InventoryAlert(models.Model):
+    """Non-discrepancy manager alerts (dispatch returns)."""
+
+    class Kind(models.TextChoices):
+        DISPATCH_RETURN_OPENED = "dispatch_return_opened", "Dispatch return opened"
+        DISPATCH_RETURN_RESTOCKED = "dispatch_return_restocked", "Dispatch return restocked"
+        DISPATCH_RETURN_WRITTEN_OFF = (
+            "dispatch_return_written_off",
+            "Dispatch return written off",
+        )
+
+    kind = models.CharField(max_length=40, choices=Kind.choices, db_index=True)
+    dispatch_return = models.ForeignKey(
+        DispatchReturn,
+        on_delete=models.CASCADE,
+        related_name="alerts",
+    )
+    branch = models.ForeignKey(
+        "branches.Branch",
+        on_delete=models.PROTECT,
+        related_name="inventory_alerts",
+    )
+    payload = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.kind} DR #{self.dispatch_return_id}"
+
+
+class InventoryAlertReadState(models.Model):
+    """Per-user seen cursor for an inventory alert."""
+
+    alert = models.ForeignKey(
+        InventoryAlert,
+        on_delete=models.CASCADE,
+        related_name="read_states",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="inventory_alert_read_states",
+    )
+    read_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["alert", "user"],
+                name="unique_inventory_alert_read_state",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} read alert #{self.alert_id} @ {self.read_at:%Y-%m-%d %H:%M}"

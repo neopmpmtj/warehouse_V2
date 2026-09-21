@@ -41,10 +41,12 @@ from .models import (
     BranchReceiptReadState,
     BranchStockMovement,
     BranchWarehouseShipment,
+    DispatchReturn,
     GoodsIssue,
     GoodsIssueLine,
     GoodsReceipt,
     GoodsReceiptLine,
+    InventoryAlert,
     StockMovement,
 )
 
@@ -1354,6 +1356,8 @@ class BranchReceiptApiTests(TestCase):
         self.assertContains(r, 'id="settings-toggle"')
         self.assertContains(r, "Catalog")
         self.assertContains(r, 'id="report-discrepancies-btn"')
+        self.assertContains(r, 'id="return-btn"')
+        self.assertContains(r, 'id="returns-body"')
         self.assertContains(r, "colReorderQty")
         self.assertContains(r, 'id="history-body"')
         self.assertContains(r, 'id="movements-body"')
@@ -2346,3 +2350,381 @@ class BranchWarehouseShipmentTests(TestCase):
         self._login_branch(self.manager, self.north)
         forbidden = self.client.get(reverse("manage_stock_at_branches"))
         self.assertEqual(forbidden.status_code, 403)
+
+
+class DispatchReturnTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.north = create_branch("North Return")
+        self.south = create_branch("South Return")
+        self.operator = _make_branch_user(
+            "ret-op@example.com", self.north, ROLE_OPERATOR
+        )
+        self.manager = _make_branch_user(
+            "ret-mgr@example.com", self.north, ROLE_MANAGER
+        )
+        self.admin = _make_branch_user("ret-adm@example.com", self.north, ROLE_ADMIN)
+        self.south_mgr = _make_branch_user(
+            "ret-south@example.com", self.south, ROLE_MANAGER
+        )
+        self.wh_admin = make_warehouse_user("ret-wh@example.com")
+        self.wh_op1 = make_warehouse_user(
+            "ret-wh-op1@example.com", group_name=GROUP_OPERATORS
+        )
+        self.item = _make_issue_item("Return Cement", wholesale="5.00", quantity="10")
+
+    def _login_branch(self, user, branch):
+        self.client.force_login(user)
+        session = self.client.session
+        session[SESSION_KEY] = branch.id
+        session.save()
+
+    def _shipped_issue(self, branch, operator, manager, qty="4"):
+        req = order_services.create_internal_request(branch, operator)
+        line = order_services.add_line(req, self.item, qty, operator)
+        req = order_services.submit(req, operator)
+        req = order_services.approve(req, manager)
+        req.refresh_from_db()
+        goods_issue = services.issue_goods(
+            req, [{"line_id": line.id, "quantity_issued": qty}], self.wh_admin
+        )
+        req.refresh_from_db()
+        return req, goods_issue
+
+    def _post(self, url, payload):
+        return self.client.post(
+            url, data=json.dumps(payload), content_type="application/json"
+        )
+
+    def test_operator_cannot_return_and_button_is_hidden(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "3"
+        )
+        self._login_branch(self.operator, self.north)
+        page = self.client.get(reverse("branch_receipt_console"))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "var CAN_RETURN = false")
+        response = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "damaged pallet"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["code"], "dispatch_return_forbidden")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.SHIPPED)
+        self.assertFalse(DispatchReturn.objects.filter(goods_issue=goods_issue).exists())
+
+    def test_manager_return_while_fulfilling_leaves_request_open(self):
+        req = order_services.create_internal_request(self.north, self.operator)
+        line = order_services.add_line(req, self.item, "8", self.operator)
+        req = order_services.submit(req, self.operator)
+        req = order_services.approve(req, self.manager)
+        req.refresh_from_db()
+        first = services.issue_goods(
+            req, [{"line_id": line.id, "quantity_issued": "3"}], self.wh_admin
+        )
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+        on_hand_before = Item.objects.get(pk=self.item.pk).quantity
+        self._login_branch(self.manager, self.north)
+        response = self._post(
+            reverse("branch_receipt_return", args=[first.id]),
+            {"reason": "pallet crushed"},
+        )
+        self.assertEqual(response.status_code, 201)
+        payload = response.json()
+        self.assertEqual(payload["status"], DispatchReturn.Status.IN_TRANSIT)
+        self.assertEqual(payload["total_returned"], "3")
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.FULFILLING)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, on_hand_before)
+        self.assertFalse(BranchReceipt.objects.filter(goods_issue=first).exists())
+        self.assertFalse(
+            StockMovement.objects.filter(
+                movement_type=StockMovement.Type.DISPATCH_RETURN
+            ).exists()
+        )
+        issues = self.client.get(reverse("branch_receipt_issue_list")).json()[
+            "goods_issues"
+        ]
+        returned = next(row for row in issues if row["id"] == first.id)
+        self.assertTrue(returned["has_return"])
+        self.assertEqual(returned["lines"][0]["remaining"], "0")
+
+    def test_cannot_return_a_booked_dispatch(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "4"
+        )
+        issue_line = goods_issue.lines.get()
+        services.receive_at_branch(
+            goods_issue,
+            [{"line_id": issue_line.id, "quantity_received": "4"}],
+            self.operator,
+        )
+        self._login_branch(self.manager, self.north)
+        response = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "too late"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], "dispatch_already_booked")
+
+    def test_cannot_receive_after_return(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "2"
+        )
+        issue_line = goods_issue.lines.get()
+        self._login_branch(self.manager, self.north)
+        created = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "wet bags"},
+        )
+        self.assertEqual(created.status_code, 201)
+        receive = self._post(
+            reverse("branch_receipt_receive", args=[goods_issue.id]),
+            {"lines": [{"line_id": issue_line.id, "quantity_received": "2"}]},
+        )
+        self.assertEqual(receive.status_code, 400)
+        self.assertEqual(receive.json()["code"], "dispatch_returned_cannot_receive")
+
+    def test_restock_increases_warehouse_stock_and_allocates_fifo(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "6"
+        )
+        waiting = order_services.create_internal_request(self.south, self.south_mgr)
+        wait_line = order_services.add_line(waiting, self.item, "5", self.south_mgr)
+        waiting = order_services.submit(waiting, self.south_mgr)
+        waiting = order_services.approve(waiting, self.south_mgr)
+        wait_line.refresh_from_db()
+        self.assertEqual(int(wait_line.quantity_reserved), 4)
+
+        self._login_branch(self.manager, self.north)
+        created = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "wrong branch"},
+        )
+        self.assertEqual(created.status_code, 201)
+        dr_id = created.json()["id"]
+        line_id = created.json()["lines"][0]["line_id"]
+        issued_qty = GoodsIssueLine.objects.get(goods_issue=goods_issue).quantity_issued
+
+        self.client.force_login(self.wh_admin)
+        page = self.client.get(reverse("warehouse_returns_console"))
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "warehouse_returns.js")
+        self.assertContains(page, "Returned dispatches")
+        inbound = self.client.get(reverse("warehouse_inbound_console"))
+        self.assertNotContains(inbound, "warehouse_returns.js")
+
+        queue = self.client.get(
+            reverse("manage_dispatch_return_list") + "?status=in_transit"
+        )
+        self.assertEqual(len(queue.json()["dispatch_returns"]), 1)
+        before = Item.objects.get(pk=self.item.pk).quantity
+        process = self._post(
+            reverse("manage_dispatch_return_process", args=[dr_id]),
+            {"lines": [{"line_id": line_id, "write_off": False}]},
+        )
+        self.assertEqual(process.status_code, 200)
+        self.assertEqual(
+            process.json()["dispatch_return"]["status"],
+            DispatchReturn.Status.PROCESSED,
+        )
+        self.item.refresh_from_db()
+        self.assertEqual(int(self.item.quantity), int(before) + 6)
+        wait_line.refresh_from_db()
+        self.assertEqual(int(wait_line.quantity_reserved), 5)
+        gi_line = GoodsIssueLine.objects.get(goods_issue=goods_issue)
+        self.assertEqual(gi_line.quantity_issued, issued_qty)
+        movements = self.client.get(reverse("manage_stock_movements")).json()[
+            "stock_movements"
+        ]
+        returned = [
+            row
+            for row in movements
+            if row["movement_type"] == StockMovement.Type.DISPATCH_RETURN
+        ]
+        self.assertEqual(len(returned), 1)
+        self.assertEqual(returned[0]["quantity"], "6")
+        self.assertEqual(returned[0]["reference"], f"DR #{dr_id}")
+
+    def test_write_off_does_not_bump_on_hand(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "5"
+        )
+        self._login_branch(self.manager, self.north)
+        created = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "all wet"},
+        )
+        dr_id = created.json()["id"]
+        line_id = created.json()["lines"][0]["line_id"]
+        before = Item.objects.get(pk=self.item.pk).quantity
+        self.client.force_login(self.wh_admin)
+        missing_reason = self._post(
+            reverse("manage_dispatch_return_process", args=[dr_id]),
+            {
+                "lines": [
+                    {"line_id": line_id, "write_off": True, "write_off_qty": 5}
+                ]
+            },
+        )
+        self.assertEqual(missing_reason.status_code, 400)
+        self.assertEqual(
+            missing_reason.json()["code"], "dispatch_write_off_reason_required"
+        )
+        ok = self._post(
+            reverse("manage_dispatch_return_process", args=[dr_id]),
+            {
+                "reason": "unsalvageable",
+                "lines": [
+                    {"line_id": line_id, "write_off": True, "write_off_qty": 5}
+                ],
+            },
+        )
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(ok.json()["dispatch_return"]["total_written_off"], "5")
+        self.assertEqual(ok.json()["dispatch_return"]["total_restocked"], "0")
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, before)
+        self.assertFalse(
+            StockMovement.objects.filter(
+                movement_type=StockMovement.Type.DISPATCH_RETURN
+            ).exists()
+        )
+
+    def test_partial_write_off_restocks_the_rest(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "4"
+        )
+        self._login_branch(self.manager, self.north)
+        created = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "one torn bag"},
+        )
+        dr_id = created.json()["id"]
+        line_id = created.json()["lines"][0]["line_id"]
+        before = Item.objects.get(pk=self.item.pk).quantity
+        self.client.force_login(self.wh_admin)
+        over = self._post(
+            reverse("manage_dispatch_return_process", args=[dr_id]),
+            {
+                "reason": "cap",
+                "lines": [
+                    {"line_id": line_id, "write_off": True, "write_off_qty": 9}
+                ],
+            },
+        )
+        self.assertEqual(over.status_code, 400)
+        self.assertEqual(over.json()["code"], "invalid_dispatch_write_off_quantity")
+        ok = self._post(
+            reverse("manage_dispatch_return_process", args=[dr_id]),
+            {
+                "reason": "one bag torn",
+                "lines": [
+                    {"line_id": line_id, "write_off": True, "write_off_qty": 1}
+                ],
+            },
+        )
+        self.assertEqual(ok.status_code, 200)
+        payload = ok.json()["dispatch_return"]
+        self.assertEqual(payload["total_written_off"], "1")
+        self.assertEqual(payload["total_restocked"], "3")
+        self.item.refresh_from_db()
+        self.assertEqual(int(self.item.quantity), int(before) + 3)
+
+    def test_return_after_warehouse_done_closes_request(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "10"
+        )
+        self.assertEqual(req.status, InternalRequest.Status.SHIPPED)
+        self._login_branch(self.manager, self.north)
+        response = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "refused whole load"},
+        )
+        self.assertEqual(response.status_code, 201)
+        req.refresh_from_db()
+        self.assertEqual(req.status, InternalRequest.Status.CLOSED)
+
+    def test_alerts_omit_qty_on_open_and_include_qty_on_process(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "3"
+        )
+        self._login_branch(self.manager, self.north)
+        created = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "secret reason"},
+        )
+        dr_id = created.json()["id"]
+        line_id = created.json()["lines"][0]["line_id"]
+
+        listed = self.client.get(reverse("branch_alerts_list")).json()
+        opened = next(
+            row
+            for row in listed["alerts"]
+            if row["kind"] == InventoryAlert.Kind.DISPATCH_RETURN_OPENED
+        )
+        self.assertEqual(opened["lines"], [])
+        self.assertEqual(opened["reason"], "")
+        self.assertEqual(opened["dispatch_return_id"], dr_id)
+        self.assertTrue(opened["unread"])
+
+        self._login_branch(self.south_mgr, self.south)
+        south = self.client.get(reverse("branch_alerts_list")).json()
+        self.assertEqual(south["alerts"], [])
+
+        self.client.force_login(self.wh_admin)
+        warehouse = self.client.get(reverse("manage_alerts_list")).json()
+        self.assertEqual(warehouse["unread_count"], 1)
+        self._post(
+            reverse("manage_dispatch_return_process", args=[dr_id]),
+            {
+                "reason": "two damaged",
+                "lines": [
+                    {"line_id": line_id, "write_off": True, "write_off_qty": 2}
+                ],
+            },
+        )
+        warehouse = self.client.get(reverse("manage_alerts_list")).json()
+        kinds = {row["kind"]: row for row in warehouse["alerts"]}
+        self.assertIn(InventoryAlert.Kind.DISPATCH_RETURN_RESTOCKED, kinds)
+        self.assertIn(InventoryAlert.Kind.DISPATCH_RETURN_WRITTEN_OFF, kinds)
+        restocked = kinds[InventoryAlert.Kind.DISPATCH_RETURN_RESTOCKED]
+        written = kinds[InventoryAlert.Kind.DISPATCH_RETURN_WRITTEN_OFF]
+        self.assertEqual(restocked["lines"][0]["quantity"], 1)
+        self.assertNotEqual(restocked["lines"][0].get("internal_code"), None)
+        self.assertEqual(written["lines"][0]["quantity"], 2)
+        self.assertEqual(written["reason"], "two damaged")
+        self.assertEqual(warehouse["unread_count"], 3)
+
+        event_id = restocked["id"]
+        marked = self._post(
+            reverse("manage_alerts_event_mark_read", args=[event_id]), {}
+        )
+        self.assertEqual(marked.status_code, 200)
+        self.assertFalse(marked.json()["unread"])
+        after = self.client.get(reverse("manage_alerts_list")).json()
+        self.assertEqual(after["unread_count"], 2)
+
+    def test_warehouse_operator_grade_1_cannot_process(self):
+        req, goods_issue = self._shipped_issue(
+            self.north, self.operator, self.manager, "1"
+        )
+        self._login_branch(self.manager, self.north)
+        created = self._post(
+            reverse("branch_receipt_return", args=[goods_issue.id]),
+            {"reason": "op1"},
+        )
+        dr_id = created.json()["id"]
+        line_id = created.json()["lines"][0]["line_id"]
+        self.client.force_login(self.wh_op1)
+        page = self.client.get(reverse("warehouse_returns_console"))
+        self.assertEqual(page.status_code, 200)
+        process = self._post(
+            reverse("manage_dispatch_return_process", args=[dr_id]),
+            {"lines": [{"line_id": line_id, "write_off": False}]},
+        )
+        self.assertEqual(process.status_code, 403)
+

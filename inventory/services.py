@@ -28,10 +28,15 @@ from .models import (
     BranchWarehouseShipment,
     BranchWarehouseShipmentChangeLog,
     BranchWarehouseShipmentLine,
+    DispatchReturn,
+    DispatchReturnChangeLog,
+    DispatchReturnLine,
     GoodsIssue,
     GoodsIssueLine,
     GoodsReceipt,
     GoodsReceiptLine,
+    InventoryAlert,
+    InventoryAlertReadState,
     StockMovement,
 )
 from orders.models import (
@@ -1205,6 +1210,104 @@ class BranchInboundShortReasonRequiredError(ValidationError):
         )
 
 
+class DispatchReturnForbiddenError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Return to sender requires manager or admin.",
+            code="dispatch_return_forbidden",
+        )
+
+
+class DispatchReturnReasonRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A reason is required to return a dispatch to the warehouse.",
+            code="dispatch_return_reason_required",
+        )
+
+
+class DispatchAlreadyBookedError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Cannot return a dispatch that has already been received.",
+            code="dispatch_already_booked",
+        )
+
+
+class DispatchAlreadyReturnedError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "This dispatch has already been returned to the warehouse.",
+            code="dispatch_already_returned",
+        )
+
+
+class DispatchReturnNotAllowedError(ValidationError):
+    def __init__(self, status):
+        super().__init__(
+            f"Cannot return a dispatch for a request with status '{status}'.",
+            code="dispatch_return_not_allowed",
+        )
+
+
+class NoDispatchLinesToReturnError(ValidationError):
+    def __init__(self):
+        super().__init__("No lines to return.", code="no_dispatch_lines_to_return")
+
+
+class DispatchReturnNotProcessableError(ValidationError):
+    def __init__(self, status):
+        super().__init__(
+            f"Cannot process a dispatch return with status '{status}'.",
+            code="dispatch_return_not_processable",
+        )
+
+
+class DispatchReturnLineNotFoundError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Return line not found on this dispatch return.",
+            code="dispatch_return_line_not_found",
+        )
+
+
+class DuplicateDispatchReturnProcessLineError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A return line was provided more than once.",
+            code="duplicate_dispatch_return_process_line",
+        )
+
+
+class InvalidDispatchWriteOffQuantityError(ValidationError):
+    def __init__(self, maximum):
+        super().__init__(
+            f"Write-off quantity must be between 1 and {maximum}.",
+            code="invalid_dispatch_write_off_quantity",
+        )
+
+
+class DispatchWriteOffReasonRequiredError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "A reason is required to write off returned items.",
+            code="dispatch_write_off_reason_required",
+        )
+
+
+class NoDispatchReturnProcessLinesError(ValidationError):
+    def __init__(self):
+        super().__init__("No lines to process.", code="no_dispatch_return_process_lines")
+
+
+class DispatchReturnedCannotReceiveError(ValidationError):
+    def __init__(self):
+        super().__init__(
+            "Cannot receive a dispatch that has been returned to the warehouse.",
+            code="dispatch_returned_cannot_receive",
+        )
+
+
 def _resolve_goods_issue(goods_issue):
     if isinstance(goods_issue, GoodsIssue):
         return goods_issue
@@ -1228,6 +1331,18 @@ def _branch_written_off_qty_map(goods_issue):
         BranchReceiptLine.objects.filter(goods_issue_line__goods_issue=goods_issue)
         .values("goods_issue_line_id")
         .annotate(total=Sum("quantity_written_off"))
+    )
+    return {
+        row["goods_issue_line_id"]: (row["total"] or 0)
+        for row in totals
+    }
+
+
+def _branch_returned_qty_map(goods_issue):
+    totals = (
+        DispatchReturnLine.objects.filter(goods_issue_line__goods_issue=goods_issue)
+        .values("goods_issue_line_id")
+        .annotate(total=Sum("quantity_returned"))
     )
     return {
         row["goods_issue_line_id"]: (row["total"] or 0)
@@ -1263,15 +1378,31 @@ def _request_written_off_qty_map(request):
     }
 
 
+def _request_returned_qty_map(request):
+    totals = (
+        DispatchReturnLine.objects.filter(
+            goods_issue_line__goods_issue__internal_request=request
+        )
+        .values("goods_issue_line__internal_request_line_id")
+        .annotate(total=Sum("quantity_returned"))
+    )
+    return {
+        row["goods_issue_line__internal_request_line_id"]: (row["total"] or 0)
+        for row in totals
+    }
+
+
 def _is_request_fully_received(request):
     issued_map = _issued_qty_map(request)
     received_map = _request_received_qty_map(request)
     written_off_map = _request_written_off_qty_map(request)
+    returned_map = _request_returned_qty_map(request)
     return all(
         (
             issued_map.get(line.id, 0)
             - received_map.get(line.id, 0)
             - written_off_map.get(line.id, 0)
+            - returned_map.get(line.id, 0)
         )
         <= 0
         for line in request.lines.all()
@@ -1353,11 +1484,15 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason="
     ):
         raise BranchReceiptNotAllowedError(request.status)
 
+    if DispatchReturn.objects.filter(goods_issue=goods_issue).exists():
+        raise DispatchReturnedCannotReceiveError()
+
     reason_text = (reason or "").strip()
     normalized = []
     seen_line_ids = set()
     received_map = _branch_received_qty_map(goods_issue)
     written_off_map = _branch_written_off_qty_map(goods_issue)
+    returned_map = _branch_returned_qty_map(goods_issue)
     for entry in lines:
         if not isinstance(entry, dict):
             raise ValidationError(
@@ -1381,6 +1516,7 @@ def receive_at_branch(goods_issue, lines, user, reference="", notes="", reason="
             issue_line.quantity_issued
             - received_map.get(issue_line.id, 0)
             - written_off_map.get(issue_line.id, 0)
+            - returned_map.get(issue_line.id, 0)
         )
         if remaining < 0:
             remaining = 0
@@ -1541,6 +1677,286 @@ def short_close_receipt(request, user, reason=""):
         getattr(user, "email", None),
     )
     return request
+
+
+def _create_inventory_alert(kind, dispatch_return, payload=None):
+    return InventoryAlert.objects.create(
+        kind=kind,
+        dispatch_return=dispatch_return,
+        branch=dispatch_return.branch,
+        payload=payload or {},
+    )
+
+
+@transaction.atomic
+def return_dispatch(goods_issue, user, reason=""):
+    """Branch manager/admin rejects an unbooked dispatch and sends it back."""
+    from branches.capabilities import can_approve_request
+    from orders.services import mark_closed
+
+    goods_issue = GoodsIssue.objects.select_for_update().get(
+        pk=_resolve_goods_issue(goods_issue).pk
+    )
+    request = InternalRequest.objects.select_for_update().get(
+        pk=goods_issue.internal_request_id
+    )
+    if not can_approve_request(user, request.branch):
+        raise DispatchReturnForbiddenError()
+    if request.status not in (
+        InternalRequest.Status.FULFILLING,
+        InternalRequest.Status.SHIPPED,
+        InternalRequest.Status.RECEIVED,
+    ):
+        raise DispatchReturnNotAllowedError(request.status)
+    if BranchReceipt.objects.filter(goods_issue=goods_issue).exists():
+        raise DispatchAlreadyBookedError()
+    if DispatchReturn.objects.filter(goods_issue=goods_issue).exists():
+        raise DispatchAlreadyReturnedError()
+
+    reason_text = (reason or "").strip()
+    if not reason_text:
+        raise DispatchReturnReasonRequiredError()
+
+    received_map = _branch_received_qty_map(goods_issue)
+    written_off_map = _branch_written_off_qty_map(goods_issue)
+    returned_map = _branch_returned_qty_map(goods_issue)
+    to_return = []
+    for issue_line in goods_issue.lines.select_related("internal_request_line").all():
+        remaining = (
+            issue_line.quantity_issued
+            - received_map.get(issue_line.id, 0)
+            - written_off_map.get(issue_line.id, 0)
+            - returned_map.get(issue_line.id, 0)
+        )
+        if remaining > 0:
+            to_return.append((issue_line, remaining))
+    if not to_return:
+        raise NoDispatchLinesToReturnError()
+
+    dispatch_return = DispatchReturn.objects.create(
+        goods_issue=goods_issue,
+        branch=request.branch,
+        returned_by=user,
+        return_reason=reason_text,
+    )
+    changelog_lines = []
+    for issue_line, qty in to_return:
+        DispatchReturnLine.objects.create(
+            dispatch_return=dispatch_return,
+            goods_issue_line=issue_line,
+            quantity_returned=qty,
+        )
+        changelog_lines.append({"line_id": issue_line.id, "quantity_returned": qty})
+    DispatchReturnChangeLog.objects.create(
+        dispatch_return=dispatch_return,
+        user=user,
+        action=DispatchReturnChangeLog.Action.RETURNED,
+        changes={"lines": changelog_lines},
+        reason=reason_text,
+    )
+    _create_inventory_alert(InventoryAlert.Kind.DISPATCH_RETURN_OPENED, dispatch_return)
+
+    if request.status != InternalRequest.Status.FULFILLING:
+        if _is_request_fully_received(request):
+            mark_closed(request, user, reason=reason_text)
+
+    logger.info(
+        "Dispatch return dr=%s gi=%s lines=%s user=%s",
+        dispatch_return.id,
+        goods_issue.id,
+        len(to_return),
+        getattr(user, "email", None),
+    )
+    return dispatch_return
+
+
+def _parse_write_off_qty(entry, remaining):
+    if remaining < 1:
+        raise InvalidDispatchWriteOffQuantityError(0)
+    raw = entry.get("write_off_qty", entry.get("quantity_written_off", remaining))
+    qty = _parse_decimal_quantity(raw)
+    if qty < 1 or qty > remaining:
+        raise InvalidDispatchWriteOffQuantityError(remaining)
+    return qty
+
+
+@transaction.atomic
+def process_dispatch_return(dispatch_return, lines, user, reason=""):
+    """Warehouse restock and/or write off an in-transit dispatch return (one shot)."""
+    dispatch_return = DispatchReturn.objects.select_for_update().get(
+        pk=dispatch_return.pk
+        if isinstance(dispatch_return, DispatchReturn)
+        else dispatch_return
+    )
+    if dispatch_return.status != DispatchReturn.Status.IN_TRANSIT:
+        raise DispatchReturnNotProcessableError(dispatch_return.status)
+    if not isinstance(lines, list) or not lines:
+        raise NoDispatchReturnProcessLinesError()
+
+    existing = {
+        line.id: line
+        for line in dispatch_return.lines.select_related(
+            "goods_issue_line__internal_request_line__item"
+        )
+    }
+    seen = set()
+    normalized = []
+    for entry in lines:
+        if not isinstance(entry, dict):
+            raise ValidationError(
+                "Each process line must be an object with line_id.",
+                code="invalid_dispatch_return_process_line",
+            )
+        line_id = entry.get("line_id", entry.get("dispatch_return_line_id"))
+        if line_id is None:
+            raise ValidationError(
+                "Each process line requires a line_id.",
+                code="invalid_dispatch_return_process_line",
+            )
+        try:
+            line_id = int(line_id)
+        except (TypeError, ValueError):
+            raise DispatchReturnLineNotFoundError()
+        line = existing.get(line_id)
+        if line is None:
+            raise DispatchReturnLineNotFoundError()
+        if line.id in seen:
+            raise DuplicateDispatchReturnProcessLineError()
+        seen.add(line.id)
+        remaining = line.remaining()
+        write_off = bool(entry.get("write_off")) or int(
+            entry.get("quantity_written_off") or 0
+        ) > 0
+        written_off = _parse_write_off_qty(entry, remaining) if write_off else 0
+        restocked = remaining - written_off
+        normalized.append((line, restocked, written_off))
+
+    if set(existing) != seen:
+        raise NoDispatchReturnProcessLinesError()
+
+    reason_text = (reason or "").strip()
+    has_write_off = any(written_off > 0 for _line, _rs, written_off in normalized)
+    if has_write_off and not reason_text:
+        raise DispatchWriteOffReasonRequiredError()
+
+    item_ids = sorted(
+        {
+            line.goods_issue_line.internal_request_line.item_id
+            for line, restocked, _wo in normalized
+            if restocked > 0
+        }
+    )
+    if item_ids:
+        list(Item.objects.filter(pk__in=item_ids).order_by("pk").select_for_update())
+
+    restock_lines = []
+    write_off_lines = []
+    now = timezone.now()
+    for line, restocked, written_off in normalized:
+        line.quantity_restocked = restocked
+        line.quantity_written_off = written_off
+        line.save(update_fields=["quantity_restocked", "quantity_written_off"])
+        item = line.goods_issue_line.internal_request_line.item
+        if restocked > 0:
+            _write_movement(
+                item,
+                restocked,
+                StockMovement.Type.DISPATCH_RETURN,
+                user,
+                content_object=dispatch_return,
+                reason=reason_text,
+            )
+            restock_lines.append(
+                {
+                    "line_id": line.id,
+                    "internal_code": item.internal_code or "",
+                    "quantity": restocked,
+                }
+            )
+        if written_off > 0:
+            write_off_lines.append(
+                {
+                    "line_id": line.id,
+                    "internal_code": item.internal_code or "",
+                    "quantity": written_off,
+                }
+            )
+
+    for item_id in item_ids:
+        allocate_available_stock(item_id, user)
+
+    dispatch_return.status = DispatchReturn.Status.PROCESSED
+    dispatch_return.processed_by = user
+    dispatch_return.processed_at = now
+    dispatch_return.process_reason = reason_text
+    dispatch_return.save(
+        update_fields=["status", "processed_by", "processed_at", "process_reason"]
+    )
+
+    if restock_lines:
+        DispatchReturnChangeLog.objects.create(
+            dispatch_return=dispatch_return,
+            user=user,
+            action=DispatchReturnChangeLog.Action.RESTOCKED,
+            changes={"lines": restock_lines},
+            reason=reason_text,
+        )
+        _create_inventory_alert(
+            InventoryAlert.Kind.DISPATCH_RETURN_RESTOCKED,
+            dispatch_return,
+            {"lines": restock_lines},
+        )
+    if write_off_lines:
+        DispatchReturnChangeLog.objects.create(
+            dispatch_return=dispatch_return,
+            user=user,
+            action=DispatchReturnChangeLog.Action.WRITTEN_OFF,
+            changes={"lines": write_off_lines},
+            reason=reason_text,
+        )
+        _create_inventory_alert(
+            InventoryAlert.Kind.DISPATCH_RETURN_WRITTEN_OFF,
+            dispatch_return,
+            {"lines": write_off_lines, "reason": reason_text},
+        )
+
+    logger.info(
+        "Processed dispatch return dr=%s restock=%s write_off=%s user=%s",
+        dispatch_return.id,
+        len(restock_lines),
+        len(write_off_lines),
+        getattr(user, "email", None),
+    )
+    return dispatch_return
+
+
+def get_dispatch_returns(status=None, branch=None):
+    queryset = (
+        DispatchReturn.objects.select_related(
+            "goods_issue__internal_request__branch",
+            "returned_by",
+            "processed_by",
+            "branch",
+        )
+        .prefetch_related(
+            Prefetch(
+                "lines",
+                queryset=DispatchReturnLine.objects.select_related(
+                    "goods_issue_line__internal_request_line__item"
+                ),
+            )
+        )
+        .order_by("-returned_at", "-id")
+    )
+    if status:
+        queryset = queryset.filter(status=status)
+    if branch is not None:
+        queryset = queryset.filter(branch=branch)
+    return queryset
+
+
+def get_dispatch_return(dispatch_return_id, branch=None):
+    return get_dispatch_returns(branch=branch).get(pk=dispatch_return_id)
 
 
 @transaction.atomic
@@ -2051,8 +2467,11 @@ def get_branch_goods_issues(branch):
                 InternalRequest.Status.RECEIVED,
             ],
         )
-        .select_related("internal_request", "issued_by")
-        .prefetch_related("lines__internal_request_line__item")
+        .select_related("internal_request", "issued_by", "dispatch_return")
+        .prefetch_related(
+            "lines__internal_request_line__item",
+            "branch_receipts",
+        )
         .order_by("-issued_at")
     )
 
@@ -2063,11 +2482,13 @@ def get_branch_issue_summary(goods_issue):
     lines = list(goods_issue.lines.select_related("internal_request_line__item").all())
     received_map = _branch_received_qty_map(goods_issue)
     written_off_map = _branch_written_off_qty_map(goods_issue)
+    returned_map = _branch_returned_qty_map(goods_issue)
     summary = []
     for line in lines:
         received = received_map.get(line.id, 0)
         written_off = written_off_map.get(line.id, 0)
-        remaining = line.quantity_issued - received - written_off
+        returned = returned_map.get(line.id, 0)
+        remaining = line.quantity_issued - received - written_off - returned
         if remaining < 0:
             remaining = 0
         summary.append(
@@ -2116,10 +2537,23 @@ def critical_receipts_qs(branch=None):
     return qs
 
 
+def inventory_alerts_qs(branch=None):
+    qs = InventoryAlert.objects.select_related(
+        "dispatch_return__goods_issue__internal_request",
+        "branch",
+    ).order_by("-created_at", "-id")
+    if branch is not None:
+        qs = qs.filter(branch=branch)
+    return qs
+
+
 def unread_alert_count(user, branch=None):
-    """Critical receipts with no read-state for this user."""
+    """Unread discrepancy receipts plus return alerts for this user."""
     read_ids = BranchReceiptReadState.objects.filter(user=user).values("receipt_id")
-    return critical_receipts_qs(branch=branch).exclude(pk__in=read_ids).count()
+    discrepancy = critical_receipts_qs(branch=branch).exclude(pk__in=read_ids).count()
+    event_read = InventoryAlertReadState.objects.filter(user=user).values("alert_id")
+    events = inventory_alerts_qs(branch=branch).exclude(pk__in=event_read).count()
+    return discrepancy + events
 
 
 def serialize_alert(receipt, unread):
@@ -2153,6 +2587,7 @@ def serialize_alert(receipt, unread):
             )
     return {
         "id": receipt.id,
+        "kind": "discrepancy",
         "received_at": receipt.received_at.isoformat(),
         "branch_name": request.branch.name,
         "request_id": request.id,
@@ -2166,20 +2601,62 @@ def serialize_alert(receipt, unread):
     }
 
 
+def serialize_inventory_alert(alert, unread):
+    dr = alert.dispatch_return
+    request = dr.goods_issue.internal_request
+    payload = alert.payload or {}
+    return {
+        "id": alert.id,
+        "kind": alert.kind,
+        "received_at": alert.created_at.isoformat(),
+        "branch_name": alert.branch.name,
+        "request_id": request.id,
+        "dispatch_id": dr.goods_issue_id,
+        "dispatch_return_id": dr.id,
+        "reason": payload.get("reason") or "",
+        "unread": unread,
+        "lines": payload.get("lines") or [],
+    }
+
+
 def list_alerts(user, branch=None):
-    """Newest-first critical receipts (cap 200) with per-user unread flags."""
+    """Newest-first discrepancy and return alerts (cap 200) with unread flags."""
     receipts = list(critical_receipts_qs(branch=branch)[:ALERTS_LIST_CAP])
+    events = list(inventory_alerts_qs(branch=branch)[:ALERTS_LIST_CAP])
     read_ids = set(
         BranchReceiptReadState.objects.filter(
             user=user,
             receipt_id__in=[receipt.id for receipt in receipts],
         ).values_list("receipt_id", flat=True)
     )
-    return [serialize_alert(receipt, receipt.id not in read_ids) for receipt in receipts]
+    event_read = set(
+        InventoryAlertReadState.objects.filter(
+            user=user,
+            alert_id__in=[alert.id for alert in events],
+        ).values_list("alert_id", flat=True)
+    )
+    combined = [
+        (receipt.received_at, receipt.id, serialize_alert(receipt, receipt.id not in read_ids))
+        for receipt in receipts
+    ]
+    combined.extend(
+        (
+            alert.created_at,
+            alert.id,
+            serialize_inventory_alert(alert, alert.id not in event_read),
+        )
+        for alert in events
+    )
+    combined.sort(key=lambda row: (row[0], row[1]), reverse=True)
+    return [row[2] for row in combined[:ALERTS_LIST_CAP]]
 
 
 def get_critical_receipt(receipt_id, branch=None):
     return critical_receipts_qs(branch=branch).get(pk=receipt_id)
+
+
+def get_inventory_alert(alert_id, branch=None):
+    return inventory_alerts_qs(branch=branch).get(pk=alert_id)
 
 
 def mark_alert_read(receipt, user):
@@ -2190,3 +2667,12 @@ def mark_alert_read(receipt, user):
         defaults={},
     )
     return receipt
+
+
+def mark_inventory_alert_read(alert, user):
+    InventoryAlertReadState.objects.update_or_create(
+        alert=alert,
+        user=user,
+        defaults={},
+    )
+    return alert

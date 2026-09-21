@@ -37,6 +37,7 @@ def branch_receipt_console(request):
     context.update(
         {
             "can_short_close": can_approve_request(request.user, branch),
+            "can_return": can_approve_request(request.user, branch),
             "can_adjust": can_adjust_branch_stock(request.user, branch),
             "page_title": "Receipts",
             "page_title_key": "navBranchReceipts",
@@ -132,3 +133,16 @@ def warehouse_inbound_console(request):
 @require_GET
 def stock_at_branches_console(request):
     return render(request, "inventory/stock_at_branches.html")
+
+
+@inventory_required
+@require_GET
+def warehouse_returns_console(request):
+    flags = inventory_permission_flags(request.user)
+    return render(
+        request,
+        "inventory/warehouse_returns.html",
+        {
+            "can_process": flags["add_goodsreceipt"],
+        },
+    )

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <title>Incoming from branches — CentCompras</title>
+    <title>Returned dispatches — CentCompras</title>
     <script>
         (function () {
             var theme = "light";
@@ -27,8 +27,8 @@
     </script>
     <link rel="stylesheet" href="{% static 'products/css/console.css' %}?v=28">
     <style>
-        .inbound-work { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 900px) { .inbound-work { grid-template-columns: 1fr; } }
+        .returns-work { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .returns-work { grid-template-columns: 1fr; } }
         .panel { border: 1px solid var(--border, #ddd); border-radius: 6px; padding: 14px; background: #fff; }
         .qty { width: 80px; }
         .reason { min-width: 16rem; flex: 1; }
@@ -36,15 +36,16 @@
         .selected { background: #eef4fe; }
         .pagination { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
         .muted { color: #666; font-size: .9rem; }
+        .write-off-qty-col[hidden] { display: none; }
     </style>
 </head>
-<body data-can-receive="{% if can_receive %}true{% else %}false{% endif %}">
+<body data-can-process="{% if can_process %}true{% else %}false{% endif %}">
     <header class="topbar">
         <div class="topbar-title">
             {% include "products/includes/console_eyebrow.html" %}
-            <h1 data-i18n="title">Incoming from branches</h1>
+            <h1 data-i18n="title">Returned dispatches</h1>
         </div>
-        {% include "products/includes/warehouse_page_nav.html" with active_nav="incoming" %}
+        {% include "products/includes/warehouse_page_nav.html" with active_nav="returns" %}
         <div class="topbar-actions">
             {% include "products/includes/account_settings.html" %}
         </div>
@@ -52,28 +53,28 @@
 
     <main class="page">
         <p id="banner" class="banner" hidden></p>
-        <div class="inbound-work">
+        <div class="returns-work">
             <section class="panel">
                 <h2 data-i18n="queueTitle">In transit</h2>
-                <p class="muted" data-i18n="queueHint">These are sends from branches — not supplier receipts and not a return of a warehouse dispatch.</p>
+                <p class="muted" data-i18n="queueHint">These are warehouse dispatches a branch rejected — not surplus sends and not supplier receipts.</p>
                 <div class="table-wrap">
                     <table>
                         <thead>
                             <tr>
-                                <th data-i18n="colId">#</th>
+                                <th data-i18n="colId">DR #</th>
                                 <th data-i18n="colBranch">Branch</th>
+                                <th data-i18n="colDispatch">Dispatch</th>
+                                <th data-i18n="colRequest">Request</th>
                                 <th data-i18n="colWhen">When</th>
-                                <th data-i18n="colReason">Reason</th>
-                                <th data-i18n="colTotal">Sent</th>
                             </tr>
                         </thead>
                         <tbody id="queue-body"></tbody>
                     </table>
                 </div>
-                <p id="queue-empty" class="muted" hidden data-i18n="queueEmpty">No sends waiting.</p>
+                <p id="queue-empty" class="muted" hidden data-i18n="queueEmpty">No returns waiting.</p>
             </section>
             <section class="panel">
-                <h2 id="detail-title" data-i18n="detailTitle">Send</h2>
+                <h2 id="detail-title" data-i18n="detailTitle">Return</h2>
                 <p id="detail-meta" class="muted"></p>
                 <div class="table-wrap">
                     <table>
@@ -81,42 +82,44 @@
                             <tr>
                                 <th data-i18n="colCode">Code</th>
                                 <th data-i18n="colDescription">Description</th>
-                                <th data-i18n="colSent">Sent</th>
-                                <th data-i18n="colReceive">Receive</th>
+                                <th data-i18n="colReturned">Returned</th>
+                                <th data-i18n="colWriteOff">Write off</th>
+                                <th data-i18n="colWriteOffQty" class="write-off-qty-col" hidden>Write-off qty</th>
                             </tr>
                         </thead>
                         <tbody id="detail-body"></tbody>
                     </table>
                 </div>
-                <p id="detail-empty" class="muted" data-i18n="noMatch">Select a send in transit.</p>
-                <div class="row" id="receive-row" hidden>
+                <p id="detail-empty" class="muted" data-i18n="noMatch">Select a return in transit.</p>
+                <div class="row" id="process-row" hidden>
                     <label class="reason-label">
-                        <span data-i18n="shortReason">Reason if less than sent</span>
-                        <input type="text" id="receive-reason" class="reason" maxlength="255">
+                        <span data-i18n="writeOffReason">Reason if writing off</span>
+                        <input type="text" id="process-reason" class="reason" maxlength="255">
                     </label>
-                    <button type="button" id="receive-btn" class="btn btn-primary" data-i18n="receive">Receive</button>
+                    <button type="button" id="restock-btn" class="btn btn-primary" data-i18n="restock">Restock</button>
                 </div>
             </section>
         </div>
         <section class="panel" style="margin-top:20px;">
-            <h2 data-i18n="historyTitle">All sends</h2>
+            <h2 data-i18n="historyTitle">All returns</h2>
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th data-i18n="colId">#</th>
+                            <th data-i18n="colId">DR #</th>
                             <th data-i18n="colBranch">Branch</th>
                             <th data-i18n="colStatus">Status</th>
+                            <th data-i18n="colDispatch">Dispatch</th>
                             <th data-i18n="colWhen">When</th>
-                            <th data-i18n="colReason">Reason</th>
-                            <th data-i18n="colTotal">Sent</th>
-                            <th data-i18n="colReceived">Received</th>
+                            <th data-i18n="colReturned">Returned</th>
+                            <th data-i18n="colRestocked">Restocked</th>
+                            <th data-i18n="colWrittenOff">Written off</th>
                         </tr>
                     </thead>
                     <tbody id="history-body"></tbody>
                 </table>
             </div>
-            <p id="history-empty" class="muted" hidden data-i18n="historyEmpty">No sends yet.</p>
+            <p id="history-empty" class="muted" hidden data-i18n="historyEmpty">No returns yet.</p>
             <div class="pagination">
                 <button type="button" id="history-prev" class="btn" data-i18n="prev">‹ Prev</button>
                 <span id="history-page-label" class="muted"></span>
@@ -125,8 +128,8 @@
         </section>
     </main>
 
-    <script src="{% static 'inventory/js/warehouse_inbound_i18n.js' %}?v=2"></script>
+    <script src="{% static 'inventory/js/warehouse_returns_i18n.js' %}?v=1"></script>
     <script src="{% static 'products/js/console_settings_menu.js' %}?v=4"></script>
-    <script src="{% static 'inventory/js/warehouse_inbound.js' %}?v=1"></script>
+    <script src="{% static 'inventory/js/warehouse_returns.js' %}?v=1"></script>
 </body>
 </html>

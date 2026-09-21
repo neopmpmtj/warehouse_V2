@@ -48,4 +48,9 @@ urlpatterns = [
         views.stock_at_branches_console,
         name="stock_at_branches_console",
     ),
+    path(
+        "manage/returned-dispatches/",
+        views.warehouse_returns_console,
+        name="warehouse_returns_console",
+    ),
 ]

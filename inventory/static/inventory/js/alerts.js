@@ -6,6 +6,8 @@
     const LIST_URL = document.body.getAttribute("data-list-url") || "";
     const MARK_READ_TEMPLATE =
         document.body.getAttribute("data-mark-read-url") || "";
+    const EVENT_MARK_READ_TEMPLATE =
+        document.body.getAttribute("data-event-mark-read-url") || "";
 
     function safeGet(key, fallback) {
         try {
@@ -119,16 +121,20 @@
         banner.textContent = message;
     }
 
-    function markReadUrl(id) {
-        return MARK_READ_TEMPLATE.replace("{id}", String(id));
+    function markReadUrl(alert) {
+        const kind = alert.kind || "discrepancy";
+        if (kind !== "discrepancy" && EVENT_MARK_READ_TEMPLATE) {
+            return EVENT_MARK_READ_TEMPLATE.replace("{id}", String(alert.id));
+        }
+        return MARK_READ_TEMPLATE.replace("{id}", String(alert.id));
     }
 
-    function markRead(id, card) {
+    function markRead(alert, card) {
         if (!card.classList.contains("is-unread") || card.dataset.marking === "1") {
             return Promise.resolve();
         }
         card.dataset.marking = "1";
-        return fetch(markReadUrl(id), {
+        return fetch(markReadUrl(alert), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -159,6 +165,27 @@
             "</dd>" +
             "</div>"
         );
+    }
+
+    function returnLinesHtml(kind, lines) {
+        if (!lines || !lines.length) {
+            return t("dash");
+        }
+        const key =
+            kind === "dispatch_return_written_off" ? "writeOffLine" : "restockLine";
+        const items = lines.map(function (line) {
+            return (
+                "<li>" +
+                escapeHtml(
+                    t(key, {
+                        code: line.internal_code || t("dash"),
+                        qty: line.quantity,
+                    })
+                ) +
+                "</li>"
+            );
+        });
+        return '<ul class="alerts-lines">' + items.join("") + "</ul>";
     }
 
     function moreHtml(alert) {
@@ -217,8 +244,10 @@
         }
         alerts.forEach(function (alert) {
             const card = document.createElement("article");
+            const kind = alert.kind || "discrepancy";
             card.className = "alert-card";
             card.dataset.id = String(alert.id);
+            card.dataset.kind = kind;
             if (alert.unread) {
                 card.classList.add("is-unread");
             }
@@ -231,27 +260,58 @@
             }
             fields.push(metaRow(t("colRequest"), "#" + escapeHtml(alert.request_id)));
             fields.push(metaRow(t("colDispatch"), "#" + escapeHtml(alert.dispatch_id)));
-            fields.push(metaRow(t("colDiscrepancy"), discrepancyHtml(alert.lines)));
-            fields.push(metaRow(t("colReason"), escapeHtml(alert.reason || t("dash"))));
+            if (kind !== "discrepancy") {
+                fields.push(
+                    metaRow(
+                        t("colReturn"),
+                        "#" + escapeHtml(alert.dispatch_return_id || t("dash"))
+                    )
+                );
+            }
+            if (kind === "discrepancy") {
+                fields.push(metaRow(t("colDiscrepancy"), discrepancyHtml(alert.lines)));
+                fields.push(metaRow(t("colReason"), escapeHtml(alert.reason || t("dash"))));
+            } else if (kind === "dispatch_return_opened") {
+                /* identifiers only — no SKU or qty */
+            } else if (kind === "dispatch_return_restocked") {
+                fields.push(
+                    metaRow(t("kind_dispatch_return_restocked"), returnLinesHtml(kind, alert.lines))
+                );
+            } else if (kind === "dispatch_return_written_off") {
+                fields.push(
+                    metaRow(t("kind_dispatch_return_written_off"), returnLinesHtml(kind, alert.lines))
+                );
+                fields.push(metaRow(t("colReason"), escapeHtml(alert.reason || t("dash"))));
+            }
+            let extra = "";
+            if (kind === "discrepancy") {
+                extra =
+                    '<details class="alert-more">' +
+                    "<summary>" +
+                    escapeHtml(t("seeMore")) +
+                    "</summary>" +
+                    '<div class="alert-more-body">' +
+                    moreHtml(alert) +
+                    "</div>" +
+                    "</details>";
+            }
             card.innerHTML =
+                '<h2 class="alert-kind">' +
+                escapeHtml(t("kind_" + kind)) +
+                "</h2>" +
                 '<dl class="alert-fields">' +
                 fields.join("") +
                 "</dl>" +
-                '<details class="alert-more">' +
-                "<summary>" +
-                escapeHtml(t("seeMore")) +
-                "</summary>" +
-                '<div class="alert-more-body">' +
-                moreHtml(alert) +
-                "</div>" +
-                "</details>";
+                extra;
             const details = card.querySelector("details");
             const summary = card.querySelector("summary");
-            details.addEventListener("toggle", function () {
-                summary.textContent = details.open ? t("seeLess") : t("seeMore");
-            });
+            if (details && summary) {
+                details.addEventListener("toggle", function () {
+                    summary.textContent = details.open ? t("seeLess") : t("seeMore");
+                });
+            }
             card.addEventListener("click", function () {
-                markRead(alert.id, card).catch(function () {
+                markRead(alert, card).catch(function () {
                     showBanner(t("markReadError"));
                 });
             });

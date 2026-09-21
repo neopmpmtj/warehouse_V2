@@ -26,6 +26,12 @@
     cursor: pointer;
 }
 
+.alert-kind {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
 .alert-card.is-unread {
     font-weight: 600;
     background: var(--surface-2, #eef6f5);

@@ -41,15 +41,17 @@ Sem stock? O armazém levanta primeiro uma **encomenda de compra** a um forneced
 | Filial (qualquer função) | `/branch/threads/` | Pedir artigos que não estão no catálogo |
 | Filial (gestor / administrador) | `/branch/requests/` | Aprovar / rejeitar |
 | Filial (qualquer função) | `/branch/receipts/` | Confirmar chegada face a uma expedição |
+| Filial (gestor / administrador) | `/branch/receipts/` | Devolver uma expedição não registada ao armazém |
 | Filial (qualquer função) | `/branch/stock/` | Ver a quantidade em mão desta filial |
 | Filial (qualquer função) | `/branch/consumption/` | Retirar artigos do stock desta filial |
 | Filial (qualquer função) | `/branch/send-to-warehouse/` | Ver envios para o armazém (envio: gestor/administrador) |
-| Filial (gestor / administrador) | `/branch/alerts/` | Discrepâncias de receção (por ler até abrir a linha) |
+| Filial (gestor / administrador) | `/branch/alerts/` | Discrepâncias de receção e devoluções (por ler até abrir a linha) |
 | Filial (qualquer função) | `/company-voice/` | Caixa de sugestões da empresa |
 | Armazém | `/manage/internal-requests/` | Fila de requisições aprovadas + saída de mercadoria |
 | Armazém | `/manage/incoming-from-branches/` | Confirmar artigos que uma filial enviou ao armazém |
+| Armazém | `/manage/returned-dispatches/` | Reintegrar ou abater uma expedição que a filial devolveu |
 | Armazém | `/manage/stock-at-branches/` | Em mão em cada filial (só leitura) |
-| Armazém (administrador, ou gestor grau 2+) | `/manage/alerts/` | Discrepâncias de receção de todas as filiais |
+| Armazém (administrador, ou gestor grau 2+) | `/manage/alerts/` | Discrepâncias de receção e devoluções de todas as filiais |
 | Administrador do armazém | `/manage/branch-approval-limits/` | Tetos de aprovação dos gestores de filial |
 
 *(Durante o desenvolvimento na sua máquina: `http://127.0.0.1:8015/…`.)*
@@ -71,6 +73,7 @@ Existem **três funções de filial** (definidas pela sede) e as habituais **fun
 | Aprovar / rejeitar | ❌ | ✅ (sim/não; tetos em EUR só se o modo com preços estiver ligado) | ✅ (ilimitado) |
 | Cancelar requisição **aprovada** | ❌ | ✅ | ✅ |
 | Confirmar chegada (receção na filial) | ✅ | ✅ | ✅ |
+| Devolver uma expedição não registada ao armazém | ❌ | ✅ | ✅ |
 | Ver stock em mão (`/branch/stock/`) | ✅ | ✅ | ✅ |
 | Consumir stock da filial (`/branch/consumption/`) | ✅ | ✅ | ✅ |
 | Ver envios para o armazém | ✅ | ✅ | ✅ |
@@ -91,7 +94,8 @@ Existem **três funções de filial** (definidas pela sede) e as habituais **fun
 | Ver a fila de requisições + emitir mercadoria | Operador grau 2+, gestor, administrador |
 | Confirmar entradas das filiais | Operador grau 2+, gestor, administrador |
 | Ver stock nas filiais (só leitura) | Quem puder abrir a receção de mercadorias |
-| Alertas de discrepância de receção (`/manage/alerts/`) | Gestor grau 2+ ou administrador |
+| Processar expedições devolvidas (`/manage/returned-dispatches/`) | Operador grau 2+, gestor, administrador |
+| Alertas de discrepância e de devolução (`/manage/alerts/`) | Gestor grau 2+ ou administrador |
 | Encerramento parcial no armazém | Gestor grau 2+ ou administrador |
 | Editar tetos de aprovação das filiais | Administrador do armazém (`/manage/branch-approval-limits/`) |
 
@@ -262,7 +266,7 @@ Só um **gestor grau 2+ ou administrador** pode fazer isto.
 
 ## 8. Filial — confirmar chegada (receção)
 
-Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial assim que o armazém as emite — inclusive enquanto a requisição ainda está **fulfilling** (ainda há mais a expedir). Cada emissão do armazém tem o seu próprio **n.º** de expedição. **Receber** fica ativo depois de selecionar uma expedição. **Encerramento parcial** permanece desativado até o armazém ter concluído (requisição **shipped** ou **received**).
+Abra **`/branch/receipts/`**. Lista as **expedições** (*guias*) da sua filial assim que o armazém as emite — inclusive enquanto a requisição ainda está **fulfilling** (ainda há mais a expedir). Cada emissão do armazém tem o seu próprio **n.º** de expedição. **Receber** fica ativo depois de selecionar uma expedição. **Devolver ao armazém** aparece a **gestores e administradores** quando esta expedição ainda **não** tem receção na filial. **Encerramento parcial** permanece desativado até o armazém ter concluído (requisição **shipped** ou **received**).
 
 ### 8.1 Receber face a uma expedição
 
@@ -281,13 +285,31 @@ Regras:
 
 Receber **incrementa o stock da filial** de imediato. A receção fica na tabela **Receções** no fundo desta página (BR n.º, expedição, pedido, quem, quando, total, se foi discrepância). Uma linha correspondente aparece em **Movimentos de stock** (quantidade positiva, tipo Receção, referência **BR n.º**). Depois de uma receção completa a expedição pode sair da lista aberta (a requisição fica **closed**) — o histórico e os movimentos ficam. Abra **`/branch/stock/`** para ver a nova quantidade em mão.
 
-### 8.2 Encerramento parcial na filial
+### 8.2 Devolver ao armazém
 
-Se o armazém já concluiu e uma expedição **nunca foi registada no stock da filial** (por exemplo um palete danificado recusado), clique em **Encerramento parcial** e indique um **motivo**. Isso não é o caso “contámos 4, expediram 5” — use **Comunicar discrepâncias** para um desacordo de contagem. O encerramento parcial dá como baixa o restante não recebido da **requisição inteira** e a requisição passa a **closed**. Só um **gestor ou administrador** pode fazer isto, e só depois de o armazém ter emitido tudo ou encerrado parcialmente (requisição **shipped** ou **received**). Enquanto a requisição ainda está **fulfilling**, Encerramento parcial fica desativado (*Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.*).
+Se o palete **não** deve entrar no stock da filial — danificado, carga errada, recusado na doca — um **gestor ou administrador** clica em **Return to sender** (*Devolver ao armazém*). Os operadores não vêem este botão.
+
+Isto **não** é um desacordo de contagem (use **Comunicar discrepâncias**) e **não** é excesso que já é da filial (use **Enviar para o armazém**). A devolução só é permitida quando esta expedição ainda **não** tem receção na filial (nada registado, nada abatido por discrepância). Depois de qualquer receção nesta *guia*, o botão fica desativado.
+
+1. Selecione a expedição. O restante tem de estar aberto.
+2. Confirme e indique um **motivo** (obrigatório). **Cancelar** nesse pedido não faz nada. Precisa de Wi-Fi.
+3. A aplicação devolve **todo o restante** dessa expedição (todas as linhas abertas dessa *guia*). Emissões posteriores do armazém mantêm o seu próprio número de expedição.
+4. O stock da filial **não** sobe. O documento de emissão do armazém **não** é revertido. A devolução aparece na tabela **Devoluções** (DR n.º). A expedição sai da lista aberta quando o restante é 0.
+5. Não se pode cancelar uma devolução em trânsito.
+
+Enquanto a requisição ainda está **fulfilling**, devolver uma expedição **não** altera o estado da requisição. Depois de o armazém concluir (**shipped** / **received**): se nada resta a receber em nenhuma GI (recebido + baixa de discrepância + devolvido), a requisição fica **closed**.
+
+O armazém trata o palete em **`/manage/returned-dispatches/`** (cartão **Expedições devolvidas**, navegação **Devoluções**). Essa página **não** se mistura com entradas de excesso das filiais nem com receções de fornecedor. Quem puder ver inventário abre-a; processar exige a mesma permissão que registar uma receção de mercadorias (operador grau 2+, gestor, administrador). O armazém não pode recusar nem devolver o palete à filial.
+
+Em cada linha: deixe **Abater** desmarcado para **Reintegrar** toda a quantidade restante na fila FIFO do armazém. Marque **Abater** para mostrar **Qtd a abater**, pré-preenchida com o restante, mínimo **1**, máximo a quantidade devolvida em falta. Baixar a quantidade reintegra o resto. É obrigatório um **motivo** se alguma linha for abatida. Um clique em **Reintegrar** processa todas as linhas. As unidades reintegradas podem ficar reservadas para uma requisição *diferente* a aguardar (a mais antiga primeiro). As unidades abatidas ficam fora da prateleira do armazém (já tinham sido emitidas); não há segundo movimento de stock — só uma linha de auditoria. **Não** há requisição automática.
+
+### 8.3 Encerramento parcial na filial
+
+Se o armazém já concluiu e o restante da requisição **não** vai ser registado no stock da filial (perdido em trânsito, abandonado na doca sem devolução), clique em **Encerramento parcial** e indique um **motivo**. Isso não é o caso “contámos 4, expediram 5” — use **Comunicar discrepâncias** para um desacordo de contagem. Também não é “enviar esta *guia* não registada de volta” — use **Devolver ao armazém** para isso. O encerramento parcial dá como baixa o restante não recebido da **requisição inteira** e a requisição passa a **closed**. Só um **gestor ou administrador** pode fazer isto, e só depois de o armazém ter emitido tudo ou encerrado parcialmente (requisição **shipped** ou **received**). Enquanto a requisição ainda está **fulfilling**, Encerramento parcial fica desativado (*Não é possível encerrar parcialmente enquanto o armazém ainda tem restante por expedir.*).
 
 > 📷 **[CAPTURA DE ECRÃ — receção na filial com quantidades recebidas]**
 
-### 8.3 Alertas do gestor (discrepâncias de receção)
+### 8.4 Alertas do gestor (discrepâncias de receção e devoluções)
 
 Quando a filial regista **menos** unidades do que o armazém expediu nessa expedição, a receção fica guardada como discrepância. Os **gestores** de ambos os lados vêem-na como um cartão **Alertas** no painel (não na faixa de navegação das páginas de trabalho):
 
@@ -296,11 +318,13 @@ Quando a filial regista **menos** unidades do que o armazém expediu nessa exped
 
 O cartão mostra quantos alertas ainda não abriu (por exemplo um distintivo **3**). Abrir a página **não** limpa esse número. Clique num cartão para o marcar como visto **para si**; as outras pessoas continuam a vê-lo por ler. Os cartões já vistos permanecem na lista.
 
-Cada discrepância é o seu próprio cartão: **quando**, o número do **pedido**, o número da **expedição** (*guia*), o desvio de quantidade (código, expedido, recebido, em falta), e o **motivo**. A lista do armazém também mostra o nome da **filial**. **See more** (*Ver mais*) mostra sempre **Requisitar em falta** como **verdadeiro** ou **falso**. Quando é **verdadeiro**, mostra também o número do **pedido de seguimento** e cada artigo requisitado com a quantidade (que pode ser inferior ao em falta). **See less** (*Ver menos*) volta a esconder esse bloco. Os operadores não têm cartão no painel; o URL devolve **403**.
+Cada discrepância é o seu próprio cartão: **quando**, o número do **pedido**, o número da **expedição** (*guia*), o desvio de quantidade (código, expedido, recebido, em falta), e o **motivo**. A lista do armazém também mostra o nome da **filial**. **See more** (*Ver mais*) mostra sempre **Requisitar em falta** como **verdadeiro** ou **falso**. Quando é **verdadeiro**, mostra também o número do **pedido de seguimento** e cada artigo requisitado com a quantidade (que pode ser inferior ao em falta). **See less** (*Ver menos*) volta a esconder esse bloco.
+
+As mesmas páginas de Alertas listam também **devoluções de expedição**. Um cartão **Expedição devolvida** mostra quando, filial, pedido n.º, expedição n.º e DR n.º — **sem artigo nem quantidade**. Depois de o armazém reintegrar, **Stock devolvido reintegrado** lista código e quantidade. Depois de um abate, **Stock devolvido abatido** lista código, quantidade e o motivo do armazém. Só a filial **que devolveu** (gestores/administradores) e o pessoal de alertas do armazém vêem estes cartões; as outras filiais não. Os operadores não têm cartão no painel; o URL devolve **403**.
 
 **Não há e-mail** para isto. O documento de emissão do armazém não é alterado.
 
-### 8.4 Stock da filial (em mão)
+### 8.5 Stock da filial (em mão)
 
 Abra **`/branch/stock/`** (qualquer função de filial). Lista só o stock **recebido nesta filial** (não o catálogo do armazém):
 
@@ -310,7 +334,7 @@ Abra **`/branch/stock/`** (qualquer função de filial). Lista só o stock **rec
 - Aqui nunca vê a quantidade do armazém, o custo nem os preços de venda — isso fica em `/branch/catalog/` (indicação + preços opcionais).
 - A página precisa de Wi-Fi. Não guarda o stock em mão offline.
 
-### 8.5 Consumo (retirar stock da filial)
+### 8.6 Consumo (retirar stock da filial)
 
 Abra **`/branch/consumption/`** (qualquer função de filial). Este ecrã regista um **ticket de consumo** numerado (BC n.º) e retira de imediato quantidade do stock **desta filial**.
 
@@ -321,7 +345,7 @@ Abra **`/branch/consumption/`** (qualquer função de filial). Este ecrã regist
 
 Não pode consumir um artigo que esta filial nunca recebeu (nem que um administrador nunca tenha ajustado para a lista local). Um artigo por linha do ticket — não adicione o mesmo artigo duas vezes. Não há rascunho nem anulação: se registou a quantidade errada, um **administrador** da filial usa **Ajustar stock** em `/branch/receipts/` para repor. Esta página precisa de Wi-Fi.
 
-### 8.6 Enviar para o armazém (excesso, não é uma devolução)
+### 8.7 Enviar para o armazém (excesso, não é uma devolução)
 
 Abra **`/branch/send-to-warehouse/`**. **Não** é a devolução de uma expedição do armazém e **não** se regista em `/branch/receipts/`.
 
@@ -455,6 +479,9 @@ Cada expedição parcial aparece em `/branch/receipts/` assim que é emitida —
 **P7. Não vejo "Encerramento parcial" — porquê?**
 Encerramento parcial é só para gestor/administrador, tanto no armazém como na filial.
 
+**P7a. Não vejo "Devolver ao armazém" — porquê?**
+O botão é só para **gestor/administrador** (os operadores mantêm Receber e Comunicar discrepâncias). Também fica oculto ou desativado quando esta expedição já tem receção na filial, o restante é 0, ou já foi devolvida. Use **Enviar para o armazém** para excesso já registado.
+
 **P8. Posso pedir o mesmo artigo duas vezes?**
 Não — uma linha por artigo por requisição. **Edite** a quantidade da linha em vez de acrescentar uma segunda linha.
 
@@ -474,7 +501,7 @@ A reserva é libertada de imediato e oferecida à requisição seguinte em esper
 O stock já está em movimento. Depois da primeira saída de mercadoria a única forma de terminar cedo é **encerramento parcial** (lado armazém) ou **encerramento parcial na filial** (lado filial).
 
 **P14. Em que difere o stock da filial do stock do armazém?**
-Dois livros-razão separados. O stock do armazém vive no artigo; o **stock da filial** vive por `(filial, artigo)` e só se move quando recebe uma expedição, **consome**, **envia para o armazém**, ou um administrador ajusta. `/branch/stock/` lista **só essas linhas locais** — não o catálogo completo do armazém. Depois de receber, o artigo aparece aí (ou a quantidade em mão sobe se já estava listado). As tabelas Receções / Movimentos de stock no fundo de `/branch/receipts/` são o livro-razão. **Consumo** em `/branch/consumption/` é como o em mão desce no uso do dia a dia. **Enviar para o armazém** em `/branch/send-to-warehouse/` é como o excesso volta ao armazém (não é a devolução de uma *guia*). A lista de expedições abertas só mostra guias ainda em curso.
+Dois livros-razão separados. O stock do armazém vive no artigo; o **stock da filial** vive por `(filial, artigo)` e só se move quando recebe uma expedição, **consome**, **envia para o armazém**, ou um administrador ajusta. `/branch/stock/` lista **só essas linhas locais** — não o catálogo completo do armazém. Depois de receber, o artigo aparece aí (ou a quantidade em mão sobe se já estava listado). As tabelas Receções / Devoluções / Movimentos de stock no fundo de `/branch/receipts/` são o livro-razão. **Consumo** em `/branch/consumption/` é como o em mão desce no uso do dia a dia. **Enviar para o armazém** em `/branch/send-to-warehouse/` é como o excesso volta ao armazém (não é a devolução de uma *guia*). **Devolver ao armazém** em `/branch/receipts/` envia uma *guia* **não registada** de volta sem subir o stock da filial. A lista de expedições abertas só mostra guias ainda em curso.
 
 **P14a. Recebi mercadoria — porque é que `/branch/stock/` não mostra todos os artigos do catálogo?**
 Não é o catálogo do armazém. Uma linha aparece na primeira vez que esta filial recebe esse artigo (ou um administrador o ajusta). Quantidade 0 permanece na lista. Encomende em `/branch/catalog/` como antes.

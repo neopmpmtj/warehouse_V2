@@ -127,7 +127,7 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Enter at least one issue quantity.` | A request is selected but every issue quantity is empty | Type a quantity on at least one line |
 | `A reason is required to short-close a request.` | Warehouse short-close needs a reason | Type one |
 
-**Branch receipt, branch stock, consumption & send to warehouse (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`, `/branch/send-to-warehouse/`)**
+**Branch receipt, branch stock, consumption, send to warehouse & dispatch return (`/branch/receipts/`, `/branch/stock/`, `/branch/consumption/`, `/branch/send-to-warehouse/`)**
 
 | Message | Why | What to do |
 |---------|-----|------------|
@@ -161,6 +161,17 @@ A message that "won't let you" is the app **protecting the ledger** — not a bu
 | `Cannot receive a shipment with status 'X'.` | Already received or cancelled | Only **in transit** can be received |
 | `Received quantity X exceeds sent remaining Y.` | Over-receive vs the send | Lower it |
 | `A reason is required when receiving less than the sent quantity.` | Short arrival | Type a reason; the missing qty is written off |
+| `Return to sender requires manager or admin.` | Operator tried to return a dispatch | Manager/admin only |
+| `A reason is required to return a dispatch to the warehouse.` | Return needs a reason | Type one |
+| `Cannot return a dispatch that has already been received.` | This *guia* already has a branch receipt | Use discrepancy or Send to warehouse |
+| `This dispatch has already been returned to the warehouse.` | Second return on the same GI | One DR per dispatch |
+| `Cannot return a dispatch for a request with status 'X'.` | Request isn't fulfilling / shipped / received | Wait for a dispatch |
+| `No lines to return.` | Remaining on this dispatch is 0 | Nothing left to send back |
+| `Cannot receive a dispatch that has been returned to the warehouse.` | Tried to book a returned *guia* | Process it on Returns instead |
+| `Cannot process a dispatch return with status 'X'.` | Already processed | One warehouse action per return |
+| `Write-off quantity must be between 1 and X.` | Write-off qty is 0, empty, or more than remaining returned | Enter 1 up to remaining, or untick Write off |
+| `A reason is required to write off returned items.` | Any write-off needs a reason | Type one |
+| `No lines to process.` | Process with missing lines | Include every returned line |
 
 ### 2.4 Requisição interna (`/branch/requests/`) & branches
 
