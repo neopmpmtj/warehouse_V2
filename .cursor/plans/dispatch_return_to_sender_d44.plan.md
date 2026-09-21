@@ -81,7 +81,7 @@ Branch stock **does not go up** for returned qty (they never received it). This 
 | **P9** | **No auto-reorder** | Warehouse processing has **Write off**, not Reorder. |
 | **P10** | **Warehouse page** | **New** `/manage/returned-dispatches/` + dashboard card. Not mixed with D43 inbound or PO receipts. New sibling-nav item (e.g. **Returns**). |
 | **P11** | **Warehouse who** | Inventory viewers can **see**; `inventory.add_goodsreceipt` **processes**. Warehouse cannot refuse. |
-| **P12** | **Line mix at warehouse** | Per line, restock + write-off must cover remaining returned. Write-off requires a **reason**. |
+| **P12** | **Write-off checkbox (Reorder analogue)** | Warehouse line: **Write off** checkbox + **Write-off qty**. Unticked = restock all remaining. Ticked = qty field appears, pre-filled with remaining returned, **min 1**, **max = remaining returned** (cannot exceed original returned qty on that line). Lowering qty restocks the rest. Reason required if any write-off. |
 | **P13** | **Restock ledger** | New `StockMovement.Type` e.g. `dispatch_return` (positive) + D32 FIFO. |
 | **P14** | **Write-off ledger** | **No** second `StockMovement`. Line qty + append-only changelog. |
 | **P15** | **Cancel in transit** | **No.** |
@@ -167,8 +167,8 @@ issued − already_received − discrepancy_write_off − returned
 Layout close to `/manage/incoming-from-branches/` and to discrepancy columns:
 
 - Left: in-transit / processed list (DR #, branch, request #, dispatch #, status, when).
-- Right: lines — code, description, returned, already restocked, already written off, remaining, **Restock qty**, **Write off** checkbox, **Write-off qty**.
-- Primary **Restock**; write-off is the discrepancy-Reorder analogue (explicit, reasoned).
+- Right: lines — code, description, returned, already restocked, already written off, remaining, **Write off** checkbox, **Write-off qty** (hidden until ticked). Same interaction as discrepancy **Reorder**: tick → qty appears, pre-filled with remaining, clamped `1 … remaining`. Untick → restock the whole remaining; no write-off.
+- Primary **Restock**. Write-off is the Reorder analogue (explicit, reasoned). Restock qty + write-off qty = remaining on that action.
 - History of processed DRs + link to stock movements (`dispatch_return`).
 
 Dashboard: warehouse card **Returned dispatches**. Do **not** put this queue on the D43 inbound page.
@@ -197,7 +197,7 @@ Unread badge on the existing Alerts dashboard card counts **all** unread kinds. 
 
 ## 7. Explicit non-goals (v1)
 
-- Do not mix with D43 BWS or PO goods receipts.
+- Do not allow Return after any `BranchReceipt` on that GI (unbooked dispatch only).
 - Do not email (Phase 9).
 - Do not offline-queue returns.
 - Do not let the warehouse refuse / bounce the pallet back to the branch.
