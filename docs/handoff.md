@@ -34,7 +34,7 @@
 
 **Phases 0–6 are complete** (Phase 6 = offline catalogue + sync + PWA + review fixes). Full-tree production-readiness review ([`docs/reviews/code-review-full-2026-08-26-1205.md`](reviews/code-review-full-2026-08-26-1205.md)) **P0/P1/P2 applied**. **Presentation deck v2.8** — **26 slides** (Part I visual 1–17 + Part II reference 18–26); slide **12** → **Parle** (D40). Requisição `unit_price` snapshots **retail** (D41). **Branch send-to-warehouse (D43)**. **Dispatch return to sender (D44)** — unbooked GI, DR #, warehouse restock/write-off, FIFO, typed alerts. **Home new-document badges (D45)** — section watermarks on dashboard cards only. **Immediate next:** remove **TEMP** viewBox debug borders; optional slides 10–16 / slide 8 viewBox polish — then **Phase 7**. OAuth + shared chrome = **Phase 8**. Email = **Phase 9**.
 
-**Tests:** full suite **683 OK** (21 Sep; D44 dispatch return).
+**Tests:** full suite **698 OK** (21 Sep; D45 Home badges).
 
 **Demo slice (27 Aug):** `/manage/cost-trends/` — primary buying-cost chart from `SupplierItemPriceChangeLog`; seed backdates **CEM-50** with 3 cost steps for client demos. Future: inflation % chart from same API `summary`.
 
@@ -48,6 +48,7 @@ Dashboard **Home** cards (`/` and `/branch/`) show a number when a **new** docum
 - HTML GET of the work page advances the watermark; Home GET and JSON lists do not.
 - **Alerts** stay click-to-ack. **Threads** keep `ThreadReadState`; dashboard now shows `unread_thread_count` (not list-capped).
 - Manuals 04 / 08 / 05 EN+PT. No polling, no nav badges, no Parle/PO.
+- **Tests:** **698 OK**.
 
 ## This session (21 Sep 2026) — dispatch return to sender (D44) ✅
 
