@@ -96,7 +96,7 @@ Filters combine. Search, family, sub-family, and **Below reorder only** run in t
 | **On hand** | Cached physical quantity (from the stock ledger) |
 | **Reserved** | Quantity held for approved / fulfilling requisições |
 | **Available** | On hand minus reserved — what is still free to ship today |
-| **Reorder** | Reorder level set on the item |
+| **Reorder level** | Reorder level set on the item |
 | **Buying Price** | Cost we pay — see §5 |
 | **Selling price** | The **manual** selling price (wholesale and special stay on the item console) |
 | **Suppliers** | Active suppliers that have a price for this item; the **primary** is listed **first** and marked ★ |
@@ -191,7 +191,7 @@ Deliberate. Warehouse staff see on-hand, reserved, and available here. Branch st
 No. Deactivated items (and items whose family is inactive) are excluded from the default view. Tick **Include inactive** to see them again, or reactivate in the item console.
 
 **Q6. On hand is 0 and the row is not amber — is that a bug?**
-Not if **Reorder** is 0. A zero reorder level means “do not flag”. Set a reorder level greater than 0 on the item if you want the warning. The tint uses **available**, so 10 on hand with 10 reserved also flags as below reorder when reorder > 0.
+Not if **Reorder level** is 0. A zero reorder level means “do not flag”. Set a reorder level greater than 0 on the item if you want the warning. The tint uses **available**, so 10 on hand with 10 reserved also flags as below reorder when reorder > 0.
 
 **Q7. On hand is 10 but Available is 0 — where did the stock go?**
 It is **reserved** for approved requisições. The warehouse queue at `/manage/internal-requests/` shows who holds it.

@@ -96,7 +96,7 @@ Os filtros combinam-se. Pesquisa, família, sub-família e **Só abaixo do ponto
 | **Em armazém** | Quantidade física em cache (do livro-razão de stock) |
 | **Reservado** | Quantidade retida para requisições aprovadas / em cumprimento |
 | **Disponível** | Em armazém menos reservado — o que ainda está livre para expedir hoje |
-| **Encomenda** | Ponto de encomenda definido no artigo |
+| **Nível de reposição** | Ponto de encomenda definido no artigo |
 | **Preço de compra** | Custo que pagamos — ver §5 |
 | **Preço Venda** | O preço de venda **manual** (grossista e especial ficam na gestão de artigos) |
 | **Fornecedores** | Fornecedores ativos com preço para este artigo; o **principal** aparece **em primeiro** e está marcado com ★ |
@@ -198,7 +198,7 @@ De propósito. O pessoal do armazém vê em armazém, reservado e disponível aq
 Não. Artigos desativados (e artigos cuja família está inativa) ficam de fora da vista por defeito. Marque **Incluir inativos** para os ver de novo, ou reative na gestão de artigos.
 
 **P6. Em armazém é 0 e a linha não está âmbar — é um bug?**
-Não se **Encomenda** for 0. Ponto de encomenda zero significa «não sinalizar». Defina ponto de encomenda maior que 0 no artigo se quiser o aviso. O tom usa **disponível**, por isso 10 em armazém com 10 reservados também sinaliza abaixo do ponto de encomenda quando encomenda > 0.
+Não se **Nível de reposição** for 0. Ponto de encomenda zero significa «não sinalizar». Defina ponto de encomenda maior que 0 no artigo se quiser o aviso. O tom usa **disponível**, por isso 10 em armazém com 10 reservados também sinaliza abaixo do ponto de encomenda quando encomenda > 0.
 
 **P7. Em armazém é 10 mas Disponível é 0 — para onde foi o stock?**
 Está **reservado** para requisições aprovadas. A fila do armazém em `/manage/internal-requests/` mostra quem o retém.
